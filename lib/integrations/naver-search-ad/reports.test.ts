@@ -5,6 +5,104 @@ import {
 } from "./reports";
 
 describe("Naver Search Ad stat report parsing", () => {
+  it("parses headerless shopping keyword detail report rows", () => {
+    const rows = parseSearchAdStatReport(
+      [
+        "20260220\t123888\tcmp-1\tgrp-1\tanswer sticker\tnad-1\tbsn-1\t20\t99\t684926\tM\t3\t2\t2010.0\t18\t0",
+      ].join("\n"),
+      "SHOPPINGKEYWORD_DETAIL",
+    );
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        reportType: "SHOPPINGKEYWORD_DETAIL",
+        date: new Date("2026-02-20T00:00:00.000+09:00"),
+        campaignId: "cmp-1",
+        adgroupId: "grp-1",
+        keywordId: null,
+        keyword: "answer sticker",
+        impressions: 3,
+        clicks: 2,
+        cost: 2010,
+        avgRank: 18,
+      }),
+    ]);
+    expect(rows[0]?.raw).toEqual(
+      expect.objectContaining({
+        column0: "20260220",
+        column2: "cmp-1",
+      }),
+    );
+    expect(rows[0]?.raw).not.toHaveProperty("column1");
+  });
+
+  it("maps headerless shopping keyword detail rows by adgroup and keyword", () => {
+    const reportRows = parseSearchAdStatReport(
+      "20260220\t123888\tcmp-1\tgrp-1\tanswer sticker\tnad-1\tbsn-1\t20\t99\t684926\tM\t3\t2\t2010.0\t18\t0",
+      "SHOPPINGKEYWORD_DETAIL",
+    );
+    const keywordMetaById = new Map([
+      [
+        "kw-1",
+        {
+          campaignId: "cmp-current",
+          adgroupId: "grp-1",
+          keywordId: "kw-1",
+          keyword: "answer sticker",
+        },
+      ],
+    ]);
+
+    expect(
+      toKeywordPerformanceRowsFromReport({
+        accountId: "account-1",
+        reportRows,
+        keywordMetaById,
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        accountId: "account-1",
+        campaignId: "cmp-current",
+        adgroupId: "grp-1",
+        keywordId: "kw-1",
+        keyword: "answer sticker",
+        impressions: 3,
+        clicks: 2,
+        cost: 2010,
+      }),
+    ]);
+  });
+
+  it("keeps report keyword rows when no current keyword snapshot matches", () => {
+    const reportRows = parseSearchAdStatReport(
+      "20260220\t123888\tcmp-1\tgrp-1\tanswer sticker\tnad-1\tbsn-1\t20\t99\t684926\tM\t3\t2\t2010.0\t18\t0",
+      "SHOPPINGKEYWORD_DETAIL",
+    );
+
+    expect(
+      toKeywordPerformanceRowsFromReport({
+        accountId: "account-1",
+        reportRows,
+        keywordMetaById: new Map(),
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        accountId: "account-1",
+        campaignId: "cmp-1",
+        adgroupId: "grp-1",
+        keywordId: expect.stringMatching(/^stat-report:/),
+        keyword: "answer sticker",
+        impressions: 3,
+        clicks: 2,
+        cost: 2010,
+        rawJson: expect.objectContaining({
+          reportMappingSource: "report-fallback",
+          source: "naver-stat-report",
+        }),
+      }),
+    ]);
+  });
+
   it("parses tab-separated keyword performance report rows", () => {
     const rows = parseSearchAdStatReport(
       [

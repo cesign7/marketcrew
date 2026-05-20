@@ -150,6 +150,9 @@ describe("Naver Search Ad performance sync helpers", () => {
         reportType: "SHOPPINGKEYWORD_DETAIL",
         statDate: "20260519",
         status: "BUILT",
+        downloadedRows: 1,
+        parsedRows: 1,
+        mappedRows: 1,
       }),
     ]);
     expect(result.performanceRows).toEqual([
@@ -160,6 +163,109 @@ describe("Naver Search Ad performance sync helpers", () => {
         impressions: 100,
         clicks: 4,
         cost: 1200,
+      }),
+    ]);
+  });
+
+  it("records parsed and mapped row counts when reports use report fallback mapping", async () => {
+    const client = {
+      createStatReportJob: async () => ({
+        reportJobId: "456",
+        reportType: "SHOPPINGKEYWORD_DETAIL" as const,
+        statDate: "2026-02-20T00:00:00Z",
+        status: "BUILT" as const,
+        downloadUrl: "https://api.searchad.naver.com/stat-reports/456/download",
+        raw: {},
+      }),
+      getStatReportJob: async () => ({
+        reportJobId: "456",
+        reportType: "SHOPPINGKEYWORD_DETAIL" as const,
+        statDate: "2026-02-20T00:00:00Z",
+        status: "BUILT" as const,
+        downloadUrl: "https://api.searchad.naver.com/stat-reports/456/download",
+        raw: {},
+      }),
+      downloadStatReport: async () =>
+        "20260220\t123888\tcmp-1\tgrp-missing\tanswer sticker\tnad-1\tbsn-1\t20\t99\t684926\tM\t3\t2\t2010.0\t18\t0",
+    };
+
+    const result = await collectStatReportPerformanceRows({
+      accountId: "account-1",
+      client,
+      keywordMetaById: new Map(),
+      reportTypes: ["SHOPPINGKEYWORD_DETAIL"],
+      statDates: ["20260220"],
+      maxPollAttempts: 1,
+      pollIntervalMs: 0,
+    });
+
+    expect(result.jobs).toEqual([
+      expect.objectContaining({
+        downloadedRows: 1,
+        parsedRows: 1,
+        mappedRows: 1,
+      }),
+    ]);
+    expect(result.performanceRows).toEqual([
+      expect.objectContaining({
+        campaignId: "cmp-1",
+        adgroupId: "grp-missing",
+        keywordId: expect.stringMatching(/^stat-report:/),
+        keyword: "answer sticker",
+      }),
+    ]);
+  });
+
+  it("aggregates duplicate report rows for the same report keyword and date", async () => {
+    const client = {
+      createStatReportJob: async () => ({
+        reportJobId: "789",
+        reportType: "SHOPPINGKEYWORD_DETAIL" as const,
+        statDate: "2026-02-20T00:00:00Z",
+        status: "BUILT" as const,
+        downloadUrl: "https://api.searchad.naver.com/stat-reports/789/download",
+        raw: {},
+      }),
+      getStatReportJob: async () => ({
+        reportJobId: "789",
+        reportType: "SHOPPINGKEYWORD_DETAIL" as const,
+        statDate: "2026-02-20T00:00:00Z",
+        status: "BUILT" as const,
+        downloadUrl: "https://api.searchad.naver.com/stat-reports/789/download",
+        raw: {},
+      }),
+      downloadStatReport: async () =>
+        [
+          "20260220\t123888\tcmp-1\tgrp-1\tanswer sticker\tnad-1\tbsn-1\t20\t99\t684926\tM\t3\t2\t2010.0\t10\t0",
+          "20260220\t123888\tcmp-1\tgrp-1\tanswer sticker\tnad-2\tbsn-1\t20\t99\t684926\tP\t7\t1\t990.0\t20\t0",
+        ].join("\n"),
+    };
+
+    const result = await collectStatReportPerformanceRows({
+      accountId: "account-1",
+      client,
+      keywordMetaById: new Map(),
+      reportTypes: ["SHOPPINGKEYWORD_DETAIL"],
+      statDates: ["20260220"],
+      maxPollAttempts: 1,
+      pollIntervalMs: 0,
+    });
+
+    expect(result.jobs).toEqual([
+      expect.objectContaining({
+        downloadedRows: 2,
+        parsedRows: 2,
+        mappedRows: 2,
+      }),
+    ]);
+    expect(result.performanceRows).toEqual([
+      expect.objectContaining({
+        impressions: 10,
+        clicks: 3,
+        cost: 3000,
+        ctr: 30,
+        avgCpc: 1000,
+        avgRank: 17,
       }),
     ]);
   });

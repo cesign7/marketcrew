@@ -47,6 +47,9 @@ Blocked until separately approved:
 - Confirm stats fallback batches `ids` and handles `1016`/`429` rate-limit style failures without write-side effects.
 - Confirm StatReport sync uses only `reportTp` and `statDt`, polls bounded attempts, and does not persist raw download URLs.
 - Confirm StatReport download URLs are same-host HTTPS URLs before fetching, including the current official `/report-download?authtoken=...&fileVersion=v2` form.
+- Confirm StatReport downloads can be parsed when Naver returns headerless TSV data, and record downloaded/parsed/mapped row counts for troubleshooting.
+- Confirm shopping report keyword rows that do not match current `/ncc/keywords` snapshots use internal `stat-report:*` IDs and are not treated as direct Naver keyword mutation targets.
+- Confirm report raw JSON stored in the database excludes customer ID values and does not persist raw download URLs.
 - Confirm performance backfill never requests more than the 180-day detail-report limit and keeps foreground chunks bounded.
 - Confirm backfill progress counts successful backfill `statDates` even when a report date stores zero rows, so empty report days are not retried forever.
 - Confirm scheduler calls include a Bearer token in production and return sanitized counts/date windows only.

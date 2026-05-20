@@ -7,6 +7,7 @@ import {
 import { sanitizeSearchAdErrorMessage } from "@/lib/integrations/naver-search-ad/errors";
 import { normalizeStats } from "@/lib/integrations/naver-search-ad/normalize";
 import {
+  countSearchAdStatReportDataRows,
   parseSearchAdStatReport,
   toKeywordPerformanceRowsFromReport,
 } from "@/lib/integrations/naver-search-ad/reports";
@@ -77,6 +78,9 @@ export interface StatReportPerformanceJobSummary {
   reportJobId: string;
   status: string;
   hasDownloadUrl: boolean;
+  downloadedRows: number;
+  parsedRows: number;
+  mappedRows: number;
 }
 
 export interface CollectStatReportPerformanceRowsInput {
@@ -373,29 +377,35 @@ export async function collectStatReportPerformanceRows({
         maxPollAttempts,
         pollIntervalMs,
       });
-
-      jobs.push({
+      const jobSummary: StatReportPerformanceJobSummary = {
         reportType,
         statDate,
         reportJobId: completed.reportJobId,
         status: completed.status,
         hasDownloadUrl: Boolean(completed.downloadUrl),
-      });
+        downloadedRows: 0,
+        parsedRows: 0,
+        mappedRows: 0,
+      };
 
       if (completed.status !== "BUILT" || !completed.downloadUrl) {
+        jobs.push(jobSummary);
         continue;
       }
 
       const reportText = await client.downloadStatReport(completed.downloadUrl);
       const reportRows = parseSearchAdStatReport(reportText, reportType);
+      const mappedRows = toKeywordPerformanceRowsFromReport({
+        accountId,
+        reportRows,
+        keywordMetaById,
+      });
 
-      performanceRows.push(
-        ...toKeywordPerformanceRowsFromReport({
-          accountId,
-          reportRows,
-          keywordMetaById,
-        }),
-      );
+      jobSummary.downloadedRows = countSearchAdStatReportDataRows(reportText);
+      jobSummary.parsedRows = reportRows.length;
+      jobSummary.mappedRows = mappedRows.length;
+      jobs.push(jobSummary);
+      performanceRows.push(...mappedRows);
     }
   }
 
@@ -531,19 +541,105 @@ function isPendingReportJob(job: SearchAdReportJob) {
 }
 
 function dedupeKeywordPerformanceRows<
-  T extends { accountId: string; keywordId: string; date: Date },
+  T extends {
+    accountId: string;
+    keywordId: string;
+    date: Date;
+    impressions: number;
+    clicks: number;
+    cost: number;
+    ctr: number | null;
+    avgCpc: number | null;
+    avgRank: number | null;
+    conversions: number | null;
+    conversionRate: number | null;
+    conversionSales: number | null;
+    roas: number | null;
+    costPerConversion: number | null;
+  },
 >(rows: T[]) {
   const rowsByKey = new Map<string, T>();
 
   for (const row of rows) {
     const key = `${row.accountId}\u0000${row.keywordId}\u0000${row.date.toISOString()}`;
+    const existing = rowsByKey.get(key);
 
-    if (!rowsByKey.has(key)) {
+    if (!existing) {
       rowsByKey.set(key, row);
+      continue;
     }
+
+    const previousImpressions = existing.impressions;
+    existing.impressions += row.impressions;
+    existing.clicks += row.clicks;
+    existing.cost += row.cost;
+    existing.conversions = addNullableNumbers(
+      existing.conversions,
+      row.conversions,
+    );
+    existing.conversionSales = addNullableNumbers(
+      existing.conversionSales,
+      row.conversionSales,
+    );
+    existing.ctr =
+      existing.impressions > 0
+        ? roundNumber((existing.clicks / existing.impressions) * 100)
+        : null;
+    existing.avgCpc =
+      existing.clicks > 0 ? roundNumber(existing.cost / existing.clicks) : null;
+    existing.avgRank = weightedAverage(
+      existing.avgRank,
+      previousImpressions,
+      row.avgRank,
+      row.impressions,
+    );
+    existing.conversionRate =
+      existing.conversions !== null && existing.clicks > 0
+        ? roundNumber((existing.conversions / existing.clicks) * 100)
+        : null;
+    existing.roas =
+      existing.conversionSales !== null && existing.cost > 0
+        ? roundNumber((existing.conversionSales / existing.cost) * 100)
+        : null;
+    existing.costPerConversion =
+      existing.conversions && existing.conversions > 0
+        ? roundNumber(existing.cost / existing.conversions)
+        : null;
   }
 
   return [...rowsByKey.values()];
+}
+
+function addNullableNumbers(left: number | null, right: number | null) {
+  if (left === null && right === null) {
+    return null;
+  }
+
+  return (left ?? 0) + (right ?? 0);
+}
+
+function weightedAverage(
+  leftValue: number | null,
+  leftWeight: number,
+  rightValue: number | null,
+  rightWeight: number,
+) {
+  if (leftValue === null && rightValue === null) {
+    return null;
+  }
+
+  const weightedTotal =
+    (leftValue ?? 0) * (leftValue === null ? 0 : leftWeight) +
+    (rightValue ?? 0) * (rightValue === null ? 0 : rightWeight);
+  const totalWeight =
+    (leftValue === null ? 0 : leftWeight) +
+    (rightValue === null ? 0 : rightWeight);
+
+  return totalWeight > 0 ? roundNumber(weightedTotal / totalWeight) : null;
+}
+
+function roundNumber(value: number) {
+  return Math.round(value * 100) / 100;
 }
 
 function formatStatDate(date: Date) {
