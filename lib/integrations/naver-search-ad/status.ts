@@ -20,7 +20,14 @@ export function getSearchAdCredentialStatus(
 }
 
 export async function getSearchAdSyncStatus() {
-  const [account, lastRun, snapshotCount] = await Promise.all([
+  const [
+    account,
+    lastRun,
+    recentRuns,
+    campaignSnapshotCount,
+    adgroupSnapshotCount,
+    keywordSnapshotCount,
+  ] = await Promise.all([
     prisma.marketingAccount.findFirst({
       where: { provider: "NAVER_SEARCH_AD" },
       orderBy: { createdAt: "asc" },
@@ -29,6 +36,13 @@ export async function getSearchAdSyncStatus() {
       where: { provider: "NAVER_SEARCH_AD" },
       orderBy: { startedAt: "desc" },
     }),
+    prisma.integrationSyncRun.findMany({
+      where: { provider: "NAVER_SEARCH_AD" },
+      orderBy: { startedAt: "desc" },
+      take: 6,
+    }),
+    prisma.adCampaignSnapshot.count(),
+    prisma.adAdgroupSnapshot.count(),
     prisma.adKeywordSnapshot.count(),
   ]);
 
@@ -36,6 +50,10 @@ export async function getSearchAdSyncStatus() {
     credentials: getSearchAdCredentialStatus(),
     account,
     lastRun,
-    snapshotCount,
+    recentRuns,
+    campaignSnapshotCount,
+    adgroupSnapshotCount,
+    keywordSnapshotCount,
+    snapshotCount: keywordSnapshotCount,
   };
 }

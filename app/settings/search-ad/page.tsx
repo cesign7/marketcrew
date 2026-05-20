@@ -1,7 +1,7 @@
-import { RefreshCw, ShieldCheck } from "lucide-react";
+import { Clock3, Database, RefreshCw, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { getSearchAdSyncStatus } from "@/lib/integrations/naver-search-ad/status";
-import { syncSearchAdDryRunAction } from "./actions";
+import { syncSearchAdAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,25 +18,25 @@ export default async function SearchAdSettingsPage() {
               검색광고 연동
             </p>
             <h2 className="mt-3 text-3xl font-black tracking-tight">
-              네이버 검색광고 dry-run
+              네이버 검색광고 저장 동기화
             </h2>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#69727c]">
-              캠페인, 광고그룹, 키워드 목록만 읽어서 DB 스냅샷으로 저장합니다.
-              입찰가 변경, 키워드 수정, 광고문안 변경은 실행하지 않습니다.
+              캠페인, 광고그룹, 키워드 목록을 읽기 전용 API로 가져와 DB에 저장합니다.
+              입찰가 변경, 키워드 수정, 광고문안 변경은 계속 차단됩니다.
             </p>
           </div>
-          <form action={syncSearchAdDryRunAction}>
+          <form action={syncSearchAdAction}>
             <button
               disabled={!canSync}
               className="inline-flex items-center gap-2 rounded-full bg-[#0e8f81] px-5 py-3 text-sm font-black text-white hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-[#b7c8c5]"
             >
               <RefreshCw size={17} />
-              dry-run 동기화
+              동기화 실행
             </button>
           </form>
         </div>
 
-        <div className="mt-7 grid gap-4 xl:grid-cols-[1fr_1fr]">
+        <div className="mt-7 grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
           <div className="rounded-3xl bg-[#fff8ec] p-5">
             <div className="flex items-center gap-2">
               <ShieldCheck size={18} className="text-[#0e8f81]" />
@@ -61,47 +61,98 @@ export default async function SearchAdSettingsPage() {
           </div>
 
           <div className="rounded-3xl bg-[#12302d] p-5 text-white">
-            <p className="font-black">마지막 동기화</p>
+            <div className="flex items-center gap-2">
+              <Database size={18} className="text-[#73d6c8]" />
+              <p className="font-black">마지막 저장 동기화</p>
+            </div>
             {status.lastRun ? (
-              <div className="mt-4 grid gap-3 text-sm font-semibold">
+              <div className="mt-4 grid gap-3 text-sm font-semibold md:grid-cols-2">
                 <Metric label="상태" value={syncStatusLabel(status.lastRun.status)} />
                 <Metric
-                  label="시간"
+                  label="시작"
                   value={formatDate(status.lastRun.startedAt)}
                 />
                 <Metric
-                  label="가져온 키워드"
+                  label="완료"
+                  value={formatOptionalDate(status.lastRun.finishedAt)}
+                />
+                <Metric
+                  label="캠페인"
+                  value={`${status.lastRun.campaignsCount.toLocaleString()}개`}
+                />
+                <Metric
+                  label="광고그룹"
+                  value={`${status.lastRun.adgroupsCount.toLocaleString()}개`}
+                />
+                <Metric
+                  label="키워드"
                   value={`${status.lastRun.keywordsCount.toLocaleString()}개`}
                 />
                 {status.lastRun.errorMessage ? (
-                  <p className="rounded-2xl bg-white/10 p-3 text-[#ffd2c4]">
+                  <p className="rounded-2xl bg-white/10 p-3 text-[#ffd2c4] md:col-span-2">
                     {status.lastRun.errorMessage}
                   </p>
                 ) : null}
               </div>
             ) : (
               <p className="mt-3 text-sm font-semibold leading-6 text-[#b9d9d2]">
-                아직 API dry-run 동기화 기록이 없습니다.
+                아직 API 저장 동기화 기록이 없습니다.
               </p>
             )}
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-4">
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <Summary label="광고 계정" value={status.account?.alias ?? "미연결"} />
           <Summary
-            label="누적 키워드 스냅샷"
-            value={`${status.snapshotCount.toLocaleString()}개`}
+            label="캠페인 스냅샷"
+            value={`${status.campaignSnapshotCount.toLocaleString()}개`}
           />
           <Summary
-            label="실행 방식"
-            value="읽기 전용"
+            label="광고그룹 스냅샷"
+            value={`${status.adgroupSnapshotCount.toLocaleString()}개`}
           />
           <Summary
-            label="입찰 변경"
+            label="키워드 스냅샷"
+            value={`${status.keywordSnapshotCount.toLocaleString()}개`}
+          />
+          <Summary
+            label="자동 변경"
             value="차단됨"
           />
         </div>
+
+        <section className="mt-6 rounded-3xl border border-[#eadfc8] bg-[#fffdf7] p-5">
+          <div className="flex items-center gap-2">
+            <Clock3 size={18} className="text-[#0e8f81]" />
+            <h3 className="font-black">최근 동기화 이력</h3>
+          </div>
+          {status.recentRuns.length > 0 ? (
+            <div className="mt-4 grid gap-3">
+              {status.recentRuns.map((run) => (
+                <div
+                  key={run.id}
+                  className="grid gap-3 rounded-2xl border border-[#eadfc8] bg-white p-4 text-sm font-semibold text-[#12302d] lg:grid-cols-[1fr_1fr_1fr_1fr]"
+                >
+                  <span className="font-black">{syncStatusLabel(run.status)}</span>
+                  <span>{formatDate(run.startedAt)}</span>
+                  <span>
+                    캠페인 {run.campaignsCount.toLocaleString()} / 광고그룹{" "}
+                    {run.adgroupsCount.toLocaleString()} / 키워드{" "}
+                    {run.keywordsCount.toLocaleString()}
+                  </span>
+                  <span className={run.errorMessage ? "text-[#b34526]" : "text-[#14764d]"}>
+                    {run.errorMessage ?? "저장 완료"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-sm font-semibold text-[#69727c]">
+              아직 표시할 동기화 이력이 없습니다.
+            </p>
+          )}
+        </section>
       </section>
     </AppShell>
   );
@@ -137,4 +188,8 @@ function formatDate(date: Date) {
     timeStyle: "short",
     timeZone: "Asia/Seoul",
   }).format(date);
+}
+
+function formatOptionalDate(date: Date | null) {
+  return date ? formatDate(date) : "진행 중";
 }

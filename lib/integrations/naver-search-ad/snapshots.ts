@@ -11,6 +11,49 @@ export interface KeywordSnapshotInput {
   keywords: SearchAdKeyword[];
 }
 
+export interface CampaignSnapshotInput {
+  accountId: string;
+  collectedAt: Date;
+  campaigns: SearchAdCampaign[];
+}
+
+export interface AdgroupSnapshotInput {
+  accountId: string;
+  collectedAt: Date;
+  adgroups: SearchAdAdgroup[];
+}
+
+export function toCampaignSnapshotRows({
+  accountId,
+  collectedAt,
+  campaigns,
+}: CampaignSnapshotInput) {
+  return campaigns.map((campaign) => ({
+    accountId,
+    campaignId: campaign.id,
+    campaignName: campaign.name,
+    brandKey: inferBrandKey(campaign.name),
+    collectedAt,
+    rawJson: toInputJson(campaign.raw),
+  }));
+}
+
+export function toAdgroupSnapshotRows({
+  accountId,
+  collectedAt,
+  adgroups,
+}: AdgroupSnapshotInput) {
+  return adgroups.map((adgroup) => ({
+    accountId,
+    campaignId: adgroup.campaignId,
+    adgroupId: adgroup.id,
+    adgroupName: adgroup.name,
+    brandKey: inferBrandKey(adgroup.name),
+    collectedAt,
+    rawJson: toInputJson(adgroup.raw),
+  }));
+}
+
 export function toKeywordSnapshotRows({
   accountId,
   collectedDate,
@@ -52,4 +95,18 @@ export function toSyncCounts({
 
 export function toInputJson(value: unknown): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue;
+}
+
+export function inferBrandKey(name: string) {
+  const normalized = name.toLowerCase();
+
+  if (normalized.includes("stickersee") || normalized.includes("스티커씨")) {
+    return "STICKERSEE" as const;
+  }
+
+  if (normalized.includes("coffeeprint") || normalized.includes("커피프린트")) {
+    return "COFFEEPRINT" as const;
+  }
+
+  return null;
 }

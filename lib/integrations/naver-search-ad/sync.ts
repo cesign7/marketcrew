@@ -6,7 +6,12 @@ import {
   collectKeywordsSequentially,
   getKeywordRequestDelayMs,
 } from "@/lib/integrations/naver-search-ad/rate-limit";
-import { toInputJson, toKeywordSnapshotRows, toSyncCounts } from "./snapshots";
+import {
+  toAdgroupSnapshotRows,
+  toCampaignSnapshotRows,
+  toKeywordSnapshotRows,
+  toSyncCounts,
+} from "./snapshots";
 
 interface SyncOptions {
   client?: NaverSearchAdClient;
@@ -15,6 +20,10 @@ interface SyncOptions {
 }
 
 export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
+  return syncNaverSearchAdPersisted(options);
+}
+
+export async function syncNaverSearchAdPersisted(options: SyncOptions = {}) {
   const credentials = readSearchAdCredentials();
   const client = options.client ?? new NaverSearchAdClient(credentials);
   const collectedDate = options.collectedDate ?? new Date();
@@ -41,8 +50,13 @@ export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
       accountId: account.id,
       status: "PENDING",
       rawJson: {
-        mode: "dry-run",
+        mode: "persisted-read-only",
         source: "Naver Search Ad read-only APIs",
+        endpoints: [
+          "GET /ncc/campaigns",
+          "GET /ncc/adgroups",
+          "GET /ncc/keywords",
+        ],
       },
     },
   });
@@ -61,6 +75,16 @@ export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
       fetchKeywords: (adgroupId, campaignMap) =>
         client.getKeywords(adgroupId, campaignMap),
     });
+    const campaignSnapshots = toCampaignSnapshotRows({
+      accountId: account.id,
+      collectedAt: collectedDate,
+      campaigns,
+    });
+    const adgroupSnapshots = toAdgroupSnapshotRows({
+      accountId: account.id,
+      collectedAt: collectedDate,
+      adgroups,
+    });
     const keywordSnapshots = toKeywordSnapshotRows({
       accountId: account.id,
       collectedDate,
@@ -70,19 +94,18 @@ export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
       campaigns,
       adgroups,
       keywords,
-      snapshots: keywordSnapshots,
+      snapshots: [...campaignSnapshots, ...adgroupSnapshots, ...keywordSnapshots],
     });
 
-    if (campaigns.length > 0) {
+    if (campaignSnapshots.length > 0) {
       await prisma.adCampaignSnapshot.createMany({
-        data: campaigns.map((campaign) => ({
-          accountId: account.id,
-          campaignId: campaign.id,
-          campaignName: campaign.name,
-          brandKey: inferBrandKey(campaign.name),
-          rawJson: toInputJson(campaign.raw),
-          collectedAt: collectedDate,
-        })),
+        data: campaignSnapshots,
+      });
+    }
+
+    if (adgroupSnapshots.length > 0) {
+      await prisma.adAdgroupSnapshot.createMany({
+        data: adgroupSnapshots,
       });
     }
 
@@ -106,7 +129,7 @@ export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
       data: {
         agentKey: "KEYWORD_STRATEGIST",
         reportType: "NAVER_SEARCH_AD_SYNC",
-        summary: `검색광고 dry-run 동기화 완료: 캠페인 ${counts.campaignsCount}개, 광고그룹 ${counts.adgroupsCount}개, 키워드 ${counts.keywordsCount}개를 확인했습니다.`,
+        summary: `검색광고 읽기 전용 동기화 완료: 캠페인 ${counts.campaignsCount}개, 광고그룹 ${counts.adgroupsCount}개, 키워드 ${counts.keywordsCount}개를 저장했습니다.`,
         detailJson: {
           characterName: "키키",
           roleName: "키워드 전략 AI",
@@ -139,7 +162,7 @@ export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
       data: {
         agentKey: "KEYWORD_STRATEGIST",
         reportType: "NAVER_SEARCH_AD_SYNC",
-        summary: `검색광고 dry-run 동기화 실패: ${errorMessage}`,
+        summary: `검색광고 읽기 전용 동기화 실패: ${errorMessage}`,
         detailJson: {
           characterName: "키키",
           roleName: "키워드 전략 AI",
@@ -161,18 +184,4 @@ export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
       snapshotsCount: 0,
     };
   }
-}
-
-function inferBrandKey(name: string) {
-  const normalized = name.toLowerCase();
-
-  if (normalized.includes("stickersee") || normalized.includes("스티커씨")) {
-    return "STICKERSEE" as const;
-  }
-
-  if (normalized.includes("coffeeprint") || normalized.includes("커피프린트")) {
-    return "COFFEEPRINT" as const;
-  }
-
-  return null;
 }

@@ -48,6 +48,50 @@ async function main() {
     },
   });
 
+  await prisma.adCampaignSnapshot.createMany({
+    data: [
+      {
+        accountId: searchAdAccount.id,
+        campaignId: "camp-mvp-001",
+        campaignName: "커피프린트 검색광고",
+        brandKey: "COFFEEPRINT",
+        collectedAt: new Date("2026-05-20T00:00:00.000Z"),
+        rawJson: { source: "seed" },
+      },
+      {
+        accountId: searchAdAccount.id,
+        campaignId: "camp-mvp-002",
+        campaignName: "스티커씨 검색광고",
+        brandKey: "STICKERSEE",
+        collectedAt: new Date("2026-05-20T00:00:00.000Z"),
+        rawJson: { source: "seed" },
+      },
+    ],
+  });
+
+  await prisma.adAdgroupSnapshot.createMany({
+    data: [
+      {
+        accountId: searchAdAccount.id,
+        campaignId: "camp-mvp-001",
+        adgroupId: "adgroup-mvp-001",
+        adgroupName: "커피프린트 핵심 키워드",
+        brandKey: "COFFEEPRINT",
+        collectedAt: new Date("2026-05-20T00:00:00.000Z"),
+        rawJson: { source: "seed" },
+      },
+      {
+        accountId: searchAdAccount.id,
+        campaignId: "camp-mvp-002",
+        adgroupId: "adgroup-mvp-002",
+        adgroupName: "스티커씨 핵심 키워드",
+        brandKey: "STICKERSEE",
+        collectedAt: new Date("2026-05-20T00:00:00.000Z"),
+        rawJson: { source: "seed" },
+      },
+    ],
+  });
+
   await prisma.productMaster.createMany({
     data: [
       {
@@ -281,6 +325,7 @@ async function resetDatabase() {
   await prisma.agentReport.deleteMany();
   await prisma.keywordRule.deleteMany();
   await prisma.adKeywordSnapshot.deleteMany();
+  await prisma.adAdgroupSnapshot.deleteMany();
   await prisma.adCampaignSnapshot.deleteMany();
   await prisma.automationRule.deleteMany();
   await prisma.integrationSyncRun.deleteMany();

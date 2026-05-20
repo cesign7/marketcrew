@@ -36,6 +36,7 @@ model MarketingAccount {
   updatedAt  DateTime                   @updatedAt
 
   campaignSnapshots AdCampaignSnapshot[]
+  adgroupSnapshots  AdAdgroupSnapshot[]
   keywordSnapshots  AdKeywordSnapshot[]
   syncRuns          IntegrationSyncRun[]
 
@@ -125,6 +126,22 @@ model AdCampaignSnapshot {
   account MarketingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId, campaignId, collectedAt])
+}
+
+model AdAdgroupSnapshot {
+  id           String    @id @default(cuid())
+  accountId    String
+  campaignId   String
+  adgroupId    String
+  adgroupName  String
+  brandKey     BrandKey?
+  rawJson      Json?
+  collectedAt  DateTime  @default(now())
+
+  account MarketingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, campaignId, adgroupId, collectedAt])
+  @@index([campaignId, adgroupId])
 }
 
 model AdKeywordSnapshot {
