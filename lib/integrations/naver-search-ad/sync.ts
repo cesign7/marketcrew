@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { NaverSearchAdClient } from "@/lib/integrations/naver-search-ad/client";
 import { readSearchAdCredentials } from "@/lib/integrations/naver-search-ad/auth";
+import { sanitizeSearchAdErrorMessage } from "@/lib/integrations/naver-search-ad/errors";
 import { toInputJson, toKeywordSnapshotRows, toSyncCounts } from "./snapshots";
 
 interface SyncOptions {
@@ -117,7 +118,7 @@ export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
       ...counts,
     };
   } catch (error) {
-    const errorMessage = sanitizeErrorMessage(error);
+    const errorMessage = sanitizeSearchAdErrorMessage(error);
 
     await prisma.integrationSyncRun.update({
       where: { id: run.id },
@@ -168,10 +169,4 @@ function inferBrandKey(name: string) {
   }
 
   return null;
-}
-
-function sanitizeErrorMessage(error: unknown) {
-  const message = error instanceof Error ? error.message : "Unknown error";
-
-  return message.replace(/(X-API-KEY|X-Signature|secret|SECRET)[^,\s]*/gi, "$1");
 }
