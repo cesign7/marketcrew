@@ -28,12 +28,37 @@ export interface PerformanceBackfillWindow {
   remainingDays: number;
 }
 
+export interface PerformanceBackfillProgress {
+  requestedDays: number;
+  completedDays: number;
+  missingDays: number;
+  percentComplete: number;
+  isComplete: boolean;
+  lookbackSince: string;
+  lookbackUntil: string;
+  nextSince: string | null;
+  nextUntil: string | null;
+  nextStatDates: string[];
+  maxDaysPerRun: number;
+  remainingAfterNextRun: number;
+}
+
 export interface PerformanceBackfillSyncOptions
   extends PerformanceBackfillWindowOptions {
   keywordLimit?: number;
   maxPollAttempts?: number;
   pollIntervalMs?: number;
   syncKind?: PerformanceSyncKind;
+}
+
+interface CompletedBackfillSyncRunLike {
+  status: string;
+  rawJson: unknown;
+}
+
+export interface CollectCompletedBackfillStatDatesInput {
+  storedStatDates?: string[];
+  syncRuns?: CompletedBackfillSyncRunLike[];
 }
 
 export function buildPerformanceBackfillWindow({
@@ -82,6 +107,121 @@ export function buildPerformanceBackfillWindow({
     skippedDates,
     remainingDays: missingDates.length - statDates.length,
   };
+}
+
+export function buildPerformanceBackfillProgress(
+  options: PerformanceBackfillWindowOptions = {},
+): PerformanceBackfillProgress {
+  const window = buildPerformanceBackfillWindow(options);
+  const completedDays = window.skippedDates.length;
+  const missingDays = window.statDates.length + window.remainingDays;
+
+  return {
+    requestedDays: window.requestedDays,
+    completedDays,
+    missingDays,
+    percentComplete: Math.round((completedDays / window.requestedDays) * 100),
+    isComplete: missingDays === 0,
+    lookbackSince: window.lookbackSince,
+    lookbackUntil: window.lookbackUntil,
+    nextSince: window.since,
+    nextUntil: window.until,
+    nextStatDates: window.statDates,
+    maxDaysPerRun: window.maxDaysPerRun,
+    remainingAfterNextRun: window.remainingDays,
+  };
+}
+
+export function collectCompletedBackfillStatDates({
+  storedStatDates = [],
+  syncRuns = [],
+}: CollectCompletedBackfillStatDatesInput) {
+  const completed = new Set<string>();
+
+  for (const date of storedStatDates) {
+    const normalized = normalizeStatDate(date);
+
+    if (normalized) {
+      completed.add(normalized);
+    }
+  }
+
+  for (const run of syncRuns) {
+    if (run.status !== "SUCCEEDED" || !isBackfillRunRawJson(run.rawJson)) {
+      continue;
+    }
+
+    for (const statDate of run.rawJson.statDates) {
+      const normalized = normalizeStatDate(statDate);
+
+      if (normalized) {
+        completed.add(normalized);
+      }
+    }
+  }
+
+  return [...completed].sort();
+}
+
+export async function getNaverSearchAdPerformanceBackfillProgress({
+  accountId,
+  now,
+  days,
+  maxDaysPerRun,
+}: {
+  accountId?: string | null;
+  now?: Date;
+  days?: number;
+  maxDaysPerRun?: number;
+} = {}) {
+  if (!accountId) {
+    return buildPerformanceBackfillProgress({ now, days, maxDaysPerRun });
+  }
+
+  const { prisma } = await import("@/lib/db/prisma");
+  const initialWindow = buildPerformanceBackfillWindow({
+    now,
+    days,
+    maxDaysPerRun,
+  });
+  const [storedRows, syncRuns] = await Promise.all([
+    prisma.adKeywordDailyPerformance.findMany({
+      where: {
+        accountId,
+        date: {
+          gte: dateFromKstDate(initialWindow.lookbackSince),
+          lte: dateFromKstDate(initialWindow.lookbackUntil),
+        },
+      },
+      select: { date: true },
+      distinct: ["date"],
+    }),
+    prisma.integrationSyncRun.findMany({
+      where: {
+        accountId,
+        provider: "NAVER_SEARCH_AD",
+        status: "SUCCEEDED",
+        startedAt: {
+          gte: dateFromKstDate(initialWindow.lookbackSince),
+        },
+      },
+      select: {
+        status: true,
+        rawJson: true,
+      },
+    }),
+  ]);
+  const completedStatDates = collectCompletedBackfillStatDates({
+    storedStatDates: storedRows.map((row) => formatStatDate(row.date)),
+    syncRuns,
+  });
+
+  return buildPerformanceBackfillProgress({
+    now,
+    days,
+    maxDaysPerRun,
+    completedStatDates,
+  });
 }
 
 export async function syncNaverSearchAdPerformanceBackfill(
@@ -166,19 +306,38 @@ async function getCompletedPerformanceStatDates({
     return [];
   }
 
-  const rows = await prisma.adKeywordDailyPerformance.findMany({
-    where: {
-      accountId: account.id,
-      date: {
-        gte: dateFromKstDate(since),
-        lte: dateFromKstDate(until),
+  const [rows, syncRuns] = await Promise.all([
+    prisma.adKeywordDailyPerformance.findMany({
+      where: {
+        accountId: account.id,
+        date: {
+          gte: dateFromKstDate(since),
+          lte: dateFromKstDate(until),
+        },
       },
-    },
-    select: { date: true },
-    distinct: ["date"],
-  });
+      select: { date: true },
+      distinct: ["date"],
+    }),
+    prisma.integrationSyncRun.findMany({
+      where: {
+        accountId: account.id,
+        provider: "NAVER_SEARCH_AD",
+        status: "SUCCEEDED",
+        startedAt: {
+          gte: dateFromKstDate(since),
+        },
+      },
+      select: {
+        status: true,
+        rawJson: true,
+      },
+    }),
+  ]);
 
-  return rows.map((row) => formatStatDate(row.date));
+  return collectCompletedBackfillStatDates({
+    storedStatDates: rows.map((row) => formatStatDate(row.date)),
+    syncRuns,
+  });
 }
 
 function assertPositiveInteger(label: string, value: number) {
@@ -199,6 +358,28 @@ function normalizeStatDate(value: string) {
   }
 
   return null;
+}
+
+function isBackfillRunRawJson(
+  value: unknown,
+): value is { mode: string; syncKind: string; statDates: string[] } {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const record = value as {
+    mode?: unknown;
+    syncKind?: unknown;
+    statDates?: unknown;
+  };
+
+  return (
+    record.mode === "performance-read-only" &&
+    (record.syncKind === "backfill" ||
+      record.syncKind === "scheduled-backfill") &&
+    Array.isArray(record.statDates) &&
+    record.statDates.every((date) => typeof date === "string")
+  );
 }
 
 function statDateToKstDate(value: string) {

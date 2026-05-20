@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
+import { getNaverSearchAdPerformanceBackfillProgress } from "@/lib/integrations/naver-search-ad/backfill";
+import { selectSearchAdStatusAccount } from "@/lib/integrations/naver-search-ad/status-helpers";
 
 const credentialGroups = [
   ["NAVER_SEARCH_AD_ACCESS_LICENSE", "NAVER_SEARCHAD_API_KEY", "NAVER_SEARCH_AD_API_KEY"],
@@ -21,7 +23,7 @@ export function getSearchAdCredentialStatus(
 
 export async function getSearchAdSyncStatus() {
   const [
-    account,
+    accounts,
     lastRun,
     recentRuns,
     campaignSnapshotCount,
@@ -29,9 +31,9 @@ export async function getSearchAdSyncStatus() {
     keywordSnapshotCount,
     keywordPerformanceCount,
   ] = await Promise.all([
-    prisma.marketingAccount.findFirst({
+    prisma.marketingAccount.findMany({
       where: { provider: "NAVER_SEARCH_AD" },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.integrationSyncRun.findFirst({
       where: { provider: "NAVER_SEARCH_AD" },
@@ -47,9 +49,13 @@ export async function getSearchAdSyncStatus() {
     prisma.adKeywordSnapshot.count(),
     prisma.adKeywordDailyPerformance.count(),
   ]);
+  const account = selectSearchAdStatusAccount(accounts, lastRun);
   const recentPerformanceRuns = recentRuns
     .filter((run) => isPerformanceRun(run.rawJson))
     .slice(0, 6);
+  const backfillProgress = await getNaverSearchAdPerformanceBackfillProgress({
+    accountId: account?.id,
+  });
 
   return {
     credentials: getSearchAdCredentialStatus(),
@@ -62,6 +68,7 @@ export async function getSearchAdSyncStatus() {
     adgroupSnapshotCount,
     keywordSnapshotCount,
     keywordPerformanceCount,
+    backfillProgress,
     snapshotCount: keywordSnapshotCount,
   };
 }

@@ -48,6 +48,7 @@ Blocked until separately approved:
 - Confirm StatReport sync uses only `reportTp` and `statDt`, polls bounded attempts, and does not persist raw download URLs.
 - Confirm StatReport download URLs are same-host HTTPS URLs before fetching, including the current official `/report-download?authtoken=...&fileVersion=v2` form.
 - Confirm performance backfill never requests more than the 180-day detail-report limit and keeps foreground chunks bounded.
+- Confirm backfill progress counts successful backfill `statDates` even when a report date stores zero rows, so empty report days are not retried forever.
 - Confirm scheduler calls include a Bearer token in production and return sanitized counts/date windows only.
 - Confirm stored sync failures and UI-visible errors are sanitized before display or persistence.
 - Confirm tests cover the changed endpoint, normalization, error handling, and read-only safety guard.

@@ -154,6 +154,64 @@ export default async function SearchAdSettingsPage() {
         </div>
 
         <section className="mt-6 rounded-3xl border border-[#eadfc8] bg-[#fffdf7] p-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <History size={18} className="text-[#12302d]" />
+              <h3 className="font-black">성과 백필 진행률</h3>
+            </div>
+            <p className="rounded-full bg-white px-4 py-2 text-sm font-black text-[#0e8f81]">
+              {status.backfillProgress.percentComplete}%
+            </p>
+          </div>
+          <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#eadfc8]">
+            <div
+              className="h-full rounded-full bg-[#0e8f81]"
+              style={{
+                width: `${Math.min(
+                  100,
+                  Math.max(0, status.backfillProgress.percentComplete),
+                )}%`,
+              }}
+            />
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <BackfillMetric
+              label="수집 완료"
+              value={`${status.backfillProgress.completedDays.toLocaleString()}일 / ${status.backfillProgress.requestedDays.toLocaleString()}일`}
+            />
+            <BackfillMetric
+              label="남은 일수"
+              value={`${status.backfillProgress.missingDays.toLocaleString()}일`}
+            />
+            <BackfillMetric
+              label="조회 범위"
+              value={`${status.backfillProgress.lookbackSince} ~ ${status.backfillProgress.lookbackUntil}`}
+            />
+            <BackfillMetric
+              label="다음 실행"
+              value={
+                status.backfillProgress.isComplete
+                  ? "완료"
+                  : `${status.backfillProgress.nextSince} ~ ${status.backfillProgress.nextUntil}`
+              }
+            />
+            <BackfillMetric
+              label="다음 처리량"
+              value={
+                status.backfillProgress.isComplete
+                  ? "0일"
+                  : `${status.backfillProgress.nextStatDates.length.toLocaleString()}일`
+              }
+            />
+          </div>
+          <p className="mt-4 text-sm font-semibold leading-6 text-[#69727c]">
+            백필 버튼은 한 번에 최대 {status.backfillProgress.maxDaysPerRun}일만
+            처리합니다. 성공한 백필 실행의 날짜는 저장 row가 0건이어도 완료로
+            계산해 같은 날짜를 반복 요청하지 않습니다.
+          </p>
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-[#eadfc8] bg-[#fffdf7] p-5">
           <div className="flex items-center gap-2">
             <Clock3 size={18} className="text-[#0e8f81]" />
             <h3 className="font-black">최근 동기화 이력</h3>
@@ -268,6 +326,15 @@ function Summary({ label, value }: { label: string; value: string }) {
     <div className="rounded-3xl border border-[#eadfc8] bg-[#fffdf7] p-4">
       <p className="text-xs font-black text-[#69727c]">{label}</p>
       <p className="mt-2 text-lg font-black text-[#12302d]">{value}</p>
+    </div>
+  );
+}
+
+function BackfillMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white p-4">
+      <p className="text-xs font-black text-[#69727c]">{label}</p>
+      <p className="mt-2 text-sm font-black leading-6 text-[#12302d]">{value}</p>
     </div>
   );
 }
