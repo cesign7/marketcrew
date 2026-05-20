@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildPerformanceSyncRawJsonBase,
   collectStatReportPerformanceRows,
   chunkIds,
   getDefaultReportStatDates,
@@ -8,6 +9,38 @@ import {
 } from "./performance";
 
 describe("Naver Search Ad performance sync helpers", () => {
+  it("adds sync kind and backfill context to raw sync metadata", () => {
+    expect(
+      buildPerformanceSyncRawJsonBase({
+        since: "2026-02-19",
+        until: "2026-02-25",
+        statDates: ["20260219", "20260220"],
+        reportTypes: ["SHOPPINGKEYWORD_DETAIL"],
+        keywordLimit: 3000,
+        batchSize: 50,
+        syncKind: "backfill",
+        statsFallbackEnabled: false,
+        rawJsonContext: {
+          requestedDays: 90,
+          maxDaysPerRun: 7,
+          remainingDays: 83,
+        },
+      }),
+    ).toMatchObject({
+      mode: "performance-read-only",
+      syncKind: "backfill",
+      statsFallbackEnabled: false,
+      since: "2026-02-19",
+      until: "2026-02-25",
+      statDates: ["20260219", "20260220"],
+      rawJsonContext: {
+        requestedDays: 90,
+        maxDaysPerRun: 7,
+        remainingDays: 83,
+      },
+    });
+  });
+
   it("builds the default recent 90 day range ending yesterday in Korea", () => {
     expect(
       getDefaultPerformanceDateRange(new Date("2026-05-20T04:00:00.000Z")),

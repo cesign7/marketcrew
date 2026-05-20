@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { syncNaverSearchAdPerformanceBackfill } from "@/lib/integrations/naver-search-ad/backfill";
 import { syncNaverSearchAdPerformance } from "@/lib/integrations/naver-search-ad/performance";
 import { syncNaverSearchAdPersisted } from "@/lib/integrations/naver-search-ad/sync";
 
@@ -18,6 +19,14 @@ export async function syncSearchAdDryRunAction() {
 
 export async function syncSearchAdPerformanceAction() {
   await syncNaverSearchAdPerformance();
+
+  revalidatePath("/settings/search-ad");
+  revalidatePath("/operations");
+  revalidatePath("/keywords");
+}
+
+export async function syncSearchAdPerformanceBackfillAction() {
+  await syncNaverSearchAdPerformanceBackfill();
 
   revalidatePath("/settings/search-ad");
   revalidatePath("/operations");

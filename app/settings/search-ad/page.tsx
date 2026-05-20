@@ -2,14 +2,17 @@ import {
   BarChart3,
   Clock3,
   Database,
+  History,
   RefreshCw,
   ShieldCheck,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { getSearchAdSyncStatus } from "@/lib/integrations/naver-search-ad/status";
 import {
   syncSearchAdAction,
   syncSearchAdPerformanceAction,
+  syncSearchAdPerformanceBackfillAction,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +20,7 @@ export const dynamic = "force-dynamic";
 export default async function SearchAdSettingsPage() {
   const status = await getSearchAdSyncStatus();
   const canSync = status.credentials.configured;
+  const canSyncPerformance = canSync && status.keywordSnapshotCount > 0;
 
   return (
     <AppShell>
@@ -30,31 +34,33 @@ export default async function SearchAdSettingsPage() {
               네이버 검색광고 데이터 동기화
             </h2>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#69727c]">
-              캠페인, 광고그룹, 키워드 목록을 읽기 전용 API로 저장합니다. 성과
-              동기화는 공식 StatReport 리포트를 우선 사용하고, 리포트가 비어 있을
-              때만 `/stats` 요약 통계를 보조로 확인합니다. 입찰가 변경, 키워드
-              수정, 광고문안 변경은 계속 차단됩니다.
+              캠페인, 광고그룹, 키워드 목록과 일자별 성과를 읽기 전용 API로
+              저장합니다. 성과 동기화는 공식 StatReport를 우선 사용하고, 리포트
+              결과가 비어 있을 때만 `/stats` 요약 통계를 보조로 확인합니다.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <form action={syncSearchAdAction}>
-              <button
-                disabled={!canSync}
-                className="inline-flex min-w-[142px] items-center justify-center gap-2 rounded-full bg-[#0e8f81] px-5 py-3 text-sm font-black text-white hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-[#b7c8c5]"
-              >
-                <RefreshCw size={17} />
-                목록 동기화
-              </button>
-            </form>
-            <form action={syncSearchAdPerformanceAction}>
-              <button
-                disabled={!canSync || status.keywordSnapshotCount === 0}
-                className="inline-flex min-w-[142px] items-center justify-center gap-2 rounded-full bg-[#f3a51d] px-5 py-3 text-sm font-black text-[#12302d] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-[#e5dccb] disabled:text-[#8a8171]"
-              >
-                <BarChart3 size={17} />
-                성과 동기화
-              </button>
-            </form>
+            <SyncButton
+              action={syncSearchAdAction}
+              disabled={!canSync}
+              icon={<RefreshCw size={17} />}
+              label="목록 동기화"
+              tone="primary"
+            />
+            <SyncButton
+              action={syncSearchAdPerformanceAction}
+              disabled={!canSyncPerformance}
+              icon={<BarChart3 size={17} />}
+              label="최근 성과"
+              tone="warning"
+            />
+            <SyncButton
+              action={syncSearchAdPerformanceBackfillAction}
+              disabled={!canSyncPerformance}
+              icon={<History size={17} />}
+              label="90일 백필 7일분"
+              tone="dark"
+            />
           </div>
         </div>
 
@@ -66,7 +72,8 @@ export default async function SearchAdSettingsPage() {
             </div>
             {status.credentials.configured ? (
               <p className="mt-3 text-sm font-semibold text-[#14764d]">
-                `.env`에 검색광고 API 키, 시크릿, Customer ID가 설정되어 있습니다.
+                `.env`에 검색광고 API 키, 시크릿, Customer ID가 설정되어
+                있습니다.
               </p>
             ) : (
               <div className="mt-3 text-sm font-semibold text-[#b34526]">
@@ -119,7 +126,14 @@ export default async function SearchAdSettingsPage() {
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-          <Summary label="광고 계정" value={status.account?.alias ?? "미연결"} />
+          <Summary
+            label="광고 계정"
+            value={
+              status.account
+                ? "커피프린트 + 스티커씨 통합 검색광고 계정"
+                : "미연결"
+            }
+          />
           <Summary
             label="캠페인 스냅샷"
             value={`${status.campaignSnapshotCount.toLocaleString()}건`}
@@ -178,9 +192,10 @@ export default async function SearchAdSettingsPage() {
               {status.recentPerformanceRuns.map((run) => (
                 <div
                   key={run.id}
-                  className="grid gap-3 rounded-2xl bg-[#fff8ec] p-4 text-sm font-semibold text-[#12302d] lg:grid-cols-[0.8fr_1fr_1fr_1fr]"
+                  className="grid gap-3 rounded-2xl bg-[#fff8ec] p-4 text-sm font-semibold text-[#12302d] lg:grid-cols-[0.8fr_1fr_1fr_1fr_1fr]"
                 >
                   <span className="font-black">{syncStatusLabel(run.status)}</span>
+                  <span>{runModeLabel(run.rawJson)}</span>
                   <span>{formatDate(run.startedAt)}</span>
                   <span>키워드 {run.keywordsCount.toLocaleString()}개</span>
                   <span>성과 {run.snapshotsCount.toLocaleString()}건</span>
@@ -189,13 +204,53 @@ export default async function SearchAdSettingsPage() {
             </div>
           ) : (
             <p className="mt-3 text-sm font-semibold text-[#69727c]">
-              성과 동기화 이력이 아직 없습니다. 목록 동기화 후 성과 동기화를
-              실행하면 최근 StatReport 기준으로 저장합니다.
+              성과 동기화 이력이 아직 없습니다. 목록 동기화 후 최근 성과나 백필을
+              실행하면 StatReport 기준으로 저장합니다.
             </p>
           )}
+          <p className="mt-4 rounded-2xl bg-[#eef8f5] p-4 text-sm font-semibold leading-6 text-[#0f4f48]">
+            스케줄러는 `POST /api/internal/search-ad/performance-sync`를 호출합니다.
+            운영 배포 전에는 `MARKETCREW_SCHEDULER_SECRET` 또는 `CRON_SECRET`을
+            설정하고 Bearer 토큰으로 보호해야 합니다.
+          </p>
         </section>
       </section>
     </AppShell>
+  );
+}
+
+function SyncButton({
+  action,
+  disabled,
+  icon,
+  label,
+  tone,
+}: {
+  action: () => Promise<void>;
+  disabled: boolean;
+  icon: ReactNode;
+  label: string;
+  tone: "primary" | "warning" | "dark";
+}) {
+  const toneClass = {
+    primary:
+      "bg-[#0e8f81] text-white disabled:bg-[#b7c8c5] disabled:text-white",
+    warning:
+      "bg-[#f3a51d] text-[#12302d] disabled:bg-[#e5dccb] disabled:text-[#8a8171]",
+    dark:
+      "bg-[#12302d] text-white disabled:bg-[#d5d0c5] disabled:text-[#8a8171]",
+  }[tone];
+
+  return (
+    <form action={action}>
+      <button
+        disabled={disabled}
+        className={`inline-flex min-w-[142px] items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black hover:-translate-y-0.5 disabled:cursor-not-allowed ${toneClass}`}
+      >
+        {icon}
+        {label}
+      </button>
+    </form>
   );
 }
 
@@ -224,16 +279,26 @@ function syncStatusLabel(status: string) {
 }
 
 function runModeLabel(rawJson: unknown) {
-  if (
-    rawJson &&
-    typeof rawJson === "object" &&
-    !Array.isArray(rawJson) &&
-    (rawJson as { mode?: unknown }).mode === "performance-read-only"
-  ) {
-    return "성과 동기화";
+  if (!rawJson || typeof rawJson !== "object" || Array.isArray(rawJson)) {
+    return "목록 동기화";
   }
 
-  return "목록 동기화";
+  const mode = (rawJson as { mode?: unknown }).mode;
+  const syncKind = (rawJson as { syncKind?: unknown }).syncKind;
+
+  if (mode !== "performance-read-only") {
+    return "목록 동기화";
+  }
+
+  if (syncKind === "backfill" || syncKind === "scheduled-backfill") {
+    return "성과 백필";
+  }
+
+  if (syncKind === "scheduled-daily") {
+    return "예약 성과";
+  }
+
+  return "성과 동기화";
 }
 
 function formatDate(date: Date) {

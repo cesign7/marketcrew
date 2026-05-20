@@ -26,6 +26,12 @@ const DEFAULT_REPORT_TYPES: SearchAdReportType[] = [
 const DEFAULT_REPORT_POLL_ATTEMPTS = 6;
 const DEFAULT_REPORT_POLL_INTERVAL_MS = 3000;
 
+export type PerformanceSyncKind =
+  | "manual-recent"
+  | "backfill"
+  | "scheduled-daily"
+  | "scheduled-backfill";
+
 export const SEARCH_AD_STAT_FIELDS = [
   "clkCnt",
   "impCnt",
@@ -52,6 +58,9 @@ interface PerformanceSyncOptions {
   pollIntervalMs?: number;
   keywordLimit?: number;
   batchSize?: number;
+  syncKind?: PerformanceSyncKind;
+  rawJsonContext?: Record<string, unknown>;
+  enableStatsFallback?: boolean;
 }
 
 export interface KeywordSnapshotLike {
@@ -91,6 +100,52 @@ type SearchAdPerformanceClient = Pick<
   | "downloadStatReport"
 >;
 
+interface PerformanceSyncRawJsonInput {
+  since: string;
+  until: string;
+  statDates: string[];
+  reportTypes: SearchAdReportType[];
+  keywordLimit: number;
+  batchSize: number;
+  syncKind?: PerformanceSyncKind;
+  rawJsonContext?: Record<string, unknown>;
+  statsFallbackEnabled?: boolean;
+}
+
+export function buildPerformanceSyncRawJsonBase({
+  since,
+  until,
+  statDates,
+  reportTypes,
+  keywordLimit,
+  batchSize,
+  syncKind = "manual-recent",
+  rawJsonContext,
+  statsFallbackEnabled = true,
+}: PerformanceSyncRawJsonInput) {
+  return {
+    mode: "performance-read-only",
+    syncKind,
+    statsFallbackEnabled,
+    source: statsFallbackEnabled
+      ? "Naver Search Ad StatReport API with /stats fallback"
+      : "Naver Search Ad StatReport API",
+    endpoints: [
+      "POST /stat-reports",
+      "GET /stat-reports/{reportJobId}",
+      "GET report downloadUrl",
+      "GET /stats",
+    ],
+    since,
+    until,
+    statDates,
+    reportTypes,
+    keywordLimit,
+    batchSize,
+    ...(rawJsonContext ? { rawJsonContext } : {}),
+  };
+}
+
 export async function syncNaverSearchAdPerformance(
   options: PerformanceSyncOptions = {},
 ) {
@@ -114,22 +169,18 @@ export async function syncNaverSearchAdPerformance(
       options.reportDays ?? DEFAULT_REPORT_DAYS,
     );
   const reportTypes = options.reportTypes ?? DEFAULT_REPORT_TYPES;
-  const rawJsonBase = {
-    mode: "performance-read-only",
-    source: "Naver Search Ad StatReport API with /stats fallback",
-    endpoints: [
-      "POST /stat-reports",
-      "GET /stat-reports/{reportJobId}",
-      "GET report downloadUrl",
-      "GET /stats",
-    ],
+  const statsFallbackEnabled = options.enableStatsFallback ?? true;
+  const rawJsonBase = buildPerformanceSyncRawJsonBase({
     since: range.since,
     until: range.until,
     statDates,
     reportTypes,
     keywordLimit,
     batchSize,
-  };
+    syncKind: options.syncKind,
+    rawJsonContext: options.rawJsonContext,
+    statsFallbackEnabled,
+  });
   const account = await prisma.marketingAccount.upsert({
     where: {
       provider_customerId: {
@@ -183,7 +234,9 @@ export async function syncNaverSearchAdPerformance(
           })
         : { jobs: [], performanceRows: [] };
     const fallbackStatsUsed =
-      keywordIds.length > 0 && reportResult.performanceRows.length === 0;
+      statsFallbackEnabled &&
+      keywordIds.length > 0 &&
+      reportResult.performanceRows.length === 0;
 
     performanceRows.push(...reportResult.performanceRows);
 
@@ -253,6 +306,7 @@ export async function syncNaverSearchAdPerformance(
       snapshotsCount: performanceRows.length,
       since: range.since,
       until: range.until,
+      statDates,
     };
   } catch (error) {
     const errorMessage = sanitizeSearchAdErrorMessage(error);
@@ -290,6 +344,7 @@ export async function syncNaverSearchAdPerformance(
       snapshotsCount: 0,
       since: range.since,
       until: range.until,
+      statDates,
     };
   }
 }

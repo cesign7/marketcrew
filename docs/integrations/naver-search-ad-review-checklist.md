@@ -24,6 +24,10 @@ Allowed read endpoints:
 - `GET` for a same-host `downloadUrl` returned by a built StatReport job
 - `GET /report-download` when returned as a same-host StatReport `downloadUrl`
 
+Internal app routes:
+
+- `POST /api/internal/search-ad/performance-sync` runs the same read-only StatReport sync from a scheduler. It must be protected with `MARKETCREW_SCHEDULER_SECRET` or `CRON_SECRET` before production, processes bounded day chunks, and does not call any Search Ad mutation endpoint.
+
 Blocked until separately approved:
 
 - bid changes
@@ -43,6 +47,8 @@ Blocked until separately approved:
 - Confirm stats fallback batches `ids` and handles `1016`/`429` rate-limit style failures without write-side effects.
 - Confirm StatReport sync uses only `reportTp` and `statDt`, polls bounded attempts, and does not persist raw download URLs.
 - Confirm StatReport download URLs are same-host HTTPS URLs before fetching, including the current official `/report-download?authtoken=...&fileVersion=v2` form.
+- Confirm performance backfill never requests more than the 180-day detail-report limit and keeps foreground chunks bounded.
+- Confirm scheduler calls include a Bearer token in production and return sanitized counts/date windows only.
 - Confirm stored sync failures and UI-visible errors are sanitized before display or persistence.
 - Confirm tests cover the changed endpoint, normalization, error handling, and read-only safety guard.
 - Confirm `npm test`, `npm run lint`, and `npm run build` pass before completion.
