@@ -14,7 +14,7 @@
 
 - Character identities already exist in `lib/domain/agent-profiles.ts` for `GENERAL_MANAGER`, `POSITION_DEFENDER`, `BID_OPTIMIZER`, `KEYWORD_STRATEGIST`, `PRODUCT_STRATEGIST`, `TITLE_SEO`, `AD_COPYWRITER`, and `MARGIN_ANALYST`.
 - The current keyword workflow is deterministic: `lib/domain/keyword-diagnostics.ts` converts performance metrics into `AgentReport` and `ActionProposal` records without an LLM call.
-- The approval page only records decisions. Approved proposals create `ActionExecution` rows with provider `INTERNAL`; external Search Ad mutation is still intentionally blocked.
+- The approval page records decisions and approved keyword-related proposals now create or update internal `KeywordRule` rows. Approved proposals still create `ActionExecution` rows with provider `INTERNAL`; external Search Ad mutation is intentionally blocked.
 - There is no `openai` SDK dependency, no `OPENAI_API_KEY` or model configuration in `.env.example`, and no audit table for prompt/model/input/output/token/cost data.
 - Existing Naver Search Ad scope remains read-only except exact StatReport job creation/download. LLM agents must not be given direct write access to Naver APIs.
 

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js App Router, TypeScript, Prisma 7, PostgreSQL, Vitest.
 
-**Status (2026-05-20 KST):** Completed and locally reverified. The live read-only list sync saved 6 campaigns, 56 adgroups, 2,879 keywords, and 2,941 total snapshots. Current UI labels the persisted sync action as `목록 동기화`. Approval-to-`KeywordRule` materialization remains a separate follow-up workflow.
+**Status (2026-05-20 KST):** Completed and locally reverified. The live read-only list sync saved 6 campaigns, 56 adgroups, 2,879 keywords, and 2,941 total snapshots. Current UI labels the persisted sync action as `목록 동기화`. Approval-to-`KeywordRule` materialization was completed separately in `docs/superpowers/plans/2026-05-20-approval-keyword-rule-materialization.md`.
 
 ---
 
