@@ -235,13 +235,19 @@ model ActionProposal {
   beforeJson     Json?
   afterJson      Json?
   status         ProposalStatus @default(NEEDS_APPROVAL)
+  agentRunId     String?
+  confidence     Float?
+  evidenceJson   Json?
+  safetyJson     Json?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
+  agentRun   AgentRun?         @relation(fields: [agentRunId], references: [id], onDelete: SetNull)
   executions ActionExecution[]
 
   @@index([status, riskLevel, createdAt])
   @@index([agentKey])
+  @@index([agentRunId])
 }
 
 model ActionExecution {
@@ -284,6 +290,51 @@ model AgentReport {
   createdAt  DateTime @default(now())
 
   @@index([agentKey, createdAt])
+}
+
+model AgentRun {
+  id             String          @id @default(cuid())
+  agentKey       AgentKey
+  runType        String
+  trigger        String
+  provider       String
+  model          String
+  promptVersion  String
+  status         ExecutionStatus @default(PENDING)
+  inputHash      String
+  inputJson      Json
+  outputJson     Json?
+  parsedJson     Json?
+  validationJson Json?
+  tokenUsageJson Json?
+  errorMessage   String?
+  startedAt      DateTime        @default(now())
+  finishedAt     DateTime?
+
+  proposals ActionProposal[]
+  memories  AgentMemory[]
+
+  @@index([agentKey, startedAt])
+  @@index([runType, status, startedAt])
+}
+
+model AgentMemory {
+  id          String     @id @default(cuid())
+  agentKey    AgentKey
+  memoryType  String
+  subjectKey  String
+  summary     String
+  sourceRunId String?
+  confidence  Float      @default(0.7)
+  status      RuleStatus @default(ACTIVE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  sourceRun AgentRun? @relation(fields: [sourceRunId], references: [id], onDelete: SetNull)
+
+  @@index([agentKey, memoryType, status])
+  @@index([subjectKey])
+  @@index([sourceRunId])
 }
 
 model IntegrationSyncRun {

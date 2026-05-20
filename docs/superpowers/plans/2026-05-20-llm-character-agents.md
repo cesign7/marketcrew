@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js App Router Server Actions, TypeScript, Prisma 7, PostgreSQL, Zod, OpenAI Responses API or Agents SDK, Vitest.
 
-**Status (2026-05-20 KST):** First LLM connection slice is complete: `/operations` has an `LLM 점검` action that runs in safe shadow mode when `OPENAI_API_KEY` is configured and otherwise records a local “LLM 연결 대기” report. Details are in `docs/superpowers/plans/2026-05-20-llm-shadow-agent-connection.md`.
+**Status (2026-05-20 KST):** First LLM connection slice is complete: `/operations` has an `LLM 점검` action that runs in safe shadow mode when `OPENAI_API_KEY` is configured and otherwise records a local “LLM 연결 대기” report. `AgentRun`/`AgentMemory` audit schema and deterministic proposal safety validators are also in place. Details are in `docs/superpowers/plans/2026-05-20-llm-shadow-agent-connection.md` and `docs/superpowers/plans/2026-05-20-agent-run-audit-safety.md`.
 
 ---
 
@@ -17,7 +17,7 @@
 - Character identities already exist in `lib/domain/agent-profiles.ts` for `GENERAL_MANAGER`, `POSITION_DEFENDER`, `BID_OPTIMIZER`, `KEYWORD_STRATEGIST`, `PRODUCT_STRATEGIST`, `TITLE_SEO`, `AD_COPYWRITER`, and `MARGIN_ANALYST`.
 - The current keyword workflow is deterministic: `lib/domain/keyword-diagnostics.ts` converts performance metrics into `AgentReport` and `ActionProposal` records without an LLM call.
 - The approval page records decisions and approved keyword-related proposals now create or update internal `KeywordRule` rows. Approved proposals still create `ActionExecution` rows with provider `INTERNAL`; external Search Ad mutation is intentionally blocked.
-- There is no `openai` SDK dependency, no `OPENAI_API_KEY` or model configuration in `.env.example`, and no audit table for prompt/model/input/output/token/cost data.
+- There is no `openai` SDK dependency. `.env.example` includes model configuration placeholders, and `AgentRun` now stores prompt/model/input/output/token/cost-adjacent audit data for shadow runs.
 - Existing Naver Search Ad scope remains read-only except exact StatReport job creation/download. LLM agents must not be given direct write access to Naver APIs.
 
 ## Official Reference Check
@@ -375,17 +375,17 @@ Expected: PASS.
 - Create: `prisma/migrations/20260520193000_add_agent_runs/migration.sql`
 - Modify: `docs/planning/COFFEEPRINT_STICKERSEE_AI_MARKETING_OPERATIONS_MVP_PLAN.md`
 
-- [ ] **Step 1: Add Prisma models**
+- [x] **Step 1: Add Prisma models**
 
 Add `AgentRun`, `AgentMemory`, and optional `ActionProposal` audit fields described in this plan.
 
-- [ ] **Step 2: Generate migration**
+- [x] **Step 2: Generate migration**
 
 Run: `npx prisma migrate dev --name add_agent_runs`
 
-Expected: migration creates `AgentRun`, `AgentMemory`, and `ActionProposal` audit columns.
+Expected: migration creates `AgentRun`, `AgentMemory`, and `ActionProposal` audit columns. Completed with manual migration `20260520193000_add_agent_runs` and `pnpm prisma migrate deploy`.
 
-- [ ] **Step 3: Validate schema**
+- [x] **Step 3: Validate schema**
 
 Run: `npx prisma validate`
 
@@ -401,11 +401,11 @@ Expected: schema valid.
 - Create: `lib/ai/safety.ts`
 - Create: `lib/ai/safety.test.ts`
 
-- [ ] **Step 1: Add RED tests for output parsing**
+- [x] **Step 1: Add RED tests for output parsing**
 
 Test valid output, overlong proposals, unknown `actionType`, and missing report summary.
 
-- [ ] **Step 2: Add RED tests for safety rejection**
+- [x] **Step 2: Add RED tests for safety rejection**
 
 Use examples:
 
@@ -421,11 +421,11 @@ expect(validateAgentProposal({
 })).toMatchObject({ ok: true });
 ```
 
-- [ ] **Step 3: Implement Zod schemas and validators**
+- [x] **Step 3: Implement Zod schemas and validators**
 
 Use the schemas in this plan. Return typed validation results instead of throwing inside safety checks.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 Run: `npm test -- lib/ai/agent-output.test.ts lib/ai/safety.test.ts`
 

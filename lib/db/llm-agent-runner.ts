@@ -1,4 +1,9 @@
 import type { Prisma } from "@/app/generated/prisma/client";
+import {
+  buildAgentRunInputHash,
+  normalizeAgentRunJson,
+  summarizeTokenUsage,
+} from "@/lib/domain/agent-run-audit";
 import { getAgentProfile } from "@/lib/domain/agent-profiles";
 import { prisma } from "@/lib/db/prisma";
 import { getKeywordDiagnosticsOverview } from "@/lib/db/keyword-diagnostics";
@@ -8,12 +13,42 @@ import {
 } from "@/lib/integrations/openai/agent-report";
 
 const shadowAgentKey = "GENERAL_MANAGER";
+const shadowPromptVersion = "llm-shadow-general-manager-v1";
 
 export async function runLlmAgentShadowReport(now = new Date()) {
   const config = getAiAgentConfig();
   const profile = getAgentProfile(shadowAgentKey);
 
   if (!config.enabled) {
+    const agentRun = await prisma.agentRun.create({
+      data: {
+        agentKey: shadowAgentKey,
+        runType: "LLM_SHADOW",
+        trigger: "manual",
+        provider: config.provider,
+        model: config.model,
+        promptVersion: shadowPromptVersion,
+        status: "SUCCEEDED",
+        inputHash: buildAgentRunInputHash({
+          mode: config.mode,
+          provider: config.provider,
+          model: config.model,
+          skippedReason: config.reason,
+        }),
+        inputJson: toInputJson({
+          mode: config.mode,
+          provider: config.provider,
+          model: config.model,
+          skippedReason: config.reason,
+        }),
+        validationJson: toInputJson({
+          skipped: true,
+          reason: config.reason,
+        }),
+        finishedAt: now,
+      },
+    });
+
     await prisma.agentReport.create({
       data: {
         agentKey: shadowAgentKey,
@@ -28,6 +63,7 @@ export async function runLlmAgentShadowReport(now = new Date()) {
           model: config.model,
           mode: config.mode,
           skippedReason: config.reason,
+          agentRunId: agentRun.id,
         }),
       },
     });
@@ -39,6 +75,27 @@ export async function runLlmAgentShadowReport(now = new Date()) {
   }
 
   const workBrief = await buildLlmAgentWorkBrief(now);
+  const inputJson = {
+    mode: config.mode,
+    provider: config.provider,
+    model: config.model,
+    promptVersion: shadowPromptVersion,
+    characterName: profile.characterName,
+    roleName: profile.roleName,
+    workBrief,
+  };
+  const agentRun = await prisma.agentRun.create({
+    data: {
+      agentKey: shadowAgentKey,
+      runType: "LLM_SHADOW",
+      trigger: "manual",
+      provider: config.provider,
+      model: config.model,
+      promptVersion: shadowPromptVersion,
+      inputHash: buildAgentRunInputHash(inputJson),
+      inputJson: toInputJson(inputJson),
+    },
+  });
 
   try {
     const response = await requestOpenAiAgentReport({
@@ -47,6 +104,22 @@ export async function runLlmAgentShadowReport(now = new Date()) {
       characterName: profile.characterName,
       roleName: profile.roleName,
       workBrief,
+    });
+
+    await prisma.agentRun.update({
+      where: { id: agentRun.id },
+      data: {
+        status: "SUCCEEDED",
+        outputJson: toInputJson(response.raw),
+        parsedJson: toInputJson(response.report),
+        validationJson: toInputJson({
+          accepted: true,
+          mode: config.mode,
+          reportOnly: true,
+        }),
+        tokenUsageJson: toInputJson(summarizeTokenUsage(response.raw)),
+        finishedAt: new Date(),
+      },
     });
 
     await prisma.agentReport.create({
@@ -65,6 +138,7 @@ export async function runLlmAgentShadowReport(now = new Date()) {
           confidence: response.report.confidence,
           proposedNextSteps: response.report.proposedNextSteps,
           response: summarizeOpenAiResponse(response.raw),
+          agentRunId: agentRun.id,
         }),
       },
     });
@@ -74,6 +148,19 @@ export async function runLlmAgentShadowReport(now = new Date()) {
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown LLM error.";
+
+    await prisma.agentRun.update({
+      where: { id: agentRun.id },
+      data: {
+        status: "FAILED",
+        errorMessage: message,
+        validationJson: toInputJson({
+          accepted: false,
+          errorMessage: message,
+        }),
+        finishedAt: new Date(),
+      },
+    });
 
     await prisma.agentReport.create({
       data: {
@@ -89,6 +176,7 @@ export async function runLlmAgentShadowReport(now = new Date()) {
           model: config.model,
           mode: config.mode,
           errorMessage: message,
+          agentRunId: agentRun.id,
         }),
       },
     });
@@ -158,5 +246,7 @@ function stringFromJson(value: unknown) {
 }
 
 function toInputJson(value: unknown): Prisma.InputJsonValue {
-  return JSON.parse(JSON.stringify(value ?? {})) as Prisma.InputJsonValue;
+  return JSON.parse(
+    JSON.stringify(normalizeAgentRunJson(value ?? {})),
+  ) as Prisma.InputJsonValue;
 }
