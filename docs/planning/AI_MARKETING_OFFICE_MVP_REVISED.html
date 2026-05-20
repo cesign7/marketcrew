@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI 마케팅 오피스 MVP 개정안</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #5c667a;
+      --line: #d9dfeb;
+      --paper: #ffffff;
+      --soft: #f6f8fb;
+      --mint: #0f8f72;
+      --amber: #b7791f;
+      --blue: #2563eb;
+      --code: #111827;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #eef2f7;
+      font-family: "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
+      line-height: 1.65;
+    }
+    .hero {
+      background: linear-gradient(120deg, #102033 0%, #163c3a 54%, #3d2d13 100%);
+      color: white;
+      padding: 56px 28px 32px;
+    }
+    .hero-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+    .eyebrow {
+      color: #b9eadf;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 12px 0 10px;
+      font-size: clamp(30px, 5vw, 52px);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+    .hero p {
+      max-width: 840px;
+      margin: 0;
+      color: #d8e2ee;
+      font-size: 18px;
+    }
+    .shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 26px 28px 64px;
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 28px;
+    }
+    nav {
+      position: sticky;
+      top: 18px;
+      align-self: start;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+    }
+    nav strong {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    nav a {
+      display: block;
+      padding: 7px 0;
+      color: #24415f;
+      text-decoration: none;
+      font-size: 14px;
+      border-bottom: 1px solid #edf1f6;
+    }
+    nav a:hover { color: var(--blue); }
+    main {
+      min-width: 0;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 34px;
+    }
+    h2 {
+      margin: 42px 0 14px;
+      padding-top: 8px;
+      font-size: 28px;
+      line-height: 1.25;
+      border-top: 2px solid var(--line);
+      letter-spacing: 0;
+    }
+    h2:first-child { margin-top: 0; }
+    h3 {
+      margin: 30px 0 10px;
+      font-size: 21px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+    p { margin: 12px 0; }
+    ul, ol { padding-left: 24px; margin: 10px 0 18px; }
+    li { margin: 5px 0; }
+    hr {
+      border: 0;
+      border-top: 1px solid var(--line);
+      margin: 28px 0;
+    }
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #eef2f7;
+      font-family: Consolas, "Cascadia Mono", monospace;
+      font-size: .92em;
+    }
+    pre {
+      overflow: auto;
+      margin: 16px 0 22px;
+      padding: 18px;
+      border-radius: 8px;
+      background: var(--code);
+      color: #edf2f7;
+      border: 1px solid #273244;
+    }
+    pre code {
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre;
+    }
+    .table-wrap {
+      overflow-x: auto;
+      margin: 16px 0 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+    th {
+      background: var(--soft);
+      color: #26364d;
+      font-weight: 700;
+    }
+    tr:last-child td { border-bottom: 0; }
+    strong { color: #0f574a; }
+    @media (max-width: 900px) {
+      .shell {
+        grid-template-columns: 1fr;
+        padding: 18px;
+      }
+      nav {
+        position: static;
+        max-height: none;
+      }
+      main { padding: 24px 18px; }
+      .hero { padding: 38px 18px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow">Reviewed Specification</div>
+      <h1>AI 마케팅 오피스 MVP 개정안</h1>
+      <p>원문 기획의 방향은 유지하면서 MVP 범위, 데이터 계약, AI 실행 흐름, 실패 처리, UI 품질 기준을 구현 가능한 수준으로 정리한 HTML 문서입니다.</p>
+    </div>
+  </header>
+  <div class="shell">
+    <nav aria-label="문서 목차">
+      <strong>목차</strong>
+      <a href="#1-검토-요약">1. 검토 요약</a><a href="#2-주요-문제점-및-수정-방향">2. 주요 문제점 및 수정 방향</a><a href="#3-개정된-목표">3. 개정된 목표</a><a href="#4-mvp-범위">4. MVP 범위</a><a href="#5-핵심-사용자-흐름">5. 핵심 사용자 흐름</a><a href="#6-입력-데이터">6. 입력 데이터</a><a href="#7-추천-결과-공통-규칙">7. 추천 결과 공통 규칙</a><a href="#8-키워드-제안">8. 키워드 제안</a><a href="#9-상품-제안">9. 상품 제안</a><a href="#10-광고-채널-제안">10. 광고 채널 제안</a><a href="#11-ai-역할">11. AI 역할</a><a href="#12-데이터-모델-개정안">12. 데이터 모델 개정안</a><a href="#13-백엔드-구조">13. 백엔드 구조</a><a href="#14-api-설계">14. API 설계</a><a href="#15-ai-실행-흐름">15. AI 실행 흐름</a><a href="#16-최종-보고서-구조">16. 최종 보고서 구조</a><a href="#17-프론트엔드-화면-구조">17. 프론트엔드 화면 구조</a><a href="#18-테스트-데이터">18. 테스트 데이터</a><a href="#19-개발-순서">19. 개발 순서</a><a href="#20-품질-기준">20. 품질 기준</a><a href="#21-완료-기준">21. 완료 기준</a><a href="#22-구현-후-보고서-양식">22. 구현 후 보고서 양식</a><a href="#23-다음-단계-후보">23. 다음 단계 후보</a>
+    </nav>
+    <main>
+      <h1 id="ai-마케팅-오피스-mvp-개정안">AI 마케팅 오피스 MVP 개정안</h1>
+<p>원본: <code>C:\Users\DESIGNID_05\Downloads\AI_MARKETING_OFFICE_MVP_KEYWORD_PRODUCT_CHANNEL_PLAN.md</code> 개정일: 2026-05-20 목적: 기존 기획 문서를 구현 가능한 MVP 지시서로 다듬고, 문제점과 보완사항을 명확히 반영한다.</p>
+<hr>
+<h2 id="1-검토-요약">1. 검토 요약</h2>
+<p>원문은 “키워드/상품/광고 채널을 AI 회의 형태로 제안한다”는 제품 방향이 분명하다. 다만 개발 지시서로 바로 사용하기에는 몇 가지 불확실성이 있다. 특히 MVP 범위, LLM 출력 계약, 채널 점수 산식, 실패 처리, DB 제약조건, UI 상태 정의가 부족해 구현자마다 해석이 달라질 수 있다.</p>
+<p>이번 개정안은 아래 기준으로 문서를 보완했다.</p>
+<ul>
+<li>MVP 범위를 “제안 생성, 저장, 표시”로 고정</li>
+<li>광고 집행, 발송, 자동 게시, 외부 API 연동을 명확히 제외</li>
+<li>AI 역할별 입력/출력 JSON 계약을 일관되게 정리</li>
+<li>채널 점수 계산 기준과 상태 분류 기준을 추가</li>
+<li>Prisma 모델에 관계, 인덱스, 고유 제약, 재실행 추적 필드를 보강</li>
+<li>API 엔드포인트의 책임과 실패 응답 기준을 구체화</li>
+<li>UI의 로딩, 실패, 빈 상태, raw output 노출 정책을 추가</li>
+<li>완료 기준을 기능 시나리오와 검증 기준으로 분리</li>
+</ul>
+<hr>
+<h2 id="2-주요-문제점-및-수정-방향">2. 주요 문제점 및 수정 방향</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>구분</th><th>원문 문제점</th><th>개정 방향</th></tr></thead>
+<tbody>
+<tr><td>범위</td><td>AI 역할, 채널, UI, 향후 연동이 한 문서에 섞여 MVP 경계가 흐림</td><td>MVP, 제외 범위, 다음 단계 후보를 분리</td></tr>
+<tr><td>데이터 계약</td><td>추천 결과 필드가 있으나 enum, 필수 여부, 점수 범위가 불명확</td><td>공통 enum, JSON 구조, 필수 필드, 점수 범위를 정의</td></tr>
+<tr><td>채널 점수</td><td><code>totalScore</code> 산식이 없어 결과 일관성이 낮음</td><td>1~5 점수와 100점 환산식을 정의</td></tr>
+<tr><td>AI 실행</td><td>동기/비동기, 실패, 재시도, 부분 성공 처리 기준이 부족</td><td><code>AiMeeting</code>과 <code>AiAgentRun</code> 상태 전이를 명시</td></tr>
+<tr><td>DB 모델</td><td>캠페인과 상품의 관계, 인덱스, 고유 제약이 부족</td><td><code>CampaignProduct</code>, 인덱스, unique 제약 추가</td></tr>
+<tr><td>보안/품질</td><td>내부 추론 노출 금지는 있으나 prompt injection, JSON 파싱 실패 대응이 약함</td><td>입력 검증, schema validation, 실패 저장, 사용자 노출 정책 추가</td></tr>
+<tr><td>API</td><td>조회 중심이고 update, 재실행, 에러 응답 기준이 부족</td><td>MVP 필수 API와 선택 API를 나누고 응답 기준 추가</td></tr>
+<tr><td>UI</td><td>결과 표시 방식은 있으나 로딩/실패/빈 상태가 빠짐</td><td>화면별 상태와 관리자 raw output 정책 추가</td></tr>
+<tr><td>완료 기준</td><td>정상 흐름 위주라 실패 케이스 검증이 부족</td><td>정상/실패/품질 검증 기준으로 재정리</td></tr>
+</tbody></table></div>
+<hr>
+<h2 id="3-개정된-목표">3. 개정된 목표</h2>
+<p>AIPRESSO와 별도 서비스로 개발할 <strong>AI 마케팅 오피스</strong>의 MVP를 구현한다. 사용자가 브랜드, 상품, 시즌, 목표, 예산 수준을 입력하면 여러 AI 역할이 마케팅 회의를 수행한 것처럼 다음 결과를 생성한다.</p>
+<ol>
+<li>키워드 제안</li>
+<li>상품 제안</li>
+<li>광고 채널 제안</li>
+<li>최종 실행 우선순위 보고서</li>
+</ol>
+<p>이번 MVP는 <strong>외부 API 연동 없이 수동 입력 데이터와 LLM 응답만으로 동작</strong>한다. 실제 광고 집행, 이메일 발송, 게시물 발행, 이미지 생성은 하지 않는다.</p>
+<hr>
+<h2 id="4-mvp-범위">4. MVP 범위</h2>
+<h3 id="포함">포함</h3>
+<ul>
+<li>Workspace, Brand, Product, Campaign 생성 및 조회</li>
+<li>Campaign에 연결된 AI Meeting 시작</li>
+<li>Keyword Strategist AI 실행 및 결과 저장</li>
+<li>Product Planner AI 실행 및 결과 저장</li>
+<li>Channel Strategist AI 실행 및 결과 저장</li>
+<li>Marketing Director AI 최종 보고서 생성 및 저장</li>
+<li>추천 결과를 프론트엔드에서 역할별로 표시</li>
+<li>LLM 응답 JSON schema 검증</li>
+<li>실패 상태와 에러 메시지 저장</li>
+<li>테스트용 seed 데이터 제공</li>
+</ul>
+<h3 id="제외">제외</h3>
+<ul>
+<li>네이버 검색광고 API 실제 연동</li>
+<li>스마트스토어 상품, 주문, 매출 데이터 연동</li>
+<li>인스타그램, 블로그, 이메일 자동 발행</li>
+<li>광고비 자동 집행</li>
+<li>상세페이지, 배너, 이미지 자동 생성</li>
+<li>실시간 WebSocket</li>
+<li>복잡한 2D/3D 게임형 UI</li>
+<li>멀티 테넌트 권한 관리 고도화</li>
+</ul>
+<hr>
+<h2 id="5-핵심-사용자-흐름">5. 핵심 사용자 흐름</h2>
+<pre><code class="language-txt">1. 사용자가 Workspace를 선택한다.
+2. Brand를 생성하거나 기존 Brand를 선택한다.
+3. Product를 등록한다.
+4. Campaign을 생성한다.
+5. Campaign에 분석할 Product를 연결한다.
+6. AI Meeting을 시작한다.
+7. 3개 전문 AI가 순차 또는 병렬로 추천 결과를 만든다.
+8. Marketing Director AI가 추천 결과를 통합해 최종 보고서를 만든다.
+9. 사용자가 키워드, 상품, 채널, 최종 보고서를 한 화면에서 확인한다.</code></pre>
+<p>MVP에서는 AI 실행을 순차 처리로 시작한다. 응답 시간이 길어질 수 있으므로 백엔드 상태는 비동기 작업처럼 저장한다.</p>
+<hr>
+<h2 id="6-입력-데이터">6. 입력 데이터</h2>
+<h3 id="brand-입력">Brand 입력</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>필드</th><th>필수</th><th>설명</th></tr></thead>
+<tbody>
+<tr><td><code>name</code></td><td>예</td><td>브랜드명</td></tr>
+<tr><td><code>category</code></td><td>아니오</td><td>업종 또는 상품군</td></tr>
+<tr><td><code>websiteUrl</code></td><td>아니오</td><td>자사몰, 스마트스토어, 랜딩 URL</td></tr>
+<tr><td><code>description</code></td><td>아니오</td><td>브랜드 설명</td></tr>
+</tbody></table></div>
+<h3 id="product-입력">Product 입력</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>필드</th><th>필수</th><th>설명</th></tr></thead>
+<tbody>
+<tr><td><code>name</code></td><td>예</td><td>상품명</td></tr>
+<tr><td><code>category</code></td><td>아니오</td><td>상품 카테고리</td></tr>
+<tr><td><code>priceRange</code></td><td>아니오</td><td>가격대 또는 주문 규모</td></tr>
+<tr><td><code>description</code></td><td>아니오</td><td>상품 설명</td></tr>
+<tr><td><code>strengths</code></td><td>아니오</td><td>주요 장점 배열</td></tr>
+<tr><td><code>targetUsers</code></td><td>아니오</td><td>타겟 고객 배열</td></tr>
+</tbody></table></div>
+<h3 id="campaign-입력">Campaign 입력</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>필드</th><th>필수</th><th>설명</th></tr></thead>
+<tbody>
+<tr><td><code>title</code></td><td>예</td><td>캠페인명</td></tr>
+<tr><td><code>goal</code></td><td>예</td><td>매출 증대, 문의 증가, 시즌 판매 등</td></tr>
+<tr><td><code>season</code></td><td>아니오</td><td>추석, 연말, 생일 시즌 등</td></tr>
+<tr><td><code>target</code></td><td>아니오</td><td>캠페인 타겟</td></tr>
+<tr><td><code>budgetLevel</code></td><td>아니오</td><td><code>UNKNOWN</code>, <code>LOW</code>, <code>MEDIUM</code>, <code>HIGH</code></td></tr>
+<tr><td><code>productIds</code></td><td>예</td><td>분석할 상품 ID 목록</td></tr>
+<tr><td><code>currentConcern</code></td><td>아니오</td><td>현재 고민 또는 제약</td></tr>
+</tbody></table></div>
+<hr>
+<h2 id="7-추천-결과-공통-규칙">7. 추천 결과 공통 규칙</h2>
+<h3 id="공통-enum">공통 enum</h3>
+<pre><code class="language-txt">RecommendationPriority = HIGH | MEDIUM | LOW
+ImpactLevel = HIGH | MEDIUM | LOW
+EffortLevel = HIGH | MEDIUM | LOW
+RiskLevel = HIGH | MEDIUM | LOW
+BudgetLevel = UNKNOWN | LOW | MEDIUM | HIGH</code></pre>
+<h3 id="공통-필드-규칙">공통 필드 규칙</h3>
+<ul>
+<li><code>priority</code>는 정렬 기준으로 사용한다.</li>
+<li><code>confidence</code>는 0부터 1 사이의 숫자다.</li>
+<li><code>riskNote</code>는 리스크가 없으면 <code>null</code>을 사용한다.</li>
+<li>모든 추천은 실제 실행 명령이 아니라 “제안”이다.</li>
+<li>외부 데이터가 없으면 <code>sourceAssumption</code>에 “사용자 입력 기반 추정”처럼 근거 수준을 남긴다.</li>
+</ul>
+<hr>
+<h2 id="8-키워드-제안">8. 키워드 제안</h2>
+<h3 id="keywordtype">KeywordType</h3>
+<pre><code class="language-txt">PURCHASE_INTENT
+INFORMATIONAL
+PRODUCT_ATTRIBUTE
+SEASONAL
+NEGATIVE_KEYWORD
+SEO
+HASHTAG
+PRODUCT_TITLE</code></pre>
+<h3 id="recommendedusage">RecommendedUsage</h3>
+<pre><code class="language-txt">NAVER_SEARCH_AD
+NAVER_SHOPPING
+PRODUCT_TITLE
+LANDING_COPY
+DETAIL_PAGE
+BLOG_SEO
+INSTAGRAM_HASHTAG
+EMAIL_CRM</code></pre>
+<h3 id="keyword-strategist-output">Keyword Strategist Output</h3>
+<pre><code class="language-json">{
+  &quot;visibleThoughtSummary&quot;: &quot;구매 의도 키워드와 정보 탐색 키워드를 분리해 광고비 낭비를 줄이는 방향입니다.&quot;,
+  &quot;keywords&quot;: [
+    {
+      &quot;keyword&quot;: &quot;기업 추석카드&quot;,
+      &quot;keywordType&quot;: &quot;PURCHASE_INTENT&quot;,
+      &quot;recommendedUsage&quot;: [&quot;NAVER_SEARCH_AD&quot;, &quot;PRODUCT_TITLE&quot;, &quot;LANDING_COPY&quot;],
+      &quot;reason&quot;: &quot;기업 고객의 구매 의도가 명확하고 시즌 상품과 직접 연결됩니다.&quot;,
+      &quot;priority&quot;: &quot;HIGH&quot;,
+      &quot;confidence&quot;: 0.82,
+      &quot;sourceAssumption&quot;: &quot;사용자 입력 기반 추정&quot;,
+      &quot;riskNote&quot;: null
+    }
+  ]
+}</code></pre>
+<h3 id="키워드-품질-기준">키워드 품질 기준</h3>
+<ul>
+<li>구매 의도 키워드와 정보 탐색 키워드를 분리한다.</li>
+<li>광고 제외 키워드는 실제 광고 세팅 전 사람이 검토해야 한다.</li>
+<li>상품명 반영 키워드는 과도한 키워드 나열이 되지 않도록 2~4개 이내로 추천한다.</li>
+<li>SEO 키워드는 블로그 제목, 본문, FAQ에 활용 가능한 형태로 제안한다.</li>
+</ul>
+<hr>
+<h2 id="9-상품-제안">9. 상품 제안</h2>
+<h3 id="product-planner-output">Product Planner Output</h3>
+<pre><code class="language-json">{
+  &quot;visibleThoughtSummary&quot;: &quot;기존 제작 역량으로 빠르게 상품화 가능한 시즌 상품을 우선 추천합니다.&quot;,
+  &quot;products&quot;: [
+    {
+      &quot;title&quot;: &quot;기업 추석 선물카드 봉투 포함 세트&quot;,
+      &quot;productConcept&quot;: &quot;회사명, 로고, 인사말을 넣어 제작할 수 있는 기업용 명절카드 세트&quot;,
+      &quot;targetCustomer&quot;: [&quot;기업 총무&quot;, &quot;소상공인&quot;, &quot;거래처 선물 준비 고객&quot;],
+      &quot;suggestedOptions&quot;: [&quot;디자인 선택&quot;, &quot;회사명 인쇄&quot;, &quot;로고 삽입&quot;, &quot;봉투 포함&quot;, &quot;수량 선택&quot;],
+      &quot;suggestedProductTitle&quot;: &quot;기업 추석 선물카드 제작 봉투포함 회사명 인쇄 명절카드&quot;,
+      &quot;recommendedKeywords&quot;: [&quot;기업 추석카드&quot;, &quot;회사 명절카드&quot;, &quot;거래처 추석카드&quot;],
+      &quot;recommendedChannels&quot;: [&quot;NAVER_SEARCH_AD&quot;, &quot;NAVER_SHOPPING&quot;, &quot;BLOG_SEO&quot;, &quot;EMAIL_CRM&quot;],
+      &quot;reason&quot;: &quot;시즌성과 B2B 재구매 가능성이 높고 기존 카드 제작 역량으로 바로 상품화할 수 있습니다.&quot;,
+      &quot;expectedImpact&quot;: &quot;HIGH&quot;,
+      &quot;effortLevel&quot;: &quot;MEDIUM&quot;,
+      &quot;riskLevel&quot;: &quot;LOW&quot;,
+      &quot;priority&quot;: 1
+    }
+  ]
+}</code></pre>
+<h3 id="상품-제안-평가-기준">상품 제안 평가 기준</h3>
+<ul>
+<li>검색 수요 가능성</li>
+<li>시즌성</li>
+<li>제작 가능성</li>
+<li>예상 마진</li>
+<li>기존 상품과의 연관성</li>
+<li>반복구매 가능성</li>
+<li>광고 적합성</li>
+<li>콘텐츠 확장성</li>
+<li>차별화 가능성</li>
+</ul>
+<p>MVP에서는 실제 검색량, 매출, 마진 데이터를 가져오지 않으므로 모든 수요와 마진 판단은 “입력 정보 기반 추정”으로 표시한다.</p>
+<hr>
+<h2 id="10-광고-채널-제안">10. 광고 채널 제안</h2>
+<p>광고 문안 생성과 광고 채널 선택은 분리한다. 이번 기능은 “어떤 광고 문안을 쓸까?”가 아니라 <strong>“어디에 광고하거나 노출할까?”</strong>를 제안한다.</p>
+<h3 id="marketingchannel">MarketingChannel</h3>
+<pre><code class="language-txt">NAVER_SEARCH_AD
+NAVER_SHOPPING
+BLOG_SEO
+INSTAGRAM_META
+YOUTUBE_SHORTS
+GOOGLE_SEARCH
+EMAIL_CRM
+KAKAO_MESSAGE
+SOOP
+DAANGN
+TIKTOK
+INFLUENCER</code></pre>
+<h3 id="channelrecommendationtype">ChannelRecommendationType</h3>
+<pre><code class="language-txt">MAINTAIN
+EXPAND
+TEST
+HOLD
+STOP</code></pre>
+<h3 id="점수-기준">점수 기준</h3>
+<p>각 항목은 1~5점으로 평가한다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>설명</th></tr></thead>
+<tbody>
+<tr><td><code>targetFitScore</code></td><td>타겟 고객과 채널 이용자 적합도</td></tr>
+<tr><td><code>purchaseIntentScore</code></td><td>구매 의도가 명확한 트래픽을 얻을 가능성</td></tr>
+<tr><td><code>creativeFitScore</code></td><td>상품을 이미지, 영상, 텍스트로 표현하기 쉬운 정도</td></tr>
+<tr><td><code>measurementScore</code></td><td>클릭, 문의, 구매 전환 측정 가능성</td></tr>
+<tr><td><code>costFitScore</code></td><td>예산 수준과 채널 비용 구조의 적합성</td></tr>
+<tr><td><code>seasonFitScore</code></td><td>시즌 이슈와 채널 운영 타이밍 적합성</td></tr>
+<tr><td><code>trendFitScore</code></td><td>현재 콘텐츠 소비 트렌드와의 적합성</td></tr>
+<tr><td><code>riskScore</code></td><td>비용 낭비, 운영 난이도, 브랜드 훼손 가능성. 낮을수록 안전</td></tr>
+</tbody></table></div>
+<p><code>totalScore</code>는 아래 방식으로 100점 환산한다.</p>
+<pre><code class="language-txt">positiveScore = targetFitScore + purchaseIntentScore + creativeFitScore + measurementScore + costFitScore + seasonFitScore + trendFitScore
+riskAdjustedScore = 6 - riskScore
+totalScore = round(((positiveScore + riskAdjustedScore) / 40) * 100)</code></pre>
+<h3 id="상태-분류-기준">상태 분류 기준</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>상태</th><th>기준</th></tr></thead>
+<tbody>
+<tr><td><code>EXPAND</code></td><td>80점 이상이고 리스크가 낮으며 즉시 운영 가치가 높음</td></tr>
+<tr><td><code>MAINTAIN</code></td><td>기존 운영 채널로 유지 가치가 있으나 증액 근거는 제한적</td></tr>
+<tr><td><code>TEST</code></td><td>60점 이상이지만 성과 검증이 필요해 소액 테스트가 적합</td></tr>
+<tr><td><code>HOLD</code></td><td>현재 정보만으로는 실행 근거가 부족함</td></tr>
+<tr><td><code>STOP</code></td><td>리스크가 높거나 타겟, 예산, 측정 기준과 맞지 않음</td></tr>
+</tbody></table></div>
+<h3 id="channel-strategist-output">Channel Strategist Output</h3>
+<pre><code class="language-json">{
+  &quot;visibleThoughtSummary&quot;: &quot;네이버 검색광고는 확대 후보이고, 유튜브 Shorts는 소액 테스트 후보입니다.&quot;,
+  &quot;channels&quot;: [
+    {
+      &quot;channel&quot;: &quot;YOUTUBE_SHORTS&quot;,
+      &quot;recommendationType&quot;: &quot;TEST&quot;,
+      &quot;totalScore&quot;: 74,
+      &quot;scoreDetail&quot;: {
+        &quot;targetFitScore&quot;: 4,
+        &quot;purchaseIntentScore&quot;: 3,
+        &quot;creativeFitScore&quot;: 5,
+        &quot;measurementScore&quot;: 3,
+        &quot;costFitScore&quot;: 4,
+        &quot;seasonFitScore&quot;: 4,
+        &quot;trendFitScore&quot;: 5,
+        &quot;riskScore&quot;: 3
+      },
+      &quot;reason&quot;: &quot;스티커와 카드 상품은 제작 과정과 완성품을 짧은 영상으로 보여주기 좋아 소액 테스트 가치가 있습니다.&quot;,
+      &quot;requiredAssets&quot;: [&quot;15초 세로 영상 2종&quot;, &quot;세로형 썸네일&quot;, &quot;짧은 CTA 문구&quot;],
+      &quot;testBudgetSuggestion&quot;: &quot;LOW&quot;,
+      &quot;testPeriodDays&quot;: 7,
+      &quot;successMetrics&quot;: [&quot;CTR&quot;, &quot;사이트 방문&quot;, &quot;장바구니&quot;, &quot;문의 발생&quot;],
+      &quot;riskNote&quot;: &quot;즉시 구매 전환보다는 리타겟팅 모수 확보 목적이 더 적합할 수 있습니다.&quot;,
+      &quot;priority&quot;: 2
+    }
+  ]
+}</code></pre>
+<hr>
+<h2 id="11-ai-역할">11. AI 역할</h2>
+<h3 id="keyword-strategist-ai">Keyword Strategist AI</h3>
+<p>역할:</p>
+<ul>
+<li>키워드 발굴</li>
+<li>키워드 유형 분류</li>
+<li>광고, 상품명, 블로그, 인스타, 상세페이지 사용처 제안</li>
+<li>제외 키워드 후보 제안</li>
+</ul>
+<p>System Prompt 초안:</p>
+<pre><code class="language-txt">너는 네이버 검색광고, 스마트스토어, 자사몰 상품을 위한 키워드 전략가다.
+입력된 브랜드, 상품, 시즌, 타겟, 고민을 기반으로 키워드를 제안한다.
+키워드는 PURCHASE_INTENT, INFORMATIONAL, PRODUCT_ATTRIBUTE, SEASONAL, NEGATIVE_KEYWORD, SEO, HASHTAG, PRODUCT_TITLE 중 하나로 분류한다.
+각 키워드의 추천 사용처와 이유, 우선순위, confidence, riskNote를 JSON으로 반환한다.
+외부 데이터가 없는 판단은 사용자 입력 기반 추정이라고 표시한다.
+근거 없이 확신하지 않는다.</code></pre>
+<h3 id="product-planner-ai">Product Planner AI</h3>
+<p>역할:</p>
+<ul>
+<li>신상품 제안</li>
+<li>기존 상품 개선안 제안</li>
+<li>상품명, 옵션, 타겟, 추천 채널 제안</li>
+<li>키워드 기반 상품화 아이디어 제안</li>
+</ul>
+<p>System Prompt 초안:</p>
+<pre><code class="language-txt">너는 온라인 쇼핑몰 상품기획자다.
+검색 수요 가능성, 시즌성, 제작 가능성, 예상 마진, 기존 상품과의 연관성, 반복구매 가능성, 광고 적합성, 콘텐츠 확장성, 차별화 가능성을 기준으로 상품 제안을 만든다.
+MVP에서는 실제 검색량과 매출 데이터가 없으므로 수치가 필요한 판단은 추정이라고 표시한다.
+상품명, 옵션 구성, 추천 키워드, 추천 채널, 상세페이지 방향을 JSON으로 반환한다.</code></pre>
+<h3 id="channel-strategist-ai">Channel Strategist AI</h3>
+<p>역할:</p>
+<ul>
+<li>광고 채널 제안</li>
+<li>유지, 확대, 테스트, 보류, 중단 분류</li>
+<li>채널별 적합도 점수화</li>
+<li>소액 테스트 조건 제안</li>
+</ul>
+<p>System Prompt 초안:</p>
+<pre><code class="language-txt">너는 광고 채널 전략가이자 미디어 플래너다.
+네이버 검색광고, 네이버 쇼핑검색, 블로그 SEO, 인스타/메타 광고, 유튜브 Shorts, 구글 검색광고, 이메일/CRM, 카카오 메시지, SOOP, 당근, 틱톡, 인플루언서 채널을 비교한다.
+각 채널을 targetFitScore, purchaseIntentScore, creativeFitScore, measurementScore, costFitScore, seasonFitScore, trendFitScore, riskScore 기준으로 1~5점 평가한다.
+riskScore는 낮을수록 안전하다.
+채널별 recommendationType, totalScore, reason, requiredAssets, successMetrics, riskNote를 JSON으로 반환한다.</code></pre>
+<h3 id="marketing-director-ai">Marketing Director AI</h3>
+<p>역할:</p>
+<ul>
+<li>각 AI 의견 통합</li>
+<li>우선순위 결정</li>
+<li>최종 보고서 생성</li>
+<li>실행 목록 생성</li>
+</ul>
+<p>System Prompt 초안:</p>
+<pre><code class="language-txt">너는 AI 마케팅 오피스의 마케팅 총괄자다.
+키워드 전략 AI, 상품기획 AI, 광고 채널 전략 AI의 결과를 통합해 실행 가능한 마케팅 전략 보고서를 작성한다.
+광고 내용과 광고 채널을 분리해 판단한다.
+우선순위, 리스크, 이번 주 실행 항목, 보류 항목을 명확히 표시한다.
+실제 광고비 집행, 이메일 발송, 게시물 발행은 사람 승인 전에는 실행하지 않는다는 점을 명시한다.
+사용자에게 내부 추론을 노출하지 말고 visibleThoughtSummary 수준의 업무 판단 요약만 반환한다.</code></pre>
+<hr>
+<h2 id="12-데이터-모델-개정안">12. 데이터 모델 개정안</h2>
+<p>Prisma 기준 모델 초안이다. 기존 인증/사용자 모델이 있다면 <code>Workspace</code> 소유자 관계는 기존 구조에 맞춰 연결한다.</p>
+<pre><code class="language-prisma">model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brands Brand[]
+}
+
+model Brand {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String
+  websiteUrl  String?
+  category    String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  campaigns Campaign[]
+  products  Product[]
+
+  @@index([workspaceId])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  brandId     String
+  name        String
+  category    String?
+  priceRange  String?
+  description String?
+  strengths   Json?
+  targetUsers Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  campaignProducts CampaignProduct[]
+
+  @@index([brandId])
+}
+
+model Campaign {
+  id          String         @id @default(cuid())
+  brandId     String
+  title       String
+  goal        String
+  season      String?
+  target      String?
+  budgetLevel BudgetLevel    @default(UNKNOWN)
+  currentConcern String?
+  inputSnapshot Json?
+  status      CampaignStatus @default(DRAFT)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  campaignProducts CampaignProduct[]
+  aiMeetings AiMeeting[]
+
+  @@index([brandId, status])
+}
+
+model CampaignProduct {
+  campaignId String
+  productId  String
+  role       CampaignProductRole @default(PRIMARY)
+  createdAt  DateTime @default(now())
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, productId])
+  @@index([productId])
+}
+
+model AiMeeting {
+  id          String          @id @default(cuid())
+  campaignId  String
+  topic       String
+  status      AiMeetingStatus @default(PENDING)
+  inputJson   Json
+  finalReport Json?
+  outputVersion String?
+  errorMessage String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  agentRuns AiAgentRun[]
+  keywordRecommendations KeywordRecommendation[]
+  productRecommendations ProductRecommendation[]
+  channelRecommendations ChannelRecommendation[]
+
+  @@index([campaignId, status])
+}
+
+model AiAgentRun {
+  id          String      @id @default(cuid())
+  meetingId   String
+  roleKey     AgentRoleKey
+  status      AiRunStatus @default(PENDING)
+  inputJson   Json
+  outputJson  Json?
+  rawText     String?
+  visibleThoughtSummary String?
+  confidenceScore Float?
+  tokenUsage  Json?
+  errorMessage String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  meeting AiMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, roleKey])
+}
+
+model KeywordRecommendation {
+  id          String   @id @default(cuid())
+  meetingId   String
+  keyword     String
+  keywordType KeywordType
+  recommendedUsage Json
+  reason      String
+  priority    RecommendationPriority
+  confidence  Float?
+  sourceAssumption String?
+  riskNote    String?
+  createdAt   DateTime @default(now())
+
+  meeting AiMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, keyword])
+  @@index([meetingId, priority])
+}
+
+model ProductRecommendation {
+  id          String   @id @default(cuid())
+  meetingId   String
+  title       String
+  productConcept String
+  targetCustomer Json?
+  suggestedOptions Json?
+  suggestedProductTitle String?
+  recommendedKeywords Json?
+  recommendedChannels Json?
+  reason      String
+  expectedImpact ImpactLevel
+  effortLevel EffortLevel
+  riskLevel   RiskLevel
+  priority    Int
+  createdAt   DateTime @default(now())
+
+  meeting AiMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@index([meetingId, priority])
+}
+
+model ChannelRecommendation {
+  id          String   @id @default(cuid())
+  meetingId   String
+  channel     MarketingChannel
+  recommendationType ChannelRecommendationType
+  totalScore  Int
+  scoreDetail Json
+  reason      String
+  requiredAssets Json?
+  testBudgetSuggestion BudgetLevel?
+  testPeriodDays Int?
+  successMetrics Json?
+  riskNote    String?
+  priority    Int
+  createdAt   DateTime @default(now())
+
+  meeting AiMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, channel])
+  @@index([meetingId, recommendationType, priority])
+}
+
+enum BudgetLevel {
+  UNKNOWN
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum CampaignProductRole {
+  PRIMARY
+  REFERENCE
+}
+
+enum CampaignStatus {
+  DRAFT
+  ANALYZING
+  COMPLETED
+  FAILED
+  ARCHIVED
+}
+
+enum AiMeetingStatus {
+  PENDING
+  RUNNING
+  PARTIAL_COMPLETED
+  COMPLETED
+  FAILED
+}
+
+enum AiRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum AgentRoleKey {
+  KEYWORD_STRATEGIST
+  PRODUCT_PLANNER
+  CHANNEL_STRATEGIST
+  MARKETING_DIRECTOR
+}
+
+enum KeywordType {
+  PURCHASE_INTENT
+  INFORMATIONAL
+  PRODUCT_ATTRIBUTE
+  SEASONAL
+  NEGATIVE_KEYWORD
+  SEO
+  HASHTAG
+  PRODUCT_TITLE
+}
+
+enum MarketingChannel {
+  NAVER_SEARCH_AD
+  NAVER_SHOPPING
+  BLOG_SEO
+  INSTAGRAM_META
+  YOUTUBE_SHORTS
+  GOOGLE_SEARCH
+  EMAIL_CRM
+  KAKAO_MESSAGE
+  SOOP
+  DAANGN
+  TIKTOK
+  INFLUENCER
+}
+
+enum ChannelRecommendationType {
+  MAINTAIN
+  EXPAND
+  TEST
+  HOLD
+  STOP
+}
+
+enum RecommendationPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ImpactLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum EffortLevel {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum RiskLevel {
+  HIGH
+  MEDIUM
+  LOW
+}</code></pre>
+<hr>
+<h2 id="13-백엔드-구조">13. 백엔드 구조</h2>
+<pre><code class="language-txt">src/modules/marketing-office/
+├─ marketing-office.module.ts
+├─ controllers/
+│  ├─ brands.controller.ts
+│  ├─ products.controller.ts
+│  ├─ campaigns.controller.ts
+│  ├─ ai-meetings.controller.ts
+│  └─ recommendations.controller.ts
+├─ services/
+│  ├─ ai-meeting-orchestrator.service.ts
+│  ├─ ai-agent-runner.service.ts
+│  ├─ ai-model-router.service.ts
+│  ├─ prompt-template.service.ts
+│  ├─ keyword-recommendation.service.ts
+│  ├─ product-recommendation.service.ts
+│  ├─ channel-recommendation.service.ts
+│  └─ final-report.service.ts
+├─ dto/
+│  ├─ create-brand.dto.ts
+│  ├─ update-brand.dto.ts
+│  ├─ create-product.dto.ts
+│  ├─ update-product.dto.ts
+│  ├─ create-campaign.dto.ts
+│  ├─ start-ai-meeting.dto.ts
+│  └─ recommendation-filter.dto.ts
+└─ schemas/
+   ├─ keyword-output.schema.ts
+   ├─ product-output.schema.ts
+   ├─ channel-output.schema.ts
+   └─ final-report.schema.ts</code></pre>
+<hr>
+<h2 id="14-api-설계">14. API 설계</h2>
+<h3 id="brand">Brand</h3>
+<pre><code class="language-http">POST /marketing-office/brands
+GET /marketing-office/brands
+GET /marketing-office/brands/:brandId
+PATCH /marketing-office/brands/:brandId</code></pre>
+<h3 id="product">Product</h3>
+<pre><code class="language-http">POST /marketing-office/brands/:brandId/products
+GET /marketing-office/brands/:brandId/products
+GET /marketing-office/products/:productId
+PATCH /marketing-office/products/:productId</code></pre>
+<h3 id="campaign">Campaign</h3>
+<pre><code class="language-http">POST /marketing-office/brands/:brandId/campaigns
+GET /marketing-office/brands/:brandId/campaigns
+GET /marketing-office/campaigns/:campaignId
+PATCH /marketing-office/campaigns/:campaignId</code></pre>
+<h3 id="ai-meeting">AI Meeting</h3>
+<pre><code class="language-http">POST /marketing-office/campaigns/:campaignId/meetings
+GET /marketing-office/meetings/:meetingId
+GET /marketing-office/meetings/:meetingId/agent-runs
+GET /marketing-office/meetings/:meetingId/final-report
+POST /marketing-office/meetings/:meetingId/retry</code></pre>
+<h3 id="recommendations">Recommendations</h3>
+<pre><code class="language-http">GET /marketing-office/meetings/:meetingId/recommendations/keywords
+GET /marketing-office/meetings/:meetingId/recommendations/products
+GET /marketing-office/meetings/:meetingId/recommendations/channels</code></pre>
+<h3 id="api-에러-응답-기준">API 에러 응답 기준</h3>
+<pre><code class="language-json">{
+  &quot;error&quot;: {
+    &quot;code&quot;: &quot;AI_OUTPUT_SCHEMA_INVALID&quot;,
+    &quot;message&quot;: &quot;AI 응답 JSON 구조가 예상 schema와 다릅니다.&quot;,
+    &quot;details&quot;: {
+      &quot;roleKey&quot;: &quot;CHANNEL_STRATEGIST&quot;,
+      &quot;meetingId&quot;: &quot;cm...&quot;
+    }
+  }
+}</code></pre>
+<p>권장 에러 코드:</p>
+<ul>
+<li><code>VALIDATION_ERROR</code></li>
+<li><code>BRAND_NOT_FOUND</code></li>
+<li><code>PRODUCT_NOT_FOUND</code></li>
+<li><code>CAMPAIGN_NOT_FOUND</code></li>
+<li><code>MEETING_NOT_FOUND</code></li>
+<li><code>AI_PROVIDER_ERROR</code></li>
+<li><code>AI_OUTPUT_EMPTY</code></li>
+<li><code>AI_OUTPUT_SCHEMA_INVALID</code></li>
+<li><code>AI_TIMEOUT</code></li>
+<li><code>AI_RATE_LIMITED</code></li>
+</ul>
+<hr>
+<h2 id="15-ai-실행-흐름">15. AI 실행 흐름</h2>
+<pre><code class="language-txt">1. Campaign 생성
+2. Campaign 입력 스냅샷 저장
+3. AI Meeting 생성, status = PENDING
+4. AI Meeting 시작, status = RUNNING
+5. Keyword Strategist Agent Run 생성 및 실행
+6. Product Planner Agent Run 생성 및 실행
+7. Channel Strategist Agent Run 생성 및 실행
+8. 세 전문 AI 결과를 DB에 저장
+9. Marketing Director Agent Run 실행
+10. finalReport 저장
+11. 모든 필수 결과가 저장되면 Meeting status = COMPLETED
+12. 일부 전문 AI만 성공하면 Meeting status = PARTIAL_COMPLETED
+13. 필수 결과가 모두 실패하면 Meeting status = FAILED</code></pre>
+<h3 id="실패-처리">실패 처리</h3>
+<ul>
+<li>LLM 호출 실패 시 해당 <code>AiAgentRun.status</code>를 <code>FAILED</code>로 저장한다.</li>
+<li>JSON 파싱 실패 시 <code>rawText</code>와 <code>errorMessage</code>를 저장한다.</li>
+<li>사용자 화면에는 내부 오류 전문이 아니라 요약 메시지를 보여준다.</li>
+<li><code>Marketing Director AI</code>는 전문 AI 결과가 최소 2개 이상 성공했을 때만 실행한다.</li>
+<li>retry는 실패한 Agent Run만 다시 실행하는 방식으로 시작한다.</li>
+</ul>
+<hr>
+<h2 id="16-최종-보고서-구조">16. 최종 보고서 구조</h2>
+<pre><code class="language-json">{
+  &quot;summary&quot;: &quot;이번 캠페인은 네이버 검색광고와 블로그 SEO를 중심으로 운영하고, 유튜브 Shorts는 소액 테스트를 권장합니다.&quot;,
+  &quot;keywordStrategy&quot;: {
+    &quot;mainKeywords&quot;: [&quot;기업 추석카드&quot;],
+    &quot;seoKeywords&quot;: [&quot;회사 명절카드 제작&quot;],
+    &quot;negativeKeywords&quot;: [&quot;무료&quot;, &quot;도안 다운로드&quot;]
+  },
+  &quot;productStrategy&quot;: {
+    &quot;recommendedProducts&quot;: [&quot;기업 추석 선물카드 봉투 포함 세트&quot;],
+    &quot;productTitleSuggestions&quot;: [&quot;기업 추석 선물카드 제작 봉투포함 회사명 인쇄 명절카드&quot;]
+  },
+  &quot;channelStrategy&quot;: {
+    &quot;expand&quot;: [&quot;NAVER_SEARCH_AD&quot;],
+    &quot;maintain&quot;: [&quot;BLOG_SEO&quot;],
+    &quot;test&quot;: [&quot;YOUTUBE_SHORTS&quot;],
+    &quot;hold&quot;: [&quot;INSTAGRAM_META&quot;],
+    &quot;stop&quot;: []
+  },
+  &quot;priorityActions&quot;: [
+    {
+      &quot;title&quot;: &quot;기업 추석카드 구매 키워드 광고그룹 분리&quot;,
+      &quot;type&quot;: &quot;KEYWORD&quot;,
+      &quot;priority&quot;: &quot;HIGH&quot;,
+      &quot;reason&quot;: &quot;광고비 낭비를 줄이고 전환율을 높이기 위함&quot;,
+      &quot;ownerHint&quot;: &quot;마케팅 담당자&quot;,
+      &quot;dueHint&quot;: &quot;이번 주&quot;
+    }
+  ],
+  &quot;risks&quot;: [
+    {
+      &quot;title&quot;: &quot;검색량 추정 불확실성&quot;,
+      &quot;level&quot;: &quot;MEDIUM&quot;,
+      &quot;mitigation&quot;: &quot;실제 광고 집행 전 키워드 플래너 또는 검색광고 도구로 검색량을 확인합니다.&quot;
+    }
+  ],
+  &quot;nextSteps&quot;: [
+    &quot;상위 구매 키워드 5개를 광고그룹으로 분리&quot;,
+    &quot;추천 상품명 2안을 상세페이지 제목에 A/B 테스트&quot;,
+    &quot;유튜브 Shorts용 15초 영상 소재 2종 제작&quot;
+  ]
+}</code></pre>
+<hr>
+<h2 id="17-프론트엔드-화면-구조">17. 프론트엔드 화면 구조</h2>
+<p>Next.js 기준 페이지:</p>
+<pre><code class="language-txt">src/app/marketing-office/
+├─ page.tsx
+├─ brands/
+│  └─ page.tsx
+├─ campaigns/
+│  ├─ page.tsx
+│  └─ [campaignId]/
+│     └─ page.tsx
+└─ meetings/
+   └─ [meetingId]/
+      └─ page.tsx</code></pre>
+<p>컴포넌트:</p>
+<pre><code class="language-txt">src/components/marketing-office/
+├─ BrandForm.tsx
+├─ ProductForm.tsx
+├─ CampaignForm.tsx
+├─ AiOfficeScene.tsx
+├─ AgentCard.tsx
+├─ AgentDetailPanel.tsx
+├─ KeywordRecommendationTable.tsx
+├─ ProductRecommendationCards.tsx
+├─ ChannelRecommendationBoard.tsx
+├─ FinalReportPanel.tsx
+└─ RecommendationPriorityBadge.tsx</code></pre>
+<h3 id="ui-상태">UI 상태</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>상태</th><th>표시</th></tr></thead>
+<tbody>
+<tr><td>빈 상태</td><td>“아직 캠페인이 없습니다” 또는 “AI Meeting을 시작하세요”</td></tr>
+<tr><td>실행 중</td><td>Agent 카드별 <code>RUNNING</code> 상태와 skeleton 표시</td></tr>
+<tr><td>부분 완료</td><td>성공한 결과는 표시하고 실패한 Agent는 재시도 버튼 표시</td></tr>
+<tr><td>실패</td><td>사용자 친화적 오류 메시지와 관리자용 오류 코드 표시</td></tr>
+<tr><td>완료</td><td>키워드 테이블, 상품 카드, 채널 보드, 최종 보고서 표시</td></tr>
+</tbody></table></div>
+<h3 id="ai-office-scene">AI Office Scene</h3>
+<p>MVP에서는 게임형 UI 대신 카드형으로 구현한다.</p>
+<pre><code class="language-txt">키워드 전략 AI
+상태: 완료
+판단 요약: 구매 의도 키워드와 정보성 키워드를 분리해야 합니다.
+
+상품기획 AI
+상태: 완료
+판단 요약: 시즌성 높은 상품을 우선 추천합니다.
+
+광고 채널 AI
+상태: 완료
+판단 요약: 네이버 검색광고는 확대, 유튜브 Shorts는 테스트 후보입니다.
+
+마케팅 총괄 AI
+상태: 완료
+판단 요약: 키워드, 상품, 채널 제안을 통합해 이번 주 실행안을 정리했습니다.</code></pre>
+<p>카드를 클릭하면 우측 패널 또는 모달에 다음 정보를 표시한다.</p>
+<ul>
+<li>역할 설명</li>
+<li>현재 상태</li>
+<li><code>visibleThoughtSummary</code></li>
+<li>주요 제안</li>
+<li><code>confidenceScore</code></li>
+<li>관리자/개발 모드에서만 raw output</li>
+</ul>
+<hr>
+<h2 id="18-테스트-데이터">18. 테스트 데이터</h2>
+<h3 id="brand-1">Brand 1</h3>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;Coffeeprint&quot;,
+  &quot;category&quot;: &quot;인쇄/카드/초대장&quot;,
+  &quot;websiteUrl&quot;: &quot;https://coffeeprint.co.kr&quot;,
+  &quot;description&quot;: &quot;기업용 명절카드, 연하장, 초대장, 봉투 등을 제작하는 인쇄 쇼핑몰&quot;
+}</code></pre>
+<h3 id="product-1">Product 1</h3>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;추석 선물카드&quot;,
+  &quot;category&quot;: &quot;명절카드&quot;,
+  &quot;priceRange&quot;: &quot;소량~기업 주문&quot;,
+  &quot;description&quot;: &quot;회사명, 로고, 인사말을 넣어 제작 가능한 기업용 추석카드&quot;,
+  &quot;strengths&quot;: [&quot;봉투 포함&quot;, &quot;소량 제작 가능&quot;, &quot;회사명 인쇄&quot;, &quot;로고 삽입 가능&quot;],
+  &quot;targetUsers&quot;: [&quot;기업 총무&quot;, &quot;소상공인&quot;, &quot;거래처 선물 준비 고객&quot;]
+}</code></pre>
+<h3 id="brand-2">Brand 2</h3>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;스티커씨&quot;,
+  &quot;category&quot;: &quot;스티커/답례품&quot;,
+  &quot;websiteUrl&quot;: &quot;https://smartstore.naver.com&quot;,
+  &quot;description&quot;: &quot;행사, 생일, 웨딩, 답례품용 소량 스티커를 판매하는 스마트스토어&quot;
+}</code></pre>
+<h3 id="product-2">Product 2</h3>
+<pre><code class="language-json">{
+  &quot;name&quot;: &quot;생일 답례품 스티커&quot;,
+  &quot;category&quot;: &quot;답례품 스티커&quot;,
+  &quot;priceRange&quot;: &quot;20개 소량 주문&quot;,
+  &quot;description&quot;: &quot;어린이집, 유치원, 생일 답례품에 사용하는 원형 48mm 스티커&quot;,
+  &quot;strengths&quot;: [&quot;원형 48mm&quot;, &quot;소량 주문&quot;, &quot;문구 변경&quot;, &quot;디자인 선택&quot;],
+  &quot;targetUsers&quot;: [&quot;어린이집 학부모&quot;, &quot;유치원 학부모&quot;, &quot;행사 준비 고객&quot;]
+}</code></pre>
+<h3 id="campaign-예시">Campaign 예시</h3>
+<pre><code class="language-json">{
+  &quot;title&quot;: &quot;2026 추석 기업카드 마케팅 캠페인&quot;,
+  &quot;goal&quot;: &quot;기업 고객 문의와 주문 증가&quot;,
+  &quot;season&quot;: &quot;2026 추석&quot;,
+  &quot;target&quot;: &quot;기업 총무, 소상공인, 거래처 선물 준비 고객&quot;,
+  &quot;budgetLevel&quot;: &quot;LOW&quot;,
+  &quot;currentConcern&quot;: &quot;광고비 낭비 없이 구매 의도 키워드와 시즌 상품을 우선 검증하고 싶음&quot;
+}</code></pre>
+<hr>
+<h2 id="19-개발-순서">19. 개발 순서</h2>
+<ol>
+<li>Prisma 모델 추가 및 마이그레이션</li>
+<li>Brand, Product, Campaign CRUD API 구현</li>
+<li>CampaignProduct 연결 로직 구현</li>
+<li>AiMeeting 생성 및 시작 API 구현</li>
+<li>AI Model Router 더미 구현</li>
+<li>Prompt Template service 구현</li>
+<li>각 Agent Runner 구현</li>
+<li>JSON Schema 기반 응답 검증 구현</li>
+<li>Recommendation 저장 로직 구현</li>
+<li>Final Report 생성 로직 구현</li>
+<li>프론트 기본 페이지 구현</li>
+<li>AI Office 카드 UI 구현</li>
+<li>Keyword, Product, Channel Recommendation UI 구현</li>
+<li>테스트 데이터 추가</li>
+<li>에러 처리, 빈 상태, 부분 완료 UI 추가</li>
+<li>README에 사용 방법 작성</li>
+</ol>
+<hr>
+<h2 id="20-품질-기준">20. 품질 기준</h2>
+<h3 id="기능-기준">기능 기준</h3>
+<ul>
+<li>브랜드를 생성하고 조회할 수 있다.</li>
+<li>상품을 등록하고 조회할 수 있다.</li>
+<li>캠페인을 생성하고 상품을 연결할 수 있다.</li>
+<li>캠페인에 대해 AI Meeting을 시작할 수 있다.</li>
+<li>키워드 제안이 저장된다.</li>
+<li>상품 제안이 저장된다.</li>
+<li>광고 채널 제안이 저장된다.</li>
+<li>최종 보고서가 저장된다.</li>
+<li>각 AI 역할별 <code>visibleThoughtSummary</code>를 UI에서 볼 수 있다.</li>
+<li>실패한 Agent Run을 재시도할 수 있다.</li>
+</ul>
+<h3 id="데이터-기준">데이터 기준</h3>
+<ul>
+<li>LLM 응답은 schema 검증을 통과해야 저장된다.</li>
+<li>schema 검증 실패 시 Agent Run은 <code>FAILED</code>로 저장된다.</li>
+<li>Agent Run의 input, output, status, errorMessage를 DB에 저장한다.</li>
+<li>사용자는 내부 추론 전체가 아니라 <code>visibleThoughtSummary</code>만 본다.</li>
+<li>raw output은 관리자/개발 모드에서만 확인한다.</li>
+</ul>
+<h3 id="ui-기준">UI 기준</h3>
+<ul>
+<li>추천 항목은 우선순위별로 정렬한다.</li>
+<li>채널 제안은 <code>EXPAND / MAINTAIN / TEST / HOLD / STOP</code> 상태별로 묶어 보여준다.</li>
+<li>상품 제안은 카드 형태로 보여준다.</li>
+<li>키워드 제안은 테이블 형태로 보여준다.</li>
+<li>최종 보고서는 한 화면에서 복사할 수 있다.</li>
+<li>로딩, 빈 상태, 실패, 부분 완료 상태를 각각 제공한다.</li>
+</ul>
+<hr>
+<h2 id="21-완료-기준">21. 완료 기준</h2>
+<h3 id="정상-시나리오">정상 시나리오</h3>
+<ol>
+<li>Coffeeprint 브랜드 생성</li>
+<li>추석 선물카드 상품 생성</li>
+<li>“2026 추석 기업카드 마케팅 캠페인” 생성</li>
+<li>캠페인에 상품 연결</li>
+<li>AI Meeting 시작</li>
+<li>키워드 전략 AI 결과 확인</li>
+<li>상품기획 AI 결과 확인</li>
+<li>광고 채널 AI 결과 확인</li>
+<li>마케팅 총괄 AI 최종 보고서 확인</li>
+<li>키워드, 상품, 채널 추천 목록이 DB에 저장됨</li>
+<li>프론트에서 추천 결과를 확인 가능</li>
+</ol>
+<h3 id="실패-시나리오">실패 시나리오</h3>
+<ol>
+<li>LLM 응답이 비어 있으면 Agent Run이 <code>FAILED</code>가 된다.</li>
+<li>JSON 파싱에 실패하면 rawText와 errorMessage가 저장된다.</li>
+<li>일부 Agent만 실패하면 Meeting은 <code>PARTIAL_COMPLETED</code>가 된다.</li>
+<li>실패한 Agent만 retry할 수 있다.</li>
+<li>사용자 화면에는 안전한 오류 메시지가 표시된다.</li>
+</ol>
+<hr>
+<h2 id="22-구현-후-보고서-양식">22. 구현 후 보고서 양식</h2>
+<p>구현 후 아래 내용을 보고서로 남긴다.</p>
+<ul>
+<li>생성/수정한 파일 목록</li>
+<li>DB 마이그레이션 내용</li>
+<li>주요 API 엔드포인트</li>
+<li>AI 출력 schema 목록</li>
+<li>테스트 방법</li>
+<li>실패 처리 검증 결과</li>
+<li>남은 TODO</li>
+<li>다음 단계 제안</li>
+</ul>
+<hr>
+<h2 id="23-다음-단계-후보">23. 다음 단계 후보</h2>
+<p>MVP 완료 후 아래 기능을 단계적으로 검토한다.</p>
+<ol>
+<li>승인함 기능</li>
+<li>업무 보드 기능</li>
+<li>네이버 검색광고 API 연동</li>
+<li>스마트스토어 주문/상품 데이터 연동</li>
+<li>광고 문안 자동 생성</li>
+<li>블로그/인스타/이메일 초안 자동 생성</li>
+<li>상세 이미지/배너 템플릿 자동 렌더링</li>
+<li>성과 분석 기반 다음 제안 생성</li>
+<li>캠페인별 추천 결과 비교 리포트</li>
+<li>팀원 권한과 승인 워크플로</li>
+</ol>
+    </main>
+  </div>
+</body>
+</html>
