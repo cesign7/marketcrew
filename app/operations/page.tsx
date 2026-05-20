@@ -3,19 +3,27 @@ import { AppShell } from "@/components/layout/AppShell";
 import {
   getActionProposals,
   getAgentReports,
+  getOperationsDiagnosticsOverview,
 } from "@/lib/db/marketing-operations";
+import { runKeywordDiagnosticsAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function OperationsPage() {
-  const [reports, proposals] = await Promise.all([
+  const [agentReports, actionProposals, diagnostics] = await Promise.all([
     getAgentReports(),
     getActionProposals(),
+    getOperationsDiagnosticsOverview(),
   ]);
 
   return (
     <AppShell>
-      <AgentRoom reports={reports} proposals={proposals} />
+      <AgentRoom
+        reports={agentReports}
+        proposals={actionProposals}
+        diagnostics={diagnostics}
+        runDiagnosticsAction={runKeywordDiagnosticsAction}
+      />
     </AppShell>
   );
 }

@@ -1,3 +1,4 @@
+import { getAgentProfile } from "@/lib/domain/agent-profiles";
 import type { AgentKey, AgentReport, AgentStatus } from "@/lib/domain/agents";
 import type {
   ActionProposal,
@@ -74,65 +75,6 @@ const targetPositionLabels: Record<string, string> = {
   TEST: "테스트",
 };
 
-const agentDefaults: Record<
-  AgentKey,
-  {
-    characterName: string;
-    roleName: string;
-    status: AgentStatus;
-    mood: AgentReport["mood"];
-  }
-> = {
-  GENERAL_MANAGER: {
-    characterName: "오피",
-    roleName: "운영 총괄 AI",
-    status: "WORKING",
-    mood: "focused",
-  },
-  POSITION_DEFENDER: {
-    characterName: "루키",
-    roleName: "순위 방어 AI",
-    status: "NEEDS_ATTENTION",
-    mood: "focused",
-  },
-  BID_OPTIMIZER: {
-    characterName: "비디",
-    roleName: "입찰 최적화 AI",
-    status: "DONE",
-    mood: "calm",
-  },
-  KEYWORD_STRATEGIST: {
-    characterName: "키키",
-    roleName: "키워드 전략 AI",
-    status: "WORKING",
-    mood: "excited",
-  },
-  PRODUCT_STRATEGIST: {
-    characterName: "프로",
-    roleName: "상품 전략 AI",
-    status: "IDLE",
-    mood: "calm",
-  },
-  TITLE_SEO: {
-    characterName: "타이",
-    roleName: "상품명 최적화 AI",
-    status: "IDLE",
-    mood: "calm",
-  },
-  AD_COPYWRITER: {
-    characterName: "카피",
-    roleName: "광고문안 AI",
-    status: "NEEDS_ATTENTION",
-    mood: "excited",
-  },
-  MARGIN_ANALYST: {
-    characterName: "마루",
-    roleName: "마진 분석 AI",
-    status: "NEEDS_ATTENTION",
-    mood: "worried",
-  },
-};
-
 const agentStatuses: AgentStatus[] = ["IDLE", "WORKING", "DONE", "NEEDS_ATTENTION"];
 const moods: AgentReport["mood"][] = ["calm", "excited", "worried", "focused"];
 
@@ -189,17 +131,17 @@ export function automationRuleFromRecord(
 }
 
 export function agentReportFromRecord(record: AgentReportRecord): AgentReport {
-  const defaults = agentDefaults[record.agentKey];
+  const profile = getAgentProfile(record.agentKey);
   const detail = objectFromJson(record.detailJson);
 
   return {
     id: record.id,
     agentKey: record.agentKey,
-    characterName: stringFromJson(detail.characterName) ?? defaults.characterName,
-    roleName: stringFromJson(detail.roleName) ?? defaults.roleName,
-    status: enumFromJson(detail.status, agentStatuses) ?? defaults.status,
+    characterName: stringFromJson(detail.characterName) ?? profile.characterName,
+    roleName: stringFromJson(detail.roleName) ?? profile.roleName,
+    status: enumFromJson(detail.status, agentStatuses) ?? profile.defaultStatus,
     summary: record.summary,
-    mood: enumFromJson(detail.mood, moods) ?? defaults.mood,
+    mood: enumFromJson(detail.mood, moods) ?? profile.defaultMood,
     createdAt: record.createdAt.toISOString(),
     relatedProposalIds: stringArrayFromJson(detail.relatedProposalIds),
   };

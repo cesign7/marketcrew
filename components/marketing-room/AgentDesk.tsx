@@ -1,9 +1,10 @@
-import type { AgentReport } from "@/lib/domain/agents";
 import { AgentSpeechBubble } from "@/components/marketing-room/AgentSpeechBubble";
+import { getAgentProfile } from "@/lib/domain/agent-profiles";
+import type { AgentReport } from "@/lib/domain/agents";
 
 const statusLabels: Record<AgentReport["status"], string> = {
   IDLE: "대기",
-  WORKING: "작업중",
+  WORKING: "작업 중",
   DONE: "완료",
   NEEDS_ATTENTION: "확인 필요",
 };
@@ -16,12 +17,16 @@ const statusStyles: Record<AgentReport["status"], string> = {
 };
 
 export function AgentDesk({ report }: { report: AgentReport }) {
+  const profile = getAgentProfile(report.agentKey);
+
   return (
     <article className="grid min-h-[210px] grid-cols-[70px_1fr] gap-4 rounded-[28px] border border-[#eadfc8] bg-white p-4 shadow-[0_18px_50px_rgba(78,62,38,0.08)]">
       <div className="flex flex-col items-center gap-3">
-        <div className="relative grid size-16 place-items-center rounded-[22px] bg-[#ffd7a8] shadow-inner">
-          <div className="grid size-12 place-items-center rounded-full bg-[#fff8ec] text-2xl font-black text-[#de6a4b]">
-            {report.characterName.slice(0, 1)}
+        <div
+          className={`relative grid size-16 place-items-center rounded-[22px] shadow-inner ${profile.accentClass}`}
+        >
+          <div className="grid size-12 place-items-center rounded-full bg-white text-2xl font-black">
+            {profile.uiInitial}
           </div>
           <span className="absolute -bottom-2 h-3 w-12 rounded-full bg-[#c58d59]" />
         </div>

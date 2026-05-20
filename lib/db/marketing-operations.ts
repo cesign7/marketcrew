@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db/prisma";
+import { getKeywordDiagnosticsOverview } from "@/lib/db/keyword-diagnostics";
 import {
   actionProposalFromRecord,
   agentReportFromRecord,
@@ -64,4 +65,8 @@ export async function getPrimaryAutomationRule() {
   });
 
   return rule ? automationRuleFromRecord(rule) : null;
+}
+
+export async function getOperationsDiagnosticsOverview() {
+  return getKeywordDiagnosticsOverview();
 }

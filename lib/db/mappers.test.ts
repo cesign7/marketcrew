@@ -78,17 +78,14 @@ describe("database mappers", () => {
     expect(rule.monthlyBudgetLimit).toBeNull();
   });
 
-  it("maps agent report detail JSON into character display fields", () => {
+  it("maps agent report fallback fields from character profiles", () => {
     const report = agentReportFromRecord({
       id: "report-1",
       agentKey: "BID_OPTIMIZER",
       reportType: "DAILY_STATUS",
-      summary: "저위험 키워드 3개가 하향 조정 후보입니다.",
+      summary: "저효율 키워드 3개가 하향 조정 후보입니다.",
       detailJson: {
-        characterName: "비디",
-        roleName: "입찰 최적화 AI",
         status: "DONE",
-        mood: "calm",
         relatedProposalIds: ["proposal-2"],
       },
       createdAt: new Date("2026-05-20T00:10:00.000Z"),

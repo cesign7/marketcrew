@@ -17,7 +17,7 @@ export function TodayQuestList({
         <div>
           <h2 className="text-lg font-black">오늘의 승인 퀘스트</h2>
           <p className="text-sm font-semibold text-[#7b8791]">
-            AI가 실행 전 확인을 요청한 일입니다.
+            AI가 실행 전 확인을 요청한 작업입니다.
           </p>
         </div>
         <Sparkles className="text-[#de6a4b]" size={22} />
@@ -55,9 +55,15 @@ export function TodayQuestList({
             </div>
           </div>
         ))}
-        <div className="flex items-center gap-2 rounded-2xl bg-[#e6f7ef] px-4 py-3 text-sm font-black text-[#14764d]">
+        {needsApproval.length === 0 ? (
+          <div className="flex items-center gap-2 rounded-2xl bg-[#e6f7ef] px-4 py-3 text-sm font-black text-[#14764d]">
+            <CheckCircle2 size={17} />
+            지금 승인 대기 중인 퀘스트가 없습니다.
+          </div>
+        ) : null}
+        <div className="flex items-center gap-2 rounded-2xl bg-[#effbf8] px-4 py-3 text-sm font-black text-[#14764d]">
           <CheckCircle2 size={17} />
-          저위험 자동 처리 내역은 실행 이력에 저장됩니다.
+          저위험 자동 처리 이력은 실행 기록에 저장됩니다.
         </div>
       </div>
     </section>
