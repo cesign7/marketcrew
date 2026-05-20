@@ -37,6 +37,7 @@ model MarketingAccount {
 
   campaignSnapshots AdCampaignSnapshot[]
   keywordSnapshots  AdKeywordSnapshot[]
+  syncRuns          IntegrationSyncRun[]
 
   @@unique([provider, customerId])
 }
@@ -235,6 +236,26 @@ model AgentReport {
   createdAt          DateTime    @default(now())
 
   @@index([agentKey, createdAt])
+}
+
+model IntegrationSyncRun {
+  id             String            @id @default(cuid())
+  provider       ExecutionProvider
+  accountId      String?
+  status         ExecutionStatus   @default(PENDING)
+  campaignsCount Int               @default(0)
+  adgroupsCount  Int               @default(0)
+  keywordsCount  Int               @default(0)
+  snapshotsCount Int               @default(0)
+  errorMessage   String?
+  rawJson        Json?
+  startedAt      DateTime          @default(now())
+  finishedAt     DateTime?
+
+  account MarketingAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([provider, status, startedAt])
+  @@index([accountId, startedAt])
 }
 
 enum StoreType {

@@ -283,6 +283,7 @@ async function resetDatabase() {
   await prisma.adKeywordSnapshot.deleteMany();
   await prisma.adCampaignSnapshot.deleteMany();
   await prisma.automationRule.deleteMany();
+  await prisma.integrationSyncRun.deleteMany();
   await prisma.marketingAccount.deleteMany();
   await prisma.costFormula.deleteMany();
   await prisma.productMapping.deleteMany();

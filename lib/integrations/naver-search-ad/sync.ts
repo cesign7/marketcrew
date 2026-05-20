@@ -1,0 +1,177 @@
+import { prisma } from "@/lib/db/prisma";
+import { NaverSearchAdClient } from "@/lib/integrations/naver-search-ad/client";
+import { readSearchAdCredentials } from "@/lib/integrations/naver-search-ad/auth";
+import { toInputJson, toKeywordSnapshotRows, toSyncCounts } from "./snapshots";
+
+interface SyncOptions {
+  client?: NaverSearchAdClient;
+  collectedDate?: Date;
+}
+
+export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
+  const credentials = readSearchAdCredentials();
+  const client = options.client ?? new NaverSearchAdClient(credentials);
+  const collectedDate = options.collectedDate ?? new Date();
+  const account = await prisma.marketingAccount.upsert({
+    where: {
+      provider_customerId: {
+        provider: "NAVER_SEARCH_AD",
+        customerId: credentials.customerId,
+      },
+    },
+    update: {
+      alias: "커피프린트/스티커씨 통합 검색광고 계정",
+      status: "ACTIVE",
+    },
+    create: {
+      provider: "NAVER_SEARCH_AD",
+      customerId: credentials.customerId,
+      alias: "커피프린트/스티커씨 통합 검색광고 계정",
+    },
+  });
+  const run = await prisma.integrationSyncRun.create({
+    data: {
+      provider: "NAVER_SEARCH_AD",
+      accountId: account.id,
+      status: "PENDING",
+      rawJson: {
+        mode: "dry-run",
+        source: "Naver Search Ad read-only APIs",
+      },
+    },
+  });
+
+  try {
+    const campaigns = await client.getCampaigns();
+    const adgroups = await client.getAdgroups();
+    const adgroupCampaignMap = new Map(
+      adgroups.map((adgroup) => [adgroup.id, adgroup.campaignId]),
+    );
+    const keywords = (
+      await Promise.all(
+        adgroups.map((adgroup) =>
+          client.getKeywords(adgroup.id, adgroupCampaignMap),
+        ),
+      )
+    ).flat();
+    const keywordSnapshots = toKeywordSnapshotRows({
+      accountId: account.id,
+      collectedDate,
+      keywords,
+    });
+    const counts = toSyncCounts({
+      campaigns,
+      adgroups,
+      keywords,
+      snapshots: keywordSnapshots,
+    });
+
+    if (campaigns.length > 0) {
+      await prisma.adCampaignSnapshot.createMany({
+        data: campaigns.map((campaign) => ({
+          accountId: account.id,
+          campaignId: campaign.id,
+          campaignName: campaign.name,
+          brandKey: inferBrandKey(campaign.name),
+          rawJson: toInputJson(campaign.raw),
+          collectedAt: collectedDate,
+        })),
+      });
+    }
+
+    if (keywordSnapshots.length > 0) {
+      await prisma.adKeywordSnapshot.createMany({
+        data: keywordSnapshots,
+        skipDuplicates: true,
+      });
+    }
+
+    await prisma.integrationSyncRun.update({
+      where: { id: run.id },
+      data: {
+        status: "SUCCEEDED",
+        finishedAt: new Date(),
+        ...counts,
+      },
+    });
+
+    await prisma.agentReport.create({
+      data: {
+        agentKey: "KEYWORD_STRATEGIST",
+        reportType: "NAVER_SEARCH_AD_SYNC",
+        summary: `검색광고 dry-run 동기화 완료: 캠페인 ${counts.campaignsCount}개, 광고그룹 ${counts.adgroupsCount}개, 키워드 ${counts.keywordsCount}개를 확인했습니다.`,
+        detailJson: {
+          characterName: "키키",
+          roleName: "키워드 전략 AI",
+          status: "DONE",
+          mood: "focused",
+          relatedProposalIds: [],
+          syncRunId: run.id,
+        },
+      },
+    });
+
+    return {
+      id: run.id,
+      status: "SUCCEEDED" as const,
+      ...counts,
+    };
+  } catch (error) {
+    const errorMessage = sanitizeErrorMessage(error);
+
+    await prisma.integrationSyncRun.update({
+      where: { id: run.id },
+      data: {
+        status: "FAILED",
+        finishedAt: new Date(),
+        errorMessage,
+      },
+    });
+
+    await prisma.agentReport.create({
+      data: {
+        agentKey: "KEYWORD_STRATEGIST",
+        reportType: "NAVER_SEARCH_AD_SYNC",
+        summary: `검색광고 dry-run 동기화 실패: ${errorMessage}`,
+        detailJson: {
+          characterName: "키키",
+          roleName: "키워드 전략 AI",
+          status: "NEEDS_ATTENTION",
+          mood: "worried",
+          relatedProposalIds: [],
+          syncRunId: run.id,
+        },
+      },
+    });
+
+    return {
+      id: run.id,
+      status: "FAILED" as const,
+      errorMessage,
+      campaignsCount: 0,
+      adgroupsCount: 0,
+      keywordsCount: 0,
+      snapshotsCount: 0,
+    };
+  }
+}
+
+function inferBrandKey(name: string) {
+  const normalized = name.toLowerCase();
+
+  if (normalized.includes("stickersee") || normalized.includes("스티커씨")) {
+    return "STICKERSEE" as const;
+  }
+
+  if (normalized.includes("coffeeprint") || normalized.includes("커피프린트")) {
+    return "COFFEEPRINT" as const;
+  }
+
+  return null;
+}
+
+function sanitizeErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "Unknown error";
+
+  return message.replace(/(X-API-KEY|X-Signature|secret|SECRET)[^,\s]*/gi, "$1");
+}

@@ -4,6 +4,7 @@ import {
   Bot,
   ClipboardCheck,
   Coins,
+  DatabaseZap,
   Settings,
 } from "lucide-react";
 import Link from "next/link";
@@ -14,6 +15,7 @@ const navItems = [
   { href: "/approvals", label: "승인실", icon: ClipboardCheck },
   { href: "/keywords", label: "키워드/입찰실", icon: BarChart3 },
   { href: "/margins", label: "상품/마진실", icon: Coins },
+  { href: "/settings/search-ad", label: "검색광고 연동", icon: DatabaseZap },
   { href: "/settings/automation-rules", label: "자동화 설정", icon: Settings },
 ];
 
