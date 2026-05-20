@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: marketcrew-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: marketcrew
+      POSTGRES_PASSWORD: marketcrew_dev
+      POSTGRES_DB: marketcrew
+    ports:
+      - "5432:5432"
+    volumes:
+      - marketcrew-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketcrew -d marketcrew"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  marketcrew-postgres-data:

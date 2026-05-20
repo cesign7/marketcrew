@@ -1,0 +1,342 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Store {
+  id          String      @id @default(cuid())
+  name        String
+  type        StoreType
+  brandKey    BrandKey
+  status      StoreStatus @default(ACTIVE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  products StoreProduct[]
+
+  @@index([brandKey, type])
+}
+
+model MarketingAccount {
+  id         String                    @id @default(cuid())
+  provider   MarketingAccountProvider
+  customerId String
+  alias      String
+  status     StoreStatus                @default(ACTIVE)
+  createdAt  DateTime                   @default(now())
+  updatedAt  DateTime                   @updatedAt
+
+  campaignSnapshots AdCampaignSnapshot[]
+  keywordSnapshots  AdKeywordSnapshot[]
+
+  @@unique([provider, customerId])
+}
+
+model ProductMaster {
+  id            String        @id @default(cuid())
+  brandKey      BrandKey
+  canonicalName String
+  productGroup  String
+  seasonTags    Json?
+  status        StoreStatus    @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  mappings     ProductMapping[]
+  costFormulas CostFormula[]
+
+  @@index([brandKey, productGroup])
+}
+
+model StoreProduct {
+  id                String      @id @default(cuid())
+  storeId           String
+  externalProductId String
+  productName       String
+  optionName        String?
+  category          String?
+  salePrice         Int?
+  status            StoreStatus @default(ACTIVE)
+  rawJson           Json?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  store    Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  mappings ProductMapping[]
+
+  @@unique([storeId, externalProductId])
+  @@index([storeId, status])
+}
+
+model ProductMapping {
+  id              String        @id @default(cuid())
+  productMasterId String
+  storeProductId  String
+  confidence      Float
+  mappingStatus   MappingStatus @default(CANDIDATE)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  productMaster ProductMaster @relation(fields: [productMasterId], references: [id], onDelete: Cascade)
+  storeProduct   StoreProduct   @relation(fields: [storeProductId], references: [id], onDelete: Cascade)
+
+  @@unique([productMasterId, storeProductId])
+}
+
+model CostFormula {
+  id                  String   @id @default(cuid())
+  productMasterId      String
+  formulaType          String
+  quantityRange        Json?
+  optionRules          Json?
+  printMethodRules     Json?
+  packagingCost        Int      @default(0)
+  shippingSupportCost  Int      @default(0)
+  paymentFeeRule       Json?
+  platformFeeRule      Json?
+  targetMarginRate     Float?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  productMaster ProductMaster @relation(fields: [productMasterId], references: [id], onDelete: Cascade)
+
+  @@index([productMasterId])
+}
+
+model AdCampaignSnapshot {
+  id           String   @id @default(cuid())
+  accountId    String
+  campaignId   String
+  campaignName String
+  brandKey     BrandKey?
+  rawJson       Json?
+  collectedAt  DateTime @default(now())
+
+  account MarketingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, campaignId, collectedAt])
+}
+
+model AdKeywordSnapshot {
+  id              String   @id @default(cuid())
+  accountId       String
+  campaignId      String
+  adgroupId       String
+  keywordId       String
+  keyword         String
+  bidAmount       Int?
+  impressions     Int      @default(0)
+  clicks          Int      @default(0)
+  cost            Int      @default(0)
+  ctr             Float?
+  avgCpc          Float?
+  conversions     Float?
+  conversionSales Int?
+  avgRank         Float?
+  collectedDate   DateTime
+  rawJson          Json?
+  createdAt        DateTime @default(now())
+
+  account MarketingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, keywordId, collectedDate])
+  @@index([keyword, collectedDate])
+  @@index([campaignId, adgroupId])
+}
+
+model KeywordRule {
+  id                      String              @id @default(cuid())
+  keywordId               String?
+  keyword                 String
+  brandKey                BrandKey
+  ruleType                KeywordRuleType
+  targetPositionType      TargetPositionType
+  maxCpc                  Int?
+  minMarginRate           Float?
+  autoBidAdjustmentLimit  Float               @default(0.05)
+  dailyAdjustmentLimit    Int                 @default(2)
+  monthlyBudgetLimit      Int?
+  status                  RuleStatus          @default(DRAFT)
+  reason                  String
+  confidence              Float?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  @@index([brandKey, ruleType, status])
+  @@index([keyword])
+}
+
+model ActionProposal {
+  id              String          @id @default(cuid())
+  agentKey        AgentKey
+  actionType      ActionType
+  riskLevel       RiskLevel
+  title           String
+  reason          String
+  expectedImpact  String
+  beforeJson      Json?
+  afterJson       Json?
+  status          ProposalStatus  @default(NEEDS_APPROVAL)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  executions ActionExecution[]
+
+  @@index([status, riskLevel, createdAt])
+  @@index([agentKey])
+}
+
+model ActionExecution {
+  id            String          @id @default(cuid())
+  proposalId    String
+  executionType ActionType
+  provider      ExecutionProvider
+  requestJson   Json
+  responseJson  Json?
+  status        ExecutionStatus @default(PENDING)
+  errorMessage  String?
+  executedAt    DateTime?
+  rollbackJson  Json?
+  createdAt     DateTime        @default(now())
+
+  proposal ActionProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([proposalId, status])
+}
+
+model AutomationRule {
+  id                         String     @id @default(cuid())
+  name                       String
+  enabled                    Boolean    @default(false)
+  maxBidChangeRate           Float      @default(0.05)
+  maxDailyChangesPerKeyword  Int        @default(2)
+  maxCpc                     Int?
+  monthlyBudgetLimit         Int?
+  requiresApprovalAboveRisk  RiskLevel  @default(LOW)
+  createdAt                  DateTime   @default(now())
+  updatedAt                  DateTime   @updatedAt
+}
+
+model AgentReport {
+  id                 String      @id @default(cuid())
+  agentKey           AgentKey
+  reportType         String
+  summary            String
+  detailJson         Json?
+  createdAt          DateTime    @default(now())
+
+  @@index([agentKey, createdAt])
+}
+
+enum StoreType {
+  NAVER_ADS
+  NAVER_SMARTSTORE
+  YOUNGCART
+}
+
+enum BrandKey {
+  COFFEEPRINT
+  STICKERSEE
+}
+
+enum StoreStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum MarketingAccountProvider {
+  NAVER_SEARCH_AD
+}
+
+enum MappingStatus {
+  CANDIDATE
+  CONFIRMED
+  REJECTED
+}
+
+enum KeywordRuleType {
+  BRAND_DEFENSE
+  TOP_1_DEFENSE
+  TOP_2_TO_3_OPTIMIZE
+  SEASONAL_TOP_TEST
+  PROFIT_BASED_BID
+  LOW_BID_KEEP
+  NEGATIVE_CANDIDATE
+  PAUSE_CANDIDATE
+  DISCOVERY_TEST
+}
+
+enum TargetPositionType {
+  TOP_1
+  TOP_1_TO_2
+  TOP_2_TO_3
+  LOW_BID
+  EXCLUDE
+  PAUSE
+  TEST
+}
+
+enum RuleStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum AgentKey {
+  GENERAL_MANAGER
+  POSITION_DEFENDER
+  BID_OPTIMIZER
+  KEYWORD_STRATEGIST
+  PRODUCT_STRATEGIST
+  TITLE_SEO
+  AD_COPYWRITER
+  MARGIN_ANALYST
+}
+
+enum ActionType {
+  BID_ADJUSTMENT
+  KEYWORD_RULE_CHANGE
+  NEGATIVE_KEYWORD
+  AD_COPY_CHANGE
+  PRODUCT_TITLE_CHANGE
+  REPORT_ONLY
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ProposalStatus {
+  AUTO_EXECUTED
+  NEEDS_APPROVAL
+  APPROVED
+  REJECTED
+  HELD
+  FAILED
+}
+
+enum ExecutionProvider {
+  NAVER_SEARCH_AD
+  NAVER_COMMERCE
+  YOUNGCART
+  INTERNAL
+}
+
+enum ExecutionStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
