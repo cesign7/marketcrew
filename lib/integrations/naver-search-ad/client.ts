@@ -8,6 +8,7 @@ import {
   type SearchAdCampaign,
   type SearchAdKeyword,
 } from "@/lib/integrations/naver-search-ad/normalize";
+import { assertReadOnlySearchAdRequest } from "@/lib/integrations/naver-search-ad/safety";
 
 type Fetcher = typeof fetch;
 
@@ -61,6 +62,7 @@ export class NaverSearchAdClient {
     params?: Record<string, string>,
   ): Promise<unknown> {
     const method = "GET";
+    assertReadOnlySearchAdRequest(method, uri);
     const url = buildUrl(this.credentials.baseUrl, uri, params);
     const response = await this.fetcher(url, {
       method,
