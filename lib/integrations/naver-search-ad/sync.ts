@@ -2,11 +2,16 @@ import { prisma } from "@/lib/db/prisma";
 import { NaverSearchAdClient } from "@/lib/integrations/naver-search-ad/client";
 import { readSearchAdCredentials } from "@/lib/integrations/naver-search-ad/auth";
 import { sanitizeSearchAdErrorMessage } from "@/lib/integrations/naver-search-ad/errors";
+import {
+  collectKeywordsSequentially,
+  getKeywordRequestDelayMs,
+} from "@/lib/integrations/naver-search-ad/rate-limit";
 import { toInputJson, toKeywordSnapshotRows, toSyncCounts } from "./snapshots";
 
 interface SyncOptions {
   client?: NaverSearchAdClient;
   collectedDate?: Date;
+  keywordRequestDelayMs?: number;
 }
 
 export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
@@ -48,13 +53,14 @@ export async function syncNaverSearchAdDryRun(options: SyncOptions = {}) {
     const adgroupCampaignMap = new Map(
       adgroups.map((adgroup) => [adgroup.id, adgroup.campaignId]),
     );
-    const keywords = (
-      await Promise.all(
-        adgroups.map((adgroup) =>
-          client.getKeywords(adgroup.id, adgroupCampaignMap),
-        ),
-      )
-    ).flat();
+    const keywords = await collectKeywordsSequentially({
+      adgroups,
+      adgroupCampaignMap,
+      delayMs:
+        options.keywordRequestDelayMs ?? getKeywordRequestDelayMs(process.env),
+      fetchKeywords: (adgroupId, campaignMap) =>
+        client.getKeywords(adgroupId, campaignMap),
+    });
     const keywordSnapshots = toKeywordSnapshotRows({
       accountId: account.id,
       collectedDate,
