@@ -22,6 +22,7 @@ Allowed read endpoints:
 - `GET /stat-reports`
 - `GET /stat-reports/{reportJobId}`
 - `GET` for a same-host `downloadUrl` returned by a built StatReport job
+- `GET /report-download` when returned as a same-host StatReport `downloadUrl`
 
 Blocked until separately approved:
 
@@ -41,7 +42,7 @@ Blocked until separately approved:
 - Confirm keyword sync uses throttling or sequential requests so adgroup-level keyword calls do not burst.
 - Confirm stats fallback batches `ids` and handles `1016`/`429` rate-limit style failures without write-side effects.
 - Confirm StatReport sync uses only `reportTp` and `statDt`, polls bounded attempts, and does not persist raw download URLs.
-- Confirm StatReport download URLs are same-host HTTPS URLs before fetching.
+- Confirm StatReport download URLs are same-host HTTPS URLs before fetching, including the current official `/report-download?authtoken=...&fileVersion=v2` form.
 - Confirm stored sync failures and UI-visible errors are sanitized before display or persistence.
 - Confirm tests cover the changed endpoint, normalization, error handling, and read-only safety guard.
 - Confirm `npm test`, `npm run lint`, and `npm run build` pass before completion.

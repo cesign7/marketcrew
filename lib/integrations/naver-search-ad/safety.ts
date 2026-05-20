@@ -4,6 +4,7 @@ const allowedReadOnlySearchAdPaths = new Set([
   "/ncc/keywords",
   "/stats",
   "/stat-reports",
+  "/report-download",
 ]);
 
 const allowedReadOnlySearchAdPostPaths = new Set(["/stat-reports"]);

@@ -225,6 +225,34 @@ describe("NaverSearchAdClient", () => {
     });
   });
 
+  it("downloads the official report-download URL without signing query parameters", async () => {
+    const fetcher = vi.fn(async () => textResponse("Date\tKeyword ID\n2026-05-19\tkw-1"));
+    const client = new NaverSearchAdClient(
+      {
+        apiKey: "api-key",
+        secretKey: "secret",
+        customerId: "123456",
+        baseUrl: "https://api.searchad.naver.com",
+      },
+      {
+        fetcher,
+        now: () => 1700000000000,
+      },
+    );
+
+    await client.downloadStatReport(
+      "https://api.searchad.naver.com/report-download?authtoken=token&fileVersion=v2",
+    );
+
+    const [requestedUrl, init] = fetcher.mock.calls[0];
+    expect(requestedUrl).toBe(
+      "https://api.searchad.naver.com/report-download?authtoken=token&fileVersion=v2",
+    );
+    expect(init?.headers).toMatchObject({
+      "X-Signature": "I+tIxiOH3ftqEIJVPk24OD8EMCXZl0ARTXh6QbWJKJg=",
+    });
+  });
+
   it("throws sanitized API errors", async () => {
     const fetcher = vi.fn(async () =>
       jsonResponse({ detail: "Invalid API key" }, { ok: false, status: 403 }),
