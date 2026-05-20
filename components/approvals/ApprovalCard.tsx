@@ -1,4 +1,5 @@
 import { RiskBadge } from "@/components/approvals/RiskBadge";
+import { decideProposalAction } from "@/app/approvals/actions";
 import type { ActionProposal } from "@/lib/domain/approvals";
 
 const statusLabels: Record<ActionProposal["status"], string> = {
@@ -11,6 +12,9 @@ const statusLabels: Record<ActionProposal["status"], string> = {
 };
 
 export function ApprovalCard({ proposal }: { proposal: ActionProposal }) {
+  const canDecide =
+    proposal.status === "NEEDS_APPROVAL" || proposal.status === "HELD";
+
   return (
     <article className="rounded-[28px] border border-[#eadfc8] bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -39,15 +43,36 @@ export function ApprovalCard({ proposal }: { proposal: ActionProposal }) {
         예상 효과: {proposal.expectedImpact}
       </p>
       <div className="mt-5 flex flex-wrap gap-2">
-        <button className="rounded-full bg-[#0e8f81] px-4 py-2 text-sm font-black text-white hover:-translate-y-0.5">
-          승인
-        </button>
-        <button className="rounded-full border border-[#eadfc8] px-4 py-2 text-sm font-black text-[#44505b] hover:-translate-y-0.5 hover:bg-[#fff4dc]">
-          보류
-        </button>
-        <button className="rounded-full border border-[#eadfc8] px-4 py-2 text-sm font-black text-[#b34526] hover:-translate-y-0.5 hover:bg-[#ffe9e0]">
-          반려
-        </button>
+        <form action={decideProposalAction}>
+          <input type="hidden" name="proposalId" value={proposal.id} />
+          <input type="hidden" name="decision" value="approve" />
+          <button
+            className="rounded-full bg-[#0e8f81] px-4 py-2 text-sm font-black text-white hover:-translate-y-0.5 disabled:opacity-50"
+            disabled={!canDecide}
+          >
+            승인
+          </button>
+        </form>
+        <form action={decideProposalAction}>
+          <input type="hidden" name="proposalId" value={proposal.id} />
+          <input type="hidden" name="decision" value="hold" />
+          <button
+            className="rounded-full border border-[#eadfc8] px-4 py-2 text-sm font-black text-[#44505b] hover:-translate-y-0.5 hover:bg-[#fff4dc] disabled:opacity-50"
+            disabled={!canDecide}
+          >
+            보류
+          </button>
+        </form>
+        <form action={decideProposalAction}>
+          <input type="hidden" name="proposalId" value={proposal.id} />
+          <input type="hidden" name="decision" value="reject" />
+          <button
+            className="rounded-full border border-[#eadfc8] px-4 py-2 text-sm font-black text-[#b34526] hover:-translate-y-0.5 hover:bg-[#ffe9e0] disabled:opacity-50"
+            disabled={!canDecide}
+          >
+            반려
+          </button>
+        </form>
       </div>
     </article>
   );

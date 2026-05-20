@@ -1,4 +1,5 @@
 import { CheckCircle2, ShieldAlert, Sparkles } from "lucide-react";
+import { decideProposalAction } from "@/app/approvals/actions";
 import type { ActionProposal } from "@/lib/domain/approvals";
 
 export function TodayQuestList({
@@ -37,12 +38,20 @@ export function TodayQuestList({
               </div>
             </div>
             <div className="mt-3 flex gap-2">
-              <button className="rounded-full bg-[#0e8f81] px-4 py-2 text-xs font-black text-white hover:-translate-y-0.5">
-                승인
-              </button>
-              <button className="rounded-full border border-[#eadfc8] px-4 py-2 text-xs font-black text-[#44505b] hover:-translate-y-0.5 hover:bg-[#fff4dc]">
-                보류
-              </button>
+              <form action={decideProposalAction}>
+                <input type="hidden" name="proposalId" value={proposal.id} />
+                <input type="hidden" name="decision" value="approve" />
+                <button className="rounded-full bg-[#0e8f81] px-4 py-2 text-xs font-black text-white hover:-translate-y-0.5">
+                  승인
+                </button>
+              </form>
+              <form action={decideProposalAction}>
+                <input type="hidden" name="proposalId" value={proposal.id} />
+                <input type="hidden" name="decision" value="hold" />
+                <button className="rounded-full border border-[#eadfc8] px-4 py-2 text-xs font-black text-[#44505b] hover:-translate-y-0.5 hover:bg-[#fff4dc]">
+                  보류
+                </button>
+              </form>
             </div>
           </div>
         ))}

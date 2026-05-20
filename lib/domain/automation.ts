@@ -6,7 +6,7 @@ export interface AutomationRule {
   enabled: boolean;
   maxBidChangeRate: number;
   maxDailyChangesPerKeyword: number;
-  maxCpc: number;
-  monthlyBudgetLimit: number;
+  maxCpc: number | null;
+  monthlyBudgetLimit: number | null;
   requiresApprovalAboveRisk: RiskLevel;
 }

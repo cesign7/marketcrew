@@ -17,7 +17,7 @@ export interface KeywordRule {
   keyword: string;
   ruleType: KeywordRuleType;
   targetPositionLabel: string;
-  maxCpc: number;
+  maxCpc: number | null;
   currentAvgCpc: number;
   currentAvgRank: number;
   confidence: number;

@@ -18,8 +18,18 @@ export function KeywordRuleCard({ rule }: { rule: KeywordRule }) {
       </div>
       <div className="mt-4 grid grid-cols-3 gap-3">
         <Stat label="평균 순위" value={rule.currentAvgRank.toFixed(1)} />
-        <Stat label="현재 CPC" value={`${rule.currentAvgCpc.toLocaleString()}원`} />
-        <Stat label="최대 CPC" value={`${rule.maxCpc.toLocaleString()}원`} />
+        <Stat
+          label="현재 CPC"
+          value={
+            rule.currentAvgCpc > 0
+              ? `${rule.currentAvgCpc.toLocaleString()}원`
+              : "수집 전"
+          }
+        />
+        <Stat
+          label="최대 CPC"
+          value={rule.maxCpc ? `${rule.maxCpc.toLocaleString()}원` : "미설정"}
+        />
       </div>
       <p className="mt-4 text-sm font-semibold leading-6 text-[#69727c]">
         {rule.reason}

@@ -1,8 +1,12 @@
 import { KeywordRuleBoard } from "@/components/keywords/KeywordRuleBoard";
 import { AppShell } from "@/components/layout/AppShell";
-import { mockKeywordRules } from "@/lib/mock/marketingOperationsMock";
+import { getKeywordRules } from "@/lib/db/marketing-operations";
 
-export default function KeywordsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function KeywordsPage() {
+  const rules = await getKeywordRules();
+
   return (
     <AppShell>
       <div className="mb-5">
@@ -11,7 +15,7 @@ export default function KeywordsPage() {
           최근 90일과 시즌 D-day 데이터를 기준으로 목표 순위 룰을 관리합니다.
         </p>
       </div>
-      <KeywordRuleBoard rules={mockKeywordRules} />
+      <KeywordRuleBoard rules={rules} />
     </AppShell>
   );
 }

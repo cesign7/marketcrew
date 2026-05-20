@@ -1,8 +1,12 @@
 import { ApprovalQueue } from "@/components/approvals/ApprovalQueue";
 import { AppShell } from "@/components/layout/AppShell";
-import { mockActionProposals } from "@/lib/mock/marketingOperationsMock";
+import { getActionProposals } from "@/lib/db/marketing-operations";
 
-export default function ApprovalsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ApprovalsPage() {
+  const proposals = await getActionProposals();
+
   return (
     <AppShell>
       <div className="mb-5">
@@ -11,7 +15,7 @@ export default function ApprovalsPage() {
           자동 실행 범위를 벗어난 작업은 여기에서 승인하거나 보류합니다.
         </p>
       </div>
-      <ApprovalQueue proposals={mockActionProposals} />
+      <ApprovalQueue proposals={proposals} />
     </AppShell>
   );
 }

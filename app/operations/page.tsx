@@ -1,14 +1,21 @@
 import { AgentRoom } from "@/components/marketing-room/AgentRoom";
 import { AppShell } from "@/components/layout/AppShell";
 import {
-  mockActionProposals,
-  mockAgentReports,
-} from "@/lib/mock/marketingOperationsMock";
+  getActionProposals,
+  getAgentReports,
+} from "@/lib/db/marketing-operations";
 
-export default function OperationsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function OperationsPage() {
+  const [reports, proposals] = await Promise.all([
+    getAgentReports(),
+    getActionProposals(),
+  ]);
+
   return (
     <AppShell>
-      <AgentRoom reports={mockAgentReports} proposals={mockActionProposals} />
+      <AgentRoom reports={reports} proposals={proposals} />
     </AppShell>
   );
 }
