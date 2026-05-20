@@ -8,6 +8,8 @@
 
 **Tech Stack:** Next.js App Router, TypeScript, Prisma 7, PostgreSQL, Vitest.
 
+**Status (2026-05-20 KST):** Completed and locally reverified. The live read-only list sync saved 6 campaigns, 56 adgroups, 2,879 keywords, and 2,941 total snapshots. Current UI labels the persisted sync action as `목록 동기화`. Approval-to-`KeywordRule` materialization remains a separate follow-up workflow.
+
 ---
 
 ### Task 1: Snapshot Row Preparation
@@ -16,10 +18,10 @@
 - Modify: `lib/integrations/naver-search-ad/snapshots.ts`
 - Test: `lib/integrations/naver-search-ad/snapshots.test.ts`
 
-- [ ] Write a failing test for `toAdgroupSnapshotRows` that maps adgroup id, campaign id, name, collectedAt, and raw JSON.
-- [ ] Run `npm test -- lib/integrations/naver-search-ad/snapshots.test.ts` and confirm the missing export failure.
-- [ ] Add `toCampaignSnapshotRows` and `toAdgroupSnapshotRows`, then keep `toKeywordSnapshotRows`.
-- [ ] Run the targeted test and confirm it passes.
+- [x] Add tests for `toAdgroupSnapshotRows` that map adgroup id, campaign id, name, collectedAt, and raw JSON.
+- [x] Run `npm test -- lib/integrations/naver-search-ad/snapshots.test.ts`.
+- [x] Add `toCampaignSnapshotRows` and `toAdgroupSnapshotRows`, then keep `toKeywordSnapshotRows`.
+- [x] Run the targeted test and confirm it passes.
 
 ### Task 2: Prisma Adgroup Snapshot Storage
 
@@ -28,10 +30,10 @@
 - Create: `prisma/migrations/<timestamp>_add_adgroup_snapshots/migration.sql`
 - Generated: `app/generated/prisma/**`
 
-- [ ] Add `AdAdgroupSnapshot` with `accountId`, `campaignId`, `adgroupId`, `adgroupName`, `brandKey`, `rawJson`, `collectedAt`.
-- [ ] Add `adgroupSnapshots` relation on `MarketingAccount`.
-- [ ] Generate a migration and Prisma client.
-- [ ] Run `npx prisma validate`.
+- [x] Add `AdAdgroupSnapshot` with `accountId`, `campaignId`, `adgroupId`, `adgroupName`, `brandKey`, `rawJson`, `collectedAt`.
+- [x] Add `adgroupSnapshots` relation on `MarketingAccount`.
+- [x] Generate a migration and Prisma client.
+- [x] Run `npx prisma validate`.
 
 ### Task 3: Persisted Sync Flow
 
@@ -39,12 +41,12 @@
 - Modify: `lib/integrations/naver-search-ad/sync.ts`
 - Test: existing sync/snapshot tests
 
-- [ ] Rename the public action-facing flow to persisted sync while leaving a compatibility alias for previous callers if useful.
-- [ ] Store campaign snapshots through `toCampaignSnapshotRows`.
-- [ ] Store adgroup snapshots through `toAdgroupSnapshotRows`.
-- [ ] Keep keyword writes `skipDuplicates` by collected day and keyword id.
-- [ ] Record `rawJson.mode` as `persisted-read-only`.
-- [ ] Update agent report copy from dry-run to read-only sync.
+- [x] Rename the public action-facing flow to persisted sync while leaving a compatibility alias for previous callers if useful.
+- [x] Store campaign snapshots through `toCampaignSnapshotRows`.
+- [x] Store adgroup snapshots through `toAdgroupSnapshotRows`.
+- [x] Keep keyword writes `skipDuplicates` by collected day and keyword id.
+- [x] Record `rawJson.mode` as `persisted-read-only`.
+- [x] Update agent report copy from dry-run to read-only sync.
 
 ### Task 4: Status and UI
 
@@ -53,20 +55,20 @@
 - Modify: `app/settings/search-ad/actions.ts`
 - Modify: `app/settings/search-ad/page.tsx`
 
-- [ ] Return recent sync runs, campaign snapshot count, adgroup snapshot count, keyword snapshot count.
-- [ ] Change the button text to `동기화 실행`.
-- [ ] Show last run started/finished time and entity counts.
-- [ ] Add a recent sync history list with success/failure state, counts, and sanitized error message.
-- [ ] Keep UI Korean-only and read-only warning visible.
+- [x] Return recent sync runs, campaign snapshot count, adgroup snapshot count, keyword snapshot count.
+- [x] Change the button text to `목록 동기화`.
+- [x] Show last run started/finished time and entity counts.
+- [x] Add a recent sync history list with success/failure state, counts, and sanitized error message.
+- [x] Keep UI Korean-only and read-only warning visible.
 
 ### Task 5: Verification
 
 **Files:**
 - All changed files
 
-- [ ] Run `npm test`.
-- [ ] Run `npm run lint`.
-- [ ] Run `npx prisma validate`.
-- [ ] Run `npm run build`.
-- [ ] Verify `/settings/search-ad` in the in-app browser.
-- [ ] Commit and push the branch.
+- [x] Run `npm test`.
+- [x] Run `npm run lint`.
+- [x] Run `npx prisma validate`.
+- [x] Run `npm run build`.
+- [x] Verify `/settings/search-ad` in the in-app browser.
+- [x] Commit and push the implementation branch.

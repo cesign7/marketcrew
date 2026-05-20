@@ -2,6 +2,15 @@
 
 Last verified against official docs on 2026-05-20.
 
+## Latest Local Verification
+
+- 2026-05-20 KST: credentials-configured local validation completed with the official read-only Search Ad list and StatReport flows.
+- List sync saved 6 campaigns, 56 adgroups, 2,879 keywords, and 2,941 total snapshots.
+- Recent performance sync handled 500 keywords and saved 103 performance rows.
+- One bounded 7-day backfill chunk saved 5,544 rows for 2026-02-19 through 2026-02-25.
+- Operations diagnostics then produced 4 keyword diagnostic reports and 8 pending approval candidates.
+- External Search Ad access stayed read-only: `GET /ncc/*`, `GET /stats`, `POST /stat-reports`, `GET /stat-reports*`, and same-host report downloads only. No bid, keyword, campaign, adgroup, or budget mutation endpoint is enabled.
+
 ## Mandatory Official Sources
 
 - API specification: https://naver.github.io/searchad-apidoc/

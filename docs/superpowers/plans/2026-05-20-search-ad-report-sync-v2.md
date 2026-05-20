@@ -33,10 +33,12 @@ Fix keyword performance sync so the AI agents have real Naver Search Ad performa
 - [x] Update performance sync to prefer StatReport rows and keep `/stats` helper tested for summary/daily envelopes.
 - [x] Update Search Ad settings copy/status labels to reflect StatReport v2.
 - [x] Update the Search Ad official-doc checklist.
-- [ ] Run `npm test`, `npm run lint`, `npx prisma validate`, and `npm run build`.
-- [ ] Browser-check `/settings/search-ad` and `/operations`.
+- [x] Run `npm test`, `npm run lint`, `npx prisma validate`, and `npm run build`.
+- [x] Browser-check `/settings/search-ad` and `/operations`.
 
 ## Notes
 
 - Historical backfill should not fire 90 report jobs from a foreground button without a queue. The first implementation should use a bounded recent window and leave 90-day backfill as a scheduled/background follow-up.
 - StatReport generation is a POST, but it creates a read-only report job. The safety guard must allow only this exact POST path, not Search Ad mutation paths.
+- Documentation catch-up on 2026-05-20 KST: credentials-configured browser checks covered `/settings/search-ad`, `/operations`, and `/approvals` during live Search Ad sync validation.
+- Live verification saved list-sync snapshots for 6 campaigns, 56 adgroups, 2,879 keywords, and 2,941 total snapshots; recent performance sync handled 500 keywords and saved 103 performance rows; one bounded 7-day backfill chunk saved 5,544 rows for 2026-02-19 through 2026-02-25.
