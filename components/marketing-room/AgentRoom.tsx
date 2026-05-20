@@ -10,11 +10,13 @@ export function AgentRoom({
   proposals,
   diagnostics,
   runDiagnosticsAction,
+  runLlmAgentShadowAction,
 }: {
   reports: AgentReport[];
   proposals: ActionProposal[];
   diagnostics: KeywordDiagnosticsOverview;
   runDiagnosticsAction: () => Promise<void>;
+  runLlmAgentShadowAction: () => Promise<void>;
 }) {
   const summary = getApprovalSummary(proposals);
 
@@ -36,11 +38,18 @@ export function AgentRoom({
               다음 작업: {diagnostics.quality.nextAction}
             </p>
           </div>
-          <form action={runDiagnosticsAction}>
-            <button className="rounded-full bg-[#0e8f81] px-5 py-3 text-sm font-black text-white hover:-translate-y-0.5">
-              AI 진단 실행
-            </button>
-          </form>
+          <div className="flex flex-wrap gap-2">
+            <form action={runDiagnosticsAction}>
+              <button className="rounded-full bg-[#0e8f81] px-5 py-3 text-sm font-black text-white hover:-translate-y-0.5">
+                AI 진단 실행
+              </button>
+            </form>
+            <form action={runLlmAgentShadowAction}>
+              <button className="rounded-full border border-[#0e8f81] bg-white px-5 py-3 text-sm font-black text-[#0e8f81] hover:-translate-y-0.5">
+                LLM 점검
+              </button>
+            </form>
+          </div>
         </div>
 
         <div className="mb-5 grid gap-3 md:grid-cols-4">

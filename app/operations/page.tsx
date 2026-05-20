@@ -5,7 +5,10 @@ import {
   getAgentReports,
   getOperationsDiagnosticsOverview,
 } from "@/lib/db/marketing-operations";
-import { runKeywordDiagnosticsAction } from "./actions";
+import {
+  runKeywordDiagnosticsAction,
+  runLlmAgentShadowAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +26,7 @@ export default async function OperationsPage() {
         proposals={actionProposals}
         diagnostics={diagnostics}
         runDiagnosticsAction={runKeywordDiagnosticsAction}
+        runLlmAgentShadowAction={runLlmAgentShadowAction}
       />
     </AppShell>
   );

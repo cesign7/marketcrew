@@ -8,6 +8,8 @@
 
 **Tech Stack:** Next.js App Router Server Actions, TypeScript, Prisma 7, PostgreSQL, Zod, OpenAI Responses API or Agents SDK, Vitest.
 
+**Status (2026-05-20 KST):** First LLM connection slice is complete: `/operations` has an `LLM 점검` action that runs in safe shadow mode when `OPENAI_API_KEY` is configured and otherwise records a local “LLM 연결 대기” report. Details are in `docs/superpowers/plans/2026-05-20-llm-shadow-agent-connection.md`.
+
 ---
 
 ## Current State Findings
