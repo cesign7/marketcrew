@@ -17,7 +17,7 @@ describe("evaluatePerformanceDataQuality", () => {
     });
   });
 
-  it("blocks proposals when stats sync has no performance rows", () => {
+  it("blocks proposals when performance sync has no performance rows", () => {
     expect(
       evaluatePerformanceDataQuality({
         keywordSnapshotCount: 2879,

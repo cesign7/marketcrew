@@ -15,6 +15,15 @@ describe("assertReadOnlySearchAdRequest", () => {
     expect(() =>
       assertReadOnlySearchAdRequest("GET", "/stats"),
     ).not.toThrow();
+    expect(() =>
+      assertReadOnlySearchAdRequest("POST", "/stat-reports"),
+    ).not.toThrow();
+    expect(() =>
+      assertReadOnlySearchAdRequest("GET", "/stat-reports"),
+    ).not.toThrow();
+    expect(() =>
+      assertReadOnlySearchAdRequest("GET", "/stat-reports/123456"),
+    ).not.toThrow();
   });
 
   it("blocks write methods until a write workflow is explicitly approved", () => {
@@ -23,6 +32,9 @@ describe("assertReadOnlySearchAdRequest", () => {
     ).toThrow("write request blocked");
     expect(() =>
       assertReadOnlySearchAdRequest("POST", "/stats"),
+    ).toThrow("write request blocked");
+    expect(() =>
+      assertReadOnlySearchAdRequest("DELETE", "/stat-reports/123456"),
     ).toThrow("write request blocked");
   });
 

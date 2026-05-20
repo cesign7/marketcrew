@@ -12,6 +12,7 @@ import { assertReadOnlySearchAdRequest } from "@/lib/integrations/naver-search-a
 
 type Fetcher = typeof fetch;
 type QueryParams = Record<string, string | string[]>;
+type RequestMethod = "GET" | "POST";
 
 interface ClientOptions {
   fetcher?: Fetcher;
@@ -23,6 +24,44 @@ export interface SearchAdStatsRequest {
   fields: string[];
   since: string;
   until: string;
+}
+
+export type SearchAdReportType =
+  | "AD"
+  | "AD_DETAIL"
+  | "AD_CONVERSION"
+  | "AD_CONVERSION_DETAIL"
+  | "ADEXTENSION"
+  | "ADEXTENSION_CONVERSION"
+  | "EXPKEYWORD"
+  | "SHOPPINGKEYWORD_DETAIL"
+  | "SHOPPINGKEYWORD_CONVERSION_DETAIL"
+  | "SHOPPINGBRANDPRODUCT"
+  | "SHOPPINGBRANDPRODUCT_CONVERSION"
+  | "CRITERION"
+  | "CRITERION_CONVERSION";
+
+export type SearchAdReportStatus =
+  | "REGIST"
+  | "RUNNING"
+  | "BUILT"
+  | "NONE"
+  | "ERROR"
+  | "WAITING"
+  | "AGGREGATING";
+
+export interface SearchAdReportJobRequest {
+  reportType: SearchAdReportType;
+  statDate: string;
+}
+
+export interface SearchAdReportJob {
+  reportJobId: string;
+  reportType: SearchAdReportType;
+  statDate: string | null;
+  status: SearchAdReportStatus;
+  downloadUrl: string | null;
+  raw: Record<string, unknown>;
 }
 
 export class NaverSearchAdClient {
@@ -38,12 +77,13 @@ export class NaverSearchAdClient {
   }
 
   async getCampaigns(): Promise<SearchAdCampaign[]> {
-    const rows = await this.requestJson("/ncc/campaigns");
+    const rows = await this.requestJson("GET", "/ncc/campaigns");
     return normalizeCampaigns(arrayResponse(rows, "/ncc/campaigns"));
   }
 
   async getAdgroups(campaignId?: string): Promise<SearchAdAdgroup[]> {
     const rows = await this.requestJson(
+      "GET",
       "/ncc/adgroups",
       campaignId ? { nccCampaignId: campaignId } : undefined,
     );
@@ -55,7 +95,7 @@ export class NaverSearchAdClient {
     adgroupId: string,
     adgroupCampaignMap: Map<string, string>,
   ): Promise<SearchAdKeyword[]> {
-    const rows = await this.requestJson("/ncc/keywords", {
+    const rows = await this.requestJson("GET", "/ncc/keywords", {
       nccAdgroupId: adgroupId,
     });
 
@@ -75,7 +115,7 @@ export class NaverSearchAdClient {
       return [];
     }
 
-    const rows = await this.requestJson("/stats", {
+    const rows = await this.requestJson("GET", "/stats", {
       ids,
       fields: JSON.stringify(fields),
       timeRange: JSON.stringify({ since, until }),
@@ -84,11 +124,43 @@ export class NaverSearchAdClient {
     return statsResponse(rows);
   }
 
+  async createStatReportJob({
+    reportType,
+    statDate,
+  }: SearchAdReportJobRequest): Promise<SearchAdReportJob> {
+    const row = await this.requestJson("POST", "/stat-reports", undefined, {
+      reportTp: reportType,
+      statDt: statDate,
+    });
+
+    return reportJobResponse(row);
+  }
+
+  async getStatReportJob(reportJobId: string): Promise<SearchAdReportJob> {
+    const row = await this.requestJson("GET", `/stat-reports/${reportJobId}`);
+
+    return reportJobResponse(row);
+  }
+
+  async downloadStatReport(downloadUrl: string): Promise<string> {
+    const baseUrl = new URL(this.credentials.baseUrl);
+    const url = new URL(downloadUrl, baseUrl);
+
+    if (url.protocol !== "https:" || url.hostname !== baseUrl.hostname) {
+      throw new Error(
+        "Naver Search Ad stat report download URL is outside the reviewed API host.",
+      );
+    }
+
+    return this.requestText("GET", `${url.pathname}${url.search}`);
+  }
+
   private async requestJson(
+    method: RequestMethod,
     uri: string,
     params?: QueryParams,
+    body?: unknown,
   ): Promise<unknown> {
-    const method = "GET";
     assertReadOnlySearchAdRequest(method, uri);
     const url = buildUrl(this.credentials.baseUrl, uri, params);
     const response = await this.fetcher(url, {
@@ -99,8 +171,9 @@ export class NaverSearchAdClient {
         customerId: this.credentials.customerId,
         timestamp: String(this.now()),
         method,
-        uri,
+        uri: uri.split("?")[0],
       }),
+      body: body === undefined ? undefined : JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -111,6 +184,31 @@ export class NaverSearchAdClient {
     }
 
     return response.json();
+  }
+
+  private async requestText(method: RequestMethod, uri: string): Promise<string> {
+    assertReadOnlySearchAdRequest(method, uri);
+    const url = buildUrl(this.credentials.baseUrl, uri);
+    const response = await this.fetcher(url, {
+      method,
+      headers: buildSearchAdHeaders({
+        apiKey: this.credentials.apiKey,
+        secretKey: this.credentials.secretKey,
+        customerId: this.credentials.customerId,
+        timestamp: String(this.now()),
+        method,
+        uri: uri.split("?")[0],
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await safeResponseText(response);
+      throw new Error(
+        `Naver Search Ad API failed: ${method} ${uri.split("?")[0]} ${response.status} ${body}`,
+      );
+    }
+
+    return response.text();
   }
 }
 
@@ -143,16 +241,65 @@ function statsResponse(value: unknown): unknown[] {
     return value;
   }
 
-  if (
-    value &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    Array.isArray((value as { data?: unknown }).data)
-  ) {
-    return (value as { data: unknown[] }).data;
+  const object = recordResponse(value, "/stats");
+  const candidates = [
+    object.data,
+    nestedData(object.summaryStatResponse),
+    nestedData(object.dailyStatResponse),
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) {
+      return candidate;
+    }
   }
 
   throw new Error("Naver Search Ad API /stats response must include data array.");
+}
+
+function nestedData(value: unknown) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return (value as { data?: unknown }).data;
+  }
+
+  return undefined;
+}
+
+function reportJobResponse(value: unknown): SearchAdReportJob {
+  const object = recordResponse(value, "/stat-reports");
+  const reportJobId = object.reportJobId;
+  const reportType = object.reportTp;
+  const status = object.status;
+
+  if (
+    (typeof reportJobId !== "string" && typeof reportJobId !== "number") ||
+    typeof reportType !== "string" ||
+    typeof status !== "string"
+  ) {
+    throw new Error(
+      "Naver Search Ad API /stat-reports response is missing report job fields.",
+    );
+  }
+
+  return {
+    reportJobId: String(reportJobId),
+    reportType: reportType as SearchAdReportType,
+    statDate: typeof object.statDt === "string" ? object.statDt : null,
+    status: status as SearchAdReportStatus,
+    downloadUrl:
+      typeof object.downloadUrl === "string" && object.downloadUrl.trim()
+        ? object.downloadUrl
+        : null,
+    raw: object,
+  };
+}
+
+function recordResponse(value: unknown, uri: string) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`Naver Search Ad API ${uri} response must be an object.`);
+  }
+
+  return value as Record<string, unknown>;
 }
 
 async function safeResponseText(response: Response) {

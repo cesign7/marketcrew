@@ -18,6 +18,10 @@ Allowed read endpoints:
 - `GET /ncc/adgroups`
 - `GET /ncc/keywords`
 - `GET /stats`
+- `POST /stat-reports` for read-only StatReport job creation only
+- `GET /stat-reports`
+- `GET /stat-reports/{reportJobId}`
+- `GET` for a same-host `downloadUrl` returned by a built StatReport job
 
 Blocked until separately approved:
 
@@ -25,7 +29,8 @@ Blocked until separately approved:
 - keyword creation or deletion
 - campaign/adgroup/ad edits
 - budget changes
-- any `POST`, `PUT`, `PATCH`, or `DELETE` call to Naver Search Ad
+- any `PUT`, `PATCH`, or `DELETE` call to Naver Search Ad
+- any `POST` call except the exact read-only `POST /stat-reports` job creation flow
 
 ## Review Checklist
 
@@ -34,7 +39,9 @@ Blocked until separately approved:
 - Confirm headers include `Content-Type`, `X-Timestamp`, `X-API-KEY`, `X-Customer`, and `X-Signature`.
 - Confirm the signature message remains `timestamp.method.uri`.
 - Confirm keyword sync uses throttling or sequential requests so adgroup-level keyword calls do not burst.
-- Confirm stats sync batches `ids` and handles `1016`/`429` rate-limit style failures without write-side effects.
+- Confirm stats fallback batches `ids` and handles `1016`/`429` rate-limit style failures without write-side effects.
+- Confirm StatReport sync uses only `reportTp` and `statDt`, polls bounded attempts, and does not persist raw download URLs.
+- Confirm StatReport download URLs are same-host HTTPS URLs before fetching.
 - Confirm stored sync failures and UI-visible errors are sanitized before display or persistence.
 - Confirm tests cover the changed endpoint, normalization, error handling, and read-only safety guard.
 - Confirm `npm test`, `npm run lint`, and `npm run build` pass before completion.

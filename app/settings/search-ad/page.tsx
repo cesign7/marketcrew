@@ -1,4 +1,10 @@
-import { BarChart3, Clock3, Database, RefreshCw, ShieldCheck } from "lucide-react";
+import {
+  BarChart3,
+  Clock3,
+  Database,
+  RefreshCw,
+  ShieldCheck,
+} from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { getSearchAdSyncStatus } from "@/lib/integrations/naver-search-ad/status";
 import {
@@ -21,12 +27,13 @@ export default async function SearchAdSettingsPage() {
               검색광고 연동
             </p>
             <h2 className="mt-3 text-3xl font-black tracking-tight">
-              네이버 검색광고 저장 동기화
+              네이버 검색광고 데이터 동기화
             </h2>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#69727c]">
-              캠페인, 광고그룹, 키워드 목록은 읽기 전용 API로 저장하고, 성과는 공식
-              `GET /stats` 기준으로 최근 90일 데이터를 별도로 저장합니다. 입찰가 변경,
-              키워드 수정, 광고문안 변경은 계속 차단합니다.
+              캠페인, 광고그룹, 키워드 목록을 읽기 전용 API로 저장합니다. 성과
+              동기화는 공식 StatReport 리포트를 우선 사용하고, 리포트가 비어 있을
+              때만 `/stats` 요약 통계를 보조로 확인합니다. 입찰가 변경, 키워드
+              수정, 광고문안 변경은 계속 차단됩니다.
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -94,7 +101,7 @@ export default async function SearchAdSettingsPage() {
                   value={`${status.lastRun.keywordsCount.toLocaleString()}개`}
                 />
                 <Metric
-                  label="저장건"
+                  label="저장"
                   value={`${status.lastRun.snapshotsCount.toLocaleString()}건`}
                 />
                 {status.lastRun.errorMessage ? (
@@ -105,7 +112,7 @@ export default async function SearchAdSettingsPage() {
               </div>
             ) : (
               <p className="mt-3 text-sm font-semibold leading-6 text-[#b9d9d2]">
-                아직 API 저장 동기화 기록이 없습니다.
+                아직 API 데이터 동기화 기록이 없습니다.
               </p>
             )}
           </div>
@@ -149,7 +156,7 @@ export default async function SearchAdSettingsPage() {
                   <span>{formatDate(run.startedAt)}</span>
                   <span className={run.errorMessage ? "text-[#b34526]" : "text-[#14764d]"}>
                     {run.errorMessage ??
-                      `키워드 ${run.keywordsCount.toLocaleString()} / 저장 ${run.snapshotsCount.toLocaleString()}`}
+                      `키워드 ${run.keywordsCount.toLocaleString()}개 / 저장 ${run.snapshotsCount.toLocaleString()}건`}
                   </span>
                 </div>
               ))}
@@ -182,8 +189,8 @@ export default async function SearchAdSettingsPage() {
             </div>
           ) : (
             <p className="mt-3 text-sm font-semibold text-[#69727c]">
-              성과 동기화 이력은 아직 없습니다. 목록 동기화 후 성과 동기화를 실행하면
-              최근 90일 기준으로 저장됩니다.
+              성과 동기화 이력이 아직 없습니다. 목록 동기화 후 성과 동기화를
+              실행하면 최근 StatReport 기준으로 저장합니다.
             </p>
           )}
         </section>

@@ -42,7 +42,8 @@ export function evaluatePerformanceDataQuality({
       status: "NO_KEYWORDS",
       canDiagnose: false,
       title: "키워드 목록이 필요합니다",
-      detail: "검색광고 목록 동기화를 먼저 실행해야 AI가 진단할 키워드를 고를 수 있습니다.",
+      detail:
+        "검색광고 목록 동기화를 먼저 실행해야 AI가 진단할 키워드를 고를 수 있습니다.",
       nextAction: "설정에서 목록 동기화를 실행하세요.",
     };
   }
@@ -66,7 +67,7 @@ export function evaluatePerformanceDataQuality({
       title: "성과 데이터가 비어 있습니다",
       detail:
         "키워드 목록은 있지만 최근 성과 row가 없어 입찰/제외 키워드 제안을 만들지 않습니다.",
-      nextAction: "성과 동기화를 다시 실행하거나 /stats 반환 범위를 점검하세요.",
+      nextAction: "성과 동기화를 다시 실행하거나 StatReport 상태를 확인하세요.",
     };
   }
 
