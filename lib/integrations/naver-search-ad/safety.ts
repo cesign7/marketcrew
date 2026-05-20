@@ -2,6 +2,7 @@ const allowedReadOnlySearchAdPaths = new Set([
   "/ncc/campaigns",
   "/ncc/adgroups",
   "/ncc/keywords",
+  "/stats",
 ]);
 
 export function assertReadOnlySearchAdRequest(method: string, uri: string) {

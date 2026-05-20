@@ -12,11 +12,17 @@ describe("assertReadOnlySearchAdRequest", () => {
     expect(() =>
       assertReadOnlySearchAdRequest("GET", "/ncc/keywords"),
     ).not.toThrow();
+    expect(() =>
+      assertReadOnlySearchAdRequest("GET", "/stats"),
+    ).not.toThrow();
   });
 
   it("blocks write methods until a write workflow is explicitly approved", () => {
     expect(() =>
       assertReadOnlySearchAdRequest("POST", "/ncc/keywords"),
+    ).toThrow("write request blocked");
+    expect(() =>
+      assertReadOnlySearchAdRequest("POST", "/stats"),
     ).toThrow("write request blocked");
   });
 

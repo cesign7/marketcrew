@@ -1,7 +1,10 @@
-import { Clock3, Database, RefreshCw, ShieldCheck } from "lucide-react";
+import { BarChart3, Clock3, Database, RefreshCw, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { getSearchAdSyncStatus } from "@/lib/integrations/naver-search-ad/status";
-import { syncSearchAdAction } from "./actions";
+import {
+  syncSearchAdAction,
+  syncSearchAdPerformanceAction,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -21,19 +24,31 @@ export default async function SearchAdSettingsPage() {
               네이버 검색광고 저장 동기화
             </h2>
             <p className="mt-2 max-w-3xl text-sm font-semibold leading-6 text-[#69727c]">
-              캠페인, 광고그룹, 키워드 목록을 읽기 전용 API로 가져와 DB에 저장합니다.
-              입찰가 변경, 키워드 수정, 광고문안 변경은 계속 차단됩니다.
+              캠페인, 광고그룹, 키워드 목록은 읽기 전용 API로 저장하고, 성과는 공식
+              `GET /stats` 기준으로 최근 90일 데이터를 별도로 저장합니다. 입찰가 변경,
+              키워드 수정, 광고문안 변경은 계속 차단합니다.
             </p>
           </div>
-          <form action={syncSearchAdAction}>
-            <button
-              disabled={!canSync}
-              className="inline-flex items-center gap-2 rounded-full bg-[#0e8f81] px-5 py-3 text-sm font-black text-white hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-[#b7c8c5]"
-            >
-              <RefreshCw size={17} />
-              동기화 실행
-            </button>
-          </form>
+          <div className="flex flex-wrap gap-3">
+            <form action={syncSearchAdAction}>
+              <button
+                disabled={!canSync}
+                className="inline-flex min-w-[142px] items-center justify-center gap-2 rounded-full bg-[#0e8f81] px-5 py-3 text-sm font-black text-white hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-[#b7c8c5]"
+              >
+                <RefreshCw size={17} />
+                목록 동기화
+              </button>
+            </form>
+            <form action={syncSearchAdPerformanceAction}>
+              <button
+                disabled={!canSync || status.keywordSnapshotCount === 0}
+                className="inline-flex min-w-[142px] items-center justify-center gap-2 rounded-full bg-[#f3a51d] px-5 py-3 text-sm font-black text-[#12302d] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-[#e5dccb] disabled:text-[#8a8171]"
+              >
+                <BarChart3 size={17} />
+                성과 동기화
+              </button>
+            </form>
+          </div>
         </div>
 
         <div className="mt-7 grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
@@ -63,30 +78,24 @@ export default async function SearchAdSettingsPage() {
           <div className="rounded-3xl bg-[#12302d] p-5 text-white">
             <div className="flex items-center gap-2">
               <Database size={18} className="text-[#73d6c8]" />
-              <p className="font-black">마지막 저장 동기화</p>
+              <p className="font-black">마지막 동기화</p>
             </div>
             {status.lastRun ? (
               <div className="mt-4 grid gap-3 text-sm font-semibold md:grid-cols-2">
+                <Metric label="구분" value={runModeLabel(status.lastRun.rawJson)} />
                 <Metric label="상태" value={syncStatusLabel(status.lastRun.status)} />
-                <Metric
-                  label="시작"
-                  value={formatDate(status.lastRun.startedAt)}
-                />
+                <Metric label="시작" value={formatDate(status.lastRun.startedAt)} />
                 <Metric
                   label="완료"
                   value={formatOptionalDate(status.lastRun.finishedAt)}
                 />
                 <Metric
-                  label="캠페인"
-                  value={`${status.lastRun.campaignsCount.toLocaleString()}개`}
-                />
-                <Metric
-                  label="광고그룹"
-                  value={`${status.lastRun.adgroupsCount.toLocaleString()}개`}
-                />
-                <Metric
                   label="키워드"
                   value={`${status.lastRun.keywordsCount.toLocaleString()}개`}
+                />
+                <Metric
+                  label="저장건"
+                  value={`${status.lastRun.snapshotsCount.toLocaleString()}건`}
                 />
                 {status.lastRun.errorMessage ? (
                   <p className="rounded-2xl bg-white/10 p-3 text-[#ffd2c4] md:col-span-2">
@@ -102,24 +111,25 @@ export default async function SearchAdSettingsPage() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-6">
           <Summary label="광고 계정" value={status.account?.alias ?? "미연결"} />
           <Summary
             label="캠페인 스냅샷"
-            value={`${status.campaignSnapshotCount.toLocaleString()}개`}
+            value={`${status.campaignSnapshotCount.toLocaleString()}건`}
           />
           <Summary
             label="광고그룹 스냅샷"
-            value={`${status.adgroupSnapshotCount.toLocaleString()}개`}
+            value={`${status.adgroupSnapshotCount.toLocaleString()}건`}
           />
           <Summary
             label="키워드 스냅샷"
-            value={`${status.keywordSnapshotCount.toLocaleString()}개`}
+            value={`${status.keywordSnapshotCount.toLocaleString()}건`}
           />
           <Summary
-            label="자동 변경"
-            value="차단됨"
+            label="키워드 성과"
+            value={`${status.keywordPerformanceCount.toLocaleString()}건`}
           />
+          <Summary label="자동 변경" value="차단됨" />
         </div>
 
         <section className="mt-6 rounded-3xl border border-[#eadfc8] bg-[#fffdf7] p-5">
@@ -132,17 +142,14 @@ export default async function SearchAdSettingsPage() {
               {status.recentRuns.map((run) => (
                 <div
                   key={run.id}
-                  className="grid gap-3 rounded-2xl border border-[#eadfc8] bg-white p-4 text-sm font-semibold text-[#12302d] lg:grid-cols-[1fr_1fr_1fr_1fr]"
+                  className="grid gap-3 rounded-2xl border border-[#eadfc8] bg-white p-4 text-sm font-semibold text-[#12302d] lg:grid-cols-[0.7fr_1fr_1fr_1.2fr]"
                 >
                   <span className="font-black">{syncStatusLabel(run.status)}</span>
+                  <span>{runModeLabel(run.rawJson)}</span>
                   <span>{formatDate(run.startedAt)}</span>
-                  <span>
-                    캠페인 {run.campaignsCount.toLocaleString()} / 광고그룹{" "}
-                    {run.adgroupsCount.toLocaleString()} / 키워드{" "}
-                    {run.keywordsCount.toLocaleString()}
-                  </span>
                   <span className={run.errorMessage ? "text-[#b34526]" : "text-[#14764d]"}>
-                    {run.errorMessage ?? "저장 완료"}
+                    {run.errorMessage ??
+                      `키워드 ${run.keywordsCount.toLocaleString()} / 저장 ${run.snapshotsCount.toLocaleString()}`}
                   </span>
                 </div>
               ))}
@@ -150,6 +157,33 @@ export default async function SearchAdSettingsPage() {
           ) : (
             <p className="mt-3 text-sm font-semibold text-[#69727c]">
               아직 표시할 동기화 이력이 없습니다.
+            </p>
+          )}
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-[#eadfc8] bg-white p-5">
+          <div className="flex items-center gap-2">
+            <BarChart3 size={18} className="text-[#f3a51d]" />
+            <h3 className="font-black">최근 성과 동기화</h3>
+          </div>
+          {status.recentPerformanceRuns.length > 0 ? (
+            <div className="mt-4 grid gap-3">
+              {status.recentPerformanceRuns.map((run) => (
+                <div
+                  key={run.id}
+                  className="grid gap-3 rounded-2xl bg-[#fff8ec] p-4 text-sm font-semibold text-[#12302d] lg:grid-cols-[0.8fr_1fr_1fr_1fr]"
+                >
+                  <span className="font-black">{syncStatusLabel(run.status)}</span>
+                  <span>{formatDate(run.startedAt)}</span>
+                  <span>키워드 {run.keywordsCount.toLocaleString()}개</span>
+                  <span>성과 {run.snapshotsCount.toLocaleString()}건</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-sm font-semibold text-[#69727c]">
+              성과 동기화 이력은 아직 없습니다. 목록 동기화 후 성과 동기화를 실행하면
+              최근 90일 기준으로 저장됩니다.
             </p>
           )}
         </section>
@@ -180,6 +214,19 @@ function syncStatusLabel(status: string) {
   if (status === "SUCCEEDED") return "성공";
   if (status === "FAILED") return "실패";
   return "진행 중";
+}
+
+function runModeLabel(rawJson: unknown) {
+  if (
+    rawJson &&
+    typeof rawJson === "object" &&
+    !Array.isArray(rawJson) &&
+    (rawJson as { mode?: unknown }).mode === "performance-read-only"
+  ) {
+    return "성과 동기화";
+  }
+
+  return "목록 동기화";
 }
 
 function formatDate(date: Date) {

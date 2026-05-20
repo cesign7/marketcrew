@@ -3,6 +3,7 @@ import type {
   SearchAdAdgroup,
   SearchAdCampaign,
   SearchAdKeyword,
+  SearchAdStat,
 } from "@/lib/integrations/naver-search-ad/normalize";
 
 export interface KeywordSnapshotInput {
@@ -21,6 +22,20 @@ export interface AdgroupSnapshotInput {
   accountId: string;
   collectedAt: Date;
   adgroups: SearchAdAdgroup[];
+}
+
+export interface KeywordPerformanceMeta {
+  campaignId: string;
+  adgroupId: string;
+  keywordId: string;
+  keyword: string;
+}
+
+export interface KeywordPerformanceInput {
+  accountId: string;
+  performanceDate: Date;
+  stats: SearchAdStat[];
+  keywordMetaById: Map<string, KeywordPerformanceMeta>;
 }
 
 export function toCampaignSnapshotRows({
@@ -72,6 +87,44 @@ export function toKeywordSnapshotRows({
     collectedDate,
     rawJson: toInputJson(keyword.raw),
   }));
+}
+
+export function toKeywordPerformanceRows({
+  accountId,
+  performanceDate,
+  stats,
+  keywordMetaById,
+}: KeywordPerformanceInput) {
+  return stats.flatMap((stat) => {
+    const meta = keywordMetaById.get(stat.id);
+
+    if (!meta) {
+      return [];
+    }
+
+    return [
+      {
+        accountId,
+        campaignId: meta.campaignId,
+        adgroupId: meta.adgroupId,
+        keywordId: meta.keywordId,
+        keyword: meta.keyword,
+        date: performanceDate,
+        impressions: stat.impressions,
+        clicks: stat.clicks,
+        cost: stat.cost,
+        ctr: stat.ctr,
+        avgCpc: stat.avgCpc,
+        avgRank: stat.avgRank,
+        conversions: stat.conversions,
+        conversionRate: stat.conversionRate,
+        conversionSales: stat.conversionSales,
+        roas: stat.roas,
+        costPerConversion: stat.costPerConversion,
+        rawJson: toInputJson(stat.raw),
+      },
+    ];
+  });
 }
 
 export function toSyncCounts({

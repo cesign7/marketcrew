@@ -272,6 +272,16 @@ async function main() {
     ],
   });
 
+  await prisma.adKeywordDailyPerformance.createMany({
+    data: [
+      keywordPerformance(searchAdAccount.id, "kw-coffeeprint", "커피프린트", 210, 1.1),
+      keywordPerformance(searchAdAccount.id, "kw-corp-invite", "기업 초대장", 720, 2.4),
+      keywordPerformance(searchAdAccount.id, "kw-stickersee", "스티커씨", 180, 1.3),
+      keywordPerformance(searchAdAccount.id, "kw-chuseok-card", "추석 감사카드", 690, 3.1),
+      keywordPerformance(searchAdAccount.id, "kw-free-template", "무료 초대장 양식", 420, 2.7),
+    ],
+  });
+
   await prisma.agentReport.createMany({
     data: [
       {
@@ -324,6 +334,7 @@ async function resetDatabase() {
   await prisma.actionProposal.deleteMany();
   await prisma.agentReport.deleteMany();
   await prisma.keywordRule.deleteMany();
+  await prisma.adKeywordDailyPerformance.deleteMany();
   await prisma.adKeywordSnapshot.deleteMany();
   await prisma.adAdgroupSnapshot.deleteMany();
   await prisma.adCampaignSnapshot.deleteMany();
@@ -363,6 +374,38 @@ function keywordSnapshot(
     rawJson: {
       source: "seed",
       note: "네이버 검색광고 dry-run 연결 전 초기 화면 검증용 데이터",
+    },
+  };
+}
+
+function keywordPerformance(
+  accountId: string,
+  keywordId: string,
+  keyword: string,
+  avgCpc: number,
+  avgRank: number,
+) {
+  return {
+    accountId,
+    campaignId: "camp-mvp-001",
+    adgroupId: "adgroup-mvp-001",
+    keywordId,
+    keyword,
+    date: new Date("2026-05-19T00:00:00.000Z"),
+    impressions: 1000,
+    clicks: 80,
+    cost: avgCpc * 80,
+    ctr: 0.08,
+    avgCpc,
+    conversions: 4,
+    conversionRate: 0.05,
+    conversionSales: 300000,
+    roas: 300000 / (avgCpc * 80),
+    costPerConversion: (avgCpc * 80) / 4,
+    avgRank,
+    rawJson: {
+      source: "seed",
+      note: "검색광고 성과 저장 화면 검증용 데이터",
     },
   };
 }

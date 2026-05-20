@@ -11,10 +11,18 @@ import {
 import { assertReadOnlySearchAdRequest } from "@/lib/integrations/naver-search-ad/safety";
 
 type Fetcher = typeof fetch;
+type QueryParams = Record<string, string | string[]>;
 
 interface ClientOptions {
   fetcher?: Fetcher;
   now?: () => number;
+}
+
+export interface SearchAdStatsRequest {
+  ids: string[];
+  fields: string[];
+  since: string;
+  until: string;
 }
 
 export class NaverSearchAdClient {
@@ -57,9 +65,28 @@ export class NaverSearchAdClient {
     );
   }
 
+  async getStatsByIds({
+    ids,
+    fields,
+    since,
+    until,
+  }: SearchAdStatsRequest): Promise<unknown[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const rows = await this.requestJson("/stats", {
+      ids,
+      fields: JSON.stringify(fields),
+      timeRange: JSON.stringify({ since, until }),
+    });
+
+    return statsResponse(rows);
+  }
+
   private async requestJson(
     uri: string,
-    params?: Record<string, string>,
+    params?: QueryParams,
   ): Promise<unknown> {
     const method = "GET";
     assertReadOnlySearchAdRequest(method, uri);
@@ -87,11 +114,17 @@ export class NaverSearchAdClient {
   }
 }
 
-function buildUrl(baseUrl: string, uri: string, params?: Record<string, string>) {
+function buildUrl(baseUrl: string, uri: string, params?: QueryParams) {
   const url = new URL(uri, baseUrl);
 
   for (const [key, value] of Object.entries(params ?? {})) {
-    url.searchParams.set(key, value);
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        url.searchParams.append(key, item);
+      }
+    } else {
+      url.searchParams.set(key, value);
+    }
   }
 
   return url.toString();
@@ -103,6 +136,23 @@ function arrayResponse(value: unknown, uri: string): unknown[] {
   }
 
   return value;
+}
+
+function statsResponse(value: unknown): unknown[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Array.isArray((value as { data?: unknown }).data)
+  ) {
+    return (value as { data: unknown[] }).data;
+  }
+
+  throw new Error("Naver Search Ad API /stats response must include data array.");
 }
 
 async function safeResponseText(response: Response) {

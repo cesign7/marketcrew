@@ -62,6 +62,51 @@ describe("NaverSearchAdClient", () => {
     });
   });
 
+  it("requests stats with repeated ids and JSON metric parameters signed as /stats", async () => {
+    const fetcher = vi.fn(async () =>
+      jsonResponse({
+        data: [{ id: "kw-1" }],
+        compTm: "2026-05-19T00:00:00",
+        cycleBaseTm: "2026-05-19T00:00:00",
+      }),
+    );
+    const client = new NaverSearchAdClient(
+      {
+        apiKey: "api-key",
+        secretKey: "secret",
+        customerId: "123456",
+        baseUrl: "https://api.searchad.naver.com",
+      },
+      {
+        fetcher,
+        now: () => 1700000000000,
+      },
+    );
+
+    const stats = await client.getStatsByIds({
+      ids: ["kw-1", "kw-2"],
+      fields: ["clkCnt", "impCnt", "salesAmt"],
+      since: "2026-05-01",
+      until: "2026-05-19",
+    });
+
+    const [requestedUrl, init] = fetcher.mock.calls[0];
+    const url = new URL(requestedUrl as string);
+
+    expect(stats).toEqual([{ id: "kw-1" }]);
+    expect(url.pathname).toBe("/stats");
+    expect(url.searchParams.getAll("ids")).toEqual(["kw-1", "kw-2"]);
+    expect(url.searchParams.get("fields")).toBe(
+      '["clkCnt","impCnt","salesAmt"]',
+    );
+    expect(url.searchParams.get("timeRange")).toBe(
+      '{"since":"2026-05-01","until":"2026-05-19"}',
+    );
+    expect(init?.headers).toMatchObject({
+      "X-Signature": "dSmwhFWokbdwBl/uE6S6gXwJnOJpri7T5DFhYjePHJU=",
+    });
+  });
+
   it("throws sanitized API errors", async () => {
     const fetcher = vi.fn(async () =>
       jsonResponse({ detail: "Invalid API key" }, { ok: false, status: 403 }),

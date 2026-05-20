@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   toAdgroupSnapshotRows,
   toCampaignSnapshotRows,
+  toKeywordPerformanceRows,
   toKeywordSnapshotRows,
   toSyncCounts,
 } from "./snapshots";
@@ -16,8 +17,8 @@ describe("Naver Search Ad snapshot preparation", () => {
       campaigns: [
         {
           id: "cmp-1",
-          name: "커피프린트 검색광고",
-          raw: { nccCampaignId: "cmp-1", name: "커피프린트 검색광고" },
+          name: "Coffeeprint search campaign",
+          raw: { nccCampaignId: "cmp-1", name: "Coffeeprint search campaign" },
         },
       ],
     });
@@ -26,10 +27,10 @@ describe("Naver Search Ad snapshot preparation", () => {
       {
         accountId: "account-1",
         campaignId: "cmp-1",
-        campaignName: "커피프린트 검색광고",
+        campaignName: "Coffeeprint search campaign",
         brandKey: "COFFEEPRINT",
         collectedAt,
-        rawJson: { nccCampaignId: "cmp-1", name: "커피프린트 검색광고" },
+        rawJson: { nccCampaignId: "cmp-1", name: "Coffeeprint search campaign" },
       },
     ]);
   });
@@ -44,7 +45,7 @@ describe("Naver Search Ad snapshot preparation", () => {
         {
           id: "grp-1",
           campaignId: "cmp-1",
-          name: "스티커씨 그룹",
+          name: "Stickersee adgroup",
           raw: { nccAdgroupId: "grp-1", nccCampaignId: "cmp-1" },
         },
       ],
@@ -55,7 +56,7 @@ describe("Naver Search Ad snapshot preparation", () => {
         accountId: "account-1",
         campaignId: "cmp-1",
         adgroupId: "grp-1",
-        adgroupName: "스티커씨 그룹",
+        adgroupName: "Stickersee adgroup",
         brandKey: "STICKERSEE",
         collectedAt,
         rawJson: { nccAdgroupId: "grp-1", nccCampaignId: "cmp-1" },
@@ -74,7 +75,7 @@ describe("Naver Search Ad snapshot preparation", () => {
           id: "kw-1",
           adgroupId: "grp-1",
           campaignId: "cmp-1",
-          keyword: "기업 초대장",
+          keyword: "company invitation",
           bidAmount: 720,
           raw: { nccKeywordId: "kw-1" },
         },
@@ -87,7 +88,7 @@ describe("Naver Search Ad snapshot preparation", () => {
         campaignId: "cmp-1",
         adgroupId: "grp-1",
         keywordId: "kw-1",
-        keyword: "기업 초대장",
+        keyword: "company invitation",
         bidAmount: 720,
         impressions: 0,
         clicks: 0,
@@ -96,6 +97,95 @@ describe("Naver Search Ad snapshot preparation", () => {
         rawJson: { nccKeywordId: "kw-1" },
       },
     ]);
+  });
+
+  it("builds keyword performance rows from stat metrics and local keyword metadata", () => {
+    const performanceDate = new Date("2026-05-19T00:00:00.000Z");
+
+    const rows = toKeywordPerformanceRows({
+      accountId: "account-1",
+      performanceDate,
+      stats: [
+        {
+          id: "kw-1",
+          impressions: 120,
+          clicks: 12,
+          cost: 3450,
+          ctr: 10,
+          avgCpc: 287.5,
+          avgRank: 1.8,
+          conversions: 2,
+          conversionRate: 16.67,
+          conversionSales: 9000,
+          roas: 260.87,
+          costPerConversion: 1725,
+          raw: { id: "kw-1" },
+        },
+      ],
+      keywordMetaById: new Map([
+        [
+          "kw-1",
+          {
+            campaignId: "cmp-1",
+            adgroupId: "grp-1",
+            keywordId: "kw-1",
+            keyword: "company invitation",
+          },
+        ],
+      ]),
+    });
+
+    expect(rows).toEqual([
+      {
+        accountId: "account-1",
+        campaignId: "cmp-1",
+        adgroupId: "grp-1",
+        keywordId: "kw-1",
+        keyword: "company invitation",
+        date: performanceDate,
+        impressions: 120,
+        clicks: 12,
+        cost: 3450,
+        ctr: 10,
+        avgCpc: 287.5,
+        avgRank: 1.8,
+        conversions: 2,
+        conversionRate: 16.67,
+        conversionSales: 9000,
+        roas: 260.87,
+        costPerConversion: 1725,
+        rawJson: { id: "kw-1" },
+      },
+    ]);
+  });
+
+  it("skips keyword performance rows when local keyword metadata is missing", () => {
+    const performanceDate = new Date("2026-05-19T00:00:00.000Z");
+
+    expect(
+      toKeywordPerformanceRows({
+        accountId: "account-1",
+        performanceDate,
+        stats: [
+          {
+            id: "unknown-kw",
+            impressions: 1,
+            clicks: 0,
+            cost: 0,
+            ctr: null,
+            avgCpc: null,
+            avgRank: null,
+            conversions: null,
+            conversionRate: null,
+            conversionSales: null,
+            roas: null,
+            costPerConversion: null,
+            raw: { id: "unknown-kw" },
+          },
+        ],
+        keywordMetaById: new Map(),
+      }),
+    ).toEqual([]);
   });
 
   it("summarizes synced entity counts", () => {

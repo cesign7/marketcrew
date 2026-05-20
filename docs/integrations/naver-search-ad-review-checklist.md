@@ -17,6 +17,7 @@ Allowed read endpoints:
 - `GET /ncc/campaigns`
 - `GET /ncc/adgroups`
 - `GET /ncc/keywords`
+- `GET /stats`
 
 Blocked until separately approved:
 
@@ -33,6 +34,7 @@ Blocked until separately approved:
 - Confirm headers include `Content-Type`, `X-Timestamp`, `X-API-KEY`, `X-Customer`, and `X-Signature`.
 - Confirm the signature message remains `timestamp.method.uri`.
 - Confirm keyword sync uses throttling or sequential requests so adgroup-level keyword calls do not burst.
+- Confirm stats sync batches `ids` and handles `1016`/`429` rate-limit style failures without write-side effects.
 - Confirm stored sync failures and UI-visible errors are sanitized before display or persistence.
 - Confirm tests cover the changed endpoint, normalization, error handling, and read-only safety guard.
 - Confirm `npm test`, `npm run lint`, and `npm run build` pass before completion.

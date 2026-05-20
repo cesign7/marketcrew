@@ -27,6 +27,7 @@ export async function getSearchAdSyncStatus() {
     campaignSnapshotCount,
     adgroupSnapshotCount,
     keywordSnapshotCount,
+    keywordPerformanceCount,
   ] = await Promise.all([
     prisma.marketingAccount.findFirst({
       where: { provider: "NAVER_SEARCH_AD" },
@@ -44,16 +45,32 @@ export async function getSearchAdSyncStatus() {
     prisma.adCampaignSnapshot.count(),
     prisma.adAdgroupSnapshot.count(),
     prisma.adKeywordSnapshot.count(),
+    prisma.adKeywordDailyPerformance.count(),
   ]);
+  const recentPerformanceRuns = recentRuns
+    .filter((run) => isPerformanceRun(run.rawJson))
+    .slice(0, 6);
 
   return {
     credentials: getSearchAdCredentialStatus(),
     account,
     lastRun,
+    lastPerformanceRun: recentPerformanceRuns[0] ?? null,
     recentRuns,
+    recentPerformanceRuns,
     campaignSnapshotCount,
     adgroupSnapshotCount,
     keywordSnapshotCount,
+    keywordPerformanceCount,
     snapshotCount: keywordSnapshotCount,
   };
+}
+
+function isPerformanceRun(value: unknown) {
+  return (
+    Boolean(value) &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    (value as { mode?: unknown }).mode === "performance-read-only"
+  );
 }
