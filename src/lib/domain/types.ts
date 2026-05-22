@@ -238,6 +238,38 @@ export interface AgentRun {
   errorMessage?: string;
 }
 
+export interface AiBudgetSettings {
+  monthlyBudgetKrw: number;
+  dailyBudgetKrw: number;
+  runBudgetKrw: number;
+  maxInputTokens: number;
+  maxOutputTokens: number;
+  maxTotalTokens: number;
+  krwPerUsd: number;
+  memo: string;
+  updatedAt: string;
+}
+
+export interface AiCharacterProfileSettings {
+  id: CharacterKey;
+  name: string;
+  departmentRole: string;
+  provider: AgentRunProvider;
+  model: string;
+  roleModel: string;
+  responsibility: string;
+  outputContract: string;
+  monthlyReviewRule: string;
+  updatedAt: string;
+}
+
+export interface AiOperationsSettings {
+  id: "default";
+  budget: AiBudgetSettings;
+  characterProfiles: AiCharacterProfileSettings[];
+  updatedAt: string;
+}
+
 export interface WorkflowObjectRef {
   objectType: WorkflowObjectType;
   objectId: string;

@@ -11,6 +11,7 @@ const FRONTEND_BACKEND_READ_PATHS = [
   "/characters",
   "/data",
   "/growth",
+  "/people",
   "/settings",
 ];
 

@@ -48,6 +48,7 @@ a {
 button,
 a,
 input,
+select,
 textarea {
   letter-spacing: 0;
 }
@@ -55,6 +56,7 @@ textarea {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
+select:focus-visible,
 textarea:focus-visible {
   outline: 2px dashed var(--ink);
   outline-offset: 3px;
@@ -1454,6 +1456,235 @@ button:disabled {
   display: grid;
   gap: 10px;
   margin-top: 12px;
+}
+
+.ai-budget-settings-card,
+.ai-payroll-summary,
+.ai-people-toolbar,
+.ai-person-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+
+.ai-budget-settings-card,
+.people-office-section {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.ai-budget-settings-card > header,
+.ai-payroll-summary > header,
+.ai-people-toolbar,
+.ai-person-card > header,
+.ai-model-usage-grid article > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-budget-settings-card h2,
+.ai-payroll-summary h2,
+.ai-people-toolbar h2 {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+
+.ai-budget-settings-card p,
+.ai-payroll-summary p,
+.ai-people-toolbar p,
+.ai-model-usage-grid p {
+  margin: 7px 0 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ai-budget-settings-card > header > span,
+.ai-payroll-summary > header > span,
+.ai-people-toolbar > span,
+.ai-person-card > header > span,
+.ai-model-usage-grid article > header > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  border-radius: 999px;
+  background: #eef4f1;
+  padding: 6px 9px;
+  color: var(--teal-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.summary-warning > header > span {
+  color: var(--gold);
+  background: #f8efd9;
+}
+
+.summary-blocked > header > span {
+  color: var(--red);
+  background: #f8e9e7;
+}
+
+.ai-budget-form-grid,
+.ai-model-usage-grid,
+.ai-people-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.ai-budget-form-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.ai-number-field,
+.ai-budget-memo-field,
+.ai-person-card label {
+  display: grid;
+  gap: 6px;
+}
+
+.ai-number-field span,
+.ai-budget-memo-field span,
+.ai-person-card label span {
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ai-number-field {
+  position: relative;
+}
+
+.ai-number-field input,
+.ai-budget-memo-field textarea,
+.ai-person-card input,
+.ai-person-card select,
+.ai-person-card textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fbfcfa;
+  padding: 10px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.ai-number-field input {
+  padding-right: 70px;
+}
+
+.ai-number-field small {
+  position: absolute;
+  right: 10px;
+  bottom: 11px;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.ai-budget-memo-field {
+  margin-top: 12px;
+}
+
+.ai-budget-settings-card footer {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.ai-budget-settings-card footer span,
+.ai-people-toolbar > span {
+  color: var(--ink-muted);
+}
+
+.ai-payroll-metrics,
+.ai-person-usage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ai-payroll-metrics span,
+.ai-person-usage span,
+.ai-model-usage-grid article div span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fbfcfa;
+  padding: 5px 8px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ai-model-usage-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.ai-model-usage-grid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfa;
+  padding: 12px;
+}
+
+.ai-model-usage-grid article strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.ai-model-usage-grid article div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.ai-model-usage-grid article div span:nth-child(5) {
+  color: var(--blue);
+  background: #edf3f8;
+}
+
+.ai-people-toolbar {
+  align-items: center;
+}
+
+.ai-people-toolbar .primary-button {
+  flex: 0 0 auto;
+}
+
+.ai-people-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ai-person-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ai-person-card h3 {
+  margin: 2px 0 0;
+  font-size: 20px;
+}
+
+.ai-person-card textarea {
+  resize: vertical;
+  line-height: 1.45;
 }
 
 .approval-agent-run-list {
@@ -3379,6 +3610,9 @@ button:disabled {
   .product-opportunity-list,
   .character-desk-grid,
   .settings-grid,
+  .ai-budget-form-grid,
+  .ai-model-usage-grid,
+  .ai-people-grid,
   .llm-governance-check-grid,
   .llm-pricing-grid,
   .owner-learning-grid,
@@ -3577,7 +3811,11 @@ button:disabled {
   .owner-learning-card header,
   .followup-column header,
   .followup-task-header,
-  .approval-agent-run-card header {
+  .approval-agent-run-card header,
+  .ai-budget-settings-card > header,
+  .ai-payroll-summary > header,
+  .ai-people-toolbar,
+  .ai-person-card > header {
     align-items: flex-start;
     flex-direction: column;
   }

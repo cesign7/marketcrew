@@ -25,7 +25,7 @@ export const OFFICIAL_LLM_PRICING: OfficialLlmPricing[] = [
     contextCacheUsdPerMillionTokens: 0.15,
     sourceLabel: "Google AI 공식 가격표",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
-    checkedAt: "2026-05-22",
+    checkedAt: "2026-05-23",
     note: "출력 단가는 thinking token을 포함한 기준입니다.",
   },
   {
@@ -39,7 +39,7 @@ export const OFFICIAL_LLM_PRICING: OfficialLlmPricing[] = [
     contextCacheUsdPerMillionTokens: 0.025,
     sourceLabel: "Google AI 공식 가격표",
     sourceUrl: "https://ai.google.dev/gemini-api/docs/pricing?hl=en",
-    checkedAt: "2026-05-22",
+    checkedAt: "2026-05-23",
     note: "텍스트/이미지/비디오 입력 기준입니다. 오디오 입력은 별도 단가입니다.",
   },
 ];

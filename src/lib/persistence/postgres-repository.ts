@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
 import type {
   AgendaCandidate,
+  AiOperationsSettings,
   AgentRun,
   AgentRunWorkflowLink,
   ApprovalRequest,
@@ -206,6 +207,14 @@ class PostgresMarketingWorkflowRepository implements MarketingWorkflowRepository
     );
 
     return state.agentRuns.filter((run) => runIds.has(run.id));
+  }
+
+  saveAiOperationsSettings(settings: AiOperationsSettings[]): void {
+    this.saveCollection("aiOperationsSettings", settings);
+  }
+
+  listAiOperationsSettings(): AiOperationsSettings[] {
+    return this.listCollection("aiOperationsSettings");
   }
 
   private saveCollection<K extends WorkflowCollectionKey>(key: K, incoming: WorkflowRepositoryState[K]): void {

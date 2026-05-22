@@ -1,5 +1,6 @@
 import type {
   AgendaCandidate,
+  AiOperationsSettings,
   AgentRun,
   AgentRunWorkflowLink,
   ApprovalRequest,
@@ -43,6 +44,7 @@ class MemoryMarketingWorkflowRepository implements MarketingWorkflowRepository {
   private providerSyncReports: ProviderSyncReport[] = [];
   private agentRuns: AgentRun[] = [];
   private agentRunWorkflowLinks: AgentRunWorkflowLink[] = [];
+  private aiOperationsSettings: AiOperationsSettings[] = [];
 
   constructor(initialState?: Partial<WorkflowRepositoryState>) {
     if (!initialState) {
@@ -67,6 +69,7 @@ class MemoryMarketingWorkflowRepository implements MarketingWorkflowRepository {
     this.providerSyncReports = [...state.providerSyncReports];
     this.agentRuns = [...state.agentRuns];
     this.agentRunWorkflowLinks = [...state.agentRunWorkflowLinks];
+    this.aiOperationsSettings = [...state.aiOperationsSettings];
   }
 
   saveSignals(signals: Signal[]): void {
@@ -213,6 +216,14 @@ class MemoryMarketingWorkflowRepository implements MarketingWorkflowRepository {
     );
 
     return this.agentRuns.filter((run) => runIds.has(run.id));
+  }
+
+  saveAiOperationsSettings(settings: AiOperationsSettings[]): void {
+    this.aiOperationsSettings = upsertById(this.aiOperationsSettings, settings);
+  }
+
+  listAiOperationsSettings(): AiOperationsSettings[] {
+    return [...this.aiOperationsSettings];
   }
 }
 

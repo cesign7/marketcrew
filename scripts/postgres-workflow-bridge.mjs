@@ -22,6 +22,7 @@ const workflowCollectionKeys = [
   "providerSyncReports",
   "agentRuns",
   "agentRunWorkflowLinks",
+  "aiOperationsSettings",
 ];
 
 const operation = process.argv[2];

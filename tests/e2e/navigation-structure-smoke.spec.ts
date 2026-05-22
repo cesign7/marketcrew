@@ -9,6 +9,7 @@ test("대표 업무실은 왼쪽 업무 메뉴와 상단 기준 필터로 나뉜
   await expect(navigation.getByRole("link", { name: "결재/실행관리" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "데이터 연동" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "성장/성과" })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "인사과" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "설정" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "데이터 연동" })).toHaveAttribute("data-prefetch-mode", "intent");
 
@@ -22,6 +23,25 @@ test("대표 업무실은 왼쪽 업무 메뉴와 상단 기준 필터로 나뉜
   await expect(topControls.getByRole("button", { name: "30일" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "전년" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "명절" })).toBeVisible();
+});
+
+test("인사과 메뉴에서 캐릭터 롤모델과 월별 AI 사용 명세를 확인한다", async ({ page }) => {
+  await page.goto("/operations");
+
+  await page.getByRole("navigation", { name: "주요 업무 메뉴" }).getByRole("link", { name: "인사과" }).click();
+
+  await expect(page).toHaveURL(/\/people$/);
+  await expect(page.getByRole("heading", { level: 1, name: "인사과" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "모델별 토큰과 예상금액" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "AI 직원 기본 역할" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "모아" })).toBeVisible();
+  const firstRoleModel = page.getByLabel("롤모델").first();
+  await expect(firstRoleModel).toBeVisible();
+  await firstRoleModel.fill("대표 비서실장처럼 안건 우선순위와 비용 위험을 먼저 정리합니다.");
+  await page.getByRole("button", { name: "저장" }).click();
+  await expect(page.getByText("저장 완료")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("롤모델").first()).toHaveValue("대표 비서실장처럼 안건 우선순위와 비용 위험을 먼저 정리합니다.");
 });
 
 test("왼쪽 업무 메뉴를 아이콘 폭으로 접고 다시 펼칠 수 있다", async ({ page }) => {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   ClipboardCheck,
   DatabaseZap,
+  IdCard,
   LayoutDashboard,
   PanelLeftClose,
   PanelLeftOpen,
@@ -17,7 +18,7 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ViewFilterControls, type ViewFilterOption } from "./ViewFilterControls";
 
-export type AppNavKey = "operations" | "characters" | "approvals" | "data" | "growth" | "settings";
+export type AppNavKey = "operations" | "characters" | "approvals" | "data" | "growth" | "people" | "settings";
 
 type AppShellProps = {
   active: AppNavKey;
@@ -64,6 +65,13 @@ const navItems = [
     description: "제안과 결과 분석",
     href: "/growth",
     icon: TrendingUp,
+  },
+  {
+    key: "people",
+    label: "인사과",
+    description: "역할과 사용 명세",
+    href: "/people",
+    icon: IdCard,
   },
   {
     key: "settings",

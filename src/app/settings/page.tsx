@@ -2,12 +2,17 @@ import { KeyRound, Lock, ShieldCheck, WalletCards } from "lucide-react";
 import { LlmCostGovernancePanel } from "@/components/agenda-room/LlmCostGovernancePanel";
 import { ProviderReadinessPanel } from "@/components/agenda-room/ProviderReadinessPanel";
 import { AppShell } from "@/components/layout/AppShell";
-import { loadAgendaRoomViewModel } from "@/features/agenda-room/loadAgendaRoomViewModel";
+import { AiBudgetSettingsPanel } from "@/components/settings/AiBudgetSettingsPanel";
+import { loadAgendaRoomViewModel, loadWorkflowReadRepository } from "@/features/agenda-room/loadAgendaRoomViewModel";
+import { resolveAiOperationsSettings } from "@/features/people/ai-operations-settings";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const viewModel = await loadAgendaRoomViewModel();
+  const [viewModel, repository] = await Promise.all([loadAgendaRoomViewModel(), loadWorkflowReadRepository()]);
+  const aiSettings = resolveAiOperationsSettings({
+    stored: repository.listAiOperationsSettings()[0],
+  });
 
   return (
     <AppShell
@@ -48,6 +53,7 @@ export default async function SettingsPage() {
         </article>
       </section>
 
+      <AiBudgetSettingsPanel initialSettings={aiSettings} />
       <LlmCostGovernancePanel governance={viewModel.llmCostGovernance} />
       <ProviderReadinessPanel providers={viewModel.providerReadiness} />
     </AppShell>

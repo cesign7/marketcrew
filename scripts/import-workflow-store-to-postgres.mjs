@@ -22,6 +22,7 @@ const collections = [
   "providerSyncReports",
   "agentRuns",
   "agentRunWorkflowLinks",
+  "aiOperationsSettings",
 ];
 
 const workflowStorePath = resolve(process.env.MARKETCREW_WORKFLOW_STORE_PATH ?? ".marketcrew/workflow-store.json");

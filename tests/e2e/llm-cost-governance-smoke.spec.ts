@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test";
 test("운영실에서 실제 AI 모델 호출 전 비용 가드를 확인한다", async ({ page }) => {
   await page.goto("/settings");
 
+  await expect(page.getByRole("heading", { name: "대표 승인 전 비용 한도" })).toBeVisible();
+  await expect(page.locator(".ai-budget-settings-card")).toContainText("월 예산");
+  await expect(page.locator(".ai-budget-settings-card")).toContainText("입력 상한");
   await expect(page.getByRole("heading", { name: "실제 호출 전 예산 확인" })).toBeVisible();
   await expect(page.getByText("AI 모델 비용 가드")).toBeVisible();
   await expect(page.locator(".llm-governance-status")).toContainText(/실제 호출 차단|실제 호출 차단 해제|주의 후 가능/);

@@ -1,5 +1,6 @@
 import type {
   AgendaCandidate,
+  AiOperationsSettings,
   AgentRun,
   AgentRunWorkflowLink,
   ApprovalRequest,
@@ -55,4 +56,6 @@ export interface MarketingWorkflowRepository {
   saveAgentRunWorkflowLinks(links: AgentRunWorkflowLink[]): void;
   listAgentRunWorkflowLinks(): AgentRunWorkflowLink[];
   listAgentRunsForWorkflowObject(ref: WorkflowObjectRef): AgentRun[];
+  saveAiOperationsSettings(settings: AiOperationsSettings[]): void;
+  listAiOperationsSettings(): AiOperationsSettings[];
 }

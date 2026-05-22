@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "
 import { dirname } from "node:path";
 import type {
   AgendaCandidate,
+  AiOperationsSettings,
   AgentRun,
   AgentRunWorkflowLink,
   ApprovalRequest,
@@ -180,6 +181,14 @@ class FileMarketingWorkflowRepository implements MarketingWorkflowRepository {
     );
 
     return this.listAgentRuns().filter((run) => runIds.has(run.id));
+  }
+
+  saveAiOperationsSettings(settings: AiOperationsSettings[]): void {
+    this.saveCollection("aiOperationsSettings", settings);
+  }
+
+  listAiOperationsSettings(): AiOperationsSettings[] {
+    return this.listCollection("aiOperationsSettings");
   }
 
   private saveCollection<K extends WorkflowCollectionKey>(key: K, incoming: WorkflowRepositoryState[K]): void {

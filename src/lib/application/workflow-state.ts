@@ -1,5 +1,6 @@
 import type {
   AgendaCandidate,
+  AiOperationsSettings,
   AgentRun,
   AgentRunWorkflowLink,
   ApprovalRequest,
@@ -37,6 +38,7 @@ export type WorkflowRepositoryState = {
   providerSyncReports: ProviderSyncReport[];
   agentRuns: AgentRun[];
   agentRunWorkflowLinks: AgentRunWorkflowLink[];
+  aiOperationsSettings: AiOperationsSettings[];
 };
 
 export type WorkflowCollectionKey = keyof WorkflowRepositoryState;
@@ -59,6 +61,7 @@ export const workflowCollectionKeys: WorkflowCollectionKey[] = [
   "providerSyncReports",
   "agentRuns",
   "agentRunWorkflowLinks",
+  "aiOperationsSettings",
 ];
 
 export function createEmptyWorkflowRepositoryState(): WorkflowRepositoryState {
@@ -80,6 +83,7 @@ export function createEmptyWorkflowRepositoryState(): WorkflowRepositoryState {
     providerSyncReports: [],
     agentRuns: [],
     agentRunWorkflowLinks: [],
+    aiOperationsSettings: [],
   };
 }
 
@@ -102,6 +106,7 @@ export function readWorkflowRepositoryState(repository: MarketingWorkflowReposit
     providerSyncReports: repository.listProviderSyncReports(),
     agentRuns: repository.listAgentRuns(),
     agentRunWorkflowLinks: repository.listAgentRunWorkflowLinks(),
+    aiOperationsSettings: repository.listAiOperationsSettings(),
   };
 }
 
@@ -126,6 +131,7 @@ export function normalizeWorkflowRepositoryState(
     providerSyncReports: asArray(parsed?.providerSyncReports),
     agentRuns: asArray(parsed?.agentRuns),
     agentRunWorkflowLinks: asArray(parsed?.agentRunWorkflowLinks),
+    aiOperationsSettings: asArray(parsed?.aiOperationsSettings),
   };
 }
 
