@@ -1,4 +1,4 @@
-import { Coins, Gauge, KeyRound, ShieldCheck } from "lucide-react";
+import { Coins, ExternalLink, Gauge, KeyRound, ShieldCheck } from "lucide-react";
 import type { LlmCostGovernanceView } from "@/features/agenda-room/types";
 
 type LlmCostGovernancePanelProps = {
@@ -6,6 +6,8 @@ type LlmCostGovernancePanelProps = {
 };
 
 export function LlmCostGovernancePanel({ governance }: LlmCostGovernancePanelProps) {
+  const pricingSourceUrl = governance.officialPricingRows.find((row) => row.sourceUrl)?.sourceUrl;
+
   return (
     <section className="llm-governance-section" aria-labelledby="llm-governance-title">
       <div className={`llm-governance-card governance-${governance.tone}`}>
@@ -51,6 +53,46 @@ export function LlmCostGovernancePanel({ governance }: LlmCostGovernancePanelPro
           {governance.plannedTokenLabels.map((label) => (
             <span key={label}>{label}</span>
           ))}
+        </div>
+
+        <div className="llm-pricing-reference" aria-label="공식 AI 모델 가격 기준">
+          <header>
+            <div>
+              <strong>공식 가격 기준</strong>
+              <p>{governance.officialPricingSourceLabel}</p>
+            </div>
+            {pricingSourceUrl ? (
+              <a
+                href={pricingSourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="공식 가격표 새 창 열기"
+              >
+                <ExternalLink size={15} aria-hidden="true" />
+                가격표
+              </a>
+            ) : null}
+          </header>
+          <div className="llm-pricing-grid">
+            {governance.officialPricingRows.map((row) => (
+              <article className={`llm-pricing-row pricing-${row.tone}`} key={`${row.modelKey}-${row.roleLabel}`}>
+                <header>
+                  <div>
+                    <strong>{row.modelLabel}</strong>
+                    <span>{row.roleLabel}</span>
+                  </div>
+                  <span>{row.tierLabel}</span>
+                </header>
+                <div>
+                  <span>{row.inputPriceLabel}</span>
+                  <span>{row.outputPriceLabel}</span>
+                  <span>{row.cachePriceLabel}</span>
+                </div>
+                <p>{row.note}</p>
+              </article>
+            ))}
+          </div>
+          <p>{governance.pricingFormulaLabel}</p>
         </div>
 
         <div className="llm-governance-check-grid" aria-label="AI 모델 호출 조건">

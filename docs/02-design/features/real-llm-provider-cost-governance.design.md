@@ -1,6 +1,6 @@
 # real-llm-provider-cost-governance Design Document
 
-> **Summary**: 실제 LLM 호출 전 provider/key, env 단가, 예산, token cap, privacy 조건을 검문하는 비용 가드를 운영실에 추가한다.
+> **Summary**: 실제 LLM 호출 전 provider/key, 공식 모델 가격 기준, env 원화 단가, 예산, token cap, privacy 조건을 검문하는 비용 가드를 운영실과 설정에 추가한다.
 >
 > **Project**: marketcrew2
 > **Version**: 0.1
@@ -17,7 +17,7 @@
 |-----|-------|
 | **WHY** | 시즌성, 전년도 비교, 30일 분석이 늘어나면 LLM token 비용이 커질 수 있다. |
 | **WHO** | 대표는 운영실에서 live LLM 호출 가능 여부와 차단 사유를 확인한다. |
-| **RISK** | key 설정과 호출 허용을 혼동하거나, 코드에 가격을 고정하거나, raw row가 LLM 입력에 섞일 수 있다. |
+| **RISK** | key 설정과 호출 허용을 혼동하거나, 공식 가격 기준이 오래되거나, raw row가 LLM 입력에 섞일 수 있다. |
 | **SUCCESS** | 모든 비용/토큰/privacy gate를 통과해야만 live call 후보가 되고, 기본은 deterministic fallback이다. |
 | **SCOPE** | view model, panel, API, tests. 실제 LLM call은 제외한다. |
 
@@ -38,6 +38,7 @@ buildAgendaRoomViewModel
   -> buildPlannerAuditRun
   -> repository.listAgentRuns
   -> buildProviderReadinessReports
+  -> official LLM pricing catalog
   -> buildLlmCostGovernanceView
   -> LlmCostGovernancePanel
   -> /api/operations/llm-cost-governance
@@ -59,8 +60,9 @@ buildAgendaRoomViewModel
 | `AI_LLM_MAX_INPUT_TOKENS` | 입력 token hard cap |
 | `AI_LLM_MAX_OUTPUT_TOKENS` | 출력 token hard cap |
 | `AI_LLM_MAX_TOTAL_TOKENS` | 총 token hard cap |
+| `OFFICIAL_LLM_PRICING` | 공식 가격표에서 확인한 USD reference 단가와 확인일 |
 
-단가는 vendor 가격을 코드에 넣지 않는다. 운영자가 env로 넣은 정책 단가가 있을 때만 KRW 예상 비용을 계산한다.
+공식 가격 기준은 화면 reference로 표시한다. 실제 호출 차단 계산은 운영자가 환율과 정책 buffer를 반영해 env로 넣은 KRW 단가가 있을 때만 수행한다.
 
 ## 4. Gate Rules
 
@@ -80,11 +82,12 @@ Token cap env가 없으면 `주의`로 표시하지만, 예산/단가 env가 없
 
 | Surface | Content |
 |---------|---------|
-| `/operations` | Planner preview 아래에 `LLM 비용 가드` 패널 |
+| `/operations`, `/settings` | Planner preview 아래 또는 설정 섹션에 `LLM 비용 가드` 패널 |
 | Header | status: `실행 가능`, `주의 후 가능`, `live call 차단` |
 | Metrics | provider/model/key/mode |
 | Budget | 이번 예상, 1회 한도, 오늘 누적, 일 예산, 호출 후 잔여 |
 | Token | 입력/출력/총 token, raw row 제외 |
+| Official pricing | 설정된 모델별 공식 USD 입력/출력/캐시 단가, 확인일, 공식 가격표 링크 |
 | Gate grid | provider/key, 단가, 예산, token, privacy, external write |
 
 ## 6. API
@@ -105,3 +108,4 @@ Token cap env가 없으면 `주의`로 표시하지만, 예산/단가 env가 없
 | Iteration | Module/Goal | Files |
 |-----------|-------------|-------|
 | iteration-1 | `module-6 LLM 인터페이스`의 실제 호출 전 cost governance 완성 | `src/features/agenda-room/buildLlmCostGovernanceView.ts`, `src/components/agenda-room/LlmCostGovernancePanel.tsx`, `/api/operations/llm-cost-governance`, tests/docs |
+| iteration-2 | `module-6 LLM 인터페이스`의 공식 모델 가격 기준 반영 | `src/lib/llm/official-pricing.ts`, `LlmCostGovernancePanel`, settings smoke/tests/docs |

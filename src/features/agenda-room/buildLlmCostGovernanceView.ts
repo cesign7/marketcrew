@@ -1,8 +1,10 @@
 import type { AgentRun, LlmPlannerAuditRun, ProviderReadinessReport } from "@/lib/domain";
+import { formatUsdPerMillionTokens, resolveOfficialLlmPricing } from "@/lib/llm/official-pricing";
 import type { LlmCostGovernanceView } from "./types";
 
 type EnvMap = Record<string, string | undefined>;
 type GateTone = LlmCostGovernanceView["gateChecks"][number]["tone"];
+type OfficialPricingRow = LlmCostGovernanceView["officialPricingRows"][number];
 
 export type BuildLlmCostGovernanceViewInput = {
   env?: EnvMap;
@@ -123,6 +125,7 @@ export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInpu
   const hasWarningGate = checks.some((check) => check.tone === "warning");
   const liveCallAllowed = !hasBlockedGate;
   const remainingBudgetKrw = dailyBudgetKrw === undefined ? undefined : Math.max(dailyBudgetKrw - projectedDailyCostKrw, 0);
+  const officialPricingRows = buildOfficialPricingRows(env, providerKey, modelKey);
 
   return {
     statusLabel: liveCallAllowed ? (hasWarningGate ? "주의 후 가능" : "실제 호출 차단 해제") : "실제 호출 차단",
@@ -143,7 +146,11 @@ export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInpu
     runBudgetLabel: runBudgetKrw === undefined ? "1회 예산 미설정" : `1회 한도 ${formatKrw(runBudgetKrw)}`,
     rateBasisLabel: hasRatePolicy
       ? `환경 단가: 입력 ${formatKrw(inputRate)} / 출력 ${formatKrw(outputRate)} / 1천 토큰`
-      : "공식 가격을 코드에 고정하지 않고 환경 단가가 있을 때만 추정합니다.",
+      : "공식 USD 가격표는 참고로 표시하고, 실제 원화 계산은 환경 단가가 있을 때만 수행합니다.",
+    officialPricingSourceLabel: resolvePricingSourceLabel(officialPricingRows),
+    pricingFormulaLabel:
+      "공식 USD 단가에 적용 환율을 반영해 AI_LLM_COST_PER_1K_INPUT_KRW와 AI_LLM_COST_PER_1K_OUTPUT_KRW를 정하면 실제 호출 비용 가드가 계산됩니다.",
+    officialPricingRows,
     plannedTokenLabels: [
       `입력 ${formatCount(inputTokens)}토큰`,
       `출력 ${formatCount(outputTokens)}토큰`,
@@ -155,6 +162,79 @@ export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInpu
       : "비용 정책 또는 토큰 조건이 닫혀 있어 모아는 규칙 기반 대체로만 종합합니다.",
     gateChecks: checks,
   };
+}
+
+function buildOfficialPricingRows(env: EnvMap, providerKey: string, activeModelKey: string): OfficialPricingRow[] {
+  const configuredModels = collectConfiguredModels(env, activeModelKey);
+
+  return configuredModels.map(({ modelKey, roles }) => {
+    const pricing = resolveOfficialLlmPricing(providerKey, modelKey);
+    const isActive = modelKey === activeModelKey;
+    const roleLabel = `${roles.join(" / ")}${isActive ? " · 현재 호출 후보" : ""}`;
+
+    if (!pricing) {
+      return {
+        modelKey,
+        modelLabel: modelKey,
+        roleLabel,
+        tierLabel: "공식 단가 미확인",
+        inputPriceLabel: "입력 단가 미확인",
+        outputPriceLabel: "출력 단가 미확인",
+        cachePriceLabel: "캐시 단가 미확인",
+        sourceLabel: "공식 가격표 확인 필요",
+        sourceUrl: "",
+        tone: "missing",
+        note: "공식 가격표에 없는 모델명은 실제 호출 전에 모델명과 단가를 다시 확인해야 합니다.",
+      };
+    }
+
+    return {
+      modelKey,
+      modelLabel: pricing.displayName,
+      roleLabel,
+      tierLabel: `${pricing.providerLabel} ${pricing.tierLabel}`,
+      inputPriceLabel: `입력 ${formatUsdPerMillionTokens(pricing.inputUsdPerMillionTokens)} / 100만 토큰`,
+      outputPriceLabel: `출력 ${formatUsdPerMillionTokens(pricing.outputUsdPerMillionTokens)} / 100만 토큰`,
+      cachePriceLabel:
+        pricing.contextCacheUsdPerMillionTokens === undefined
+          ? "캐시 단가 없음"
+          : `캐시 ${formatUsdPerMillionTokens(pricing.contextCacheUsdPerMillionTokens)} / 100만 토큰`,
+      sourceLabel: `${pricing.sourceLabel} · ${pricing.checkedAt} 확인`,
+      sourceUrl: pricing.sourceUrl,
+      tone: isActive ? "active" : "reference",
+      note: pricing.note,
+    };
+  });
+}
+
+function collectConfiguredModels(env: EnvMap, activeModelKey: string): Array<{ modelKey: string; roles: string[] }> {
+  const rolesByModel = new Map<string, string[]>();
+  const roleInputs = [
+    { label: "기획", value: env.AI_LLM_MODEL_PLANNER },
+    { label: "전략", value: env.AI_LLM_MODEL_STRATEGIC },
+    { label: "검토", value: env.AI_LLM_MODEL_REVIEWER },
+    { label: "기본", value: env.AI_LLM_MODEL_DEFAULT },
+  ];
+
+  for (const input of roleInputs) {
+    const modelKey = normalizeText(input.value);
+    if (!modelKey) {
+      continue;
+    }
+    rolesByModel.set(modelKey, [...(rolesByModel.get(modelKey) ?? []), input.label]);
+  }
+
+  if (!rolesByModel.has(activeModelKey)) {
+    rolesByModel.set(activeModelKey, ["현재"]);
+  }
+
+  return Array.from(rolesByModel, ([modelKey, roles]) => ({ modelKey, roles }));
+}
+
+function resolvePricingSourceLabel(rows: OfficialPricingRow[]): string {
+  const sources = Array.from(new Set(rows.filter((row) => row.sourceUrl).map((row) => row.sourceLabel)));
+
+  return sources.length === 0 ? "공식 가격표 확인 필요" : sources.join(" / ");
 }
 
 function buildGateCheck(input: {

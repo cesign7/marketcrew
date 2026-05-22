@@ -35,6 +35,15 @@ describe("LLM cost governance", () => {
     expect(view.estimatedRunCostLabel).toBe("이번 예상 7원");
     expect(view.dailySpentLabel).toBe("오늘 누적 12원");
     expect(view.dailyRemainingLabel).toBe("호출 후 잔여 981원");
+    expect(view.officialPricingSourceLabel).toContain("Google AI 공식 가격표");
+    expect(view.officialPricingRows).toEqual([
+      expect.objectContaining({
+        modelKey: "gemini-3.1-flash-lite",
+        inputPriceLabel: "입력 $0.25 / 100만 토큰",
+        outputPriceLabel: "출력 $1.50 / 100만 토큰",
+        tone: "active",
+      }),
+    ]);
     expect(view.gateChecks.every((check) => check.tone === "ready")).toBe(true);
   });
 
@@ -55,9 +64,46 @@ describe("LLM cost governance", () => {
     expect(view.liveCallAllowed).toBe(false);
     expect(view.statusLabel).toBe("실제 호출 차단");
     expect(view.decisionSummary).toContain("규칙 기반 대체");
+    expect(view.rateBasisLabel).toContain("공식 USD 가격표");
     expect(view.gateChecks.find((check) => check.id === "rate-policy")?.tone).toBe("blocked");
     expect(view.gateChecks.find((check) => check.id === "run-budget")?.tone).toBe("blocked");
     expect(view.gateChecks.find((check) => check.id === "daily-budget")?.tone).toBe("blocked");
+  });
+
+  it("역할별 설정 모델 가격을 공식 기준으로 함께 보여준다", () => {
+    const env = {
+      AI_LLM_PROVIDER: "gemini",
+      AI_LLM_MODEL_DEFAULT: "gemini-3.1-flash-lite",
+      AI_LLM_MODEL_STRATEGIC: "gemini-3.5-flash",
+      AI_LLM_MODEL_REVIEWER: "gemini-3.5-flash",
+      GEMINI_API_KEY: "test-key",
+    };
+
+    const view = buildLlmCostGovernanceView({
+      env,
+      generatedAt: NOW,
+      plannerAudit: buildPlannerAudit(),
+      agentRuns: [],
+      providerReadiness: buildProviderReadinessReports(env, NOW),
+    });
+
+    expect(view.modelLabel).toBe("모델 gemini-3.5-flash");
+    expect(view.officialPricingRows).toEqual([
+      expect.objectContaining({
+        modelKey: "gemini-3.5-flash",
+        roleLabel: "전략 / 검토 · 현재 호출 후보",
+        inputPriceLabel: "입력 $1.50 / 100만 토큰",
+        outputPriceLabel: "출력 $9.00 / 100만 토큰",
+        tone: "active",
+      }),
+      expect.objectContaining({
+        modelKey: "gemini-3.1-flash-lite",
+        roleLabel: "기본",
+        inputPriceLabel: "입력 $0.25 / 100만 토큰",
+        outputPriceLabel: "출력 $1.50 / 100만 토큰",
+        tone: "reference",
+      }),
+    ]);
   });
 
   it("1회 예산, 일 예산, 토큰 상한을 넘으면 호출을 차단한다", () => {

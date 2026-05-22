@@ -198,6 +198,21 @@ export type LlmCostGovernanceView = {
   dailyRemainingLabel: string;
   runBudgetLabel: string;
   rateBasisLabel: string;
+  officialPricingSourceLabel: string;
+  pricingFormulaLabel: string;
+  officialPricingRows: Array<{
+    modelKey: string;
+    modelLabel: string;
+    roleLabel: string;
+    tierLabel: string;
+    inputPriceLabel: string;
+    outputPriceLabel: string;
+    cachePriceLabel: string;
+    sourceLabel: string;
+    sourceUrl: string;
+    tone: "active" | "reference" | "missing";
+    note: string;
+  }>;
   plannedTokenLabels: string[];
   decisionSummary: string;
   gateChecks: Array<{

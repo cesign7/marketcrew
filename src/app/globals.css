@@ -1145,7 +1145,10 @@ button:disabled {
 .planner-audit-grid,
 .llm-governance-metrics,
 .llm-governance-budget,
-.llm-governance-token-row {
+.llm-governance-token-row,
+.llm-pricing-reference header,
+.llm-pricing-row header,
+.llm-pricing-row div {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1349,6 +1352,99 @@ button:disabled {
   border-radius: 8px;
   color: var(--teal-strong);
   background: #eef4f1;
+}
+
+.llm-pricing-reference {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfa;
+  padding: 12px;
+}
+
+.llm-pricing-reference header {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.llm-pricing-reference header p {
+  margin: 3px 0 0;
+}
+
+.llm-pricing-reference a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0 10px;
+  color: var(--teal-strong);
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.llm-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.llm-pricing-row {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.llm-pricing-row.pricing-active {
+  border-color: #90c8bd;
+  background: #f3faf7;
+}
+
+.llm-pricing-row.pricing-missing {
+  border-color: #e4b6ad;
+  background: #fff8f6;
+}
+
+.llm-pricing-row header {
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.llm-pricing-row header strong {
+  display: block;
+  font-size: 14px;
+}
+
+.llm-pricing-row header span,
+.llm-pricing-row div span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fbfcfa;
+  padding: 5px 8px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.llm-pricing-row header > span {
+  flex: 0 0 auto;
+  color: var(--teal-strong);
+  background: #eef4f1;
+}
+
+.llm-pricing-row div {
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.llm-pricing-row div span {
+  color: var(--blue);
+  background: #edf3f8;
 }
 
 .llm-governance-check-grid {
@@ -2813,6 +2909,7 @@ button:disabled {
   .character-desk-grid,
   .settings-grid,
   .llm-governance-check-grid,
+  .llm-pricing-grid,
   .owner-learning-grid,
   .followup-board,
   .approval-provenance-grid,
@@ -2998,6 +3095,8 @@ button:disabled {
   .decision-flow-header,
   .planner-preview-card header,
   .llm-governance-card header,
+  .llm-pricing-reference header,
+  .llm-pricing-row header,
   .llm-governance-check header,
   .provider-sync-card header,
   .product-opportunity-card header,
