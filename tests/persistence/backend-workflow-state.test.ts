@@ -52,13 +52,20 @@ describe("readBackendWorkflowRepositoryState", () => {
 
     expect(state?.signals[0]?.id).toBe("signal-from-railway-api");
     expect(state?.approvalRequests).toEqual([]);
-    expect(fetchMock).toHaveBeenCalledWith(new URL("https://api.marketcrew.app/api/operations/workflow-state"), {
-      cache: "no-store",
-      headers: {
-        authorization: "Bearer secret-token",
-      },
-      signal: expect.any(AbortSignal),
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL("https://api.marketcrew.app/api/operations/workflow-state"),
+      expect.objectContaining({
+        cache: "force-cache",
+        headers: {
+          authorization: "Bearer secret-token",
+        },
+        next: {
+          revalidate: 60,
+          tags: ["marketcrew-backend-read"],
+        },
+        signal: expect.any(AbortSignal),
+      }),
+    );
   });
 
   it("백엔드 API가 실패하면 fallback을 위해 undefined를 반환한다", async () => {
@@ -96,13 +103,20 @@ describe("readBackendAgendaRoomViewModel", () => {
     }));
 
     expect(viewModel?.generatedAt).toBe("2026-05-22T00:00:00.000Z");
-    expect(fetchMock).toHaveBeenCalledWith(new URL("https://api.marketcrew.app/api/operations/view-model"), {
-      cache: "no-store",
-      headers: {
-        authorization: "Bearer secret-token",
-      },
-      signal: expect.any(AbortSignal),
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL("https://api.marketcrew.app/api/operations/view-model"),
+      expect.objectContaining({
+        cache: "force-cache",
+        headers: {
+          authorization: "Bearer secret-token",
+        },
+        next: {
+          revalidate: 60,
+          tags: ["marketcrew-backend-read"],
+        },
+        signal: expect.any(AbortSignal),
+      }),
+    );
   });
 });
 

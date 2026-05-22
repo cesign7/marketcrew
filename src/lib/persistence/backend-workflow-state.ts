@@ -2,6 +2,7 @@ import type { AgendaRoomViewModel } from "@/features/agenda-room/types";
 import { normalizeWorkflowRepositoryState, type WorkflowRepositoryState } from "./workflow-state";
 
 const DEFAULT_BACKEND_API_TIMEOUT_MS = 5_000;
+const DEFAULT_BACKEND_API_CACHE_TTL_SECONDS = 60;
 
 type BackendWorkflowStateResponse = {
   state?: Partial<WorkflowRepositoryState>;
@@ -63,10 +64,14 @@ async function fetchBackendJson<TPayload>(path: string, env: NodeJS.ProcessEnv):
 
   try {
     const response = await fetch(new URL(path, baseUrl), {
-      cache: "no-store",
+      cache: "force-cache",
       headers: buildBackendApiHeaders(env),
+      next: {
+        revalidate: getBackendApiCacheTtlSeconds(env),
+        tags: ["marketcrew-backend-read"],
+      },
       signal: abortController.signal,
-    });
+    } as RequestInit & { next: { revalidate: number; tags: string[] } });
     if (!response.ok) {
       return undefined;
     }
@@ -100,4 +105,9 @@ function buildBackendApiHeaders(env: NodeJS.ProcessEnv): HeadersInit {
 function getBackendApiTimeoutMs(env: NodeJS.ProcessEnv): number {
   const parsed = Number.parseInt(env.MARKETCREW_BACKEND_API_TIMEOUT_MS ?? "", 10);
   return Number.isFinite(parsed) ? Math.max(250, parsed) : DEFAULT_BACKEND_API_TIMEOUT_MS;
+}
+
+function getBackendApiCacheTtlSeconds(env: NodeJS.ProcessEnv): number {
+  const parsed = Number.parseInt(env.MARKETCREW_BACKEND_API_CACHE_TTL_SECONDS ?? "", 10);
+  return Number.isFinite(parsed) ? Math.max(1, parsed) : DEFAULT_BACKEND_API_CACHE_TTL_SECONDS;
 }

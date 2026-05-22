@@ -64,13 +64,20 @@ describe("loadWorkflowReadRepository", () => {
     });
 
     expect(repository.listSignals()[0]?.id).toBe("signal-from-backend-state");
-    expect(fetchMock).toHaveBeenCalledWith(new URL("https://api.marketcrew.app/api/operations/workflow-state"), {
-      cache: "no-store",
-      headers: {
-        authorization: "Bearer secret-token",
-      },
-      signal: expect.any(AbortSignal),
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL("https://api.marketcrew.app/api/operations/workflow-state"),
+      expect.objectContaining({
+        cache: "force-cache",
+        headers: {
+          authorization: "Bearer secret-token",
+        },
+        next: {
+          revalidate: 60,
+          tags: ["marketcrew-backend-read"],
+        },
+        signal: expect.any(AbortSignal),
+      }),
+    );
   });
 });
 
