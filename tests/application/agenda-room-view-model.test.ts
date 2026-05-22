@@ -77,8 +77,13 @@ describe("buildAgendaRoomViewModel", () => {
       "스마트스토어(스티커씨)",
       "쇼핑몰(커피프린트)",
     ]);
+    expect(viewModel.providerSyncEvidence.find((report) => report.providerKey === "search_ad")?.notes).toContain(
+      "실제 호출은 대표가 제공한 서버 환경 설정으로만 수행하며 외부 반영 잠금과 무관합니다.",
+    );
     const smartstoreEvidence = viewModel.providerSyncEvidence.find((report) => report.providerKey === "smartstore");
     expect(smartstoreEvidence?.brandLabel).toBe("스티커씨");
+    expect(smartstoreEvidence?.historyPolicy.requestWindowLabel).toContain("24시간");
+    expect(smartstoreEvidence?.historyPolicy.seasonalityLabel).toContain("전년도 명절");
     expect(smartstoreEvidence?.snapshotLabels).toContain(
       "스티커씨 주문 100건",
     );
@@ -159,7 +164,10 @@ function buildProviderAggregateReports(): ProviderSyncReport[] {
       endpoint: "https://api.searchad.naver.com/keywordstool",
       sourceUrl: "http://naver.github.io/searchad-apidoc/",
       missingEnvKeys: [],
-      evidenceNotes: ["read-only keyword tool 응답 2건을 KeywordDemandSnapshot으로 정규화했습니다."],
+      evidenceNotes: [
+        "read-only keyword tool 응답 2건을 KeywordDemandSnapshot으로 정규화했습니다.",
+        "실제 호출은 대표가 제공한 server env로만 수행하며 write gate와 무관합니다.",
+      ],
       checkedAt: "2026-05-22T02:00:00.000Z",
       httpStatus: 200,
       keywordDemandSnapshots: [

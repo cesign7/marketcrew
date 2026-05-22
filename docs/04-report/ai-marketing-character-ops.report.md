@@ -40,7 +40,7 @@ QA Verdict:    QA_PASS
 | **Problem** | 대표 혼자 스마트스토어, 네이버 키워드광고, 자체 쇼핑몰 데이터를 매일 확인하고 시즌성까지 판단하기 어렵다. 특히 음력 명절과 시즌 키워드는 작년 같은 양력 날짜 비교만으로는 결재 판단이 흔들린다. |
 | **Solution** | 하위 캐릭터가 read-only 데이터와 음력/양력 캘린더를 읽어 안건을 상신하고, 오피가 대표 결재용 diff/위험/rollback/성과 계획으로 묶는 bottom-up 업무실을 구현했다. |
 | **Function/UX Effect** | `/operations`에서 오늘 안건, provider 근거, 상품/키워드/마케팅 후보를 보고, `/approvals/[id]`에서 승인 버튼, write gate 차단, provider evidence, 저장된 outcome report를 확인할 수 있다. |
-| **Core Value** | 실제 provider write를 열지 않고도 “올라온 자료만 보고 승인할 수 있는가”를 검증했다. QA는 15개 테스트 파일/53개 테스트, Playwright e2e, API/browser smoke를 통과했다. |
+| **Core Value** | 실제 provider write를 열지 않고도 “올라온 자료만 보고 승인할 수 있는가”를 검증했다. 최신 회귀는 26개 테스트 파일/79개 테스트, Playwright e2e, API/browser smoke를 통과한다. |
 
 ---
 
@@ -61,11 +61,12 @@ QA Verdict:    QA_PASS
 | SC-11 | 시즌 키워드 광고 안건은 생애주기/예산/입찰/중지/제외 키워드를 포함한다. | Met | seasonal keyword tests |
 | SC-12 | `KeywordDemandSnapshot`에 캐시/조회 시각이 있다. | Met | keyword demand snapshot tests |
 | SC-13 | 승인 없는 외부 쓰기는 차단된다. | Met | 423 `WRITE_GATE_CLOSED`, no provider write |
-| SC-14 | 최소 단위 테스트와 브라우저 smoke가 통과한다. | Met | Vitest 53 tests, Playwright 1 e2e |
+| SC-14 | 최소 단위 테스트와 브라우저 smoke가 통과한다. | Met | Vitest 79 tests, Playwright 8 e2e |
 | SC-15 | 저장된 성과 보고를 다시 조회할 수 있다. | Met | `/api/approvals/[id]/outcomes`, `OutcomeReportHistoryPanel` |
+| SC-16 | 외부 API 조회 한계와 백필/일별 저장 정책이 데이터 연동 화면에 보인다. | Met | `ProviderSyncReport.historyPolicy`, `/data` policy panel |
 
-**Success Rate**: 13 Met / 1 Partial / 1 Deferred within the first-MVP boundary.
-**Operator MVP Rate**: 92%.
+**Success Rate**: 15 Met / 1 Partial within the first-MVP boundary.
+**Operator MVP Rate**: 95%.
 
 ## 1.5 Decision Record Summary
 
@@ -79,6 +80,7 @@ QA Verdict:    QA_PASS
 | Design | LLM에는 raw row가 아니라 집계 요약과 근거 ID를 전달한다. | Yes | planner preview `rawRowsIncluded: false` |
 | Act | provider read-only sync 근거를 대표 화면과 결재 상세에 노출한다. | Yes | provider readiness/sync/evidence panels 구현 |
 | Act | 생성된 outcome report는 상세 화면/API에서 다시 읽힌다. | Yes | outcome history panel과 outcomes API 구현 |
+| Act | API 과거 조회 한계는 화면에서 운영 정책으로 드러나야 한다. | Yes | provider별 조회 한계/백필/음력 시즌 비교/AI 입력 제한 표시 |
 
 ---
 
@@ -112,6 +114,7 @@ QA Verdict:    QA_PASS
 | Outcome tracking | Complete for MVP | checkpoints, outcome report, outcome history API/UI |
 | Provider readiness | Complete | Search Ad, DataLab, Smartstore, Shop, LLM readiness |
 | Read-only provider sync | Complete for MVP | aggregate snapshots and evidence labels |
+| Provider history policy | Complete for MVP | API 조회 한계, 백필 분할, 일별 스냅샷, AI 요약 입력 기준 |
 | Product growth candidates | Complete for MVP | keyword, marketing, product discovery candidates |
 
 ### 3.2 Non-Functional Requirements

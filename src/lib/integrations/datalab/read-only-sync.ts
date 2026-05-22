@@ -1,4 +1,4 @@
-import type { ProviderSyncReport, SearchTrendSnapshot } from "@/lib/domain";
+import { getProviderHistoryPolicy, type ProviderSyncReport, type SearchTrendSnapshot } from "@/lib/domain";
 import { buildDatalabReadinessReport, DATALAB_READINESS_SOURCE_URL, DATALAB_SEARCH_URL } from "./readiness";
 
 type EnvMap = Record<string, string | undefined>;
@@ -49,6 +49,7 @@ export function buildDatalabReadOnlySyncReport(
         "데이터랩은 쓰기 채널이 아니므로 외부 변경 요청을 만들지 않습니다.",
       ],
       checkedAt,
+      historyPolicy: getProviderHistoryPolicy("datalab"),
       generatedSignal: {
         id: "signal-provider-datalab-missing-config",
         source: "datalab",
@@ -81,6 +82,7 @@ export function buildDatalabReadOnlySyncReport(
       "쓰기 작업이 없는 읽기 전용 연동입니다.",
     ],
     checkedAt,
+    historyPolicy: getProviderHistoryPolicy("datalab"),
   };
 }
 

@@ -1,3 +1,4 @@
+import { getProviderHistoryPolicy } from "@/lib/domain";
 import type { AgendaRoomViewModel } from "./types";
 
 export const agendaRoomSample: AgendaRoomViewModel = {
@@ -279,6 +280,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
       missingEnvKeys: [],
       notes: ["원천 행 없이 키워드 수요 요약만 저장합니다."],
       sourceUrl: "https://github.com/naver/searchad-apidoc",
+      historyPolicy: getProviderHistoryPolicy("search_ad"),
     },
   ],
   plannerPreview: {

@@ -1,4 +1,4 @@
-import type { ProviderSyncReport, ShopAggregateSnapshot } from "@/lib/domain";
+import { getProviderHistoryPolicy, type ProviderSyncReport, type ShopAggregateSnapshot } from "@/lib/domain";
 import { buildShopReadinessReport, resolveFirstEnv, YOUNGCART_BRIDGE_SOURCE_URL } from "@/lib/integrations/providers/readiness";
 
 type EnvMap = Record<string, string | undefined>;
@@ -29,6 +29,7 @@ export function buildYoungcartReadOnlySyncReport(
         "쓰기 작업은 이 수집에서 호출하지 않습니다.",
       ],
       checkedAt,
+      historyPolicy: getProviderHistoryPolicy("shop"),
       generatedSignal: {
         id: "signal-provider-shop-missing-config",
         source: "shop",
@@ -61,6 +62,7 @@ export function buildYoungcartReadOnlySyncReport(
       "자체 쇼핑몰 외부 반영 연결은 이 수집에서 호출하지 않습니다.",
     ],
     checkedAt,
+    historyPolicy: getProviderHistoryPolicy("shop"),
   };
 }
 

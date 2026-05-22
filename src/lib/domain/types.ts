@@ -74,6 +74,19 @@ export interface ProviderSyncReport {
   commerceAggregateSnapshot?: CommerceAggregateSnapshot;
   shopAggregateSnapshot?: ShopAggregateSnapshot;
   generatedSignal?: Signal;
+  historyPolicy?: ProviderHistoryPolicy;
+}
+
+export interface ProviderHistoryPolicy {
+  provider: Exclude<ProviderKey, "llm">;
+  apiLimitLabel: string;
+  requestWindowLabel: string;
+  backfillLabel: string;
+  dailySnapshotLabel: string;
+  seasonalityLabel: string;
+  storageLabel: string;
+  costGuardLabel: string;
+  sourceUrl: string;
 }
 
 export interface CommerceAggregateSnapshot {

@@ -979,6 +979,7 @@ button:disabled {
 .outcome-history-section,
 .agent-run-section,
 .approval-agent-run-section,
+.collection-policy-section,
 .provider-readiness-section,
 .provider-sync-section,
 .product-opportunity-section,
@@ -1020,7 +1021,8 @@ button:disabled {
 }
 
 .provider-readiness-grid,
-.provider-sync-grid {
+.provider-sync-grid,
+.collection-policy-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
@@ -1028,6 +1030,7 @@ button:disabled {
 
 .provider-card,
 .provider-sync-card,
+.collection-policy-card,
 .product-opportunity-card,
 .agent-run-card,
 .approval-agent-run-card,
@@ -1043,6 +1046,7 @@ button:disabled {
 
 .provider-card header,
 .provider-sync-card header,
+.collection-policy-card header,
 .product-opportunity-card header,
 .planner-preview-card header,
 .llm-governance-card header,
@@ -1455,6 +1459,7 @@ button:disabled {
 
 .provider-card p,
 .provider-sync-card p,
+.collection-policy-card p,
 .product-opportunity-card p,
 .planner-preview-card p {
   margin: 10px 0 0;
@@ -1465,6 +1470,74 @@ button:disabled {
 
 .provider-sync-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.policy-principle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.policy-principle-row span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fbfcfa;
+  padding: 7px 10px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.policy-period-note {
+  margin: 12px 0 0;
+  border-left: 3px solid #b7d7cf;
+  padding-left: 10px;
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.collection-policy-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.collection-policy-card header {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.collection-policy-card header span {
+  color: var(--teal-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.collection-policy-card strong {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.collection-policy-card ul,
+.sync-history-policy {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.collection-policy-card li {
+  margin-left: 18px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
 }
 
 .provider-sync-view-switch {
@@ -1577,6 +1650,7 @@ button:disabled {
 }
 
 .sync-snapshot-list,
+.sync-history-policy,
 .sync-note-list,
 .opportunity-evidence-grid {
   display: flex;
@@ -1586,6 +1660,7 @@ button:disabled {
 }
 
 .sync-snapshot-list span,
+.sync-history-policy span,
 .opportunity-evidence-grid span,
 .target-label {
   border: 1px solid var(--line);
@@ -1595,6 +1670,11 @@ button:disabled {
   color: var(--ink-muted);
   font-size: 12px;
   font-weight: 800;
+}
+
+.sync-history-policy span {
+  border-style: dashed;
+  background: #f6f8f7;
 }
 
 .sync-note-list {
@@ -2557,6 +2637,7 @@ button:disabled {
   .bucket-bar,
   .provider-readiness-grid,
   .provider-sync-grid,
+  .collection-policy-grid,
   .product-opportunity-list,
   .character-desk-grid,
   .settings-grid,

@@ -1,5 +1,5 @@
 import { createHmac } from "node:crypto";
-import type { KeywordDemandSnapshot, ProviderSyncReport } from "@/lib/domain";
+import { getProviderHistoryPolicy, type KeywordDemandSnapshot, type ProviderSyncReport } from "@/lib/domain";
 import {
   buildSearchAdReadinessReport,
   SEARCH_AD_API_SPEC_URL,
@@ -58,6 +58,7 @@ export function buildSearchAdReadOnlySyncReport(
         "쓰기 작업은 이 수집에서 호출하지 않습니다.",
       ],
       checkedAt,
+      historyPolicy: getProviderHistoryPolicy("search_ad"),
       generatedSignal: buildProviderMissingConfigSignal({
         id: "signal-provider-search-ad-missing-config",
         title: "네이버 키워드광고 읽기 동기화 대기",
@@ -85,6 +86,7 @@ export function buildSearchAdReadOnlySyncReport(
       "외부 반영 잠금과 무관하게 이 단계에서는 키워드/입찰/예산 변경 요청을 만들지 않습니다.",
     ],
     checkedAt,
+    historyPolicy: getProviderHistoryPolicy("search_ad"),
   };
 }
 

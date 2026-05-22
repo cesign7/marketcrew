@@ -1,5 +1,5 @@
 import { hashSync } from "bcryptjs";
-import type { CommerceAggregateSnapshot, ProviderSyncReport } from "@/lib/domain";
+import { getProviderHistoryPolicy, type CommerceAggregateSnapshot, type ProviderSyncReport } from "@/lib/domain";
 import {
   buildSmartstoreReadinessReport,
   NAVER_COMMERCE_AUTH_DOC_URL,
@@ -54,6 +54,7 @@ export function buildCommerceReadOnlySyncReport(
         "쓰기 작업은 이 수집에서 호출하지 않습니다.",
       ],
       checkedAt,
+      historyPolicy: getProviderHistoryPolicy("smartstore"),
       generatedSignal: {
         id: "signal-provider-smartstore-missing-config",
         source: "smartstore",
@@ -86,6 +87,7 @@ export function buildCommerceReadOnlySyncReport(
       "상품/노출/주문 상태 변경은 이 수집에서 호출하지 않습니다.",
     ],
     checkedAt,
+    historyPolicy: getProviderHistoryPolicy("smartstore"),
   };
 }
 

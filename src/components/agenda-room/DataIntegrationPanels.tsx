@@ -10,6 +10,8 @@ import type {
 import {
   filterProviderReadiness,
   filterProviderSyncEvidence,
+  dataPeriodLabel,
+  dataPeriodPolicyLabel,
   normalizeDataChannel,
   normalizeDataPeriod,
   type DataChannelFilter,
@@ -17,6 +19,7 @@ import {
 } from "@/features/agenda-room/data-filters";
 import { AgentRunSummaryPanel } from "./AgentRunSummaryPanel";
 import { PlannerPreviewPanel } from "./PlannerPreviewPanel";
+import { ProviderCollectionPolicyPanel } from "./ProviderCollectionPolicyPanel";
 import { ProviderReadinessPanel } from "./ProviderReadinessPanel";
 import { ProviderSyncEvidencePanel } from "./ProviderSyncEvidencePanel";
 
@@ -68,11 +71,18 @@ export function DataIntegrationPanels({
     () => filterProviderSyncEvidence(providerSyncEvidence, selectedFilter.channel),
     [providerSyncEvidence, selectedFilter.channel],
   );
+  const periodLabel = dataPeriodLabel(selectedFilter.period);
+  const periodPolicyLabel = dataPeriodPolicyLabel(selectedFilter.period);
 
   return (
     <>
+      <ProviderCollectionPolicyPanel
+        periodLabel={periodLabel}
+        periodPolicyLabel={periodPolicyLabel}
+        reports={filteredProviderSyncEvidence}
+      />
       <ProviderReadinessPanel providers={filteredProviderReadiness} />
-      <ProviderSyncEvidencePanel reports={filteredProviderSyncEvidence} />
+      <ProviderSyncEvidencePanel reports={filteredProviderSyncEvidence} showHistoryPolicy />
       <PlannerPreviewPanel preview={plannerPreview} />
       <AgentRunSummaryPanel summary={agentRunSummary} />
     </>

@@ -5,19 +5,20 @@ import {
   type ProductGrowthOpportunity,
 } from "@/lib/application/product-growth-opportunities";
 import { buildProviderSignalAgendaArtifacts } from "@/lib/application/provider-signal-agenda";
-import type {
-  AgendaCandidate,
-  AgentRun,
-  ApprovalRequest,
-  CharacterKey,
-  CharacterReport,
-  LlmPlannerAuditRun,
-  LlmPlannerResult,
-  MarketingCalendarEvent,
-  OwnerDecisionType,
-  ProviderReadinessReport,
-  ProviderSyncReport,
-  SeasonalKeywordAdPlan,
+import {
+  getProviderHistoryPolicy,
+  type AgendaCandidate,
+  type AgentRun,
+  type ApprovalRequest,
+  type CharacterKey,
+  type CharacterReport,
+  type LlmPlannerAuditRun,
+  type LlmPlannerResult,
+  type MarketingCalendarEvent,
+  type OwnerDecisionType,
+  type ProviderReadinessReport,
+  type ProviderSyncReport,
+  type SeasonalKeywordAdPlan,
 } from "@/lib/domain";
 import { recordPlannerAgentRun } from "@/lib/application/agent-run-recorder";
 import { buildProviderReadinessReports } from "@/lib/integrations/providers/readiness";
@@ -657,6 +658,7 @@ function buildProviderSyncEvidenceViews(reports: ProviderSyncReport[]): AgendaRo
 function buildProviderSyncEvidenceView(report: ProviderSyncReport): AgendaRoomViewModel["providerSyncEvidence"][number] {
   const providerDisplay = buildProviderDisplayInfo(report);
   const snapshotLabels = buildProviderSnapshotLabels(report);
+  const historyPolicy = report.historyPolicy ?? getProviderHistoryPolicy(report.provider);
   const evidenceCount =
     snapshotLabels.length +
     (report.keywordDemandSnapshots?.length ?? 0) +
@@ -682,6 +684,16 @@ function buildProviderSyncEvidenceView(report: ProviderSyncReport): AgendaRoomVi
     notes: report.evidenceNotes.slice(0, 3).map(toOperatorKorean),
     failureReason: report.failureReason ? toOperatorKorean(report.failureReason) : undefined,
     sourceUrl: report.sourceUrl,
+    historyPolicy: {
+      apiLimitLabel: historyPolicy.apiLimitLabel,
+      requestWindowLabel: historyPolicy.requestWindowLabel,
+      backfillLabel: historyPolicy.backfillLabel,
+      dailySnapshotLabel: historyPolicy.dailySnapshotLabel,
+      seasonalityLabel: historyPolicy.seasonalityLabel,
+      storageLabel: historyPolicy.storageLabel,
+      costGuardLabel: historyPolicy.costGuardLabel,
+      sourceUrl: historyPolicy.sourceUrl,
+    },
   };
 }
 
@@ -1050,7 +1062,9 @@ function toOperatorKorean(value: string): string {
     .replaceAll("candidate summary", "후보 요약")
     .replaceAll("confidence", "신뢰도")
     .replaceAll("risk", "위험도")
-    .replaceAll("evidence id", "근거 ID");
+    .replaceAll("evidence id", "근거 ID")
+    .replaceAll("서버 환경 설정로", "서버 환경 설정으로")
+    .replaceAll("외부 반영 잠금와", "외부 반영 잠금과");
 }
 
 function metricLabel(metric: string): string {

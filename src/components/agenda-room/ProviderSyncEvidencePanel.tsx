@@ -8,6 +8,7 @@ type ProviderSyncEvidencePanelProps = {
   title?: string;
   description?: string;
   emptyMessage?: string;
+  showHistoryPolicy?: boolean;
 };
 
 export function ProviderSyncEvidencePanel({
@@ -17,6 +18,7 @@ export function ProviderSyncEvidencePanel({
   title = "연동 수집 결과",
   description = "각 안건이 어떤 읽기 전용 수집과 요약 자료에서 올라왔는지 대표가 바로 확인하는 영역입니다.",
   emptyMessage = "아직 저장된 연동 수집 기록이 없습니다. 읽기 전용 수집을 실행하면 이 영역에 근거가 쌓입니다.",
+  showHistoryPolicy = false,
 }: ProviderSyncEvidencePanelProps) {
   const channelGroups = buildProviderSyncChannelGroups(reports);
 
@@ -50,7 +52,7 @@ export function ProviderSyncEvidencePanel({
               <strong>채널 통합 확인</strong>
               <p>광고, 트렌드, 스마트스토어(스티커씨), 쇼핑몰(커피프린트) 근거를 한 번에 봅니다.</p>
             </div>
-            <ProviderSyncCardGrid reports={reports} />
+            <ProviderSyncCardGrid reports={reports} showHistoryPolicy={showHistoryPolicy} />
           </div>
 
           {channelGroups.length > 0 ? (
@@ -69,7 +71,7 @@ export function ProviderSyncEvidencePanel({
                     </div>
                     <strong>{group.reports.length.toLocaleString("ko-KR")}건</strong>
                   </header>
-                  <ProviderSyncCardGrid reports={group.reports} />
+                  <ProviderSyncCardGrid reports={group.reports} showHistoryPolicy={showHistoryPolicy} />
                 </section>
               ))}
             </div>
@@ -85,7 +87,13 @@ export function ProviderSyncEvidencePanel({
   );
 }
 
-function ProviderSyncCardGrid({ reports }: { reports: ProviderSyncEvidenceView[] }) {
+function ProviderSyncCardGrid({
+  reports,
+  showHistoryPolicy = false,
+}: {
+  reports: ProviderSyncEvidenceView[];
+  showHistoryPolicy?: boolean;
+}) {
   return (
     <div className="provider-sync-grid">
       {reports.map((report) => (
@@ -109,10 +117,18 @@ function ProviderSyncCardGrid({ reports }: { reports: ProviderSyncEvidenceView[]
             <span>{report.evidenceCountLabel}</span>
           </div>
           <div className="sync-snapshot-list" aria-label={`${report.providerLabel} 요약 자료`}>
-            {report.snapshotLabels.map((label) => (
-              <span key={label}>{label}</span>
+            {report.snapshotLabels.map((label, index) => (
+              <span key={`${report.id}-snapshot-${index}-${label}`}>{label}</span>
             ))}
           </div>
+          {showHistoryPolicy ? (
+            <div className="sync-history-policy" aria-label={`${report.providerLabel} 조회 한계와 저장 기준`}>
+              <span>{report.historyPolicy.apiLimitLabel}</span>
+              <span>{report.historyPolicy.requestWindowLabel}</span>
+              <span>{report.historyPolicy.dailySnapshotLabel}</span>
+              <span>{report.historyPolicy.costGuardLabel}</span>
+            </div>
+          ) : null}
           {report.missingEnvKeys.length > 0 ? (
             <div className="missing-env-list" aria-label={`${report.providerLabel} 누락 환경변수`}>
               {report.missingEnvKeys.map((key) => (
@@ -122,8 +138,8 @@ function ProviderSyncCardGrid({ reports }: { reports: ProviderSyncEvidenceView[]
           ) : null}
           {report.failureReason ? <p className="sync-failure">{report.failureReason}</p> : null}
           <ul className="sync-note-list">
-            {report.notes.map((note) => (
-              <li key={note}>{note}</li>
+            {report.notes.map((note, index) => (
+              <li key={`${report.id}-note-${index}-${note}`}>{note}</li>
             ))}
           </ul>
         </article>

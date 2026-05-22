@@ -150,6 +150,16 @@ export type ProviderSyncEvidenceView = {
   notes: string[];
   failureReason?: string;
   sourceUrl: string;
+  historyPolicy: {
+    apiLimitLabel: string;
+    requestWindowLabel: string;
+    backfillLabel: string;
+    dailySnapshotLabel: string;
+    seasonalityLabel: string;
+    storageLabel: string;
+    costGuardLabel: string;
+    sourceUrl: string;
+  };
 };
 
 export type PlannerPreviewView = {

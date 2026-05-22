@@ -336,7 +336,24 @@ PerformanceCheckpoint N ──── 0..1 OutcomeReport
 OutcomeReport 0..1 ──── N FollowUpInternalTask
 ```
 
-### 3.4 Persistence Shape
+### 3.4 Provider History Policy
+
+외부 API의 과거 조회 한계는 안건 신뢰도와 비용을 직접 좌우하므로 `ProviderSyncReport.historyPolicy`에 함께 저장한다.
+
+| Provider | API 조회 한계 | 백필/저장 기준 | 시즌 비교 기준 |
+|----------|---------------|----------------|----------------|
+| 네이버 키워드광고 | 일반 성과 리포트는 최대 2년, 1회 요청은 92일 단위. 키워드 도구는 과거 추이가 아니라 현재 월검색량이다. | 광고 성과는 초기 2년을 92일 단위로 쪼개 저장하고, 키워드 수요는 매일 캐시한다. | 전년도 시즌 비교는 저장된 광고 성과와 데이터랩 추이를 결합한다. |
+| 네이버 데이터랩 | 2016-01-01 이후 검색 추이를 상대 ratio로 조회한다. | 핵심 시즌 키워드만 일/주 단위 요약으로 저장하고 절대 검색량으로 해석하지 않는다. | 설날·추석 같은 음력 명절은 연도별 양력 날짜로 변환한 뒤 같은 D-기간끼리 비교한다. |
+| 스마트스토어(스티커씨) | 주문 조회는 1회 최대 24시간 범위, 조건형 주문 조회는 시작일 기준 180일 이내 주문, 데이터솔루션 통계는 구독 시 최대 18개월이다. | 초기 주문 백필은 180일을 24시간 단위로 나누고 이후 변경분을 매일 저장한다. 주문번호/주문 원문은 저장하지 않는다. | 전년도 명절 비교는 API 재조회보다 자체 일별 스냅샷을 기준으로 한다. |
+| 쇼핑몰(커피프린트) | 자체 영카트 DB와 브리지 보존 정책이 기준이다. | 과거 데이터는 원천 DB에서 재집계하되 MarketCrew 워크플로에는 주문/재구매/매출 집계만 저장한다. | 내부 DB 재집계 또는 저장된 일별 스냅샷으로 전년도 명절 윈도우를 비교한다. |
+
+Design decisions:
+
+- LLM에는 원천 행, 주문번호, 고객 식별정보, 토큰, 시크릿을 전달하지 않는다.
+- 30일 집계를 반복해서 LLM에 넣지 않고, 코드가 일별 집계/전년동기/음력 이벤트 윈도우를 먼저 계산한 뒤 요약만 보낸다.
+- API로 다시 가져올 수 없는 기간은 `INSUFFICIENT_HISTORY` 또는 추가 백필 필요로 표시한다.
+
+### 3.5 Persistence Shape
 
 For MVP, a repository interface should support an in-memory/sample implementation first, then Prisma/Postgres.
 
@@ -580,6 +597,7 @@ Operations Room
 | 5 | `AgendaTriageService` | duplicate agenda candidates are collapsed by duplicate key. | one promoted candidate |
 | 6 | `ApprovalWorkflowService` | `APPROVE_AND_APPLY` with closed write gate records draft/mock state, not real provider write. | no external write call |
 | 7 | `OutcomeTrackingService` | approved execution creates checkpoints and outcome placeholders. | checkpoint records created |
+| 8 | `ProviderSyncReport` | provider별 조회 한계, 백필, 일별 저장, AI 입력 제한 정책이 view model로 전달된다. | `historyPolicy` visible |
 
 ### 8.3 L2: UI Action Test Scenarios
 
@@ -591,6 +609,7 @@ Operations Room
 | 4 | Approval Detail | Approval blocked by missing guard | `승인 후 바로 반영` disabled | reason includes `BUDGET_GUARD_MISSING` |
 | 5 | Approval Detail | Approve valid mock execution | execution result timeline appears | `ExecutionResult.state` visible |
 | 6 | Outcome View | Open tracking bucket | checkpoints visible by due date | outcome state badge visible |
+| 7 | Data Integration | Change channel/period filter | provider-specific API limit and storage policy visible | policy text matches selected channel |
 
 ### 8.4 L3: E2E Scenario Test Scenarios
 
