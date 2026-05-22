@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ClipboardList, ShieldCheck } from "lucide-react";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 import { FollowUpQueueBoard } from "@/components/follow-ups/FollowUpQueueBoard";
 import { OwnerLearningPanel } from "@/components/follow-ups/OwnerLearningPanel";
 import { buildFollowUpQueueViewModel } from "@/features/follow-ups/buildFollowUpQueueViewModel";
@@ -30,6 +31,7 @@ export default function FollowUpsPage() {
             <ShieldCheck size={16} aria-hidden="true" />
             결재 확인
           </Link>
+          <LogoutButton />
         </div>
       </header>
 

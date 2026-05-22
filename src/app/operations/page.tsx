@@ -13,6 +13,7 @@ import { ProductGrowthOpportunityPanel } from "@/components/agenda-room/ProductG
 import { ProviderReadinessPanel } from "@/components/agenda-room/ProviderReadinessPanel";
 import { ProviderSyncEvidencePanel } from "@/components/agenda-room/ProviderSyncEvidencePanel";
 import { SeasonalKeywordPanel } from "@/components/agenda-room/SeasonalKeywordPanel";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 import { buildAgendaRoomViewModel } from "@/features/agenda-room/buildAgendaRoomViewModel";
 import { createLocalWorkflowRepository } from "@/lib/persistence/workflow-store";
 
@@ -44,6 +45,7 @@ export default function OperationsPage() {
             <ShieldCheck size={16} aria-hidden="true" />
             승인 검토
           </button>
+          <LogoutButton />
         </div>
       </header>
 

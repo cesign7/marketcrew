@@ -16,7 +16,7 @@ export default defineConfig({
   },
   webServer: {
     // Keep e2e independent from the user-visible Next dev server on port 3001.
-    command: `rm -f ${workflowStorePath} && MARKETCREW_REPOSITORY_MODE=file MARKETCREW_WORKFLOW_STORE_PATH=${workflowStorePath} npm run build && MARKETCREW_REPOSITORY_MODE=file MARKETCREW_WORKFLOW_STORE_PATH=${workflowStorePath} npx next start --port ${port}`,
+    command: `rm -f ${workflowStorePath} && MARKETCREW_AUTH_DISABLED=1 MARKETCREW_REPOSITORY_MODE=file MARKETCREW_WORKFLOW_STORE_PATH=${workflowStorePath} npm run build && MARKETCREW_AUTH_DISABLED=1 MARKETCREW_REPOSITORY_MODE=file MARKETCREW_WORKFLOW_STORE_PATH=${workflowStorePath} npx next start --port ${port}`,
     url: `${baseURL}/operations`,
     reuseExistingServer: false,
     timeout: 120_000,

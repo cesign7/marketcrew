@@ -4,6 +4,7 @@ import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { ApprovalAgentRunTimelinePanel } from "@/components/agenda-room/ApprovalAgentRunTimelinePanel";
 import { ApprovalPreviewPanel } from "@/components/agenda-room/ApprovalPreviewPanel";
 import { ExecutionPanel } from "@/components/agenda-room/ExecutionPanel";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 import { OwnerDecisionFlowPanel } from "@/components/agenda-room/OwnerDecisionFlowPanel";
 import { OwnerDecisionSubmitPanel } from "@/components/agenda-room/OwnerDecisionSubmitPanel";
 import { OutcomeReportHistoryPanel } from "@/components/agenda-room/OutcomeReportHistoryPanel";
@@ -42,6 +43,7 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
             <ShieldCheck size={16} aria-hidden="true" />
             승인 후 바로 반영
           </a>
+          <LogoutButton />
         </div>
       </header>
 

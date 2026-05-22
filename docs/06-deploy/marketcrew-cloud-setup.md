@@ -13,7 +13,8 @@
 | Vercel | Connected and deployed | `https://marketcrew.vercel.app` |
 | Vercel project | Ready | `aipressos-projects/marketcrew` |
 | Vercel production branch | Updated | `main` |
-| Custom domain | Added in Vercel, DNS pending | `marketcrew.app`, `www.marketcrew.app` |
+| Custom domain | Added in Vercel, DNS updated | `marketcrew.app`, `www.marketcrew.app` |
+| Owner login | Enabled | password session gate |
 | Railway | Connected | project `marketcrew` |
 | Railway Postgres | Online | service `Postgres`, production environment |
 
@@ -31,8 +32,20 @@ Required production keys currently registered in Vercel:
 | Coffeeprint Youngcart | `YOUNGCART_BRIDGE_URL`, `YOUNGCART_BRIDGE_TOKEN`, `MARKETCREW_YOUNGCART_BRIDGE_APPROVED`, `MARKETCREW_YOUNGCART_PII_MINIMIZATION_CONFIRMED` |
 | DataLab | `NAVER_DATALAB_CLIENT_ID`, `NAVER_DATALAB_CLIENT_SECRET` |
 | AI model readiness | `AI_AGENT_MODE`, `AI_AGENT_PROVIDER`, `AI_AGENT_MODEL`, `AI_LLM_PROVIDER`, `AI_LLM_MODEL_DEFAULT`, `AI_LLM_MODEL_STRATEGIC`, `AI_LLM_MODEL_REVIEWER`, `GEMINI_API_KEY` |
+| Owner login | `MARKETCREW_AUTH_SECRET`, `MARKETCREW_OWNER_PASSWORD_HASH` |
 
 `OPENAI_API_KEY` was not registered because the local value was blank.
+
+## Owner Login
+
+Production routes are protected by a password-only owner login gate:
+
+- Public entry: `/login`
+- Protected pages: `/operations`, `/follow-ups`, `/approvals/[id]`
+- Protected APIs: all `/api/*` except `/api/auth/*`
+- Session cookie: HTTP-only, same-site, secure in production, 12 hour max age
+
+The generated owner password is not committed. The local handoff file is `.marketcrew/owner-login.txt`, and Vercel stores only the bcrypt password hash plus session secret as encrypted environment variables.
 
 ## Railway Seed
 
@@ -82,7 +95,9 @@ Required Cloudflare DNS records:
 | A | `@` | `76.76.21.21` | DNS only during verification |
 | A | `www` | `76.76.21.21` | DNS only during verification |
 
-Cloudflare DNS API/CLI authentication is not available in this workspace yet. After the records are added in Cloudflare, verify with:
+Cloudflare DNS API/CLI authentication is not available in this workspace yet. The records were added manually in Cloudflare and public resolvers now return `76.76.21.21`.
+
+Verify with:
 
 ```bash
 dig +short A marketcrew.app
@@ -104,7 +119,8 @@ curl -I https://marketcrew.app/operations
 | `/approvals/approval-agenda-season-plan-buddha-gift-card` production smoke | 200, key Korean terms present |
 | `/api/operations/workflow-state` | `repositoryMode=db`, approvalRequests 5, providerSyncReports 18, agentRuns 1 |
 | Vercel recent error logs after final smoke | no errors in latest 1 minute |
-| `marketcrew.app` Vercel project domain | added, waiting for Cloudflare DNS records |
+| `marketcrew.app` DNS | public resolvers return `76.76.21.21` |
+| Owner login unit tests | PASS |
 
 ## Remaining GitHub Deletion Decision
 
