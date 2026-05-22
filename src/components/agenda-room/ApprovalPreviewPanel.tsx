@@ -45,25 +45,25 @@ export function ApprovalPreviewPanel({ previews }: ApprovalPreviewPanelProps) {
               <div className="approval-provenance-grid">
                 <div>
                   <strong>데이터 근거</strong>
-                  <ChipList items={preview.provenance.evidenceLabels} />
+                  <ChipList items={preview.provenance.evidenceLabels} keyPrefix={`${preview.id}-evidence`} />
                 </div>
                 <div>
                   <strong>
                     <Activity size={14} aria-hidden="true" />
                     AI 실행 이력
                   </strong>
-                  <ChipList items={preview.provenance.agentRunLabels} />
+                  <ChipList items={preview.provenance.agentRunLabels} keyPrefix={`${preview.id}-agent-run`} />
                 </div>
                 <div>
                   <strong>
                     <Database size={14} aria-hidden="true" />
                     연동 수집
                   </strong>
-                  <ChipList items={preview.provenance.providerEvidenceLabels} />
+                  <ChipList items={preview.provenance.providerEvidenceLabels} keyPrefix={`${preview.id}-provider-evidence`} />
                 </div>
                 <div>
                   <strong>안전 조건</strong>
-                  <ChipList items={preview.provenance.safetyLabels} />
+                  <ChipList items={preview.provenance.safetyLabels} keyPrefix={`${preview.id}-safety`} />
                 </div>
               </div>
             </section>
@@ -72,16 +72,16 @@ export function ApprovalPreviewPanel({ previews }: ApprovalPreviewPanelProps) {
               <div>
                 <strong>변경 전</strong>
                 <ul>
-                  {preview.beforeItems.map((item) => (
-                    <li key={item}>{item}</li>
+                  {preview.beforeItems.map((item, index) => (
+                    <li key={`${preview.id}-before-${index}-${item}`}>{item}</li>
                   ))}
                 </ul>
               </div>
               <div>
                 <strong>승인 후</strong>
                 <ul>
-                  {preview.afterItems.map((item) => (
-                    <li key={item}>{item}</li>
+                  {preview.afterItems.map((item, index) => (
+                    <li key={`${preview.id}-after-${index}-${item}`}>{item}</li>
                   ))}
                 </ul>
               </div>
@@ -118,8 +118,8 @@ export function ApprovalPreviewPanel({ previews }: ApprovalPreviewPanelProps) {
                 <ShieldCheck size={16} aria-hidden="true" />
                 {preview.primaryActionLabel}
               </button>
-              {preview.secondaryActions.map((action) => (
-                <button className="secondary-button" type="button" key={action}>
+              {preview.secondaryActions.map((action, index) => (
+                <button className="secondary-button" type="button" key={`${preview.id}-action-${index}-${action}`}>
                   {action}
                 </button>
               ))}
@@ -132,11 +132,11 @@ export function ApprovalPreviewPanel({ previews }: ApprovalPreviewPanelProps) {
   );
 }
 
-function ChipList({ items }: { items: string[] }) {
+function ChipList({ items, keyPrefix }: { items: string[]; keyPrefix: string }) {
   return (
     <div className="approval-provenance-chips">
-      {items.map((item) => (
-        <span key={item}>{item}</span>
+      {items.map((item, index) => (
+        <span key={`${keyPrefix}-${index}-${item}`}>{item}</span>
       ))}
     </div>
   );
