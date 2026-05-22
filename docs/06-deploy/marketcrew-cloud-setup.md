@@ -1,6 +1,6 @@
 # MarketCrew Cloud Setup
 
-> Date: 2026-05-22 KST
+> Date: 2026-05-23 KST
 > Scope: GitHub, Vercel, Railway production 연결
 
 ## Current State
@@ -18,7 +18,7 @@
 | Owner login | Enabled | password session gate |
 | Railway | Connected | project `marketcrew` |
 | Railway Postgres | Online | service `Postgres`, production environment |
-| Railway API | Online | service `marketcrew-api`, `https://marketcrew-api-production.up.railway.app` |
+| Railway API | Online | service `marketcrew-api`, `https://api.marketcrew.app` |
 
 ## Production Runtime
 
@@ -58,7 +58,7 @@ The backend now runs the same Next.js application on Railway, with backend mode 
 |---------|--------|
 | Service root | repository root |
 | Runtime | Next.js production server |
-| Production URL | `https://marketcrew-api-production.up.railway.app` |
+| Production URL | `https://api.marketcrew.app` |
 | Health check | `GET /api/backend/health` |
 | View model | `GET /api/operations/view-model` |
 | Read model | `GET /api/operations/workflow-state` |
@@ -151,19 +151,21 @@ curl -I https://marketcrew.app/operations
 | Local `npm run build` | PASS |
 | Local targeted API/persistence tests | PASS, 4 files / 14 tests |
 | Railway root Next backend deploy | SUCCESS, Node 22 runtime |
-| Railway `/api/backend/health` | `ok=true`, `repositoryMode=db`, approvalRequests 5, providerSyncReports 18, agentRuns 1 |
+| Railway `/api/backend/health` | `ok=true`, `repositoryMode=db`, approvalRequests 5, providerSyncReports 42, agentRuns 25 |
 | Railway `/api/operations/view-model` | 200, DB-backed operations view model returned |
 | Railway `/api/operations/workflow-state` | 200, token-protected DB summary returned |
 | Railway unauthenticated API guard | `/api/operations/view-model` returns 401 without backend token |
 | Vercel production deploy | READY, `marketcrew.app` alias updated after env pruning |
 | Vercel production env list | 5 keys remain: owner login 2, Railway bridge 3 |
 | Railway service status | Online |
+| Railway custom API domain | `https://api.marketcrew.app` |
+| Vercel backend bridge health | `https://marketcrew.app/api/backend/health` returns the same DB-backed health summary |
 | `/operations` production smoke | 200, key Korean terms present |
-| `/operations` login smoke after env pruning | 200 after owner login, `repositoryMode=db`, approvalRequests 5, providerSyncReports 18, agentRuns 1 |
+| `/operations` login smoke after env pruning | 200 after owner login, `repositoryMode=db`, approvalRequests 5, providerSyncReports 42, agentRuns 25 |
 | `/operations` unauthenticated guard | 307 redirect to `/login?next=/operations` |
 | `/follow-ups` production smoke | 200, key Korean terms present |
 | `/approvals/approval-agenda-season-plan-buddha-gift-card` production smoke | 200, key Korean terms present |
-| `/api/operations/workflow-state` | `repositoryMode=db`, approvalRequests 5, providerSyncReports 18, agentRuns 1 |
+| `/api/operations/workflow-state` | `repositoryMode=db`, approvalRequests 5, providerSyncReports 42, agentRuns 25 |
 | Vercel recent error logs after pruned-env smoke | no errors in latest 3 minutes |
 | `marketcrew.app` DNS | public resolvers return `76.76.21.21` |
 | Owner login unit tests | PASS |
