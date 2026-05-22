@@ -140,7 +140,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
                 className={`app-nav-link${isActive ? " is-active" : ""}`}
                 href={item.href}
                 key={item.key}
-                prefetch
+                prefetch={false}
                 title={`${item.label} - ${item.description}`}
               >
                 <Icon size={18} aria-hidden="true" />
@@ -165,7 +165,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
             </div>
 
             <section className="workspace-actions" aria-label="화면 실행 버튼">
-              <Link className="secondary-button" href={activeItem.href}>
+              <Link className="secondary-button" href={activeItem.href} prefetch={false}>
                 <RefreshCcw size={16} aria-hidden="true" />
                 새로고침
               </Link>

@@ -48,7 +48,7 @@ export function CharacterDesk({ characters, agendaCards, ownerDecisionFlows, sel
   return (
     <section className="character-desk-section" aria-label="캐릭터별 업무 현황">
       <div className="character-switcher" aria-label="캐릭터 선택">
-        <Link className={!selectedCharacterId ? "is-active" : ""} href="/characters">
+        <Link className={!selectedCharacterId ? "is-active" : ""} href="/characters" prefetch={false}>
           전체
         </Link>
         {characters.map((character) => (
@@ -56,6 +56,7 @@ export function CharacterDesk({ characters, agendaCards, ownerDecisionFlows, sel
             className={selectedCharacterId === character.id ? "is-active" : ""}
             href={`/characters/${character.id}`}
             key={character.id}
+            prefetch={false}
           >
             {character.name}
           </Link>
@@ -99,7 +100,12 @@ function CharacterDeskCard({
           <span className="eyebrow">{character.role}</span>
           <h2>{character.name}</h2>
         </div>
-        <Link aria-label={`${character.name} 업무 보기`} className="icon-button" href={`/characters/${character.id}`}>
+        <Link
+          aria-label={`${character.name} 업무 보기`}
+          className="icon-button"
+          href={`/characters/${character.id}`}
+          prefetch={false}
+        >
           <ArrowRight size={18} aria-hidden="true" />
         </Link>
       </header>
@@ -137,7 +143,7 @@ function CharacterDeskCard({
       <div className="character-work-list" aria-label={`${character.name} 연결 안건`}>
         {relatedAgendas.length > 0 ? (
           relatedAgendas.map((agenda) => (
-            <Link href={`/approvals/${agenda.id}`} key={agenda.id}>
+            <Link href={`/approvals/${agenda.id}`} key={agenda.id} prefetch={false}>
               <ShieldCheck size={15} aria-hidden="true" />
               <span>{agenda.title}</span>
             </Link>
