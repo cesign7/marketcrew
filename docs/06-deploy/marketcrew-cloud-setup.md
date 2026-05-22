@@ -13,6 +13,7 @@
 | Vercel | Connected and deployed | `https://marketcrew.vercel.app` |
 | Vercel project | Ready | `aipressos-projects/marketcrew` |
 | Vercel production branch | Updated | `main` |
+| Vercel production env | Minimized | owner login + Railway backend bridge only |
 | Custom domain | Added in Vercel, DNS updated | `marketcrew.app`, `www.marketcrew.app` |
 | Owner login | Enabled | password session gate |
 | Railway | Connected | project `marketcrew` |
@@ -154,13 +155,16 @@ curl -I https://marketcrew.app/operations
 | Railway `/api/operations/view-model` | 200, DB-backed operations view model returned |
 | Railway `/api/operations/workflow-state` | 200, token-protected DB summary returned |
 | Railway unauthenticated API guard | `/api/operations/view-model` returns 401 without backend token |
-| Vercel production deploy | READY |
+| Vercel production deploy | READY, `marketcrew.app` alias updated after env pruning |
+| Vercel production env list | 5 keys remain: owner login 2, Railway bridge 3 |
 | Railway service status | Online |
 | `/operations` production smoke | 200, key Korean terms present |
+| `/operations` login smoke after env pruning | 200 after owner login, `repositoryMode=db`, approvalRequests 5, providerSyncReports 18, agentRuns 1 |
+| `/operations` unauthenticated guard | 307 redirect to `/login?next=/operations` |
 | `/follow-ups` production smoke | 200, key Korean terms present |
 | `/approvals/approval-agenda-season-plan-buddha-gift-card` production smoke | 200, key Korean terms present |
 | `/api/operations/workflow-state` | `repositoryMode=db`, approvalRequests 5, providerSyncReports 18, agentRuns 1 |
-| Vercel recent error logs after final smoke | no errors in latest 1 minute |
+| Vercel recent error logs after pruned-env smoke | no errors in latest 3 minutes |
 | `marketcrew.app` DNS | public resolvers return `76.76.21.21` |
 | Owner login unit tests | PASS |
 
