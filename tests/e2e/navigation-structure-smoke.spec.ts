@@ -28,9 +28,10 @@ test("모바일 상단 메뉴는 첫 화면을 과하게 차지하지 않는다"
   await page.goto("/operations");
 
   const topbar = page.locator(".workspace-topbar");
-  const box = await topbar.boundingBox();
+  await expect(topbar).toBeVisible();
+  const topbarHeight = await topbar.evaluate((element) => element.getBoundingClientRect().height);
 
-  expect(box?.height).toBeLessThanOrEqual(300);
+  expect(topbarHeight).toBeLessThanOrEqual(300);
   await expect(page.getByRole("region", { name: "화면 실행 버튼" }).getByRole("link", { name: "결재 검토" })).toBeVisible();
   await expect(page.getByRole("region", { name: "화면 보기 기준" }).getByRole("button", { name: "스티커씨" })).toBeVisible();
 });
