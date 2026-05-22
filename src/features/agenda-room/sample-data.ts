@@ -1,4 +1,5 @@
 import { getProviderHistoryPolicy } from "@/lib/domain";
+import { buildProviderDataContracts } from "./provider-data-contracts";
 import type { AgendaRoomViewModel } from "./types";
 
 export const agendaRoomSample: AgendaRoomViewModel = {
@@ -243,6 +244,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
       followUpTasks: ["모아: 외부 반영 잠금 상태를 대표에게 보고하고 수동 반영 또는 잠금 해제 여부 확인"],
     },
   ],
+  providerDataContracts: buildProviderDataContracts(),
   providerReadiness: [
     {
       id: "search_ad",

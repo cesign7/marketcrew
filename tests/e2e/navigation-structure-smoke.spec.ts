@@ -48,6 +48,9 @@ test("데이터 연동 메뉴와 상단 채널/기간 필터가 클릭에 반응
   await page.getByRole("navigation", { name: "주요 업무 메뉴" }).getByRole("link", { name: "데이터 연동" }).click();
   await expect(page).toHaveURL(/\/data$/);
   await expect(page.getByRole("heading", { level: 1, name: "데이터 연동" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "불러오는 데이터와 저장하는 데이터" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "불러오는 데이터" }).first()).toBeVisible();
+  await expect(page.locator(".data-contract-table").first()).toContainText("칼럼");
 
   const topControls = page.getByRole("region", { name: "화면 보기 기준" });
   await topControls.getByRole("button", { name: "스티커씨" }).click();
@@ -55,6 +58,8 @@ test("데이터 연동 메뉴와 상단 채널/기간 필터가 클릭에 반응
   await expect(topControls.getByRole("button", { name: "스티커씨" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".provider-card").filter({ hasText: "스마트스토어(스티커씨)" })).toHaveCount(1);
   await expect(page.locator(".provider-card").filter({ hasText: "쇼핑몰(커피프린트)" })).toHaveCount(0);
+  await expect(page.locator(".data-contract-provider").filter({ hasText: "스마트스토어(스티커씨)" })).toHaveCount(1);
+  await expect(page.locator(".data-contract-provider").filter({ hasText: "쇼핑몰(커피프린트)" })).toHaveCount(0);
 
   await topControls.getByRole("button", { name: "30일" }).click();
   await expect(page).toHaveURL(/\/data\?channel=stickersee&period=30d$/);

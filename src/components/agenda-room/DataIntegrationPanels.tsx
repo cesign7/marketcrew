@@ -4,10 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import type {
   AgentRunSummaryView,
   PlannerPreviewView,
+  ProviderDataContractView,
   ProviderReadinessView,
   ProviderSyncEvidenceView,
 } from "@/features/agenda-room/types";
 import {
+  filterProviderDataContracts,
   filterProviderReadiness,
   filterProviderSyncEvidence,
   dataPeriodLabel,
@@ -20,6 +22,7 @@ import {
 import { AgentRunSummaryPanel } from "./AgentRunSummaryPanel";
 import { PlannerPreviewPanel } from "./PlannerPreviewPanel";
 import { ProviderCollectionPolicyPanel } from "./ProviderCollectionPolicyPanel";
+import { ProviderDataContractPanel } from "./ProviderDataContractPanel";
 import { ProviderReadinessPanel } from "./ProviderReadinessPanel";
 import { ProviderSyncEvidencePanel } from "./ProviderSyncEvidencePanel";
 
@@ -28,6 +31,7 @@ type DataIntegrationPanelsProps = {
   initialChannel: DataChannelFilter;
   initialPeriod: DataPeriodFilter;
   plannerPreview: PlannerPreviewView;
+  providerDataContracts: ProviderDataContractView[];
   providerReadiness: ProviderReadinessView[];
   providerSyncEvidence: ProviderSyncEvidenceView[];
 };
@@ -42,6 +46,7 @@ export function DataIntegrationPanels({
   initialChannel,
   initialPeriod,
   plannerPreview,
+  providerDataContracts,
   providerReadiness,
   providerSyncEvidence,
 }: DataIntegrationPanelsProps) {
@@ -71,6 +76,10 @@ export function DataIntegrationPanels({
     () => filterProviderSyncEvidence(providerSyncEvidence, selectedFilter.channel),
     [providerSyncEvidence, selectedFilter.channel],
   );
+  const filteredProviderDataContracts = useMemo(
+    () => filterProviderDataContracts(providerDataContracts, selectedFilter.channel),
+    [providerDataContracts, selectedFilter.channel],
+  );
   const periodLabel = dataPeriodLabel(selectedFilter.period);
   const periodPolicyLabel = dataPeriodPolicyLabel(selectedFilter.period);
 
@@ -81,6 +90,7 @@ export function DataIntegrationPanels({
         periodPolicyLabel={periodPolicyLabel}
         reports={filteredProviderSyncEvidence}
       />
+      <ProviderDataContractPanel contracts={filteredProviderDataContracts} />
       <ProviderReadinessPanel providers={filteredProviderReadiness} />
       <ProviderSyncEvidencePanel reports={filteredProviderSyncEvidence} showHistoryPolicy />
       <PlannerPreviewPanel preview={plannerPreview} />

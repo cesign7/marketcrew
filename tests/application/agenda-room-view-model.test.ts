@@ -40,6 +40,15 @@ describe("buildAgendaRoomViewModel", () => {
       "shop",
       "llm",
     ]);
+    expect(viewModel.providerDataContracts.map((contract) => contract.providerKey)).toEqual([
+      "search_ad",
+      "datalab",
+      "smartstore",
+      "shop",
+    ]);
+    expect(viewModel.providerDataContracts.find((contract) => contract.providerKey === "shop")?.stored.columns[0]?.key).toBe(
+      "ShopAggregateSnapshot.brandKey",
+    );
     expect(viewModel.providerReadiness.find((provider) => provider.id === "search_ad")?.canWriteLabel).toBe("쓰기 차단");
     expect(viewModel.plannerPreview.rawRowsLabel).toBe("원천 행 제외");
     expect(viewModel.plannerPreview.selectedAgendaIds[0]).toBe("approval-agenda-season-plan-buddha-gift-card");

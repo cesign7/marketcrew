@@ -184,12 +184,13 @@ QA Verdict:    QA_PASS
 
 | Check | Result |
 |-------|--------|
-| `npm test -- --run` | 15 files, 53 tests passed |
+| `npm test -- --run` | 27 files, 81 tests passed |
 | `npm run typecheck` | passed |
 | `npm run build` | passed |
 | `npm audit --omit=dev` | 0 vulnerabilities |
-| `npm run test:e2e` | 1 chromium smoke passed |
+| Targeted Playwright `/data` smoke | 1 chromium smoke passed |
 | `/operations` smoke | 200 OK |
+| `/data` HTTP smoke | 200 OK, data contract anchors visible |
 | `/approvals/[id]` smoke | 200 OK |
 | outcomes API | 1 report, `판단 보류` |
 | Browser smoke | provider evidence and saved outcome visible |
@@ -203,6 +204,7 @@ QA Verdict:    QA_PASS
 | Missing persistence | Added local file repository and workflow-state API | Resolved for MVP |
 | Missing provider evidence | Added readiness, read-only sync, evidence panels | Resolved for MVP |
 | Missing outcome re-read | Added outcomes API and outcome history panel | Resolved |
+| Missing data contract visibility | Added `/data` contract panel for incoming fields, stored fields, samples, and safety notes | Resolved |
 | Risk of external writes | Kept provider write gates closed | Resolved for MVP |
 
 ---
@@ -270,6 +272,7 @@ QA Verdict:    QA_PASS
 - Bottom-up agenda/report/approval workflow.
 - Lunar/solar marketing calendar and seasonal keyword guardrails.
 - Provider readiness and read-only sync evidence.
+- Provider data contract panel for incoming data, stored data, column descriptions, and sample values.
 - Product keyword/marketing/product discovery candidates.
 - Approval detail with provider evidence, owner decision submit, execution result, checkpoints, and outcome history.
 - Local file repository, workflow-state API, outcomes API.
@@ -291,3 +294,4 @@ QA Verdict:    QA_PASS
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 1.0 | 2026-05-22 | Completion report created | Codex |
+| 1.1 | 2026-05-22 | Added `/data` provider data contract transparency slice | Codex |

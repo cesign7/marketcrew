@@ -31,6 +31,7 @@ export default async function DataPage({ searchParams }: DataPageProps) {
         initialChannel={selectedChannel}
         initialPeriod={selectedPeriod}
         plannerPreview={viewModel.plannerPreview}
+        providerDataContracts={viewModel.providerDataContracts}
         providerReadiness={viewModel.providerReadiness}
         providerSyncEvidence={viewModel.providerSyncEvidence}
       />

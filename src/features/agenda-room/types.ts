@@ -162,6 +162,38 @@ export type ProviderSyncEvidenceView = {
   };
 };
 
+export type ProviderDataContractView = {
+  providerKey: ProviderSyncEvidenceView["providerKey"];
+  providerLabel: string;
+  channelKey: string;
+  channelLabel: string;
+  brandLabel?: string;
+  sourceUrl: string;
+  incoming: ProviderDataContractDatasetView;
+  stored: ProviderDataContractDatasetView;
+};
+
+export type ProviderDataContractDatasetView = {
+  id: string;
+  title: string;
+  description: string;
+  safetyNote: string;
+  columns: Array<{
+    key: string;
+    label: string;
+    description: string;
+    sample: string;
+  }>;
+  sampleRows: Array<{
+    id: string;
+    values: Array<{
+      key: string;
+      label: string;
+      value: string;
+    }>;
+  }>;
+};
+
 export type PlannerPreviewView = {
   title: string;
   modeLabel: string;
@@ -275,6 +307,7 @@ export type AgendaRoomViewModel = {
   seasonalKeywordPlans: SeasonalKeywordPlanView[];
   approvalPreviews: ApprovalPreviewView[];
   ownerDecisionFlows: OwnerDecisionFlowView[];
+  providerDataContracts: ProviderDataContractView[];
   providerReadiness: ProviderReadinessView[];
   providerSyncEvidence: ProviderSyncEvidenceView[];
   plannerPreview: PlannerPreviewView;

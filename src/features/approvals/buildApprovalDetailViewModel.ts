@@ -288,7 +288,10 @@ function toOperatorKorean(value: string): string {
     .replaceAll("tokens", "토큰")
     .replaceAll("token", "토큰")
     .replaceAll("deterministic fallback", "규칙 기반 대체")
-    .replaceAll("fallback", "대체");
+    .replaceAll("fallback", "대체")
+    .replaceAll("주문 원문 행는", "주문 원문 행은")
+    .replaceAll("원천 행는", "원천 행은")
+    .replaceAll("연결는", "연결은");
 }
 
 function agentRunStatusLabel(status: AgentRunStatus): string {

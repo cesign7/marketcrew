@@ -25,6 +25,7 @@ import { buildProviderReadinessReports } from "@/lib/integrations/providers/read
 import { buildDeterministicPlannerResult, buildPlannerAuditRun, buildPlannerInputFromApprovals } from "@/lib/llm/planner";
 import type { MarketingWorkflowRepository } from "@/lib/persistence/repositories";
 import { buildLlmCostGovernanceView } from "./buildLlmCostGovernanceView";
+import { buildProviderDataContracts } from "./provider-data-contracts";
 import type {
   AgendaRoomViewModel,
   ApprovalPreviewView,
@@ -137,6 +138,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
       ),
     ),
     ownerDecisionFlows,
+    providerDataContracts: buildProviderDataContracts(),
     providerReadiness: providerReadiness.map(buildProviderReadinessView),
     providerSyncEvidence: buildProviderSyncEvidenceViews(providerSyncReports),
     plannerPreview: buildPlannerPreviewView(plannerResult, plannerAudit),
@@ -1064,7 +1066,10 @@ function toOperatorKorean(value: string): string {
     .replaceAll("risk", "위험도")
     .replaceAll("evidence id", "근거 ID")
     .replaceAll("서버 환경 설정로", "서버 환경 설정으로")
-    .replaceAll("외부 반영 잠금와", "외부 반영 잠금과");
+    .replaceAll("외부 반영 잠금와", "외부 반영 잠금과")
+    .replaceAll("주문 원문 행는", "주문 원문 행은")
+    .replaceAll("원천 행는", "원천 행은")
+    .replaceAll("연결는", "연결은");
 }
 
 function metricLabel(metric: string): string {
