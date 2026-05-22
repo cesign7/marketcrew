@@ -19,9 +19,10 @@ import type {
   WorkflowObjectRef,
 } from "../domain";
 import type { MarketingWorkflowRepository } from "./repositories";
+import { normalizeWorkflowRepositoryState, type WorkflowRepositoryState } from "./workflow-state";
 
-export function createMemoryMarketingWorkflowRepository(): MarketingWorkflowRepository {
-  return new MemoryMarketingWorkflowRepository();
+export function createMemoryMarketingWorkflowRepository(initialState?: Partial<WorkflowRepositoryState>): MarketingWorkflowRepository {
+  return new MemoryMarketingWorkflowRepository(initialState);
 }
 
 class MemoryMarketingWorkflowRepository implements MarketingWorkflowRepository {
@@ -42,6 +43,31 @@ class MemoryMarketingWorkflowRepository implements MarketingWorkflowRepository {
   private providerSyncReports: ProviderSyncReport[] = [];
   private agentRuns: AgentRun[] = [];
   private agentRunWorkflowLinks: AgentRunWorkflowLink[] = [];
+
+  constructor(initialState?: Partial<WorkflowRepositoryState>) {
+    if (!initialState) {
+      return;
+    }
+
+    const state = normalizeWorkflowRepositoryState(initialState);
+    this.signals = [...state.signals];
+    this.seasonalKeywordAdPlans = [...state.seasonalKeywordAdPlans];
+    this.keywordDemandSnapshots = [...state.keywordDemandSnapshots];
+    this.searchTrendSnapshots = [...state.searchTrendSnapshots];
+    this.agendaCandidates = [...state.agendaCandidates];
+    this.characterReports = [...state.characterReports];
+    this.moaSynthesisReports = [...state.moaSynthesisReports];
+    this.approvalRequests = [...state.approvalRequests];
+    this.ownerDecisions = [...state.ownerDecisions];
+    this.preflightChecks = [...state.preflightChecks];
+    this.executionResults = [...state.executionResults];
+    this.performanceCheckpoints = [...state.performanceCheckpoints];
+    this.outcomeReports = [...state.outcomeReports];
+    this.followUpInternalTasks = [...state.followUpInternalTasks];
+    this.providerSyncReports = [...state.providerSyncReports];
+    this.agentRuns = [...state.agentRuns];
+    this.agentRunWorkflowLinks = [...state.agentRunWorkflowLinks];
+  }
 
   saveSignals(signals: Signal[]): void {
     this.signals = upsertById(this.signals, signals);

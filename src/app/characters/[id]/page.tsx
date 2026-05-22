@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CharacterDetailPage({ params }: CharacterDetailPageProps) {
   const { id } = await params;
-  const viewModel = loadAgendaRoomViewModel();
+  const viewModel = await loadAgendaRoomViewModel();
   const character = viewModel.characters.find((item) => item.id === id);
 
   if (!character) {

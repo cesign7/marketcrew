@@ -4,8 +4,8 @@ import { loadAgendaRoomViewModel } from "@/features/agenda-room/loadAgendaRoomVi
 
 export const dynamic = "force-dynamic";
 
-export default function CharactersPage() {
-  const viewModel = loadAgendaRoomViewModel();
+export default async function CharactersPage() {
+  const viewModel = await loadAgendaRoomViewModel();
 
   return (
     <AppShell

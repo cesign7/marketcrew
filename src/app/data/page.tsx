@@ -16,7 +16,7 @@ export default async function DataPage({ searchParams }: DataPageProps) {
   const params = await searchParams;
   const selectedChannel = normalizeDataChannel(params?.channel);
   const selectedPeriod = normalizeDataPeriod(params?.period);
-  const viewModel = loadAgendaRoomViewModel();
+  const viewModel = await loadAgendaRoomViewModel();
 
   return (
     <AppShell

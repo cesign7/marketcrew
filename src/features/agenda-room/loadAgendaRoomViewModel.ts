@@ -1,4 +1,7 @@
-import { createLocalWorkflowRepository } from "@/lib/persistence/workflow-store";
+import { createMemoryMarketingWorkflowRepository } from "@/lib/persistence/memory-repository";
+import { clearPostgresReadModelStateCache, readPostgresWorkflowRepositoryState } from "@/lib/persistence/postgres-read-model";
+import type { MarketingWorkflowRepository } from "@/lib/persistence/repositories";
+import { createLocalWorkflowRepository, getWorkflowDatabaseUrl, getWorkflowRepositoryMode } from "@/lib/persistence/workflow-store";
 import { buildAgendaRoomViewModel } from "./buildAgendaRoomViewModel";
 import type { AgendaRoomViewModel } from "./types";
 
@@ -14,14 +17,14 @@ declare global {
   var __marketcrewAgendaRoomViewModelCache: CachedAgendaRoomViewModel | undefined;
 }
 
-export function loadAgendaRoomViewModel() {
+export async function loadAgendaRoomViewModel() {
   const cached = readAgendaRoomViewModelCache();
   if (cached) {
     return cached;
   }
 
   const viewModel = buildAgendaRoomViewModel({
-    repository: createLocalWorkflowRepository(),
+    repository: await createAgendaRoomReadRepository(),
   });
   writeAgendaRoomViewModelCache(viewModel);
 
@@ -30,6 +33,7 @@ export function loadAgendaRoomViewModel() {
 
 export function clearAgendaRoomViewModelCache() {
   globalThis.__marketcrewAgendaRoomViewModelCache = undefined;
+  clearPostgresReadModelStateCache();
 }
 
 function readAgendaRoomViewModelCache() {
@@ -68,4 +72,18 @@ function getViewModelCacheTtlMs(env: NodeJS.ProcessEnv = process.env): number {
 
   const parsed = Number.parseInt(rawValue, 10);
   return Number.isFinite(parsed) ? Math.max(0, parsed) : DEFAULT_VIEW_MODEL_CACHE_TTL_MS;
+}
+
+async function createAgendaRoomReadRepository(env: NodeJS.ProcessEnv = process.env): Promise<MarketingWorkflowRepository> {
+  if (getWorkflowRepositoryMode(env) !== "db") {
+    return createLocalWorkflowRepository(env);
+  }
+
+  const databaseUrl = getWorkflowDatabaseUrl(env);
+  if (!databaseUrl) {
+    return createLocalWorkflowRepository(env);
+  }
+
+  const state = await readPostgresWorkflowRepositoryState(databaseUrl, env);
+  return createMemoryMarketingWorkflowRepository(state);
 }
