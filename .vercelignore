@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.marketcrew/
+.omx/
+.next/
+node_modules/
+playwright-report/
+test-results/
+*.tsbuildinfo
+.DS_Store
