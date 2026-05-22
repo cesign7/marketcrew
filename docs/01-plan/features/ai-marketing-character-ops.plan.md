@@ -245,7 +245,7 @@ Opportunity types:
 | Type | Owner | Output |
 |------|-------|--------|
 | `KeywordOpportunity` | `gro` | 네이버 키워드광고 신규/확장 키워드, 제외 키워드, 랜딩 연결 제안 |
-| `MarketingProposal` | `copy` + `opi` | 광고문구, 배너/상세/콘텐츠 문안, 기획전 메시지 |
+| `MarketingProposal` | `copy` + `moa` | 광고문구, 배너/상세/콘텐츠 문안, 기획전 메시지 |
 | `ProductOpportunity` | `pro` + `maru` | 신상품, 묶음상품, 가격/프로모션, 재고/운영 준비 제안 |
 | `SegmentOpportunity` | `ripi` | 이벤트별 고객군, 재구매/선물/휴면 고객 캠페인 제안 |
 
@@ -275,10 +275,10 @@ Seasonal keyword lifecycle:
 | `DISCOVER` | D-60 ~ D-45 | `gro` + `pro` | 상품/이벤트 조합별 키워드 후보와 적합도 점수 |
 | `VALIDATE` | D-45 ~ D-30 | `day` + `gro` | 검색수, 경쟁도, 전년도 성과, 데이터 신뢰도 |
 | `TEST` | D-30 ~ D-14 | `gro` + `copy` | 낮은 예산의 테스트 키워드/광고문구/랜딩 연결 초안 |
-| `SCALE` | D-14 ~ D-3 | `gro` + `opi` | 예산/입찰 증액 또는 유지 결재안 |
+| `SCALE` | D-14 ~ D-3 | `gro` + `moa` | 예산/입찰 증액 또는 유지 결재안 |
 | `PEAK_GUARD` | D-3 ~ D+1 | `gro` + `day` | 일 예산 소진, CPA/ROAS, 재고/마진 중지 조건 감시 |
 | `TAPER` | D+1 ~ D+7 | `gro` | 축소/중지/제외 키워드 반영안 |
-| `REVIEW` | D+7 ~ D+14 | `gro` + `opi` | 성과 회고, 내년 시즌 기준값, 후속 상품/콘텐츠 안건 |
+| `REVIEW` | D+7 ~ D+14 | `gro` + `moa` | 성과 회고, 내년 시즌 기준값, 후속 상품/콘텐츠 안건 |
 
 Required evidence:
 
@@ -522,7 +522,7 @@ Priority inbox buckets:
 | `ProductOpportunity` | Domain Model | 시즌/이벤트/성과 기반 신상품, 묶음상품, 프로모션 발굴 제안. |
 | `AgendaTriage` | Domain Service | 안건 후보의 중요도, 중복, 근거 충분성, 결재 필요성을 판정한다. |
 | `CharacterReport` | Domain Model | 담당 캐릭터가 상위 보고자에게 제출한 근거 기반 보고. |
-| `OpiSynthesisReport` | Domain Model | 모아가 하위 보고를 종합한 대표 결재 전 보고. |
+| `MoaSynthesisReport` | Domain Model | 모아가 하위 보고를 종합한 대표 결재 전 보고. |
 | `ApprovalRequest` | Domain Model | 모아가 대표에게 올리는 결재 요청. |
 | `ExecutionPlan` | Domain Model | 대표가 승인하면 실행될 변경 diff, 위험 등급, preflight, rollback 계획. |
 | `OwnerDecision` | Domain Model | 대표의 승인/반려/수정/보류/추가근거 요청 결정. |
@@ -552,7 +552,7 @@ Priority inbox buckets:
 | `ProductOpportunity` | CREATE/READ | pro/maru product scout, approval preview | 신규 구현 |
 | `AgendaTriage` | READ/EVALUATE | agenda workflow engine, tests | 신규 구현 |
 | `CharacterReport` | CREATE/READ | specialist character runners, report UI | 신규 구현 |
-| `OpiSynthesisReport` | CREATE/READ | Moa review engine, operations UI | 신규 구현 |
+| `MoaSynthesisReport` | CREATE/READ | Moa review engine, operations UI | 신규 구현 |
 | `ApprovalRequest` | CREATE/READ/UPDATE | approvals UI, owner decision action | 신규 구현 |
 | `ExecutionPlan` | CREATE/READ | Moa review engine, approval preview UI, preflight | 신규 구현 |
 | `OwnerDecision` | CREATE/READ | approval actions, follow-up planner | 신규 구현 |
@@ -660,7 +660,7 @@ SignalCollector(read-only adapters)
   -> SeasonalKeywordAdPlan[]
   -> AgendaTriage
   -> CharacterReport[]
-  -> OpiSynthesisReport
+  -> MoaSynthesisReport
   -> ApprovalRequest
   -> ExecutionPlan
   -> OwnerDecision
@@ -686,7 +686,7 @@ Initial character map:
 
 | Character | Korean Role | Role Model | Primary Responsibility | Agenda Creation Criteria | Not Responsible For |
 |-----------|-------------|------------|------------------------|--------------------------|---------------------|
-| `opi` | 모아 | AI Chief of Staff / 마케팅 운영실장 | 하위 보고 검토, 안건 묶음, 대표 결재 요청, 후속 업무 배분 | 여러 캐릭터 보고가 같은 문제를 가리키거나 대표 결재가 필요한 외부 영향 의사결정일 때 `ApprovalRequest`로 승격한다. | 원천 데이터를 직접 해석해 단독 안건을 만들지 않는다. 하위 보고 없는 결재 요청을 만들지 않는다. |
+| `moa` | 모아 | AI Chief of Staff / 마케팅 운영실장 | 하위 보고 검토, 안건 묶음, 대표 결재 요청, 후속 업무 배분 | 여러 캐릭터 보고가 같은 문제를 가리키거나 대표 결재가 필요한 외부 영향 의사결정일 때 `ApprovalRequest`로 승격한다. | 원천 데이터를 직접 해석해 단독 안건을 만들지 않는다. 하위 보고 없는 결재 요청을 만들지 않는다. |
 | `gro` | 그로 | Performance Marketer / Attribution Analyst | 네이버 키워드광고 성과 하락, 성장 기회, 예산 낭비, 상품별 키워드 기회, 시즌 키워드 광고 생애주기 안건 발굴 | 캠페인/광고그룹/키워드 단위에서 클릭률, 전환율, 전환비용, 매출, 예산 소진이 기준선을 벗어나거나 이벤트/상품 조합에 새 키워드 기회가 있을 때 안건을 만든다. 시즌 키워드는 탐색/테스트/증액/축소/회고 단계로 올린다. | 승인 전에는 광고 입찰가, 예산, 키워드를 직접 변경하지 않는다. 승인 후에는 executor와 write gate를 통해서만 반영한다. |
 | `maru` | 마루 | Commerce Operations Analyst | 스마트스토어/자체 쇼핑몰 매출, 주문, 상품 운영 이슈와 이벤트 운영 준비 안건 발굴 | 채널별 매출 급변, 주문 급증/급감, 특정 상품 판매 이상, 품절/운영 리스크, 이벤트 상품 준비 부족이 보일 때 안건을 만든다. | 가격/마진 전략을 최종 판단하지 않는다. 상품 경제성 판단은 `pro`에게 넘긴다. |
 | `day` | 데이 | Data QA / Evidence Auditor | 데이터 정합성, 이상치, 근거 품질 안건 발굴 및 모든 안건의 신뢰도 보조 평가 | 데이터 누락, 수치 불일치, API 실패, 근거 부족, 표본 부족이 있으면 데이터 품질 안건을 만든다. 다른 캐릭터 안건에는 evidence score를 붙인다. | 사업 액션을 직접 추천하지 않는다. 안건 승인권자가 아니라 검증자다. |
@@ -694,13 +694,13 @@ Initial character map:
 | `ripi` | 리피 | Retention / CRM Marketer | 재구매, 휴면 고객, VIP, 고객군 변화, 이벤트별 고객군 안건 발굴 | 재구매율 하락, VIP 반응 변화, 휴면 고객 증가, 특정 세그먼트 매출 변화, 이벤트 선물 수요가 감지되면 CRM 안건을 만든다. | 신규 유입 광고 최적화나 상품 마진 판단을 맡지 않는다. 메시지/쿠폰 발송은 승인, 세그먼트 diff, 발송 수량, rollback/중지 조건이 있어야만 executor로 넘긴다. |
 | `pro` | 프로 | Merchandising / Profit Strategist | 상품, 가격, 마진, 프로모션, 신상품/묶음상품 판단 안건 발굴 | 판매량은 좋지만 마진이 낮거나, 가격/할인/묶음상품/프로모션 조정 여지가 있거나 이벤트에 맞는 상품 발굴 기회가 있을 때 안건을 만든다. | 채널 운영 장애나 CRM 세그먼트 운영을 맡지 않는다. 가격/프로모션 변경은 승인, 마진 검증, rollback snapshot이 있어야만 executor로 넘긴다. |
 
-표시명은 `모아`로 통일한다. 단, 기존 저장 데이터와 코드 호환을 위해 내부 키 `opi`, 실행 타입 `opi_planner`, 도메인 타입 `OpiSynthesisReport`는 유지한다.
+표시명, 문서명, 코드 내부 키는 `모아` / `moa` 기준으로 통일한다. 모아 관련 실행 타입은 `moa_planner`, 도메인 타입은 `MoaSynthesisReport`를 사용한다.
 
 Execution and outcome responsibilities:
 
 | Character | Execution Role | Outcome Role |
 |-----------|----------------|--------------|
-| `opi` | 승인된 `ExecutionPlan`을 preflight에 넘기고 실행 결과를 대표에게 요약한다. | 하위 캐릭터 성과 보고를 묶어 성공/부분성공/실패/판단보류 결론을 낸다. |
+| `moa` | 승인된 `ExecutionPlan`을 preflight에 넘기고 실행 결과를 대표에게 요약한다. | 하위 캐릭터 성과 보고를 묶어 성공/부분성공/실패/판단보류 결론을 낸다. |
 | `gro` | 승인된 검색광고 변경의 실행값과 제한 조건을 검토한다. | CPA, ROAS, 전환수, 광고비 변화의 성과 보고를 올린다. |
 | `maru` | 승인된 쇼핑몰 운영 변경의 대상 상품/채널을 검토한다. | 주문, 매출, 재고, 운영 이슈 변화의 성과 보고를 올린다. |
 | `day` | preflight, data confidence, rollback snapshot 존재 여부를 검수한다. | 성과 분석의 표본 부족, 시즌성, API 실패 여부를 검수한다. |
@@ -731,12 +731,12 @@ External role model benchmarks:
 
 | Reference Product | What to Borrow | Character Impact |
 |-------------------|----------------|------------------|
-| Shopify Sidekick | Store-context assistant that can analyze, create, and prepare changes for merchant review. | `opi`는 승인 전에는 대표 검토 가능한 변경안/결재 요청으로 정리하고, 승인 후에는 preflight와 executor 상태를 대표에게 보고한다. `maru`는 store operations signal을 읽는 캐릭터로 둔다. |
-| Triple Whale Moby | Ecommerce-specific AI operator that connects multiple commerce/advertising data sources into actionable recommendations. | `opi`, `gro`, `maru`, `pro`는 채널별 숫자를 따로 보지 않고 cross-channel 안건으로 묶을 수 있어야 한다. |
+| Shopify Sidekick | Store-context assistant that can analyze, create, and prepare changes for merchant review. | `moa`는 승인 전에는 대표 검토 가능한 변경안/결재 요청으로 정리하고, 승인 후에는 preflight와 executor 상태를 대표에게 보고한다. `maru`는 store operations signal을 읽는 캐릭터로 둔다. |
+| Triple Whale Moby | Ecommerce-specific AI operator that connects multiple commerce/advertising data sources into actionable recommendations. | `moa`, `gro`, `maru`, `pro`는 채널별 숫자를 따로 보지 않고 cross-channel 안건으로 묶을 수 있어야 한다. |
 | Northbeam | Attribution and marketing measurement across touchpoints. | `gro`는 단순 클릭/비용 감시가 아니라 어떤 광고 접점이 매출에 기여했는지 보는 성과 분석가로 둔다. `day`는 측정 신뢰도 검증을 맡는다. |
 | Klaviyo K:AI | Campaign/flow creation, customer agent, personalization, and predictive/generative CRM features. | `ripi`는 재구매/세그먼트/개인화 안건을 만들고, `copy`는 캠페인 메시지 초안을 만든다. |
 | HubSpot Breeze | Assistant, agents, and data enrichment for go-to-market workflows. | 캐릭터는 고정된 메뉴가 아니라 업무별 agent profile로 확장 가능해야 한다. |
-| Optimizely Opal | Marketing agent orchestration with access controls, permissions, observability, and audit trails. | `opi`는 상위 orchestrator, `day`는 audit/evidence 품질 보증 역할로 둔다. |
+| Optimizely Opal | Marketing agent orchestration with access controls, permissions, observability, and audit trails. | `moa`는 상위 orchestrator, `day`는 audit/evidence 품질 보증 역할로 둔다. |
 
 Decision: keep the visible character count at 7 for MVP. Add modes/skills under each character instead of adding more visible characters until a repeated agenda type cannot be owned cleanly by the current seven.
 
@@ -832,7 +832,7 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 
 ### Slice 2: Signal, Agenda, and Guardrail Domain Engine
 
-- `Signal`, `MarketingCalendar`, `KeywordDemandSnapshot`, `SearchTrendSnapshot`, `AgendaCandidate`, `KeywordOpportunity`, `SeasonalKeywordAdPlan`, `MarketingProposal`, `ProductOpportunity`, `AgendaTriage`, `CharacterReport`, `OpiSynthesisReport`, `ApprovalRequest`, `ExecutionPlan`, `OwnerDecision`, `ExecutionResult`, `PerformanceCheckpoint`, `OutcomeReport`, `FollowUpInternalTask` 타입/저장소.
+- `Signal`, `MarketingCalendar`, `KeywordDemandSnapshot`, `SearchTrendSnapshot`, `AgendaCandidate`, `KeywordOpportunity`, `SeasonalKeywordAdPlan`, `MarketingProposal`, `ProductOpportunity`, `AgendaTriage`, `CharacterReport`, `MoaSynthesisReport`, `ApprovalRequest`, `ExecutionPlan`, `OwnerDecision`, `ExecutionResult`, `PerformanceCheckpoint`, `OutcomeReport`, `FollowUpInternalTask` 타입/저장소.
 - `daily_spike`, `weekly_trend`, `monthly_trend`, `seasonal_yoy`, `lunar_event_yoy`, `event_opportunity`, `seasonal_keyword_demand`, `target_gap` signal type과 deterministic comparison engine 구현.
 - deterministic character watcher와 triage 우선 구현.
 - LLM planner는 interface 뒤에 붙인다.
@@ -909,7 +909,7 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 1. [ ] Design 문서 작성: `docs/02-design/features/ai-marketing-character-ops.design.md`
 2. [ ] 앱 scaffold 결정: Next.js + TypeScript + 테스트 도구
 3. [ ] Slice 1 구현: `오늘 올라온 안건` / `승인하면 바로 반영될 작업` / `성과 추적 중` 중심 Operations Room
-4. [ ] Slice 2 구현: `Signal -> AgendaCandidate -> CharacterReport -> OpiSynthesisReport -> ApprovalRequest -> ExecutionPlan` 도메인 타입과 테스트
+4. [ ] Slice 2 구현: `Signal -> AgendaCandidate -> CharacterReport -> MoaSynthesisReport -> ApprovalRequest -> ExecutionPlan` 도메인 타입과 테스트
 5. [ ] Slice 3 구현: approval preview, owner decision, mock/sandbox executor
 6. [ ] Slice 4 구현: 음력/양력 `MarketingCalendar`, 이벤트 윈도우, 키워드 수요 캐시, 시즌 키워드 광고 생애주기, 상품별 키워드/마케팅/상품 발굴 후보 생성
 7. [ ] Slice 6 이후 실제 provider executor 전 공식 API 문서 확인: 네이버 키워드광고, 스마트스토어/커머스, 자체 쇼핑몰 bridge

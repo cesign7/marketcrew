@@ -11,7 +11,7 @@ const collections = [
   "searchTrendSnapshots",
   "agendaCandidates",
   "characterReports",
-  "opiSynthesisReports",
+  "moaSynthesisReports",
   "approvalRequests",
   "ownerDecisions",
   "preflightChecks",

@@ -7,7 +7,7 @@ describe("buildAgendaRoomViewModel", () => {
   it("결재함 버킷과 결재 미리보기를 샘플 workflow 결과에서 만든다", () => {
     const viewModel = buildAgendaRoomViewModel({ env: {} });
 
-    expect(viewModel.opiReport.summary).toContain("대표 결재 대기 1건");
+    expect(viewModel.moaReport.summary).toContain("대표 결재 대기 1건");
     expect(viewModel.inboxBuckets.map((bucket) => [bucket.id, bucket.count])).toEqual([
       ["TODAY_APPROVAL", 1],
       ["SEASONAL_KEYWORD_REVIEW", 2],
@@ -59,7 +59,7 @@ describe("buildAgendaRoomViewModel", () => {
 
     const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
 
-    expect(viewModel.opiReport.summary).toContain("실제 읽기 전용 연동 집계");
+    expect(viewModel.moaReport.summary).toContain("실제 읽기 전용 연동 집계");
     expect(viewModel.summary.waitingApproval).toBe(4);
     expect(viewModel.agendaCards.map((card) => card.title)).toEqual(
       expect.arrayContaining([

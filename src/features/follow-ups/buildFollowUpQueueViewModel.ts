@@ -21,7 +21,7 @@ export type BuildFollowUpQueueViewModelInput = {
 };
 
 const characterProfiles: Record<CharacterKey, { name: string; role: string }> = {
-  opi: { name: "모아", role: "업무실장" },
+  moa: { name: "모아", role: "업무실장" },
   gro: { name: "그로", role: "성장 담당" },
   pro: { name: "프로", role: "상품 담당" },
   copy: { name: "카피", role: "메시지 담당" },
@@ -30,7 +30,7 @@ const characterProfiles: Record<CharacterKey, { name: string; role: string }> = 
   day: { name: "데이", role: "데이터 담당" },
 };
 
-const characterOrder: CharacterKey[] = ["opi", "gro", "pro", "copy", "ripi", "maru", "day"];
+const characterOrder: CharacterKey[] = ["moa", "gro", "pro", "copy", "ripi", "maru", "day"];
 
 export function buildFollowUpQueueViewModel({
   repository,
@@ -276,7 +276,7 @@ function nextActionLabel(
     return "수동 반영 또는 잠금 해제 조건 확인";
   }
 
-  if (task.assignedCharacter === "opi") {
+  if (task.assignedCharacter === "moa") {
     return "대표 보고용 재상신 정리";
   }
 

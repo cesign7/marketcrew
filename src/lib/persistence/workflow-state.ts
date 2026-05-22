@@ -7,7 +7,7 @@ import type {
   ExecutionResult,
   FollowUpInternalTask,
   KeywordDemandSnapshot,
-  OpiSynthesisReport,
+  MoaSynthesisReport,
   OutcomeReport,
   PerformanceCheckpoint,
   PreflightCheck,
@@ -25,7 +25,7 @@ export type WorkflowRepositoryState = {
   searchTrendSnapshots: SearchTrendSnapshot[];
   agendaCandidates: AgendaCandidate[];
   characterReports: CharacterReport[];
-  opiSynthesisReports: OpiSynthesisReport[];
+  moaSynthesisReports: MoaSynthesisReport[];
   approvalRequests: ApprovalRequest[];
   ownerDecisions: OwnerDecision[];
   preflightChecks: PreflightCheck[];
@@ -47,7 +47,7 @@ export const workflowCollectionKeys: WorkflowCollectionKey[] = [
   "searchTrendSnapshots",
   "agendaCandidates",
   "characterReports",
-  "opiSynthesisReports",
+  "moaSynthesisReports",
   "approvalRequests",
   "ownerDecisions",
   "preflightChecks",
@@ -68,7 +68,7 @@ export function createEmptyWorkflowRepositoryState(): WorkflowRepositoryState {
     searchTrendSnapshots: [],
     agendaCandidates: [],
     characterReports: [],
-    opiSynthesisReports: [],
+    moaSynthesisReports: [],
     approvalRequests: [],
     ownerDecisions: [],
     preflightChecks: [],
@@ -92,7 +92,7 @@ export function normalizeWorkflowRepositoryState(
     searchTrendSnapshots: asArray(parsed?.searchTrendSnapshots),
     agendaCandidates: asArray(parsed?.agendaCandidates),
     characterReports: asArray(parsed?.characterReports),
-    opiSynthesisReports: asArray(parsed?.opiSynthesisReports),
+    moaSynthesisReports: asArray(parsed?.moaSynthesisReports),
     approvalRequests: asArray(parsed?.approvalRequests),
     ownerDecisions: asArray(parsed?.ownerDecisions),
     preflightChecks: asArray(parsed?.preflightChecks),

@@ -35,7 +35,7 @@
 
 - `SampleProviderAdapter`가 부처님오신날/스승의날 이벤트와 키워드 수요 스냅샷을 제공한다.
 - `MemoryMarketingWorkflowRepository`가 signal, 시즌 키워드 광고안, 안건 후보, 캐릭터 보고, 모아 종합, 결재 요청, 성과 체크포인트를 저장한다.
-- `runAgendaCycle`이 샘플 입력을 `Signal -> SeasonalKeywordAdPlan -> AgendaCandidate -> CharacterReport -> OpiSynthesisReport -> ApprovalRequest -> PerformanceCheckpoint`로 변환한다.
+- `runAgendaCycle`이 샘플 입력을 `Signal -> SeasonalKeywordAdPlan -> AgendaCandidate -> CharacterReport -> MoaSynthesisReport -> ApprovalRequest -> PerformanceCheckpoint`로 변환한다.
 - `MockProviderExecutor`는 write gate가 닫힌 상태에서 외부 쓰기를 호출하지 않고 `WRITE_GATE_CLOSED` 차단 결과를 만든다.
 - 업무실 view model은 정적 샘플 객체 대신 `runSampleAgendaCycle()` 결과를 읽는다.
 

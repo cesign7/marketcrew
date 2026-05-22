@@ -22,7 +22,7 @@ export function recordPlannerAgentRun(
   const run: AgentRun = {
     id: audit.id,
     runnerKey: audit.runnerKey,
-    runType: "opi_planner",
+    runType: "moa_planner",
     mode: result.mode === "deterministic_fallback" ? "deterministic_fallback" : "llm",
     provider: normalizeAgentRunProvider(audit.provider),
     model: audit.model,

@@ -7,7 +7,7 @@ import type {
   ExecutionResult,
   FollowUpInternalTask,
   KeywordDemandSnapshot,
-  OpiSynthesisReport,
+  MoaSynthesisReport,
   OutcomeReport,
   PerformanceCheckpoint,
   PreflightCheck,
@@ -31,7 +31,7 @@ class MemoryMarketingWorkflowRepository implements MarketingWorkflowRepository {
   private searchTrendSnapshots: SearchTrendSnapshot[] = [];
   private agendaCandidates: AgendaCandidate[] = [];
   private characterReports: CharacterReport[] = [];
-  private opiSynthesisReports: OpiSynthesisReport[] = [];
+  private moaSynthesisReports: MoaSynthesisReport[] = [];
   private approvalRequests: ApprovalRequest[] = [];
   private ownerDecisions: OwnerDecision[] = [];
   private preflightChecks: PreflightCheck[] = [];
@@ -91,12 +91,12 @@ class MemoryMarketingWorkflowRepository implements MarketingWorkflowRepository {
     return [...this.characterReports];
   }
 
-  saveOpiSynthesisReport(report: OpiSynthesisReport): void {
-    this.opiSynthesisReports = upsertById(this.opiSynthesisReports, [report]);
+  saveMoaSynthesisReport(report: MoaSynthesisReport): void {
+    this.moaSynthesisReports = upsertById(this.moaSynthesisReports, [report]);
   }
 
-  listOpiSynthesisReports(): OpiSynthesisReport[] {
-    return [...this.opiSynthesisReports];
+  listMoaSynthesisReports(): MoaSynthesisReport[] {
+    return [...this.moaSynthesisReports];
   }
 
   saveApprovalRequests(requests: ApprovalRequest[]): void {

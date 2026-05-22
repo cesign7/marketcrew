@@ -19,7 +19,7 @@ describe("runAgendaCycle", () => {
       "BUDGET_GUARD_MISSING",
     ]);
     expect(result.characterReports.map((report) => report.character)).toEqual(["gro", "day"]);
-    expect(result.opiSynthesisReport.summary).toContain("대표 결재 대기 1건");
+    expect(result.moaSynthesisReport.summary).toContain("대표 결재 대기 1건");
     expect(result.approvalRequests.map((request) => request.status)).toEqual(["PENDING", "NEEDS_EVIDENCE"]);
     expect(result.performanceCheckpoints).toHaveLength(3);
 

@@ -25,10 +25,10 @@ export function buildProviderSignalAgendaArtifacts(input: {
   signals: Signal[];
   providerSyncReports: ProviderSyncReport[];
   generatedAt: string;
-  opiSynthesisReportId?: string;
+  moaSynthesisReportId?: string;
 }): ProviderSignalAgendaArtifacts {
   const generatedAt = input.generatedAt;
-  const opiSynthesisReportId = input.opiSynthesisReportId ?? `opi-synthesis-provider-${generatedAt.slice(0, 10)}`;
+  const moaSynthesisReportId = input.moaSynthesisReportId ?? `moa-synthesis-provider-${generatedAt.slice(0, 10)}`;
   const signalsById = new Map(input.signals.map((signal) => [signal.id, signal]));
   const commerceReport = latestSyncedReport(input.providerSyncReports, "smartstore", "commerceAggregateSnapshot");
   const shopReport = latestSyncedReport(input.providerSyncReports, "shop", "shopAggregateSnapshot");
@@ -43,7 +43,7 @@ export function buildProviderSignalAgendaArtifacts(input: {
     buildApprovalRequest({
       candidate,
       generatedAt,
-      opiSynthesisReportId,
+      moaSynthesisReportId,
       report: candidate.id.includes("smartstore")
         ? commerceReport
         : candidate.id.includes("youngcart")
@@ -153,7 +153,7 @@ function buildCharacterReports(candidates: AgendaCandidate[], generatedAt: strin
 function buildApprovalRequest(input: {
   candidate: AgendaCandidate;
   generatedAt: string;
-  opiSynthesisReportId: string;
+  moaSynthesisReportId: string;
   report?: ProviderSyncReport;
 }): ApprovalRequest {
   const executionPlan = buildExecutionPlan(input);
@@ -161,7 +161,7 @@ function buildApprovalRequest(input: {
   return {
     id: `approval-${input.candidate.id}`,
     title: input.candidate.title,
-    opiSynthesisReportId: input.opiSynthesisReportId,
+    moaSynthesisReportId: input.moaSynthesisReportId,
     evidenceSummary: input.candidate.summary,
     evidenceIds: Array.from(new Set([...input.candidate.sourceSignalIds, ...input.candidate.opportunityIds])),
     dataConfidence: input.candidate.dataConfidence,
@@ -308,7 +308,7 @@ function riskFromConfidence(confidence: DataConfidence): RiskLevel {
 
 function characterName(character: CharacterKey): string {
   const names: Record<CharacterKey, string> = {
-    opi: "모아",
+    moa: "모아",
     gro: "그로",
     maru: "마루",
     day: "데이",

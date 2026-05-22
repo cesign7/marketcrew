@@ -7,7 +7,7 @@ import type {
   ExecutionResult,
   FollowUpInternalTask,
   KeywordDemandSnapshot,
-  OpiSynthesisReport,
+  MoaSynthesisReport,
   OutcomeReport,
   PerformanceCheckpoint,
   PreflightCheck,
@@ -32,8 +32,8 @@ export interface MarketingWorkflowRepository {
   listAgendaCandidates(): AgendaCandidate[];
   saveCharacterReports(reports: CharacterReport[]): void;
   listCharacterReports(): CharacterReport[];
-  saveOpiSynthesisReport(report: OpiSynthesisReport): void;
-  listOpiSynthesisReports(): OpiSynthesisReport[];
+  saveMoaSynthesisReport(report: MoaSynthesisReport): void;
+  listMoaSynthesisReports(): MoaSynthesisReport[];
   saveApprovalRequests(requests: ApprovalRequest[]): void;
   listApprovalRequests(): ApprovalRequest[];
   saveOwnerDecisions(decisions: OwnerDecision[]): void;

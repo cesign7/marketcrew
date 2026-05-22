@@ -85,7 +85,7 @@ export function buildPlannerAuditRun(
 
   return {
     id: `planner-audit-${result.id}`,
-    runnerKey: "opi_planner",
+    runnerKey: "moa_planner",
     plannerInputId: input.id,
     plannerResultId: result.id,
     mode: result.mode,

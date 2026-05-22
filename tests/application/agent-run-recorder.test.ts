@@ -17,7 +17,7 @@ describe("AgentRunRecorder", () => {
     const run = recordPlannerAgentRun(repository, input, result, audit);
 
     expect(run.id).toBe(audit.id);
-    expect(run.runType).toBe("opi_planner");
+    expect(run.runType).toBe("moa_planner");
     expect(run.provider).toBe("deterministic");
     expect(run.tokenUsage.totalTokens).toBe(audit.tokenUsage.totalEstimate);
     expect(repository.listAgentRunsForWorkflowObject({ objectType: "approval_request", objectId: result.recommendedApprovalIds[0] })).toEqual([

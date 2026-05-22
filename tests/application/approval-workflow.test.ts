@@ -40,7 +40,7 @@ describe("processOwnerDecision", () => {
     expect(result.updatedApprovalRequest.status).toBe("APPROVED");
     expect(result.performanceCheckpoints).toHaveLength(3);
     expect(result.outcomeReport?.state).toBe("INCONCLUSIVE");
-    expect(result.followUpTasks[0]?.assignedCharacter).toBe("opi");
+    expect(result.followUpTasks[0]?.assignedCharacter).toBe("moa");
 
     expect(repository.listOwnerDecisions()).toHaveLength(1);
     expect(repository.listPreflightChecks()).toHaveLength(1);

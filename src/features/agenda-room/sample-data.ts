@@ -3,7 +3,7 @@ import type { AgendaRoomViewModel } from "./types";
 
 export const agendaRoomSample: AgendaRoomViewModel = {
   generatedAt: "2026-05-22 09:20",
-  opiReport: {
+  moaReport: {
     title: "모아 종합 보고",
     summary: "대표 결재 대기 3건, 추가 근거 대기 2건으로 정리했습니다.",
     reportCount: 6,
@@ -60,7 +60,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
   ],
   characters: [
     {
-      id: "opi",
+      id: "moa",
       name: "모아",
       role: "업무실장",
       tone: "coordinator",

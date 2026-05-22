@@ -131,7 +131,7 @@ function processApproveDraftOnly(
       {
         id: `followup-draft-${input.approvalRequest.id}`,
         sourceApprovalRequestId: input.approvalRequest.id,
-        assignedCharacter: "opi" as const,
+        assignedCharacter: "moa" as const,
         title: "초안 승인 범위로 내부 작업을 정리하고 외부 반영 전 재상신",
         status: "OPEN" as const,
         createdAt: input.now,
@@ -352,7 +352,7 @@ function buildExecutionFollowUpTasks(
     {
       id: `followup-manual-${approvalRequest.id}`,
       sourceApprovalRequestId: approvalRequest.id,
-      assignedCharacter: "opi",
+      assignedCharacter: "moa",
       title: "외부 반영 잠금 상태를 대표에게 보고하고 수동 반영 또는 잠금 해제 여부 확인",
       status: "OPEN",
       createdAt: now,
@@ -377,7 +377,7 @@ function followUpCharacterFromDecision(decision: OwnerDecisionType): FollowUpInt
   }
 
   if (decision === "REQUEST_REVISION") {
-    return "opi";
+    return "moa";
   }
 
   return "maru";

@@ -9,7 +9,7 @@ describe("buildProviderSignalAgendaArtifacts", () => {
       providerSyncReports: reports,
       signals: reports.flatMap((report) => (report.generatedSignal ? [report.generatedSignal] : [])),
       generatedAt: "2026-05-22T02:00:00.000Z",
-      opiSynthesisReportId: "opi-synthesis-sample-001",
+      moaSynthesisReportId: "moa-synthesis-sample-001",
     });
 
     expect(artifacts.agendaCandidates.map((candidate) => [candidate.character, candidate.title])).toEqual([

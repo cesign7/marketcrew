@@ -41,7 +41,7 @@ describe("LLM planner interface", () => {
     const result = buildDeterministicPlannerResult(input);
     const audit = buildPlannerAuditRun(input, result, { providerEvidenceNoteCount: 4 });
 
-    expect(audit.runnerKey).toBe("opi_planner");
+    expect(audit.runnerKey).toBe("moa_planner");
     expect(audit.provider).toBe("deterministic");
     expect(audit.model).toBe("deterministic-fallback");
     expect(audit.tokenUsage.rawRowsIncluded).toBe(false);

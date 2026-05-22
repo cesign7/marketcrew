@@ -15,7 +15,7 @@ import type {
   ExecutionResult,
   MarketingCalendarEvent,
   MeasurementPlan,
-  OpiSynthesisReport,
+  MoaSynthesisReport,
   PerformanceCheckpoint,
   RiskLevel,
   SeasonalKeywordAdPlan,
@@ -39,7 +39,7 @@ export type AgendaCycleResult = {
   agendaCandidates: AgendaCandidate[];
   promotedAgendaCandidates: AgendaCandidate[];
   characterReports: CharacterReport[];
-  opiSynthesisReport: OpiSynthesisReport;
+  moaSynthesisReport: MoaSynthesisReport;
   approvalRequests: ApprovalRequest[];
   executionResults: ExecutionResult[];
   performanceCheckpoints: PerformanceCheckpoint[];
@@ -120,18 +120,18 @@ export function runAgendaCycle({ sampleProvider, repository }: AgendaCycleDepend
   });
   const promotedAgendaCandidates = triageAgendaCandidates(agendaCandidates);
   const characterReports = buildCharacterReports(promotedAgendaCandidates, input.generatedAt);
-  const opiSynthesisReportId = "opi-synthesis-sample-001";
+  const moaSynthesisReportId = "moa-synthesis-sample-001";
   const approvalRequests = buildApprovalRequests({
     baselineYear: input.baselineYear,
     currentYear: input.currentYear,
     events: input.events,
     generatedAt: input.generatedAt,
-    opiSynthesisReportId,
+    moaSynthesisReportId,
     plans: seasonalKeywordAdPlans,
     promotedAgendaCandidates,
   });
-  const opiSynthesisReport = buildOpiSynthesisReport({
-    id: opiSynthesisReportId,
+  const moaSynthesisReport = buildMoaSynthesisReport({
+    id: moaSynthesisReportId,
     generatedAt: input.generatedAt,
     characterReports,
     approvalRequests,
@@ -143,7 +143,7 @@ export function runAgendaCycle({ sampleProvider, repository }: AgendaCycleDepend
   repository.saveAgendaCandidates(agendaCandidates);
   repository.saveCharacterReports(characterReports);
   repository.saveApprovalRequests(approvalRequests);
-  repository.saveOpiSynthesisReport(opiSynthesisReport);
+  repository.saveMoaSynthesisReport(moaSynthesisReport);
   repository.savePerformanceCheckpoints(performanceCheckpoints);
 
   return {
@@ -154,7 +154,7 @@ export function runAgendaCycle({ sampleProvider, repository }: AgendaCycleDepend
     agendaCandidates,
     promotedAgendaCandidates,
     characterReports,
-    opiSynthesisReport,
+    moaSynthesisReport,
     approvalRequests,
     executionResults: repository.listExecutionResults(),
     performanceCheckpoints,
@@ -215,7 +215,7 @@ function buildApprovalRequests(input: {
   currentYear: number;
   events: MarketingCalendarEvent[];
   generatedAt: string;
-  opiSynthesisReportId: string;
+  moaSynthesisReportId: string;
   plans: SeasonalKeywordAdPlan[];
   promotedAgendaCandidates: AgendaCandidate[];
 }): ApprovalRequest[] {
@@ -238,7 +238,7 @@ function buildApprovalRequests(input: {
     return {
       id: `approval-${candidate.id}`,
       title: candidate.title,
-      opiSynthesisReportId: input.opiSynthesisReportId,
+      moaSynthesisReportId: input.moaSynthesisReportId,
       evidenceSummary: candidate.summary,
       evidenceIds: Array.from(new Set([...candidate.sourceSignalIds, ...plan.evidenceIds])),
       dataConfidence: candidate.dataConfidence,
@@ -293,12 +293,12 @@ function buildExecutionPlan(input: {
   };
 }
 
-function buildOpiSynthesisReport(input: {
+function buildMoaSynthesisReport(input: {
   id: string;
   generatedAt: string;
   characterReports: CharacterReport[];
   approvalRequests: ApprovalRequest[];
-}): OpiSynthesisReport {
+}): MoaSynthesisReport {
   const pendingCount = input.approvalRequests.filter((request) => request.status === "PENDING").length;
   const waitingEvidenceCount = input.approvalRequests.filter((request) => request.status === "NEEDS_EVIDENCE").length;
 
@@ -346,7 +346,7 @@ function riskFromConfidence(confidence: DataConfidence): RiskLevel {
 
 function characterName(character: CharacterKey): string {
   const names: Record<CharacterKey, string> = {
-    opi: "모아",
+    moa: "모아",
     gro: "그로",
     maru: "마루",
     day: "데이",

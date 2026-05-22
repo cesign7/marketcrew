@@ -14,13 +14,32 @@ test("대표 업무실은 왼쪽 업무 메뉴와 상단 기준 필터로 나뉜
   const topControls = page.getByRole("region", { name: "화면 보기 기준" });
   await expect(topControls.getByRole("button", { name: "전체" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "스티커씨" })).toBeVisible();
-  await expect(topControls.getByRole("button", { name: "커피프린트" })).toBeVisible();
-  await expect(topControls.getByRole("button", { name: "키워드광고" })).toBeVisible();
+  await expect(topControls.getByRole("button", { name: "커피" })).toBeVisible();
+  await expect(topControls.getByRole("button", { name: "광고" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "오늘" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "7일" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "30일" })).toBeVisible();
-  await expect(topControls.getByRole("button", { name: "전년동기" })).toBeVisible();
-  await expect(topControls.getByRole("button", { name: "명절기준" })).toBeVisible();
+  await expect(topControls.getByRole("button", { name: "전년" })).toBeVisible();
+  await expect(topControls.getByRole("button", { name: "명절" })).toBeVisible();
+});
+
+test("왼쪽 업무 메뉴를 아이콘 폭으로 접고 다시 펼칠 수 있다", async ({ page }) => {
+  await page.goto("/operations");
+
+  const sidebar = page.locator(".app-sidebar");
+  await expect(sidebar).toBeVisible();
+  const expandedWidth = await sidebar.evaluate((element) => element.getBoundingClientRect().width);
+  await page.getByRole("button", { name: "왼쪽 메뉴 접기" }).click();
+
+  await expect(page.getByRole("button", { name: "왼쪽 메뉴 펼치기" })).toBeVisible();
+  await expect
+    .poll(() => sidebar.evaluate((element) => element.getBoundingClientRect().width))
+    .toBeLessThan(expandedWidth);
+  await expect
+    .poll(() => sidebar.evaluate((element) => element.getBoundingClientRect().width))
+    .toBeLessThanOrEqual(90);
+
+  await expect(page.getByRole("navigation", { name: "주요 업무 메뉴" }).getByRole("link", { name: "오늘 업무실" })).toBeVisible();
 });
 
 test("데이터 연동 메뉴와 상단 채널/기간 필터가 클릭에 반응한다", async ({ page }) => {
@@ -53,6 +72,23 @@ test("모바일 상단 메뉴는 첫 화면을 과하게 차지하지 않는다"
   expect(topbarHeight).toBeLessThanOrEqual(300);
   await expect(page.getByRole("region", { name: "화면 실행 버튼" }).getByRole("link", { name: "결재 검토" })).toBeVisible();
   await expect(page.getByRole("region", { name: "화면 보기 기준" }).getByRole("button", { name: "스티커씨" })).toBeVisible();
+});
+
+test("앱 브라우저 폭에서도 왼쪽 메뉴와 본문 카드가 읽히게 유지된다", async ({ page }) => {
+  await page.setViewportSize({ width: 787, height: 850 });
+  await page.goto("/operations");
+
+  await expect(page.getByRole("button", { name: "왼쪽 메뉴 접기" })).toBeVisible();
+  const firstBucketWidth = await page
+    .locator(".bucket-item")
+    .first()
+    .evaluate((element) => element.getBoundingClientRect().width);
+  expect(firstBucketWidth).toBeGreaterThanOrEqual(220);
+
+  const dailyBriefColumns = await page
+    .locator(".daily-brief-grid")
+    .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
+  expect(dailyBriefColumns).toBe(1);
 });
 
 test("캐릭터 업무데스크에서 캐릭터별 업무 화면으로 이동한다", async ({ page }) => {

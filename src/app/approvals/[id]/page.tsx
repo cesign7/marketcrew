@@ -33,7 +33,7 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
           승인 후 바로 반영
         </a>
       }
-      description={viewModel.opiSummary}
+      description={viewModel.moaSummary}
       eyebrow="대표 결재 상세"
       generatedAt={viewModel.generatedAt}
       title={viewModel.title}

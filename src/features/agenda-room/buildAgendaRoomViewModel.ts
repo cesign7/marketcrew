@@ -47,7 +47,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
         signals: input.repository.listSignals(),
         providerSyncReports,
         generatedAt: agendaCycle.generatedAt,
-        opiSynthesisReportId: agendaCycle.opiSynthesisReport.id,
+        moaSynthesisReportId: agendaCycle.moaSynthesisReport.id,
       })
     : {
         agendaCandidates: [],
@@ -98,9 +98,9 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
 
   return {
     generatedAt: formatKoreanDateTime(agendaCycle.generatedAt),
-    opiReport: {
-      title: agendaCycle.opiSynthesisReport.title,
-      summary: buildOpiSummary(allApprovalRequests, providerArtifacts.agendaCandidates.length),
+    moaReport: {
+      title: agendaCycle.moaSynthesisReport.title,
+      summary: buildMoaSummary(allApprovalRequests, providerArtifacts.agendaCandidates.length),
       reportCount: allCharacterReports.length,
     },
     summary: {
@@ -216,7 +216,7 @@ function countBy<TItem, TKey>(items: TItem[], keyFn: (item: TItem) => TKey): Map
 
 function agentRunTypeLabel(runType: AgentRun["runType"]): string {
   const labels: Record<AgentRun["runType"], string> = {
-    opi_planner: "모아 계획",
+    moa_planner: "모아 계획",
     provider_sync: "연동 수집",
     provider_signal_agenda: "연동 안건 생성",
     owner_decision: "대표 결정",
@@ -366,7 +366,7 @@ function buildAgendaCardView(
   };
 }
 
-function buildOpiSummary(approvalRequests: ApprovalRequest[], providerAgendaCount: number): string {
+function buildMoaSummary(approvalRequests: ApprovalRequest[], providerAgendaCount: number): string {
   const pendingCount = approvalRequests.filter((request) => request.status === "PENDING").length;
   const waitingEvidenceCount = approvalRequests.filter((request) => request.status === "NEEDS_EVIDENCE").length;
 
@@ -774,7 +774,7 @@ function buildCharacterStatuses(characterReports: CharacterReport[]): AgendaRoom
 
   return [
     {
-      id: "opi",
+      id: "moa",
       name: "모아",
       role: "업무실장",
       tone: "coordinator",
@@ -1093,7 +1093,7 @@ function opportunityKindLabel(kind: ProductGrowthOpportunity["kind"]): string {
 
 function characterName(character: CharacterKey): string {
   const names: Record<CharacterKey, string> = {
-    opi: "모아",
+    moa: "모아",
     gro: "그로",
     maru: "마루",
     day: "데이",

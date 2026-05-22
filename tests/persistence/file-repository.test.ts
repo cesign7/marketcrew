@@ -46,7 +46,7 @@ describe("FileMarketingWorkflowRepository", () => {
     expect(reloadedRepository.listExecutionResults()).toHaveLength(1);
     expect(reloadedRepository.listOutcomeReports()).toHaveLength(1);
     expect(reloadedRepository.listFollowUpInternalTasks()).toHaveLength(1);
-    expect(reloadedRepository.listFollowUpInternalTasks()[0]?.assignedCharacter).toBe("opi");
+    expect(reloadedRepository.listFollowUpInternalTasks()[0]?.assignedCharacter).toBe("moa");
   });
 
   it("읽기 전용 provider sync 결과와 스냅샷을 파일에 저장하고 다시 조회한다", () => {

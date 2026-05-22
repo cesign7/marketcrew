@@ -12,7 +12,7 @@
 ### In Scope
 
 - 음력/양력 시즌 이벤트, 키워드 수요, 시즌 키워드 광고 guardrail.
-- bottom-up `Signal -> AgendaCandidate -> CharacterReport -> OpiSynthesisReport -> ApprovalRequest` 흐름.
+- bottom-up `Signal -> AgendaCandidate -> CharacterReport -> MoaSynthesisReport -> ApprovalRequest` 흐름.
 - provider readiness와 read-only provider sync 근거 표시.
 - 대표 결재 API, preflight, write gate 차단, mock execution, outcome 생성.
 - 결재 상세 화면에서 provider 근거와 저장된 outcome report 재조회.

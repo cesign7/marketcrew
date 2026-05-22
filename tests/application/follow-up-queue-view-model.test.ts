@@ -40,13 +40,13 @@ describe("buildFollowUpQueueViewModel", () => {
     expect(viewModel.summary.openTasks).toBe(2);
     expect(viewModel.summary.sourceApprovals).toBe(2);
     expect(viewModel.summary.learningSignals).toBe(6);
-    expect(viewModel.characterQueues.find((queue) => queue.character === "opi")?.openCount).toBe(1);
+    expect(viewModel.characterQueues.find((queue) => queue.character === "moa")?.openCount).toBe(1);
     expect(viewModel.characterQueues.find((queue) => queue.character === "day")?.openCount).toBe(1);
 
-    const opiTask = viewModel.characterQueues.find((queue) => queue.character === "opi")?.tasks[0];
-    expect(opiTask?.blockerLabels).toContain("외부 반영 잠금 닫힘");
-    expect(opiTask?.learningNote).toContain("외부 반영 잠금");
-    expect(opiTask?.latestDecisionMemo).toBe("즉시 반영은 하되 외부 반영은 확인");
+    const moaTask = viewModel.characterQueues.find((queue) => queue.character === "moa")?.tasks[0];
+    expect(moaTask?.blockerLabels).toContain("외부 반영 잠금 닫힘");
+    expect(moaTask?.learningNote).toContain("외부 반영 잠금");
+    expect(moaTask?.latestDecisionMemo).toBe("즉시 반영은 하되 외부 반영은 확인");
 
     const dayTask = viewModel.characterQueues.find((queue) => queue.character === "day")?.tasks[0];
     expect(dayTask?.nextActionLabel).toBe("근거 보강 후 재상신");
@@ -88,7 +88,7 @@ describe("buildFollowUpQueueViewModel", () => {
 
     expect(viewModel.summary.openTasks).toBe(0);
     expect(viewModel.summary.doneTasks).toBe(1);
-    expect(viewModel.characterQueues.find((queue) => queue.character === "opi")?.tasks[0]?.learningNote).toContain("완료된");
+    expect(viewModel.characterQueues.find((queue) => queue.character === "moa")?.tasks[0]?.learningNote).toContain("완료된");
     expect(viewModel.ownerLearningSignals.find((signal) => signal.id === "draft-first-pattern")?.value).toBe("1건");
   });
 });

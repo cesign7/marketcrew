@@ -30,7 +30,7 @@
 
 ## Goals
 
-1. 1차 MVP의 `Signal -> AgendaCandidate -> CharacterReport -> OpiSynthesisReport -> ApprovalRequest -> ExecutionResult -> OutcomeReport` 흐름을 운영 DB로 옮길 수 있게 한다.
+1. 1차 MVP의 `Signal -> AgendaCandidate -> CharacterReport -> MoaSynthesisReport -> ApprovalRequest -> ExecutionResult -> OutcomeReport` 흐름을 운영 DB로 옮길 수 있게 한다.
 2. 모든 주요 결과물에 `AgentRun` 또는 provenance record를 연결한다.
 3. provider/model/token/cost/status/error/evidence source를 대표 화면에서 숨기지 않는다.
 4. 기존 local JSON store는 import/export 또는 fallback 경로로 보존한다.
@@ -49,7 +49,7 @@
 
 | ID | Requirement | Acceptance |
 |----|-------------|------------|
-| FR-01 | workflow entity를 담을 운영 DB schema를 설계한다. | `Signal`, `AgendaCandidate`, `CharacterReport`, `OpiSynthesisReport`, `ApprovalRequest`, `OwnerDecision`, `ExecutionResult`, `PerformanceCheckpoint`, `OutcomeReport`, `ProviderSyncReport`, `FollowUpInternalTask` 저장 경계가 문서화된다. |
+| FR-01 | workflow entity를 담을 운영 DB schema를 설계한다. | `Signal`, `AgendaCandidate`, `CharacterReport`, `MoaSynthesisReport`, `ApprovalRequest`, `OwnerDecision`, `ExecutionResult`, `PerformanceCheckpoint`, `OutcomeReport`, `ProviderSyncReport`, `FollowUpInternalTask` 저장 경계가 문서화된다. |
 | FR-02 | repository contract를 DB-backed 구현으로 교체 가능하게 정리한다. | 현재 local file repository 테스트가 깨지지 않고, DB repository가 같은 application query/action에서 동작한다. |
 | FR-03 | local JSON store import 경로를 제공한다. | 기존 `.marketcrew/workflow-store.json`의 핵심 count와 approval/outcome 관계가 유지된다. |
 | FR-04 | `AgentRun` provenance model을 추가한다. | provider, model, run type, status, prompt/input summary, output summary, evidence IDs, token usage, cost estimate, error가 저장된다. |

@@ -243,7 +243,7 @@ export type AgentRunSummaryView = {
 
 export type AgendaRoomViewModel = {
   generatedAt: string;
-  opiReport: {
+  moaReport: {
     title: string;
     summary: string;
     reportCount: number;

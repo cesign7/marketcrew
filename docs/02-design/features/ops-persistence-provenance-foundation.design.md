@@ -139,7 +139,7 @@ export interface WorkflowMigrationRepository {
 | `workflow_signals` | `id`, `source`, `signal_type`, `entity_type`, `entity_id`, `period_start`, `period_end`, `payload_json` | signal type별 세부 값은 payload에 보관하되 query key는 column으로 둔다. |
 | `agenda_candidates` | `id`, `owner_key`, `status`, `confidence`, `risk_level`, `payload_json` | 하위 캐릭터 상신 후보. |
 | `character_reports` | `id`, `character_key`, `agenda_candidate_ids_json`, `payload_json` | 캐릭터별 보고서. |
-| `opi_synthesis_reports` | `id`, `status`, `recommended_approval_ids_json`, `payload_json` | 모아 종합 보고서. |
+| `moa_synthesis_reports` | `id`, `status`, `recommended_approval_ids_json`, `payload_json` | 모아 종합 보고서. |
 | `approval_requests` | `id`, `status`, `owner_key`, `risk_level`, `created_at`, `payload_json` | 대표 결재 단위. |
 | `owner_decisions` | `id`, `approval_request_id`, `decision_type`, `decided_at`, `payload_json` | 대표 결정 이력. |
 | `execution_results` | `id`, `approval_request_id`, `status`, `write_attempted`, `created_at`, `payload_json` | mock/sandbox execution 결과. |
@@ -164,7 +164,7 @@ export interface WorkflowMigrationRepository {
 
 ```typescript
 export type AgentRunType =
-  | "opi_planner"
+  | "moa_planner"
   | "provider_sync"
   | "provider_signal_agenda"
   | "owner_decision"
@@ -208,8 +208,8 @@ export interface AgentRunTokenUsage {
 AgendaRoomQuery
   -> build planner input summary
   -> LlmPlanner or deterministic fallback
-  -> AgentRunRecorder.save(opi_planner)
-  -> link run to OpiSynthesisReport and selected ApprovalRequests
+  -> AgentRunRecorder.save(moa_planner)
+  -> link run to MoaSynthesisReport and selected ApprovalRequests
   -> UI provenance summary
 ```
 
@@ -251,7 +251,7 @@ AgendaRoomQuery
 
 | Page | Placement | Copy Direction |
 |------|-----------|----------------|
-| `/operations` | 각 안건 카드 하단 또는 evidence panel | `근거 4개 · opi_planner · fallback · 380 tokens 추정 · 0원` |
+| `/operations` | 각 안건 카드 하단 또는 evidence panel | `근거 4개 · moa_planner · fallback · 380 tokens 추정 · 0원` |
 | `/operations` | workflow-state diagnostic strip | `저장소: DB 준비 중 / File fallback`, `AgentRun 5건` |
 | `/approvals/[id]` | provider evidence 아래 | `이 결재안 생성 이력` timeline |
 | `/approvals/[id]` | outcome history 옆 | `성과 보고 생성 근거` |

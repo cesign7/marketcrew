@@ -50,7 +50,7 @@ describe("AgentRun repository contract", () => {
 
     expect(summary.counts.agentRuns).toBe(1);
     expect(summary.counts.agentRunWorkflowLinks).toBe(1);
-    expect(summary.recent.agentRunIds).toEqual(["agent-run-opi-planner-1"]);
+    expect(summary.recent.agentRunIds).toEqual(["agent-run-moa-planner-1"]);
   });
 });
 
@@ -79,9 +79,9 @@ function assertAgentRunPersistence(repository: MarketingWorkflowRepository): voi
 
 function buildAgentRun(): AgentRun {
   return {
-    id: "agent-run-opi-planner-1",
-    runnerKey: "opi_planner",
-    runType: "opi_planner",
+    id: "agent-run-moa-planner-1",
+    runnerKey: "moa_planner",
+    runType: "moa_planner",
     mode: "deterministic_fallback",
     provider: "deterministic",
     model: "deterministic-fallback",
@@ -105,7 +105,7 @@ function buildAgentRun(): AgentRun {
 
 function buildAgentRunLink(agentRunId: string): AgentRunWorkflowLink {
   return {
-    id: "agent-run-link-opi-approval-1",
+    id: "agent-run-link-moa-approval-1",
     agentRunId,
     objectType: "approval_request",
     objectId: "approval-agenda-season-plan-buddha-gift-card",

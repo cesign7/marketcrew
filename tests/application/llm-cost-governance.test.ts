@@ -99,8 +99,8 @@ describe("LLM cost governance", () => {
 
 function buildPlannerAudit(overrides: Partial<LlmPlannerAuditRun> = {}): LlmPlannerAuditRun {
   return {
-    id: "agentrun-opi-planner-test",
-    runnerKey: "opi_planner",
+    id: "agentrun-moa-planner-test",
+    runnerKey: "moa_planner",
     plannerInputId: "llm-input-test",
     plannerResultId: "llm-result-test",
     mode: "deterministic_fallback",
@@ -132,8 +132,8 @@ function buildPlannerAudit(overrides: Partial<LlmPlannerAuditRun> = {}): LlmPlan
 function buildAgentRun(input: { estimatedCostKrw: number }): AgentRun {
   return {
     id: `agentrun-cost-${input.estimatedCostKrw}`,
-    runnerKey: "opi",
-    runType: "opi_planner",
+    runnerKey: "moa",
+    runType: "moa_planner",
     mode: "llm",
     provider: "gemini",
     model: "gemini-test",

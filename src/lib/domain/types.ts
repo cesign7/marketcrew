@@ -1,4 +1,4 @@
-export type CharacterKey = "opi" | "gro" | "maru" | "day" | "copy" | "ripi" | "pro";
+export type CharacterKey = "moa" | "gro" | "maru" | "day" | "copy" | "ripi" | "pro";
 
 export type SignalType =
   | "daily_spike"
@@ -151,7 +151,7 @@ export interface LlmPlannerResult {
 
 export interface LlmPlannerAuditRun {
   id: string;
-  runnerKey: "opi_planner";
+  runnerKey: "moa_planner";
   plannerInputId: string;
   plannerResultId: string;
   mode: LlmPlannerResult["mode"];
@@ -179,7 +179,7 @@ export interface LlmPlannerAuditRun {
 }
 
 export type AgentRunType =
-  | "opi_planner"
+  | "moa_planner"
   | "provider_sync"
   | "provider_signal_agenda"
   | "owner_decision"
@@ -194,7 +194,7 @@ export type WorkflowObjectType =
   | "signal"
   | "agenda_candidate"
   | "character_report"
-  | "opi_synthesis_report"
+  | "moa_synthesis_report"
   | "approval_request"
   | "owner_decision"
   | "preflight_check"
@@ -368,7 +368,7 @@ export interface CharacterReport {
   createdAt: string;
 }
 
-export interface OpiSynthesisReport {
+export interface MoaSynthesisReport {
   id: string;
   title: string;
   summary: string;
@@ -398,7 +398,7 @@ export interface ExecutionPlan {
 export interface ApprovalRequest {
   id: string;
   title: string;
-  opiSynthesisReportId: string;
+  moaSynthesisReportId: string;
   evidenceSummary: string;
   evidenceIds: string[];
   dataConfidence: DataConfidence;

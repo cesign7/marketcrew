@@ -10,7 +10,7 @@ type CharacterDeskProps = {
 };
 
 const characterFocus: Record<string, { focus: string; nextReport: string }> = {
-  opi: {
+  moa: {
     focus: "담당 캐릭터들이 올린 안건을 대표 결재 흐름으로 묶습니다.",
     nextReport: "매일 업무실 첫 화면에서 오늘 결재 우선순위를 보고합니다.",
   },
@@ -85,7 +85,7 @@ function CharacterDeskCard({
   agendaCards: AgendaCardView[];
   ownerDecisionFlows: OwnerDecisionFlowView[];
 }) {
-  const focus = characterFocus[character.id] ?? characterFocus.opi;
+  const focus = characterFocus[character.id] ?? characterFocus.moa;
   const relatedAgendas = agendaCards.filter((agenda) => agenda.owner === character.name).slice(0, 3);
   const relatedFlows = ownerDecisionFlows.filter((flow) => flow.title.includes(character.name)).slice(0, 2);
 

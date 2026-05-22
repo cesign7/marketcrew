@@ -127,7 +127,7 @@ Sample or read-only provider data
   -> AgendaCandidate[] + OpportunityCandidate[] + SeasonalKeywordAdPlan[]
   -> AgendaTriage
   -> CharacterReport[]
-  -> OpiSynthesisReport
+  -> MoaSynthesisReport
   -> ApprovalRequest + ExecutionPlan
   -> OwnerDecision
   -> PreflightCheck
@@ -157,7 +157,7 @@ Sample or read-only provider data
 ### 3.1 Core Types
 
 ```typescript
-export type CharacterKey = "opi" | "gro" | "maru" | "day" | "copy" | "ripi" | "pro";
+export type CharacterKey = "moa" | "gro" | "maru" | "day" | "copy" | "ripi" | "pro";
 
 export type SignalType =
   | "daily_spike"
@@ -287,7 +287,7 @@ export interface AgendaCandidate {
 export interface ApprovalRequest {
   id: string;
   title: string;
-  opiSynthesisReportId: string;
+  moaSynthesisReportId: string;
   evidenceSummary: string;
   dataConfidence: DataConfidence;
   riskLevel: RiskLevel;
@@ -326,8 +326,8 @@ KeywordDemandSnapshot N ──── N SeasonalKeywordAdPlan
 SearchTrendSnapshot N ──── N SeasonalKeywordAdPlan
 Signal N ──── N AgendaCandidate
 AgendaCandidate N ──── 1 CharacterReport
-CharacterReport N ──── 1 OpiSynthesisReport
-OpiSynthesisReport 1 ──── N ApprovalRequest
+CharacterReport N ──── 1 MoaSynthesisReport
+MoaSynthesisReport 1 ──── N ApprovalRequest
 ApprovalRequest 1 ──── 1 ExecutionPlan
 ApprovalRequest 1 ──── N OwnerDecision
 OwnerDecision 0..1 ──── 1 ExecutionResult
@@ -628,7 +628,7 @@ Operations Room
 | `Product` | 4 | 선물카드, 시즌상품, 일반상품, 재고부족상품 |
 | `Signal` | 8 | mixed signal types and evidence ids |
 | `KeywordDemandSnapshot` | 8 | add and negative keyword candidates |
-| `AgendaCandidate` | 6 | at least one per major character except opi |
+| `AgendaCandidate` | 6 | at least one per major character except moa |
 | `ApprovalRequest` | 3 | ready, blocked, draft-only examples |
 | `ExecutionResult` | 2 | applied and partial failure examples |
 

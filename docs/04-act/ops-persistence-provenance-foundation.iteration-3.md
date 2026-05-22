@@ -28,7 +28,7 @@
 | searchTrendSnapshots | 2 |
 | agendaCandidates | 5 |
 | characterReports | 5 |
-| opiSynthesisReports | 1 |
+| moaSynthesisReports | 1 |
 | approvalRequests | 5 |
 | ownerDecisions | 2 |
 | preflightChecks | 1 |

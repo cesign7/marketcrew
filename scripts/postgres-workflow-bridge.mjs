@@ -11,7 +11,7 @@ const workflowCollectionKeys = [
   "searchTrendSnapshots",
   "agendaCandidates",
   "characterReports",
-  "opiSynthesisReports",
+  "moaSynthesisReports",
   "approvalRequests",
   "ownerDecisions",
   "preflightChecks",

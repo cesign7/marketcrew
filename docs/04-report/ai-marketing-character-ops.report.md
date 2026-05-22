@@ -50,7 +50,7 @@ QA Verdict:    QA_PASS
 |---|----------|:------:|----------|
 | SC-1 | `/operations`에 오늘 올라온 안건 중심 업무 지휘실이 있다. | Met | `/operations` 200 OK, browser smoke |
 | SC-2 | 샘플과 provider read-only 데이터가 공통 signal/agenda로 변환된다. | Met | `runAgendaCycle`, provider signal tests |
-| SC-3 | 하위 캐릭터가 안건 후보를 생성한다. | Met | `AgendaCandidate`, `CharacterReport`, `OpiSynthesisReport` |
+| SC-3 | 하위 캐릭터가 안건 후보를 생성한다. | Met | `AgendaCandidate`, `CharacterReport`, `MoaSynthesisReport` |
 | SC-4 | triage 통과/탈락 이유가 기록된다. | Partial | 중복 제거와 근거 기준은 있으나 탈락 사유 UI는 후속 |
 | SC-5 | 캐릭터 보고서와 모아 종합 보고서가 구분된다. | Met | agenda room view model |
 | SC-6 | 대표 결재 요청에 diff, 실행 작업, 위험, rollback이 포함된다. | Met | `ApprovalPreviewPanel` |
@@ -72,7 +72,7 @@ QA Verdict:    QA_PASS
 
 | Source | Decision | Followed? | Outcome |
 |--------|----------|:---------:|---------|
-| Plan | 첫 MVP는 top-down 지시보다 bottom-up 안건 상신을 먼저 증명한다. | Yes | `Signal -> AgendaCandidate -> CharacterReport -> OpiSynthesisReport -> ApprovalRequest` 흐름 구현 |
+| Plan | 첫 MVP는 top-down 지시보다 bottom-up 안건 상신을 먼저 증명한다. | Yes | `Signal -> AgendaCandidate -> CharacterReport -> MoaSynthesisReport -> ApprovalRequest` 흐름 구현 |
 | Plan | 화면은 캐릭터 자체보다 오늘 안건, 근거, 대표 결정을 중심으로 둔다. | Yes | `/operations`가 안건/근거/결재 후보 중심으로 구성됨 |
 | Plan | 음력 명절은 같은 음력 이벤트 윈도우로 비교한다. | Yes | `MarketingCalendar`와 `lunar_event_yoy` 테스트 통과 |
 | Plan | 실제 외부 write는 명시 승인 전까지 차단한다. | Yes | e2e에서 `WRITE_GATE_CLOSED`, provider write 미시도 확인 |

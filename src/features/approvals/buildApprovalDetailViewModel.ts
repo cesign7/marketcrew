@@ -21,7 +21,7 @@ export type ApprovalDetailViewModel = {
   generatedAt: string;
   id: string;
   title: string;
-  opiSummary: string;
+  moaSummary: string;
   approvalPreview: ApprovalPreviewView;
   providerSyncEvidence: ProviderSyncEvidenceView[];
   agentRunTimeline: ApprovalAgentRunTimelineView[];
@@ -79,7 +79,7 @@ export function buildApprovalDetailViewModel(
     generatedAt: room.generatedAt,
     id: approvalPreview.id,
     title: approvalPreview.title,
-    opiSummary: room.opiReport.summary,
+    moaSummary: room.moaReport.summary,
     approvalPreview,
     providerSyncEvidence: filterProviderSyncEvidence(room.providerSyncEvidence, approvalPreview),
     agentRunTimeline: repository ? buildApprovalAgentRunTimeline(repository, approvalPreview.id) : [],
@@ -216,7 +216,7 @@ function workflowRefKey(objectType: WorkflowObjectType, objectId: string): strin
 
 function agentRunTypeLabel(runType: AgentRunType): string {
   const labels: Record<AgentRunType, string> = {
-    opi_planner: "모아 계획",
+    moa_planner: "모아 계획",
     provider_sync: "연동 수집",
     provider_signal_agenda: "연동 안건 생성",
     owner_decision: "대표 결정",
@@ -340,7 +340,7 @@ function workflowObjectLabel(objectType: WorkflowObjectType): string {
     signal: "시그널",
     agenda_candidate: "안건 후보",
     character_report: "캐릭터 보고",
-    opi_synthesis_report: "모아 종합",
+    moa_synthesis_report: "모아 종합",
     approval_request: "결재안",
     owner_decision: "대표 결정",
     preflight_check: "실행 전 점검",

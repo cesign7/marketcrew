@@ -53,10 +53,10 @@ export default function OperationsPage() {
       <InboxBucketBar buckets={viewModel.inboxBuckets} />
 
       <div className="daily-brief-grid">
-        <section className="opi-brief-panel" aria-labelledby="opi-brief-title">
+        <section className="moa-brief-panel" aria-labelledby="moa-brief-title">
           <span className="eyebrow">모아 종합</span>
-          <h2 id="opi-brief-title">{viewModel.opiReport.title}</h2>
-          <p>{viewModel.opiReport.summary}</p>
+          <h2 id="moa-brief-title">{viewModel.moaReport.title}</h2>
+          <p>{viewModel.moaReport.summary}</p>
           <div className="brief-action-row">
             <Link className="secondary-button" href="/characters">
               <UsersRound size={16} aria-hidden="true" />
@@ -74,7 +74,7 @@ export default function OperationsPage() {
             <div>
               <span className="eyebrow">하위 담당자 보고</span>
               <h2 id="agenda-section-title">오늘 결재할 안건</h2>
-              <p>{viewModel.opiReport.summary}</p>
+              <p>{viewModel.moaReport.summary}</p>
             </div>
             <div className="segmented-control" aria-label="안건 상태 필터">
               <button type="button" aria-pressed="true">

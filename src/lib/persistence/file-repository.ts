@@ -9,7 +9,7 @@ import type {
   ExecutionResult,
   FollowUpInternalTask,
   KeywordDemandSnapshot,
-  OpiSynthesisReport,
+  MoaSynthesisReport,
   OutcomeReport,
   PerformanceCheckpoint,
   PreflightCheck,
@@ -84,12 +84,12 @@ class FileMarketingWorkflowRepository implements MarketingWorkflowRepository {
     return this.listCollection("characterReports");
   }
 
-  saveOpiSynthesisReport(report: OpiSynthesisReport): void {
-    this.saveCollection("opiSynthesisReports", [report]);
+  saveMoaSynthesisReport(report: MoaSynthesisReport): void {
+    this.saveCollection("moaSynthesisReports", [report]);
   }
 
-  listOpiSynthesisReports(): OpiSynthesisReport[] {
-    return this.listCollection("opiSynthesisReports");
+  listMoaSynthesisReports(): MoaSynthesisReport[] {
+    return this.listCollection("moaSynthesisReports");
   }
 
   saveApprovalRequests(requests: ApprovalRequest[]): void {

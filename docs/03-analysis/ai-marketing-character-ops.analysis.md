@@ -45,7 +45,7 @@ PRD 문서는 `docs/00-pm/ai-marketing-character-ops.prd.md` 형태로 존재하
 |---|----------|:------:|----------|
 | SC-1 | `/operations`에 오늘 올라온 안건 중심 업무 지휘실이 있다. | Met | `/operations` route, browser smoke. |
 | SC-2 | 샘플과 provider read-only 데이터가 공통 signal/agenda로 변환된다. | Met | sample provider, provider signal agenda tests. |
-| SC-3 | 하위 캐릭터가 안건 후보를 생성한다. | Met | `AgendaCandidate`, `CharacterReport`, `OpiSynthesisReport`. |
+| SC-3 | 하위 캐릭터가 안건 후보를 생성한다. | Met | `AgendaCandidate`, `CharacterReport`, `MoaSynthesisReport`. |
 | SC-4 | triage 통과/탈락 이유가 기록된다. | Partial | 중복 제거와 근거 기준은 있으나 탈락 사유 UI는 아직 약하다. |
 | SC-5 | 캐릭터 보고서와 모아 종합 보고서가 구분된다. | Met | domain/application flow and view model. |
 | SC-6 | 결재 요청에 diff, 실행 작업, 위험, rollback이 포함된다. | Met | `ApprovalPreviewPanel`. |
@@ -84,7 +84,7 @@ PRD 문서는 `docs/00-pm/ai-marketing-character-ops.prd.md` 형태로 존재하
 |-------|:------:|-------|
 | MarketingCalendar / DateWindow / EventComparisonWindow | Met | 음력/양력 이벤트 윈도우 구현. |
 | Signal / KeywordDemandSnapshot / SearchTrendSnapshot | Met | sample + Search Ad/DataLab read-only snapshot. |
-| AgendaCandidate / CharacterReport / OpiSynthesisReport | Met | bottom-up 보고 루프 구현. |
+| AgendaCandidate / CharacterReport / MoaSynthesisReport | Met | bottom-up 보고 루프 구현. |
 | ApprovalRequest / ExecutionPlan / OwnerDecision / PreflightCheck | Met | 대표 결정과 preflight 구현. |
 | ExecutionResult / PerformanceCheckpoint / OutcomeReport | Met | mock execution + provider evidence 기반 outcome. |
 | FollowUpInternalTask | Met for local MVP | 생성/저장/성과 이력 노출. 전용 업무 큐는 후속. |
