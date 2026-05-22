@@ -1,0 +1,261 @@
+import type {
+  AgentRun,
+  AgentRunMode,
+  AgentRunProvider,
+  AgentRunStatus,
+  AgentRunWorkflowLink,
+  LlmPlannerAuditRun,
+  LlmPlannerInput,
+  LlmPlannerResult,
+  ProviderSyncReport,
+  WorkflowObjectRef,
+} from "../domain";
+import type { MarketingWorkflowRepository } from "../persistence/repositories";
+import type { OwnerDecisionWorkflowResult } from "./approval-workflow";
+
+export function recordPlannerAgentRun(
+  repository: MarketingWorkflowRepository,
+  input: LlmPlannerInput,
+  result: LlmPlannerResult,
+  audit: LlmPlannerAuditRun,
+): AgentRun {
+  const run: AgentRun = {
+    id: audit.id,
+    runnerKey: audit.runnerKey,
+    runType: "opi_planner",
+    mode: result.mode === "deterministic_fallback" ? "deterministic_fallback" : "llm",
+    provider: normalizeAgentRunProvider(audit.provider),
+    model: audit.model,
+    status: "SUCCEEDED",
+    inputSummary: `결재 후보 ${audit.sourceCounts.candidateSummaries.toLocaleString("ko-KR")}건과 연동 근거 메모 ${audit.sourceCounts.providerEvidenceNotes.toLocaleString("ko-KR")}개를 요약 입력으로 사용했습니다.`,
+    outputSummary: result.summary,
+    rawRowsIncluded: false,
+    tokenUsage: {
+      inputTokens: audit.tokenUsage.inputEstimate,
+      outputTokens: audit.tokenUsage.outputEstimate,
+      totalTokens: audit.tokenUsage.totalEstimate,
+      estimated: true,
+      estimatedCostKrw: audit.billing.estimatedCostKrw,
+      basis: audit.billing.basis,
+    },
+    evidenceIds: audit.evidenceIds,
+    startedAt: input.generatedAt,
+    finishedAt: result.createdAt,
+  };
+  const links = result.recommendedApprovalIds.map((approvalId) =>
+    buildWorkflowLink(run.id, { objectType: "approval_request", objectId: approvalId }, "generated", result.createdAt),
+  );
+
+  repository.saveAgentRuns([run]);
+  repository.saveAgentRunWorkflowLinks(links);
+
+  return run;
+}
+
+export function recordProviderSyncAgentRuns(
+  repository: MarketingWorkflowRepository,
+  reports: ProviderSyncReport[],
+): AgentRun[] {
+  const runs = reports.map(buildProviderSyncAgentRun);
+  const links = reports.flatMap((report) => {
+    const runId = providerSyncRunId(report);
+    const createdAt = report.checkedAt;
+    const workflowLinks: AgentRunWorkflowLink[] = [
+      buildWorkflowLink(runId, { objectType: "provider_sync_report", objectId: report.id }, "generated", createdAt),
+    ];
+
+    if (report.generatedSignal) {
+      workflowLinks.push(
+        buildWorkflowLink(runId, { objectType: "signal", objectId: report.generatedSignal.id }, "generated", createdAt),
+      );
+    }
+
+    return workflowLinks;
+  });
+
+  repository.saveAgentRuns(runs);
+  repository.saveAgentRunWorkflowLinks(links);
+
+  return runs;
+}
+
+export function recordOwnerDecisionAgentRun(
+  repository: MarketingWorkflowRepository,
+  result: OwnerDecisionWorkflowResult,
+): AgentRun {
+  const executionState = result.executionResult?.state;
+  const run: AgentRun = {
+    id: `agent-run-owner-decision-${result.ownerDecision.id}`,
+    runnerKey: "owner_decision_workflow",
+    runType: "owner_decision",
+    mode: result.executionResult ? "mock_execution" : "deterministic_fallback",
+    provider: "local",
+    model: "owner-decision-workflow",
+    status: "SUCCEEDED",
+    inputSummary: `${result.ownerDecision.decision} 대표 결정을 처리했습니다.`,
+    outputSummary: executionState
+      ? `결재 상태 ${result.updatedApprovalRequest.status}, 실행 상태 ${executionState}, 후속 업무 ${result.followUpTasks.length.toLocaleString("ko-KR")}건을 기록했습니다.`
+      : `결재 상태 ${result.updatedApprovalRequest.status}, 후속 업무 ${result.followUpTasks.length.toLocaleString("ko-KR")}건을 기록했습니다.`,
+    rawRowsIncluded: false,
+    tokenUsage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      estimated: false,
+      estimatedCostKrw: 0,
+      basis: "로컬 규칙 기반 업무 흐름",
+    },
+    evidenceIds: result.outcomeReport?.evidenceIds ?? [],
+    startedAt: result.ownerDecision.decidedAt,
+    finishedAt: result.outcomeReport?.createdAt ?? result.ownerDecision.decidedAt,
+  };
+  const links = buildOwnerDecisionLinks(run.id, result);
+
+  repository.saveAgentRuns([run]);
+  repository.saveAgentRunWorkflowLinks(links);
+
+  return run;
+}
+
+function buildProviderSyncAgentRun(report: ProviderSyncReport): AgentRun {
+  const evidenceIds = Array.from(
+    new Set([
+      ...(report.generatedSignal?.evidenceRowIds ?? []),
+      ...(report.keywordDemandSnapshots ?? []).map((snapshot) => snapshot.id),
+      ...(report.searchTrendSnapshots ?? []).map((snapshot) => snapshot.id),
+      report.commerceAggregateSnapshot?.id,
+      report.shopAggregateSnapshot?.id,
+    ].filter(Boolean) as string[]),
+  );
+
+  return {
+    id: providerSyncRunId(report),
+    runnerKey: `${report.provider}_read_only_sync`,
+    runType: "provider_sync",
+    mode: "provider_read_only",
+    provider: providerFromSyncReport(report),
+    model: "read-only-adapter",
+    status: statusFromProviderSyncReport(report),
+    inputSummary: `${report.label}을 ${report.endpoint} 기준으로 실행했습니다.`,
+    outputSummary: report.failureReason ?? `${providerSyncStatusLabel(report.status)} 상태로 근거 메모 ${report.evidenceNotes.length.toLocaleString("ko-KR")}개를 남겼습니다.`,
+    rawRowsIncluded: false,
+    tokenUsage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      estimated: false,
+      estimatedCostKrw: 0,
+      basis: "AI 모델 과금 없는 읽기 전용 연동 수집",
+    },
+    evidenceIds,
+    startedAt: report.checkedAt,
+    finishedAt: report.checkedAt,
+    errorMessage: report.status === "FAILED" ? report.failureReason : undefined,
+  };
+}
+
+function buildOwnerDecisionLinks(agentRunId: string, result: OwnerDecisionWorkflowResult): AgentRunWorkflowLink[] {
+  const createdAt = result.ownerDecision.decidedAt;
+  const refs: Array<{ ref: WorkflowObjectRef; relation: AgentRunWorkflowLink["relation"] }> = [
+    {
+      ref: { objectType: "approval_request", objectId: result.updatedApprovalRequest.id },
+      relation: "decided",
+    },
+    {
+      ref: { objectType: "owner_decision", objectId: result.ownerDecision.id },
+      relation: "decided",
+    },
+  ];
+
+  if (result.preflightCheck) {
+    refs.push({
+      ref: { objectType: "preflight_check", objectId: result.preflightCheck.id },
+      relation: "used_as_evidence",
+    });
+  }
+  if (result.executionResult) {
+    refs.push({
+      ref: { objectType: "execution_result", objectId: result.executionResult.id },
+      relation: "executed",
+    });
+  }
+  if (result.outcomeReport) {
+    refs.push({
+      ref: { objectType: "outcome_report", objectId: result.outcomeReport.id },
+      relation: "measured",
+    });
+  }
+  for (const checkpoint of result.performanceCheckpoints) {
+    refs.push({
+      ref: { objectType: "performance_checkpoint", objectId: checkpoint.id },
+      relation: "measured",
+    });
+  }
+  for (const task of result.followUpTasks) {
+    refs.push({
+      ref: { objectType: "follow_up_internal_task", objectId: task.id },
+      relation: "generated",
+    });
+  }
+
+  return refs.map(({ ref, relation }) => buildWorkflowLink(agentRunId, ref, relation, createdAt));
+}
+
+function providerSyncRunId(report: ProviderSyncReport): string {
+  return `agent-run-provider-sync-${report.id}`;
+}
+
+function providerSyncStatusLabel(status: ProviderSyncReport["status"]): string {
+  const labels: Record<ProviderSyncReport["status"], string> = {
+    READY_READ_ONLY: "읽기 준비",
+    SYNCED: "수집 완료",
+    SKIPPED_MISSING_CONFIG: "설정 부족으로 건너뜀",
+    FAILED: "수집 실패",
+  };
+
+  return labels[status];
+}
+
+function buildWorkflowLink(
+  agentRunId: string,
+  ref: WorkflowObjectRef,
+  relation: AgentRunWorkflowLink["relation"],
+  createdAt: string,
+): AgentRunWorkflowLink {
+  return {
+    id: `agent-run-link-${agentRunId}-${ref.objectType}-${ref.objectId}-${relation}`,
+    agentRunId,
+    objectType: ref.objectType,
+    objectId: ref.objectId,
+    relation,
+    createdAt,
+  };
+}
+
+function statusFromProviderSyncReport(report: ProviderSyncReport): AgentRunStatus {
+  if (report.status === "FAILED") {
+    return "FAILED";
+  }
+
+  if (report.status === "SKIPPED_MISSING_CONFIG") {
+    return "SKIPPED";
+  }
+
+  return "SUCCEEDED";
+}
+
+function providerFromSyncReport(report: ProviderSyncReport): AgentRunProvider {
+  if (report.provider === "shop") {
+    return "youngcart";
+  }
+
+  return "naver";
+}
+
+function normalizeAgentRunProvider(provider: string): AgentRunProvider {
+  if (provider === "deterministic" || provider === "openai" || provider === "gemini" || provider === "naver" || provider === "youngcart") {
+    return provider;
+  }
+
+  return "local";
+}

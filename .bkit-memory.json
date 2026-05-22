@@ -1,0 +1,69 @@
+{
+  "project": "marketcrew2",
+  "currentFeature": "mvp-final-provenance-closeout",
+  "phase": "completed",
+  "updatedAt": "2026-05-22T15:32:16+09:00",
+  "features": {
+    "ai-marketing-character-ops": {
+      "phase": "completed",
+      "planPath": "docs/01-plan/features/ai-marketing-character-ops.plan.md",
+      "designPath": "docs/02-design/features/ai-marketing-character-ops.design.md",
+      "summary": "AI/LLM 기반 마케팅 캐릭터 업무시스템. 첫 MVP는 하위 캐릭터가 데이터와 음력/양력 MarketingCalendar, KeywordDemandSnapshot을 읽고 안건, 키워드 기회, SeasonalKeywordAdPlan, 마케팅 제안, 상품 발굴 후보를 만들어 오피와 대표에게 상신하며, 대표가 승인하면 risk/write gate/preflight/rollback 조건을 통과한 작업이 즉시 반영되고 이후 성과 체크포인트와 outcome report까지 이어지는 회사형 보고/결재/실행 루프다.",
+      "doPath": "docs/03-do/ai-marketing-character-ops.do.md",
+      "analysisPath": "docs/03-analysis/ai-marketing-character-ops.analysis.md",
+      "qaPath": "docs/05-qa/ai-marketing-character-ops.qa-report.md",
+      "reportPath": "docs/04-report/ai-marketing-character-ops.report.md",
+      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-11.md",
+      "matchRate": 92,
+      "next": "1차 MVP completion report를 작성했고 PDCA cycle #1은 completed 상태다. matchRate는 92%, QA verdict는 QA_PASS다. 대표는 /operations에서 올라온 안건을 보고 /approvals/[id]에서 provider 근거, diff, 대표 결정, write gate 차단, 저장된 outcome report를 확인할 수 있다. 다음 PDCA 후보는 운영 DB schema + repository migration, AgentRun/model/token/cost provenance, FollowUpInternalTask 전용 큐다. 실제 provider write는 계속 차단한다."
+    },
+    "ops-persistence-provenance-foundation": {
+      "phase": "completed",
+      "planPath": "docs/01-plan/features/ops-persistence-provenance-foundation.plan.md",
+      "designPath": "docs/02-design/features/ops-persistence-provenance-foundation.design.md",
+      "doPath": "docs/03-do/ops-persistence-provenance-foundation.do.md",
+      "analysisPath": "docs/03-analysis/ops-persistence-provenance-foundation.analysis.md",
+      "qaPath": "docs/05-qa/ops-persistence-provenance-foundation.qa-report.md",
+      "reportPath": "docs/04-report/ops-persistence-provenance-foundation.report.md",
+      "actPath": "docs/04-act/ops-persistence-provenance-foundation.iteration-6.md",
+      "summary": "1차 MVP의 local JSON repository와 deterministic/fallback 실행 근거를 운영 DB와 AgentRun/model/token/cost provenance 기반으로 전환하기 위한 두 번째 PDCA cycle이다. 대표가 /operations와 /approvals/[id]에서 안건의 근거, 연결된 실행 run, 모델명, 토큰/비용, 실패 원인을 바로 확인할 수 있게 하되 실제 provider write는 계속 차단한다.",
+      "matchRate": 98,
+      "next": "PDCA cycle #2는 QA_PASS와 completion report까지 완료했다. 1차 MVP 대비 운영 기반 진행율은 98%다. 다음 후보는 FollowUpInternalTask 전용 큐와 owner learning, 실제 LLM cost governance, /operations per-card provenance drilldown, normalized analytics schema다. 실제 provider write는 별도 PDCA와 명시 승인 전까지 계속 차단한다."
+    },
+    "follow-up-task-queue-owner-learning": {
+      "phase": "completed",
+      "planPath": "docs/01-plan/features/follow-up-task-queue-owner-learning.plan.md",
+      "designPath": "docs/02-design/features/follow-up-task-queue-owner-learning.design.md",
+      "doPath": "docs/03-do/follow-up-task-queue-owner-learning.do.md",
+      "analysisPath": "docs/03-analysis/follow-up-task-queue-owner-learning.analysis.md",
+      "qaPath": "docs/05-qa/follow-up-task-queue-owner-learning.qa-report.md",
+      "reportPath": "docs/04-report/follow-up-task-queue-owner-learning.report.md",
+      "actPath": "docs/04-act/follow-up-task-queue-owner-learning.iteration-1.md",
+      "summary": "대표 결정 이후 생성된 FollowUpInternalTask를 담당 캐릭터별 전용 큐로 보여주고, source approval, 최신 대표 결정, outcome, blocker, owner learning signal을 함께 표시한다. /api/follow-ups/[id]로 OPEN/DONE 상태를 저장하지만 실제 provider write는 계속 차단한다.",
+      "matchRate": 99,
+      "next": "PDCA cycle #3는 Check/QA/report까지 완료했다. /follow-ups, owner learning signal, PATCH /api/follow-ups/[id], /operations 후속 업무 link가 동작한다. 검증은 npm test 20 files/67 tests, typecheck, build, audit 0 vulnerabilities, follow-ups Playwright smoke, in-app browser smoke를 통과했다. 1차 MVP 대비 진행율은 99%다. 다음 후보는 실제 LLM provider cost governance 또는 /operations per-card provenance drilldown이다. 실제 provider write는 별도 PDCA와 명시 승인 전까지 계속 차단한다."
+    },
+    "real-llm-provider-cost-governance": {
+      "phase": "completed",
+      "planPath": "docs/01-plan/features/real-llm-provider-cost-governance.plan.md",
+      "designPath": "docs/02-design/features/real-llm-provider-cost-governance.design.md",
+      "doPath": "docs/03-do/real-llm-provider-cost-governance.do.md",
+      "analysisPath": "docs/03-analysis/real-llm-provider-cost-governance.analysis.md",
+      "qaPath": "docs/05-qa/real-llm-provider-cost-governance.qa-report.md",
+      "reportPath": "docs/04-report/real-llm-provider-cost-governance.report.md",
+      "actPath": "docs/04-act/real-llm-provider-cost-governance.iteration-1.md",
+      "summary": "실제 LLM 호출 전에 provider/key readiness, env 단가, 1회/일 예산, AgentRun 누적 비용, token cap, raw row privacy, external write 분리를 운영실에서 확인하는 비용 governance slice다. /operations에 LLM 비용 가드 패널과 /api/operations/llm-cost-governance read-only route를 추가했다.",
+      "matchRate": 99.5,
+      "next": "PDCA cycle #4는 QA_PASS와 completion report까지 완료했다. 현재 local env는 Gemini provider/key가 준비됐지만 단가/예산 env가 없어 의도대로 live call 차단 상태다. 검증은 npm test 21 files/70 tests, typecheck, build, audit 0 vulnerabilities, LLM cost governance Playwright smoke, localhost:3001 HTTP/API smoke를 통과했다. 1차 MVP 대비 진행율은 99.5%다. per-card provenance drilldown은 mvp-final-provenance-closeout에서 완료했다. 실제 provider write는 별도 PDCA와 명시 승인 전까지 계속 차단한다."
+    },
+    "mvp-final-provenance-closeout": {
+      "phase": "completed",
+      "actPath": "docs/04-act/mvp-final-provenance-closeout.iteration-1.md",
+      "qaPath": "docs/05-qa/mvp-final-provenance-closeout.qa-report.md",
+      "reportPath": "docs/04-report/mvp-final-provenance-closeout.report.md",
+      "summary": "1차 MVP 마지막 0.5%를 닫기 위해 /operations 결재 미리보기 카드에 카드별 근거 추적을 추가했다. 대표는 데이터 근거, AI 실행 이력, 연동 수집 기록, 성과 체크포인트, 안전 조건을 카드 안에서 바로 확인할 수 있다. 실제 provider write와 실제 LLM call은 계속 차단한다.",
+      "matchRate": 100,
+      "next": "1차 MVP는 100%로 닫았다. 검증은 npm run typecheck, npm test -- --run, npm run build, npm audit --omit=dev, npm run test:e2e -- --project=chromium, localhost:3001 browser text scan을 통과했다. 다음 작업부터는 1차 MVP 후속 확장으로 분류한다."
+    }
+  }
+}
