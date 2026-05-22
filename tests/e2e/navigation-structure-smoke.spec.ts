@@ -13,14 +13,26 @@ test("대표 업무실은 왼쪽 업무 메뉴와 상단 기준 필터로 나뉜
 
   const topControls = page.getByRole("region", { name: "화면 보기 기준" });
   await expect(topControls.getByRole("button", { name: "전체" })).toBeVisible();
-  await expect(topControls.getByRole("button", { name: "스마트스토어" })).toBeVisible();
-  await expect(topControls.getByRole("button", { name: "쇼핑몰" })).toBeVisible();
+  await expect(topControls.getByRole("button", { name: "스티커씨" })).toBeVisible();
+  await expect(topControls.getByRole("button", { name: "커피프린트" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "키워드광고" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "오늘" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "7일" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "30일" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "전년동기" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "명절기준" })).toBeVisible();
+});
+
+test("모바일 상단 메뉴는 첫 화면을 과하게 차지하지 않는다", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/operations");
+
+  const topbar = page.locator(".workspace-topbar");
+  const box = await topbar.boundingBox();
+
+  expect(box?.height).toBeLessThanOrEqual(300);
+  await expect(page.getByRole("region", { name: "화면 실행 버튼" }).getByRole("link", { name: "결재 검토" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "화면 보기 기준" }).getByRole("button", { name: "스티커씨" })).toBeVisible();
 });
 
 test("캐릭터 업무데스크에서 캐릭터별 업무 화면으로 이동한다", async ({ page }) => {

@@ -74,7 +74,7 @@ const navItems = [
   icon: typeof LayoutDashboard;
 }>;
 
-const channelFilters = ["전체", "스마트스토어", "쇼핑몰", "키워드광고"];
+const channelFilters = ["전체", "스티커씨", "커피프린트", "키워드광고"];
 const periodFilters = ["오늘", "7일", "30일", "전년동기", "명절기준"];
 
 export function AppShell({ active, eyebrow, title, description, generatedAt, actions, children }: AppShellProps) {
@@ -113,10 +113,22 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
 
       <div className="app-main">
         <header className="workspace-topbar">
-          <div className="workspace-title">
-            <span className="eyebrow">{eyebrow}</span>
-            <h1>{title}</h1>
-            {description ? <p>{description}</p> : null}
+          <div className="workspace-header-row">
+            <div className="workspace-title">
+              <span className="eyebrow">{eyebrow}</span>
+              <h1>{title}</h1>
+              {description ? <p>{description}</p> : null}
+              {generatedAt ? <span className="workspace-generated-at">생성 시각 {generatedAt}</span> : null}
+            </div>
+
+            <section className="workspace-actions" aria-label="화면 실행 버튼">
+              <Link className="secondary-button" href={activeItem.href}>
+                <RefreshCcw size={16} aria-hidden="true" />
+                새로고침
+              </Link>
+              {actions}
+              <LogoutButton />
+            </section>
           </div>
 
           <section className="view-control-bar" aria-label="화면 보기 기준">
@@ -128,22 +140,13 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
                 </button>
               ))}
             </div>
-            <div className="filter-group" aria-label="기간 기준">
+            <div className="filter-group period-filter-group" aria-label="기간 기준">
               <span>기간</span>
               {periodFilters.map((filter, index) => (
                 <button aria-pressed={index === 0} key={filter} type="button">
                   {filter}
                 </button>
               ))}
-            </div>
-            <div className="topbar-actions">
-              {generatedAt ? <span>생성 시각 {generatedAt}</span> : null}
-              <Link className="secondary-button" href={activeItem.href}>
-                <RefreshCcw size={16} aria-hidden="true" />
-                새로고침
-              </Link>
-              {actions}
-              <LogoutButton />
             </div>
           </section>
         </header>
