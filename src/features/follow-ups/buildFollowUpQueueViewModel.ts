@@ -7,7 +7,7 @@ import type {
   OwnerDecision,
   PreflightCheck,
 } from "@/lib/domain";
-import type { MarketingWorkflowRepository } from "@/lib/persistence/repositories";
+import type { MarketingWorkflowRepository } from "@/lib/application/workflow-repository";
 import type {
   FollowUpCharacterQueueView,
   FollowUpQueueViewModel,

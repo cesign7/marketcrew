@@ -2,12 +2,14 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const frontendRoots = ["src/app", "src/features"];
+const frontendRoots = ["src/app", "src/components", "src/features"];
 const forbiddenFrontendPatterns = [
-  /from\s+["']@\/lib\/persistence\/workflow-store["']/,
-  /from\s+["']@\/lib\/persistence\/postgres-read-model["']/,
-  /from\s+["']@\/lib\/persistence\/postgres-repository["']/,
+  /from\s+["'][^"']*persistence(?:\/[^"']*)?["']/,
   /from\s+["']pg["']/,
+  /postgres-read-model/,
+  /postgres-repository/,
+  /workflow-store/,
+  /backend-workflow-state/,
   /\bDATABASE_URL\b/,
   /\bMARKETCREW_DATABASE_URL\b/,
   /화면 불러오는 중/,

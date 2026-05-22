@@ -1,13 +1,14 @@
 import {
+  clearBackendReadThroughCache,
   clearBackendWorkflowStateCache,
   readBackendAgendaRoomViewModel,
   readBackendWorkflowRepositoryState,
-} from "@/lib/persistence/backend-workflow-state";
+} from "@/lib/backend/workflow-state-client";
 import { isHostedFrontendRuntime } from "@/lib/backend/proxy";
 import { runAgendaCycle } from "@/lib/application/agenda-cycle";
 import { SampleProviderAdapter } from "@/lib/integrations/sample/provider";
-import { createMemoryMarketingWorkflowRepository } from "@/lib/persistence/memory-repository";
-import type { MarketingWorkflowRepository } from "@/lib/persistence/repositories";
+import { createMemoryMarketingWorkflowRepository } from "@/lib/application/memory-workflow-repository";
+import type { MarketingWorkflowRepository } from "@/lib/application/workflow-repository";
 import { buildAgendaRoomViewModel } from "./buildAgendaRoomViewModel";
 import type { AgendaRoomViewModel } from "./types";
 
@@ -47,9 +48,10 @@ export async function loadAgendaRoomViewModel() {
   return viewModel;
 }
 
-export function clearAgendaRoomViewModelCache() {
+export async function clearAgendaRoomViewModelCache() {
   clearLocalAgendaRoomViewModelCache();
-  void clearBackendWorkflowStateCache();
+  await clearBackendReadThroughCache();
+  await clearBackendWorkflowStateCache();
 }
 
 export function clearLocalAgendaRoomViewModelCache() {
@@ -64,7 +66,7 @@ function readAgendaRoomViewModelCache() {
 
   const cached = globalThis.__marketcrewAgendaRoomViewModelCache;
   if (!cached || cached.expiresAt <= Date.now()) {
-    clearAgendaRoomViewModelCache();
+    void clearAgendaRoomViewModelCache();
     return undefined;
   }
 
@@ -74,7 +76,7 @@ function readAgendaRoomViewModelCache() {
 function writeAgendaRoomViewModelCache(viewModel: AgendaRoomViewModel) {
   const ttlMs = getViewModelCacheTtlMs();
   if (ttlMs <= 0) {
-    clearAgendaRoomViewModelCache();
+    void clearAgendaRoomViewModelCache();
     return;
   }
 

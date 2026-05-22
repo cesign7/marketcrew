@@ -20,14 +20,14 @@ import type {
   Signal,
   WorkflowObjectRef,
 } from "../domain";
-import type { MarketingWorkflowRepository } from "./repositories";
+import type { MarketingWorkflowRepository } from "../application/workflow-repository";
 import {
   createEmptyWorkflowRepositoryState,
   normalizeWorkflowRepositoryState,
   upsertById,
   type WorkflowCollectionKey,
   type WorkflowRepositoryState,
-} from "./workflow-state";
+} from "../application/workflow-state";
 
 export function createFileMarketingWorkflowRepository(filePath: string): MarketingWorkflowRepository {
   return new FileMarketingWorkflowRepository(filePath);

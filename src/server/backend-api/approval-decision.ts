@@ -58,7 +58,7 @@ export async function handleApprovalDecision(request: Request, context: { params
     repository,
     now: new Date().toISOString(),
   });
-  clearAgendaRoomViewModelCache();
+  await clearAgendaRoomViewModelCache();
 
   return NextResponse.json(
     {

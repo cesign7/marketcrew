@@ -8,7 +8,7 @@ type FollowUpRouteContext = {
 export async function PATCH(request: Request, context: FollowUpRouteContext) {
   const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
   if (proxied) {
-    clearAgendaRoomViewModelCache();
+    await clearAgendaRoomViewModelCache();
     return proxied;
   }
 

@@ -9,7 +9,7 @@ export async function handleProviderSync() {
   const providerSyncReports = await syncReadOnlyProviderSyncReports(process.env, checkedAt);
   const repository = createBackendWorkflowRepository();
   persistProviderSyncReports(repository, providerSyncReports);
-  clearAgendaRoomViewModelCache();
+  await clearAgendaRoomViewModelCache();
 
   return NextResponse.json({
     checkedAt,

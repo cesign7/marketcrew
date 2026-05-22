@@ -15,7 +15,7 @@ import type {
   OutcomeReport,
   WorkflowObjectType,
 } from "@/lib/domain";
-import type { MarketingWorkflowRepository } from "@/lib/persistence/repositories";
+import type { MarketingWorkflowRepository } from "@/lib/application/workflow-repository";
 
 export type ApprovalDetailViewModel = {
   generatedAt: string;

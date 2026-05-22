@@ -4,7 +4,7 @@ import { proxyRequestToBackend } from "@/lib/backend/proxy";
 export async function GET(request: Request) {
   const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
   if (proxied) {
-    clearAgendaRoomViewModelCache();
+    await clearAgendaRoomViewModelCache();
     return proxied;
   }
 

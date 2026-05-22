@@ -23,8 +23,8 @@ import type {
 } from "../domain";
 import { MockProviderExecutor } from "../integrations/executors/mock-provider-executor";
 import { SampleProviderAdapter, type SampleMarketingInput } from "../integrations/sample/provider";
-import { createMemoryMarketingWorkflowRepository } from "../persistence/memory-repository";
-import type { MarketingWorkflowRepository } from "../persistence/repositories";
+import { createMemoryMarketingWorkflowRepository } from "./memory-workflow-repository";
+import type { MarketingWorkflowRepository } from "./workflow-repository";
 
 export type AgendaCycleDependencies = {
   sampleProvider: { collect(): SampleMarketingInput };

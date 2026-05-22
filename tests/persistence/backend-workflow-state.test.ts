@@ -25,6 +25,10 @@ describe("readBackendWorkflowRepositoryState", () => {
       ok: true,
       json: async () => ({
         state: {
+          repositoryMode: "db",
+          counts: {
+            signals: 1,
+          },
           signals: [
             {
               id: "signal-from-railway-api",
@@ -55,13 +59,9 @@ describe("readBackendWorkflowRepositoryState", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       new URL("https://api.marketcrew.app/api/operations/workflow-state"),
       expect.objectContaining({
-        cache: "force-cache",
+        cache: "no-store",
         headers: {
           authorization: "Bearer secret-token",
-        },
-        next: {
-          revalidate: 60,
-          tags: ["marketcrew-backend-read"],
         },
         signal: expect.any(AbortSignal),
       }),

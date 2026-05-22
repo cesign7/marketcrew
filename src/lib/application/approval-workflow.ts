@@ -10,7 +10,7 @@ import type {
   ProviderSyncReport,
 } from "../domain";
 import { MockProviderExecutor } from "../integrations/executors/mock-provider-executor";
-import type { MarketingWorkflowRepository } from "../persistence/repositories";
+import type { MarketingWorkflowRepository } from "./workflow-repository";
 import { recordOwnerDecisionAgentRun } from "./agent-run-recorder";
 import { buildProviderOutcomeAnalysis } from "./provider-outcome-analysis";
 

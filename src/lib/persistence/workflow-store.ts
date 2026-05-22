@@ -3,7 +3,7 @@ import { runAgendaCycle } from "../application/agenda-cycle";
 import { recordProviderSyncAgentRuns } from "../application/agent-run-recorder";
 import { buildProviderSignalAgendaArtifacts } from "../application/provider-signal-agenda";
 import type { ProviderSyncReport } from "../domain";
-import type { MarketingWorkflowRepository } from "./repositories";
+import type { MarketingWorkflowRepository } from "../application/workflow-repository";
 import { SampleProviderAdapter } from "../integrations/sample/provider";
 import { createFileMarketingWorkflowRepository } from "./file-repository";
 import { createPostgresMarketingWorkflowRepository } from "./postgres-repository";

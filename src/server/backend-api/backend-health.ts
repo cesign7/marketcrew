@@ -1,11 +1,28 @@
 import { NextResponse } from "next/server";
 import { readPostgresWorkflowRepositoryState } from "@/lib/persistence/postgres-read-model";
-import { getWorkflowDatabaseUrl, getWorkflowRepositoryMode } from "@/lib/persistence/workflow-store";
+import {
+  buildWorkflowStateSummary,
+  getWorkflowDatabaseUrl,
+  getWorkflowRepositoryMode,
+  getWorkflowStoreLabel,
+} from "@/lib/persistence/workflow-store";
+import { createBackendWorkflowRepository } from "./repository";
 
 export async function handleBackendHealth() {
-  const databaseUrl = getWorkflowDatabaseUrl();
+  const repositoryMode = getWorkflowRepositoryMode();
   let counts: Record<string, number> | undefined;
-  if (databaseUrl) {
+  if (repositoryMode === "file") {
+    const repository = createBackendWorkflowRepository();
+    const summary = buildWorkflowStateSummary(repository, getWorkflowStoreLabel(), repositoryMode);
+    counts = {
+      approvalRequests: summary.counts.approvalRequests,
+      providerSyncReports: summary.counts.providerSyncReports,
+      agentRuns: summary.counts.agentRuns,
+    };
+  }
+
+  const databaseUrl = getWorkflowDatabaseUrl();
+  if (repositoryMode === "db" && databaseUrl) {
     const state = await readPostgresWorkflowRepositoryState(databaseUrl, {
       ...process.env,
       MARKETCREW_POSTGRES_READ_MODEL_CACHE_TTL_MS: "1000",
@@ -18,9 +35,9 @@ export async function handleBackendHealth() {
   }
 
   return NextResponse.json({
-    ok: Boolean(databaseUrl),
+    ok: repositoryMode === "file" || Boolean(databaseUrl),
     service: "marketcrew-api",
-    repositoryMode: getWorkflowRepositoryMode(),
+    repositoryMode,
     counts,
   });
 }

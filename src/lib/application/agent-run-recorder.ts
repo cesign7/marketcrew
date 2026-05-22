@@ -10,7 +10,7 @@ import type {
   ProviderSyncReport,
   WorkflowObjectRef,
 } from "../domain";
-import type { MarketingWorkflowRepository } from "../persistence/repositories";
+import type { MarketingWorkflowRepository } from "./workflow-repository";
 import type { OwnerDecisionWorkflowResult } from "./approval-workflow";
 
 export function recordPlannerAgentRun(

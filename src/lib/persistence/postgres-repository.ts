@@ -20,13 +20,13 @@ import type {
   Signal,
   WorkflowObjectRef,
 } from "../domain";
-import type { MarketingWorkflowRepository } from "./repositories";
+import type { MarketingWorkflowRepository } from "../application/workflow-repository";
 import {
   normalizeWorkflowRepositoryState,
   upsertById,
   type WorkflowCollectionKey,
   type WorkflowRepositoryState,
-} from "./workflow-state";
+} from "../application/workflow-state";
 
 const bridgeScriptPath = resolve(process.cwd(), "scripts", "postgres-workflow-bridge.mjs");
 const DEFAULT_POSTGRES_STATE_CACHE_TTL_MS = 15_000;

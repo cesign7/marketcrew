@@ -23,7 +23,7 @@ import {
 import { recordPlannerAgentRun } from "@/lib/application/agent-run-recorder";
 import { buildProviderReadinessReports } from "@/lib/integrations/providers/readiness";
 import { buildDeterministicPlannerResult, buildPlannerAuditRun, buildPlannerInputFromApprovals } from "@/lib/llm/planner";
-import type { MarketingWorkflowRepository } from "@/lib/persistence/repositories";
+import type { MarketingWorkflowRepository } from "@/lib/application/workflow-repository";
 import { buildLlmCostGovernanceView } from "./buildLlmCostGovernanceView";
 import { buildProviderDataContracts } from "./provider-data-contracts";
 import type {

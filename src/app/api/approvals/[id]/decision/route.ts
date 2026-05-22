@@ -8,7 +8,7 @@ type DecisionRouteContext = {
 export async function POST(request: Request, context: DecisionRouteContext) {
   const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
   if (proxied) {
-    clearAgendaRoomViewModelCache();
+    await clearAgendaRoomViewModelCache();
     return proxied;
   }
 

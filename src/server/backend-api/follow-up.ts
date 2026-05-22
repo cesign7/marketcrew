@@ -41,7 +41,7 @@ export async function handleFollowUpPatch(request: Request, context: { params: P
     status: body.status,
   };
   repository.saveFollowUpInternalTasks([updatedTask]);
-  clearAgendaRoomViewModelCache();
+  await clearAgendaRoomViewModelCache();
 
   return NextResponse.json({ task: updatedTask });
 }
