@@ -36,7 +36,7 @@ describe("LLM cost governance", () => {
     expect(view.estimatedRunCostLabel).toBe("이번 예상 7원");
     expect(view.dailySpentLabel).toBe("오늘 누적 12원");
     expect(view.dailyRemainingLabel).toBe("호출 후 잔여 981원");
-    expect(view.officialPricingSourceLabel).toContain("Google AI 공식 가격표");
+    expect(view.officialPricingSourceLabel).toContain("구글 AI 공식 가격표");
     expect(view.officialPricingRows).toEqual([
       expect.objectContaining({
         modelKey: "gemini-3.1-flash-lite",

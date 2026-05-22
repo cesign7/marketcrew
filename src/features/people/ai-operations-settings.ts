@@ -79,7 +79,7 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "AI 업무실장",
         provider: defaultProvider,
         model: strategicModel,
-        roleModel: "Chief of Staff처럼 각 담당자의 안건을 묶고 대표 결재에 맞게 우선순위를 정합니다.",
+        roleModel: "대표 비서실장처럼 각 담당자의 안건을 묶고 대표 결재에 맞게 우선순위를 정합니다.",
         responsibility: "하위 캐릭터가 올린 안건을 비용, 근거, 실행 위험 기준으로 정리합니다.",
         outputContract: "대표가 바로 승인/보류/보강을 판단할 수 있는 3줄 결론과 근거 ID를 남깁니다.",
         monthlyReviewRule: "월말에는 모델별 사용량과 승인 성과를 묶어 다음 달 호출 한도를 제안합니다.",
@@ -91,7 +91,7 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "퍼포먼스 마케터",
         provider: defaultProvider,
         model: strategicModel,
-        roleModel: "Performance Marketer처럼 시즌 키워드, 광고 효율, 신규 수요를 먼저 찾습니다.",
+        roleModel: "광고 성과 담당자처럼 시즌 키워드, 광고 효율, 신규 수요를 먼저 찾습니다.",
         responsibility: "네이버 키워드광고와 검색 수요를 보고 테스트 안건을 상신합니다.",
         outputContract: "키워드, 예상 효과, 예산 상한, 중단 기준을 함께 보고합니다.",
         monthlyReviewRule: "월별 광고비 대비 매출 기여와 키워드 발굴 적중률을 봅니다.",
@@ -103,7 +103,7 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "상품 기획자",
         provider: defaultProvider,
         model: defaultModel,
-        roleModel: "Merchandiser처럼 상품별 판매 흐름과 시즌 구색을 연결합니다.",
+        roleModel: "상품 기획자처럼 상품별 판매 흐름과 시즌 구색을 연결합니다.",
         responsibility: "스티커씨와 커피프린트 상품 데이터를 보고 묶음, 노출, 신규 상품 후보를 올립니다.",
         outputContract: "상품명, 채널, 제안 이유, 필요한 근거를 분리해 남깁니다.",
         monthlyReviewRule: "월별 상품 제안이 실제 주문/재구매로 이어졌는지 확인합니다.",
@@ -115,7 +115,7 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "콘텐츠 기획자",
         provider: defaultProvider,
         model: defaultModel,
-        roleModel: "Creative Strategist처럼 승인된 안건을 고객이 이해하는 문장으로 바꿉니다.",
+        roleModel: "콘텐츠 전략가처럼 승인된 안건을 고객이 이해하는 문장으로 바꿉니다.",
         responsibility: "광고 문구, 상세페이지 메시지, 시즌 선물 제안을 작성합니다.",
         outputContract: "대표 승인 전에는 초안만 만들고 외부 채널에는 쓰지 않습니다.",
         monthlyReviewRule: "월별 문구 테스트의 클릭률, 전환, 반려 사유를 모아 개선합니다.",
@@ -124,10 +124,10 @@ export function buildDefaultAiOperationsSettings(input: {
       {
         id: "ripi",
         name: "리피",
-        departmentRole: "CRM 담당자",
+        departmentRole: "고객 관리 담당자",
         provider: defaultProvider,
         model: defaultModel,
-        roleModel: "Lifecycle Marketer처럼 구매 이후의 재방문과 반복 구매 신호를 관리합니다.",
+        roleModel: "재구매 관리 담당자처럼 구매 이후의 재방문과 반복 구매 신호를 관리합니다.",
         responsibility: "고객군, 재구매 타이밍, 쿠폰/메시지 후보를 후속 업무로 올립니다.",
         outputContract: "개인정보 원문 없이 집계 근거와 실행 조건만 보고합니다.",
         monthlyReviewRule: "월별 재구매 후보와 실제 후속 성과를 비교합니다.",
@@ -139,7 +139,7 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "손익 관리자",
         provider: defaultProvider,
         model: defaultModel,
-        roleModel: "FP&A Controller처럼 광고비와 마진 위험을 먼저 막습니다.",
+        roleModel: "손익 관리 담당자처럼 광고비와 마진 위험을 먼저 막습니다.",
         responsibility: "예산 초과, 손익 악화, 성과 측정 누락을 결재 전에 검토합니다.",
         outputContract: "승인 가능 예산, 중단 기준, 성과 확인일을 함께 제시합니다.",
         monthlyReviewRule: "월별 AI 비용과 마케팅 비용이 승인 성과에 맞는지 점검합니다.",
@@ -151,7 +151,7 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "데이터 분석가",
         provider: defaultProvider,
         model: defaultModel,
-        roleModel: "BI Analyst처럼 원천 필드와 집계 기준을 검증합니다.",
+        roleModel: "데이터 감사 담당자처럼 원천 필드와 집계 기준을 검증합니다.",
         responsibility: "수집 누락, 전년동기, 음력 명절 비교, 근거 품질을 확인합니다.",
         outputContract: "분석에 쓴 기간, 채널, 원천 필드, 저장 필드를 명확히 남깁니다.",
         monthlyReviewRule: "월별 수집 실패와 근거 부족 안건을 줄이는 개선안을 냅니다.",
@@ -208,10 +208,10 @@ export function sanitizeAiOperationsSettings(
     return {
       id: fallbackProfile.id,
       name: fallbackProfile.name,
-      departmentRole: cleanText(rawProfile.departmentRole, fallbackProfile.departmentRole, 80),
+      departmentRole: localizePeopleOfficeText(cleanText(rawProfile.departmentRole, fallbackProfile.departmentRole, 80)),
       provider: resolveProvider(cleanText(rawProfile.provider, fallbackProfile.provider, 40)),
       model: cleanText(rawProfile.model, fallbackProfile.model, 80),
-      roleModel: cleanText(rawProfile.roleModel, fallbackProfile.roleModel, 220),
+      roleModel: localizePeopleOfficeText(cleanText(rawProfile.roleModel, fallbackProfile.roleModel, 220)),
       responsibility: cleanText(rawProfile.responsibility, fallbackProfile.responsibility, 220),
       outputContract: cleanText(rawProfile.outputContract, fallbackProfile.outputContract, 220),
       monthlyReviewRule: cleanText(rawProfile.monthlyReviewRule, fallbackProfile.monthlyReviewRule, 220),
@@ -255,7 +255,7 @@ export function buildAiPeopleOfficeView(input: {
     ...OFFICIAL_LLM_PRICING.map((pricing) => ({
       provider: pricing.provider,
       model: pricing.model,
-      label: `${pricing.displayName} · 입력 ${formatUsd(pricing.inputUsdPerMillionTokens)} / 출력 ${formatUsd(pricing.outputUsdPerMillionTokens)}`,
+      label: `${modelDisplayLabel(pricing.model)} · 입력 ${formatUsd(pricing.inputUsdPerMillionTokens)} / 출력 ${formatUsd(pricing.outputUsdPerMillionTokens)}`,
     })),
     {
       provider: "deterministic" as const,
@@ -269,7 +269,7 @@ export function buildAiPeopleOfficeView(input: {
     .map((profile) => ({
       provider: profile.provider,
       model: profile.model,
-      label: `${providerLabel(profile.provider)} ${profile.model} · 직접 설정`,
+      label: `${providerLabel(profile.provider)} ${modelDisplayLabel(profile.model)} · 직접 설정`,
     }));
 
   return {
@@ -293,7 +293,7 @@ export function buildAiPeopleOfficeView(input: {
     budgetStatusLabel: budgetRatio >= 1 ? "월 예산 초과" : budgetRatio >= 0.8 ? "주의 구간" : "예산 안정",
     budgetStatusTone: budgetRatio >= 1 ? "blocked" : budgetRatio >= 0.8 ? "warning" : "ready",
     modelOptions: [...baseModelOptions, ...configuredModelOptions],
-    sourceNote: "월별 사용량은 저장된 AgentRun의 입력/출력 토큰과 공식 모델 단가 기준 예상금액으로 계산합니다.",
+    sourceNote: "월별 사용량은 저장된 AI 실행 기록의 입력/출력 토큰과 공식 모델 단가 기준 예상금액으로 계산합니다.",
   };
 }
 
@@ -355,7 +355,7 @@ function buildModelUsageRows(agentRuns: AgentRun[], krwPerUsd: number): AiModelU
     .map((row) => ({
       id: `${row.provider}-${row.model}`,
       providerLabel: providerLabel(row.provider),
-      model: row.model,
+      model: modelDisplayLabel(row.model),
       runCountLabel: `${formatCount(row.runCount)}건`,
       inputTokensLabel: `${formatCount(row.inputTokens)}토큰`,
       outputTokensLabel: `${formatCount(row.outputTokens)}토큰`,
@@ -443,12 +443,34 @@ function resolveProvider(value: unknown): AgentRunProvider {
 function providerLabel(provider: AgentRunProvider): string {
   const labels: Partial<Record<AgentRunProvider, string>> = {
     deterministic: "규칙 기반",
-    gemini: "Gemini",
-    openai: "OpenAI",
+    gemini: "제미나이",
+    openai: "오픈AI",
     local: "로컬",
   };
 
   return labels[provider] ?? provider;
+}
+
+function modelDisplayLabel(model: string): string {
+  const labels: Record<string, string> = {
+    "gemini-3.5-flash": "제미나이 3.5 빠른 모델",
+    "gemini-3.1-flash-lite": "제미나이 3.1 경량 모델",
+    "deterministic-fallback": "규칙 기반 대체",
+  };
+
+  return labels[model] ?? model;
+}
+
+function localizePeopleOfficeText(value: string): string {
+  return value
+    .replaceAll("Chief of Staff", "대표 비서실장")
+    .replaceAll("Performance Marketer", "광고 성과 담당자")
+    .replaceAll("Merchandiser", "상품 기획자")
+    .replaceAll("Creative Strategist", "콘텐츠 전략가")
+    .replaceAll("Lifecycle Marketer", "재구매 관리 담당자")
+    .replaceAll("FP&A Controller", "손익 관리 담당자")
+    .replaceAll("BI Analyst", "데이터 감사 담당자")
+    .replaceAll("CRM 담당자", "고객 관리 담당자");
 }
 
 function formatMonthKey(value: string): string {
