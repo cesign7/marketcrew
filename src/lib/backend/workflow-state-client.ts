@@ -1,5 +1,7 @@
 import type { AgendaRoomViewModel } from "@/features/agenda-room/types";
+import type { AiPeopleOfficeView } from "@/features/people/ai-operations-settings";
 import { normalizeWorkflowRepositoryState, type WorkflowRepositoryState } from "@/lib/application/workflow-state";
+import type { AiOperationsSettings } from "@/lib/domain";
 
 const DEFAULT_BACKEND_API_TIMEOUT_MS = 5_000;
 const DEFAULT_BACKEND_API_CACHE_TTL_SECONDS = 60;
@@ -23,6 +25,11 @@ type BackendAgendaRoomViewModelResponse = {
   viewModel?: AgendaRoomViewModel;
 };
 
+export type BackendAiOperationsSettingsResponse = {
+  settings?: AiOperationsSettings;
+  peopleOfficeView?: AiPeopleOfficeView;
+};
+
 export async function readBackendAgendaRoomViewModel(
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<AgendaRoomViewModel | undefined> {
@@ -41,6 +48,14 @@ export async function readBackendWorkflowRepositoryState(
   }
 
   return normalizeWorkflowRepositoryState(payload.state);
+}
+
+export async function readBackendAiOperationsSettings(
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<BackendAiOperationsSettingsResponse | undefined> {
+  return fetchBackendJson<BackendAiOperationsSettingsResponse>("/api/settings/ai-operations", env, {
+    cacheMode: "no-store",
+  });
 }
 
 export async function clearBackendWorkflowStateCache(env: NodeJS.ProcessEnv = process.env): Promise<void> {

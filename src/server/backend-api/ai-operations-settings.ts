@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  buildAiPeopleOfficeView,
   buildDefaultAiOperationsSettings,
   resolveAiOperationsSettings,
   sanitizeAiOperationsSettings,
@@ -11,9 +12,14 @@ export function handleGetAiOperationsSettings() {
   const settings = resolveAiOperationsSettings({
     stored: repository.listAiOperationsSettings()[0],
   });
+  const peopleOfficeView = buildAiPeopleOfficeView({
+    settings,
+    agentRuns: repository.listAgentRuns(),
+  });
 
   return NextResponse.json({
     settings,
+    peopleOfficeView,
   });
 }
 
@@ -43,9 +49,14 @@ export async function handlePutAiOperationsSettings(request: Request) {
   );
 
   repository.saveAiOperationsSettings([settings]);
+  const peopleOfficeView = buildAiPeopleOfficeView({
+    settings,
+    agentRuns: repository.listAgentRuns(),
+  });
 
   return NextResponse.json({
     settings,
+    peopleOfficeView,
   });
 }
 

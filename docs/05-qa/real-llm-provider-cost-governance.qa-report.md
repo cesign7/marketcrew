@@ -62,3 +62,15 @@
 | E2E smoke | `npm run test:e2e -- tests/e2e/llm-cost-governance-smoke.spec.ts tests/e2e/navigation-structure-smoke.spec.ts` | PASS, 9 chromium tests |
 
 저장된 AI 운영 설정이 비용 가드에 들어가는 후속 hardening도 QA_PASS다.
+
+## 2026-05-23 Settings Access Fix QA
+
+| Test | Command | Result |
+|------|---------|--------|
+| Typecheck | `npm run typecheck` | PASS |
+| Targeted unit | `npm test -- --run tests/application/ai-operations-view-loader.test.ts tests/application/llm-cost-governance.test.ts` | PASS, 2 files / 6 tests |
+| Full unit | `npm test -- --run` | PASS, 33 files / 97 tests |
+| Production build | `npm run build` | PASS |
+| E2E smoke | `npm run test:e2e -- tests/e2e/navigation-structure-smoke.spec.ts` | PASS, 8 chromium tests |
+
+인사과/설정 화면의 hosted runtime full workflow-state 의존 제거도 QA_PASS다.

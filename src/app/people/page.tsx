@@ -1,19 +1,12 @@
 import { AiPeopleOffice } from "@/components/people/AiPeopleOffice";
 import { AppShell } from "@/components/layout/AppShell";
-import { loadAgendaRoomViewModel, loadWorkflowReadRepository } from "@/features/agenda-room/loadAgendaRoomViewModel";
-import { buildAiPeopleOfficeView, resolveAiOperationsSettings } from "@/features/people/ai-operations-settings";
+import { loadAgendaRoomViewModel } from "@/features/agenda-room/loadAgendaRoomViewModel";
+import { loadAiPeopleOfficeView } from "@/features/people/loadAiOperationsView";
 
 export const dynamic = "force-dynamic";
 
 export default async function PeoplePage() {
-  const [viewModel, repository] = await Promise.all([loadAgendaRoomViewModel(), loadWorkflowReadRepository()]);
-  const settings = resolveAiOperationsSettings({
-    stored: repository.listAiOperationsSettings()[0],
-  });
-  const peopleOfficeView = buildAiPeopleOfficeView({
-    settings,
-    agentRuns: repository.listAgentRuns(),
-  });
+  const [viewModel, peopleOfficeView] = await Promise.all([loadAgendaRoomViewModel(), loadAiPeopleOfficeView()]);
 
   return (
     <AppShell

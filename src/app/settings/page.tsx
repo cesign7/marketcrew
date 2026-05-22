@@ -3,16 +3,13 @@ import { LlmCostGovernancePanel } from "@/components/agenda-room/LlmCostGovernan
 import { ProviderReadinessPanel } from "@/components/agenda-room/ProviderReadinessPanel";
 import { AppShell } from "@/components/layout/AppShell";
 import { AiBudgetSettingsPanel } from "@/components/settings/AiBudgetSettingsPanel";
-import { loadAgendaRoomViewModel, loadWorkflowReadRepository } from "@/features/agenda-room/loadAgendaRoomViewModel";
-import { resolveAiOperationsSettings } from "@/features/people/ai-operations-settings";
+import { loadAgendaRoomViewModel } from "@/features/agenda-room/loadAgendaRoomViewModel";
+import { loadAiOperationsSettings } from "@/features/people/loadAiOperationsView";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const [viewModel, repository] = await Promise.all([loadAgendaRoomViewModel(), loadWorkflowReadRepository()]);
-  const aiSettings = resolveAiOperationsSettings({
-    stored: repository.listAiOperationsSettings()[0],
-  });
+  const [viewModel, aiSettings] = await Promise.all([loadAgendaRoomViewModel(), loadAiOperationsSettings()]);
 
   return (
     <AppShell
