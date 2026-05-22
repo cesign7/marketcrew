@@ -32,6 +32,12 @@ export function ProviderDataContractPanel({ contracts }: ProviderDataContractPan
                 <FileSearch size={15} aria-hidden="true" />
                 불러오는 데이터
               </a>
+              {contract.incoming.rawSampleRows && contract.incoming.rawSampleRows.length > 0 ? (
+                <a href={`#${contract.incoming.id}-raw`}>
+                  <FileSearch size={15} aria-hidden="true" />
+                  로우데이터 예시
+                </a>
+              ) : null}
               <a href={`#${contract.stored.id}`}>
                 <Database size={15} aria-hidden="true" />
                 저장하는 데이터
@@ -112,6 +118,31 @@ function DatasetContractCard({
           </tbody>
         </table>
       </div>
+
+      {dataset.rawSampleRows && dataset.rawSampleRows.length > 0 ? (
+        <div className="data-raw-sample-list" id={`${dataset.id}-raw`} aria-label={`${dataset.title} 로우데이터 항목 예시`}>
+          <strong>로우데이터 항목 예시</strong>
+          <p>API 응답에 들어올 수 있는 원천 항목 예시입니다. 아래 항목은 확인용이며 원문 그대로 저장하지 않습니다.</p>
+          {dataset.rawSampleRows.map((row) => (
+            <article className="data-raw-sample-card" key={row.id}>
+              <header>
+                <strong>{row.title}</strong>
+                <span>저장 안 함</span>
+              </header>
+              <p>{row.description}</p>
+              <div className="data-raw-field-grid">
+                {row.values.map((item) => (
+                  <span key={`${row.id}-${item.key}`}>
+                    <small>{item.label}</small>
+                    <code>{item.key}</code>
+                    {item.value}
+                  </span>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : null}
 
       <div className="data-sample-list" aria-label={`${dataset.title} 샘플 데이터`}>
         <strong>샘플 데이터</strong>

@@ -190,7 +190,7 @@ QA Verdict:    QA_PASS
 | `npm audit --omit=dev` | 0 vulnerabilities |
 | Targeted Playwright `/data` smoke | 1 chromium smoke passed |
 | `/operations` smoke | 200 OK |
-| `/data` HTTP smoke | 200 OK, data contract anchors visible |
+| `/data` HTTP smoke | 200 OK, data contract and raw data example anchors visible |
 | `/approvals/[id]` smoke | 200 OK |
 | outcomes API | 1 report, `판단 보류` |
 | Browser smoke | provider evidence and saved outcome visible |
@@ -204,7 +204,7 @@ QA Verdict:    QA_PASS
 | Missing persistence | Added local file repository and workflow-state API | Resolved for MVP |
 | Missing provider evidence | Added readiness, read-only sync, evidence panels | Resolved for MVP |
 | Missing outcome re-read | Added outcomes API and outcome history panel | Resolved |
-| Missing data contract visibility | Added `/data` contract panel for incoming fields, stored fields, samples, and safety notes | Resolved |
+| Missing data contract visibility | Added `/data` contract panel for incoming fields, raw examples, stored fields, samples, and safety notes | Resolved |
 | Risk of external writes | Kept provider write gates closed | Resolved for MVP |
 
 ---
@@ -272,7 +272,7 @@ QA Verdict:    QA_PASS
 - Bottom-up agenda/report/approval workflow.
 - Lunar/solar marketing calendar and seasonal keyword guardrails.
 - Provider readiness and read-only sync evidence.
-- Provider data contract panel for incoming data, stored data, column descriptions, and sample values.
+- Provider data contract panel for incoming data, raw data examples, stored data, column descriptions, and sample values.
 - Product keyword/marketing/product discovery candidates.
 - Approval detail with provider evidence, owner decision submit, execution result, checkpoints, and outcome history.
 - Local file repository, workflow-state API, outcomes API.

@@ -192,6 +192,16 @@ export type ProviderDataContractDatasetView = {
       value: string;
     }>;
   }>;
+  rawSampleRows?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    values: Array<{
+      key: string;
+      label: string;
+      value: string;
+    }>;
+  }>;
 };
 
 export type PlannerPreviewView = {
