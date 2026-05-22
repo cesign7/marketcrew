@@ -94,8 +94,8 @@ const periodFilters: ViewFilterOption[] = [
 ];
 
 const sidebarStorageKey = "marketcrew:sidebar-collapsed";
-const navWarmupDelayMs = 420;
-const navWarmupStepMs = 280;
+const navWarmupDelayMs = 80;
+const navWarmupStepMs = 90;
 
 type MarketCrewWindow = Window &
   typeof globalThis & {
@@ -212,7 +212,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
                 onFocus={() => warmRoute(item.href)}
                 onMouseEnter={() => warmRoute(item.href)}
                 onTouchStart={() => warmRoute(item.href)}
-                prefetch={false}
+                prefetch
                 title={`${item.label} - ${item.description}`}
               >
                 <Icon size={18} aria-hidden="true" />
