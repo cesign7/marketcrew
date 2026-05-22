@@ -97,6 +97,7 @@ function buildTaskView(input: {
   const tone = taskTone(input.task, input.sourceApproval, rawBlockerLabels);
   const latestDecisionLabel = input.latestDecision ? decisionLabel(input.latestDecision.decision) : "대표 결정 없음";
   const latestOutcomeLabel = input.latestOutcome ? outcomeLabel(input.latestOutcome.state) : "성과 보고 대기";
+  const assignedCharacter = normalizeCharacterKey(input.task.assignedCharacter);
 
   return {
     id: input.task.id,
@@ -104,8 +105,8 @@ function buildTaskView(input: {
     status: input.task.status,
     statusLabel: input.task.status === "DONE" ? "완료" : "대기",
     tone,
-    assignedCharacter: input.task.assignedCharacter,
-    assignedCharacterName: characterProfiles[input.task.assignedCharacter].name,
+    assignedCharacter,
+    assignedCharacterName: characterProfiles[assignedCharacter].name,
     createdAt: formatKoreanDateTime(input.task.createdAt),
     sourceApprovalId: input.task.sourceApprovalRequestId,
     sourceApprovalTitle: input.sourceApproval?.title ?? input.task.sourceApprovalRequestId,
@@ -268,7 +269,7 @@ function nextActionLabel(
     return "학습 근거로 보관";
   }
 
-  if (task.assignedCharacter === "day" || sourceApproval?.status === "NEEDS_EVIDENCE") {
+  if (normalizeCharacterKey(task.assignedCharacter) === "day" || sourceApproval?.status === "NEEDS_EVIDENCE") {
     return "근거 보강 후 재상신";
   }
 
@@ -276,7 +277,7 @@ function nextActionLabel(
     return "수동 반영 또는 잠금 해제 조건 확인";
   }
 
-  if (task.assignedCharacter === "moa") {
+  if (normalizeCharacterKey(task.assignedCharacter) === "moa") {
     return "대표 보고용 재상신 정리";
   }
 
@@ -328,7 +329,7 @@ function taskTone(
     return "blocked";
   }
 
-  if (task.assignedCharacter === "day" || sourceApproval?.status === "NEEDS_EVIDENCE") {
+  if (normalizeCharacterKey(task.assignedCharacter) === "day" || sourceApproval?.status === "NEEDS_EVIDENCE") {
     return "evidence";
   }
 
@@ -405,6 +406,14 @@ function outcomeLabel(state: OutcomeReport["state"]): string {
   };
 
   return labels[state];
+}
+
+function normalizeCharacterKey(value: string): CharacterKey {
+  if (value === "opi") {
+    return "moa";
+  }
+
+  return value in characterProfiles ? (value as CharacterKey) : "moa";
 }
 
 function formatKoreanDateTime(value: string): string {

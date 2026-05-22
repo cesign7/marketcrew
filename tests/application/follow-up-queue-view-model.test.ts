@@ -91,4 +91,38 @@ describe("buildFollowUpQueueViewModel", () => {
     expect(viewModel.characterQueues.find((queue) => queue.character === "moa")?.tasks[0]?.learningNote).toContain("완료된");
     expect(viewModel.ownerLearningSignals.find((signal) => signal.id === "draft-first-pattern")?.value).toBe("1건");
   });
+
+  it("기존 운영 DB에 남은 opi 담당 후속 업무는 모아 큐로 안전하게 읽는다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    const cycle = runAgendaCycle({
+      sampleProvider: new SampleProviderAdapter(),
+      repository,
+    });
+    const readyApproval = cycle.approvalRequests.find((approval) => approval.status === "PENDING")!;
+
+    const result = processOwnerDecision({
+      approvalRequest: readyApproval,
+      decision: "APPROVE_DRAFT_ONLY",
+      memo: "초안만 승인",
+      now: "2026-05-22T04:00:00.000Z",
+      externalWriteEnabled: false,
+      repository,
+    });
+    repository.saveFollowUpInternalTasks([
+      {
+        ...result.followUpTasks[0]!,
+        assignedCharacter: "opi" as never,
+      },
+    ]);
+
+    const viewModel = buildFollowUpQueueViewModel({
+      repository,
+      now: "2026-05-22T04:10:00.000Z",
+    });
+
+    const moaTask = viewModel.characterQueues.find((queue) => queue.character === "moa")?.tasks[0];
+    expect(moaTask?.assignedCharacter).toBe("moa");
+    expect(moaTask?.assignedCharacterName).toBe("모아");
+    expect(moaTask?.nextActionLabel).toBe("대표 보고용 재상신 정리");
+  });
 });
