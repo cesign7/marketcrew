@@ -13,6 +13,7 @@
 | Vercel | Connected and deployed | `https://marketcrew.vercel.app` |
 | Vercel project | Ready | `aipressos-projects/marketcrew` |
 | Vercel production branch | Updated | `main` |
+| Custom domain | Added in Vercel, DNS pending | `marketcrew.app`, `www.marketcrew.app` |
 | Railway | Connected | project `marketcrew` |
 | Railway Postgres | Online | service `Postgres`, production environment |
 
@@ -65,6 +66,31 @@ Total records: 137.
 - The first Vercel deployment that detected local `.env` was removed.
 - The intermediate Vercel deployment that failed before file-tracing fix was removed.
 
+## Custom Domain
+
+`marketcrew.app` is registered at Cloudflare nameservers and has been added to the Vercel `marketcrew` project together with `www.marketcrew.app`.
+
+Current Cloudflare nameservers:
+
+- `peter.ns.cloudflare.com`
+- `sandy.ns.cloudflare.com`
+
+Required Cloudflare DNS records:
+
+| Type | Name | Content | Proxy |
+|------|------|---------|-------|
+| A | `@` | `76.76.21.21` | DNS only during verification |
+| A | `www` | `76.76.21.21` | DNS only during verification |
+
+Cloudflare DNS API/CLI authentication is not available in this workspace yet. After the records are added in Cloudflare, verify with:
+
+```bash
+dig +short A marketcrew.app
+dig +short A www.marketcrew.app
+vercel domains inspect marketcrew.app --scope aipressos-projects
+curl -I https://marketcrew.app/operations
+```
+
 ## Verification
 
 | Check | Result |
@@ -78,6 +104,7 @@ Total records: 137.
 | `/approvals/approval-agenda-season-plan-buddha-gift-card` production smoke | 200, key Korean terms present |
 | `/api/operations/workflow-state` | `repositoryMode=db`, approvalRequests 5, providerSyncReports 18, agentRuns 1 |
 | Vercel recent error logs after final smoke | no errors in latest 1 minute |
+| `marketcrew.app` Vercel project domain | added, waiting for Cloudflare DNS records |
 
 ## Remaining GitHub Deletion Decision
 
