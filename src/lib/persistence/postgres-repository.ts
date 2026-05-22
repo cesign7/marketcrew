@@ -36,7 +36,12 @@ type CachedWorkflowRepositoryState = {
   state: WorkflowRepositoryState;
 };
 
-const sharedStateCache = new Map<string, CachedWorkflowRepositoryState>();
+const sharedStateCache = getSharedStateCache();
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __marketcrewPostgresStateCache: Map<string, CachedWorkflowRepositoryState> | undefined;
+}
 
 export function createPostgresMarketingWorkflowRepository(databaseUrl: string): MarketingWorkflowRepository {
   return new PostgresMarketingWorkflowRepository(databaseUrl);
@@ -291,4 +296,9 @@ function getPostgresStateCacheTtlMs(env: NodeJS.ProcessEnv = process.env): numbe
 
   const parsed = Number.parseInt(rawValue, 10);
   return Number.isFinite(parsed) ? Math.max(0, parsed) : DEFAULT_POSTGRES_STATE_CACHE_TTL_MS;
+}
+
+function getSharedStateCache(): Map<string, CachedWorkflowRepositoryState> {
+  globalThis.__marketcrewPostgresStateCache ??= new Map<string, CachedWorkflowRepositoryState>();
+  return globalThis.__marketcrewPostgresStateCache;
 }
