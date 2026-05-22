@@ -2,7 +2,7 @@ import { createLocalWorkflowRepository } from "@/lib/persistence/workflow-store"
 import { buildAgendaRoomViewModel } from "./buildAgendaRoomViewModel";
 import type { AgendaRoomViewModel } from "./types";
 
-const DEFAULT_VIEW_MODEL_CACHE_TTL_MS = 10_000;
+const DEFAULT_VIEW_MODEL_CACHE_TTL_MS = 60_000;
 
 type CachedAgendaRoomViewModel = {
   expiresAt: number;

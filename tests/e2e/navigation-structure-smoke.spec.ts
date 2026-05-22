@@ -10,6 +10,7 @@ test("대표 업무실은 왼쪽 업무 메뉴와 상단 기준 필터로 나뉜
   await expect(navigation.getByRole("link", { name: "데이터 연동" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "성장/성과" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "설정" })).toBeVisible();
+  await expect(navigation.getByRole("link", { name: "데이터 연동" })).toHaveAttribute("data-prefetch-mode", "intent");
 
   const topControls = page.getByRole("region", { name: "화면 보기 기준" });
   await expect(topControls.getByRole("button", { name: "전체" })).toBeVisible();

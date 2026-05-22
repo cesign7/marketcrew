@@ -12,7 +12,8 @@ import {
   TrendingUp,
   UsersRound,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ViewFilterControls, type ViewFilterOption } from "./ViewFilterControls";
 
@@ -93,10 +94,41 @@ const periodFilters: ViewFilterOption[] = [
 ];
 
 const sidebarStorageKey = "marketcrew:sidebar-collapsed";
+const navWarmupDelayMs = 420;
+const navWarmupStepMs = 280;
+
+type MarketCrewWindow = Window &
+  typeof globalThis & {
+    __marketcrewWarmedRoutes?: Set<string>;
+  };
 
 export function AppShell({ active, eyebrow, title, description, generatedAt, actions, children }: AppShellProps) {
   const activeItem = navItems.find((item) => item.key === active) ?? navItems[0];
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const router = useRouter();
+
+  const warmRoute = useCallback(
+    (href: string) => {
+      if (href === activeItem.href || typeof window === "undefined") {
+        return;
+      }
+
+      const marketCrewWindow = window as MarketCrewWindow;
+      marketCrewWindow.__marketcrewWarmedRoutes ??= new Set<string>();
+      if (marketCrewWindow.__marketcrewWarmedRoutes.has(href)) {
+        return;
+      }
+
+      marketCrewWindow.__marketcrewWarmedRoutes.add(href);
+      try {
+        router.prefetch(href);
+      } catch {
+        marketCrewWindow.__marketcrewWarmedRoutes.delete(href);
+      }
+    },
+    [activeItem.href, router],
+  );
 
   useEffect(() => {
     setIsSidebarCollapsed(window.localStorage.getItem(sidebarStorageKey) === "true");
@@ -105,6 +137,39 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
   useEffect(() => {
     window.localStorage.setItem(sidebarStorageKey, String(isSidebarCollapsed));
   }, [isSidebarCollapsed]);
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [active]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const warmableRoutes = navItems.map((item) => item.href).filter((href) => href !== activeItem.href);
+    const timeoutIds: number[] = [];
+    const scheduleWarmup = () => {
+      warmableRoutes.forEach((href, index) => {
+        timeoutIds.push(window.setTimeout(() => warmRoute(href), navWarmupDelayMs + index * navWarmupStepMs));
+      });
+    };
+    const cancelWarmup =
+      typeof window.requestIdleCallback === "function"
+        ? (() => {
+            const idleCallbackId = window.requestIdleCallback(scheduleWarmup, { timeout: 1600 });
+            return () => window.cancelIdleCallback(idleCallbackId);
+          })()
+        : (() => {
+            const timeoutId = window.setTimeout(scheduleWarmup, navWarmupDelayMs);
+            return () => window.clearTimeout(timeoutId);
+          })();
+
+    return () => {
+      timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      cancelWarmup();
+    };
+  }, [activeItem.href, warmRoute]);
 
   const SidebarToggleIcon = isSidebarCollapsed ? PanelLeftOpen : PanelLeftClose;
 
@@ -136,9 +201,17 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
               <Link
                 aria-current={isActive ? "page" : undefined}
                 aria-label={item.label}
-                className={`app-nav-link${isActive ? " is-active" : ""}`}
+                className={`app-nav-link${isActive ? " is-active" : ""}${pendingHref === item.href && !isActive ? " is-pending" : ""}`}
+                data-prefetch-mode="intent"
                 href={item.href}
                 key={item.key}
+                onClick={() => {
+                  setPendingHref(item.href);
+                  warmRoute(item.href);
+                }}
+                onFocus={() => warmRoute(item.href)}
+                onMouseEnter={() => warmRoute(item.href)}
+                onTouchStart={() => warmRoute(item.href)}
                 prefetch={false}
                 title={`${item.label} - ${item.description}`}
               >
