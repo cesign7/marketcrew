@@ -23,6 +23,23 @@ test("대표 업무실은 왼쪽 업무 메뉴와 상단 기준 필터로 나뉜
   await expect(topControls.getByRole("button", { name: "명절기준" })).toBeVisible();
 });
 
+test("데이터 연동 메뉴와 상단 채널/기간 필터가 클릭에 반응한다", async ({ page }) => {
+  await page.goto("/operations");
+
+  await page.getByRole("navigation", { name: "주요 업무 메뉴" }).getByRole("link", { name: "데이터 연동" }).click();
+  await expect(page).toHaveURL(/\/data$/);
+  await expect(page.getByRole("heading", { level: 1, name: "데이터 연동" })).toBeVisible();
+
+  const topControls = page.getByRole("region", { name: "화면 보기 기준" });
+  await topControls.getByRole("button", { name: "스티커씨" }).click();
+  await expect(page).toHaveURL(/\/data\?channel=stickersee$/);
+  await expect(topControls.getByRole("button", { name: "스티커씨" })).toHaveAttribute("aria-pressed", "true");
+
+  await topControls.getByRole("button", { name: "30일" }).click();
+  await expect(page).toHaveURL(/\/data\?channel=stickersee&period=30d$/);
+  await expect(topControls.getByRole("button", { name: "30일" })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("모바일 상단 메뉴는 첫 화면을 과하게 차지하지 않는다", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/operations");

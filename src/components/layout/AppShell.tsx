@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { ViewFilterControls, type ViewFilterOption } from "./ViewFilterControls";
 
 export type AppNavKey = "operations" | "characters" | "approvals" | "data" | "growth" | "settings";
 
@@ -74,8 +75,19 @@ const navItems = [
   icon: typeof LayoutDashboard;
 }>;
 
-const channelFilters = ["전체", "스티커씨", "커피프린트", "키워드광고"];
-const periodFilters = ["오늘", "7일", "30일", "전년동기", "명절기준"];
+const channelFilters: ViewFilterOption[] = [
+  { label: "전체", value: "all" },
+  { label: "스티커씨", value: "stickersee" },
+  { label: "커피프린트", value: "coffeeprint" },
+  { label: "키워드광고", value: "search-ad" },
+];
+const periodFilters: ViewFilterOption[] = [
+  { label: "오늘", value: "today" },
+  { label: "7일", value: "7d" },
+  { label: "30일", value: "30d" },
+  { label: "전년동기", value: "last-year" },
+  { label: "명절기준", value: "holiday" },
+];
 
 export function AppShell({ active, eyebrow, title, description, generatedAt, actions, children }: AppShellProps) {
   const activeItem = navItems.find((item) => item.key === active) ?? navItems[0];
@@ -131,24 +143,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
             </section>
           </div>
 
-          <section className="view-control-bar" aria-label="화면 보기 기준">
-            <div className="filter-group" aria-label="채널 기준">
-              <span>채널</span>
-              {channelFilters.map((filter, index) => (
-                <button aria-pressed={index === 0} key={filter} type="button">
-                  {filter}
-                </button>
-              ))}
-            </div>
-            <div className="filter-group period-filter-group" aria-label="기간 기준">
-              <span>기간</span>
-              {periodFilters.map((filter, index) => (
-                <button aria-pressed={index === 0} key={filter} type="button">
-                  {filter}
-                </button>
-              ))}
-            </div>
-          </section>
+          <ViewFilterControls channelFilters={channelFilters} periodFilters={periodFilters} />
         </header>
 
         <main className="operations-shell">{children}</main>
