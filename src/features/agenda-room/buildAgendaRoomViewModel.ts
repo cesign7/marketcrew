@@ -953,7 +953,7 @@ function buildProviderDisplayInfo(report: ProviderSyncReport): ProviderDisplayIn
     return {
       providerGroup: "trend",
       channelKey: "datalab",
-      channelLabel: providerKeyLabel(report.provider),
+      channelLabel: "마케팅 데이터",
       providerLabel: providerKeyLabel(report.provider),
     };
   }
@@ -961,7 +961,7 @@ function buildProviderDisplayInfo(report: ProviderSyncReport): ProviderDisplayIn
   return {
     providerGroup: "ad",
     channelKey: "search-ad",
-    channelLabel: providerKeyLabel(report.provider),
+    channelLabel: "마케팅 데이터",
     providerLabel: providerKeyLabel(report.provider),
   };
 }

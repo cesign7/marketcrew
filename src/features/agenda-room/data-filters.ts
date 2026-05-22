@@ -1,10 +1,10 @@
 import type { ProviderDataContractView, ProviderReadinessView, ProviderSyncEvidenceView } from "./types";
 
-export type DataChannelFilter = "all" | "stickersee" | "coffeeprint" | "search-ad";
+export type DataChannelFilter = "all" | "stickersee" | "coffeeprint";
 export type DataPeriodFilter = "today" | "7d" | "30d" | "last-year" | "holiday";
 
 export function normalizeDataChannel(value: string | undefined): DataChannelFilter {
-  if (value === "stickersee" || value === "coffeeprint" || value === "search-ad") {
+  if (value === "stickersee" || value === "coffeeprint") {
     return value;
   }
 
@@ -55,11 +55,7 @@ export function filterProviderReadiness(
     if (selectedChannel === "stickersee") {
       return provider.id === "smartstore";
     }
-    if (selectedChannel === "coffeeprint") {
-      return provider.id === "shop";
-    }
-
-    return provider.id === "search_ad" || provider.id === "datalab";
+    return provider.id === "shop";
   });
 }
 
@@ -75,11 +71,7 @@ export function filterProviderSyncEvidence(
     if (selectedChannel === "stickersee") {
       return report.channelKey === "smartstore-stickersee";
     }
-    if (selectedChannel === "coffeeprint") {
-      return report.channelKey === "shop-coffeeprint";
-    }
-
-    return report.providerKey === "search_ad" || report.providerKey === "datalab";
+    return report.channelKey === "shop-coffeeprint";
   });
 }
 
@@ -95,10 +87,6 @@ export function filterProviderDataContracts(
     if (selectedChannel === "stickersee") {
       return contract.providerKey === "smartstore";
     }
-    if (selectedChannel === "coffeeprint") {
-      return contract.providerKey === "shop";
-    }
-
-    return contract.providerKey === "search_ad" || contract.providerKey === "datalab";
+    return contract.providerKey === "shop";
   });
 }

@@ -19,8 +19,8 @@ const DEFAULT_PERIOD = "today";
 export function ViewFilterControls({ channelFilters, periodFilters }: ViewFilterControlsProps) {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const urlChannel = searchParams.get("channel") ?? DEFAULT_CHANNEL;
-  const urlPeriod = searchParams.get("period") ?? DEFAULT_PERIOD;
+  const urlChannel = normalizeFilterValue(searchParams.get("channel"), channelFilters, DEFAULT_CHANNEL);
+  const urlPeriod = normalizeFilterValue(searchParams.get("period"), periodFilters, DEFAULT_PERIOD);
   const [selectedFilter, setSelectedFilter] = useState({
     channel: urlChannel,
     period: urlPeriod,
@@ -35,6 +35,12 @@ export function ViewFilterControls({ channelFilters, periodFilters }: ViewFilter
 
   function updateFilter(key: "channel" | "period", value: string) {
     const nextParams = new URLSearchParams(window.location.search);
+    if (!isAllowedFilterValue(nextParams.get("channel"), channelFilters)) {
+      nextParams.delete("channel");
+    }
+    if (!isAllowedFilterValue(nextParams.get("period"), periodFilters)) {
+      nextParams.delete("period");
+    }
     const defaultValue = key === "channel" ? DEFAULT_CHANNEL : DEFAULT_PERIOD;
     const nextSelectedFilter = {
       ...selectedFilter,
@@ -86,4 +92,16 @@ export function ViewFilterControls({ channelFilters, periodFilters }: ViewFilter
       </div>
     </section>
   );
+}
+
+function normalizeFilterValue(value: string | null, options: ViewFilterOption[], defaultValue: string): string {
+  if (isAllowedFilterValue(value, options)) {
+    return value;
+  }
+
+  return defaultValue;
+}
+
+function isAllowedFilterValue(value: string | null, options: ViewFilterOption[]): value is string {
+  return Boolean(value && options.some((option) => option.value === value));
 }

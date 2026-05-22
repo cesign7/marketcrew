@@ -28,7 +28,7 @@ export function ProviderDataContractPanel({ contracts }: ProviderDataContractPan
         {contracts.map((contract) => (
           <article className="data-contract-link-card" key={`${contract.providerKey}-${contract.channelKey}`}>
             <div>
-              <span>{contract.brandLabel ?? "광고"}</span>
+              <span>{contract.brandLabel ?? "마케팅 데이터"}</span>
               <strong>{contract.providerLabel}</strong>
             </div>
             <nav aria-label={`${contract.providerLabel} 데이터 명세`}>

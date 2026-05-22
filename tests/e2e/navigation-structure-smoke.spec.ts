@@ -15,7 +15,7 @@ test("대표 업무실은 왼쪽 업무 메뉴와 상단 기준 필터로 나뉜
   await expect(topControls.getByRole("button", { name: "전체" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "스티커씨" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "커피" })).toBeVisible();
-  await expect(topControls.getByRole("button", { name: "광고" })).toBeVisible();
+  await expect(topControls.getByRole("button", { name: "광고" })).toHaveCount(0);
   await expect(topControls.getByRole("button", { name: "오늘" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "7일" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "30일" })).toBeVisible();
@@ -75,8 +75,13 @@ test("데이터 연동 메뉴와 상단 채널/기간 필터가 클릭에 반응
   await expect(page.locator(".data-contract-provider").filter({ hasText: "쇼핑몰(커피프린트)" })).toHaveCount(0);
   await expect(page.locator(".data-source-field-card").filter({ hasText: "lastChangeStatuses[0]" })).toBeVisible();
 
+  await page.goto("/data?channel=search-ad");
+  await expect(page).toHaveURL(/\/data\?channel=search-ad$/);
+  await expect(topControls.getByRole("button", { name: "전체" })).toHaveAttribute("aria-pressed", "true");
+  await expect(topControls.getByRole("button", { name: "광고" })).toHaveCount(0);
+
   await topControls.getByRole("button", { name: "30일" }).click();
-  await expect(page).toHaveURL(/\/data\?channel=stickersee&period=30d$/);
+  await expect(page).toHaveURL(/\/data\?period=30d$/);
   await expect(topControls.getByRole("button", { name: "30일" })).toHaveAttribute("aria-pressed", "true");
 });
 

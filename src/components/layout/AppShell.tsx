@@ -83,7 +83,6 @@ const channelFilters: ViewFilterOption[] = [
   { label: "전체", value: "all" },
   { label: "스티커씨", value: "stickersee" },
   { label: "커피", value: "coffeeprint" },
-  { label: "광고", value: "search-ad" },
 ];
 const periodFilters: ViewFilterOption[] = [
   { label: "오늘", value: "today" },

@@ -6,7 +6,7 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
       providerKey: "search_ad",
       providerLabel: "네이버 키워드광고",
       channelKey: "search-ad",
-      channelLabel: "광고/검색",
+      channelLabel: "마케팅 데이터",
       sourceUrl: "https://api.searchad.naver.com/keywordstool",
       incoming: {
         id: "search-ad-incoming",
@@ -143,7 +143,7 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
       providerKey: "datalab",
       providerLabel: "네이버 데이터랩",
       channelKey: "datalab",
-      channelLabel: "광고/검색",
+      channelLabel: "마케팅 데이터",
       sourceUrl: "https://openapi.naver.com/v1/datalab/search",
       incoming: {
         id: "datalab-incoming",

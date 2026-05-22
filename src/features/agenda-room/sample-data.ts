@@ -267,7 +267,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
       providerKey: "search_ad",
       providerGroup: "ad",
       channelKey: "search-ad",
-      channelLabel: "네이버 키워드광고",
+      channelLabel: "마케팅 데이터",
       providerLabel: "네이버 키워드광고",
       statusLabel: "동기화 완료",
       tone: "ready",
