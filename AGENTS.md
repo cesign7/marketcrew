@@ -32,6 +32,7 @@
 - MVP 최종 근거 드릴다운 Act 문서: `docs/04-act/mvp-final-provenance-closeout.iteration-1.md`
 - MVP 최종 근거 드릴다운 QA 문서: `docs/05-qa/mvp-final-provenance-closeout.qa-report.md`
 - MVP 최종 완료 보고서: `docs/04-report/mvp-final-provenance-closeout.report.md`
+- 클라우드 연결 문서: `docs/06-deploy/marketcrew-cloud-setup.md`
 - PDCA 상태 파일: `.bkit-memory.json`
 - 현재 기능명: `mvp-final-provenance-closeout`
 - 현재 PDCA 단계: `completed`
@@ -40,6 +41,7 @@
 - 현재 진행 작업 2: `follow-up-task-queue-owner-learning` PDCA cycle #3는 Check/QA/report까지 완료했다. `/follow-ups` 전용 큐, owner learning signal, `PATCH /api/follow-ups/[id]` 상태 변경 API, `/operations` 후속 업무 link가 동작한다. `npm test -- --run` 20 files/67 tests, typecheck, build, audit 0 vulnerabilities, follow-ups Playwright smoke, in-app browser smoke를 통과했다. 1차 MVP 대비 진행율은 99%다.
 - 현재 진행 작업 3: `real-llm-provider-cost-governance` PDCA cycle #4는 Check/QA/report까지 완료했다. `/operations`에 LLM 비용 가드가 표시되고 `/api/operations/llm-cost-governance`가 read-only로 provider/key, env 단가, 1회/일 예산, AgentRun 누적 비용, token cap, raw row privacy gate를 반환한다. 현재 local env는 Gemini provider/key가 준비됐지만 단가/예산 env가 없어 의도대로 `live call 차단`이다. `npm test -- --run` 21 files/70 tests, typecheck, build, audit 0 vulnerabilities, LLM cost governance Playwright smoke, localhost:3001 HTTP/API smoke를 통과했다. 1차 MVP 대비 진행율은 99.5%였다.
 - 현재 진행 작업 4: `mvp-final-provenance-closeout`은 `/operations` 결재 미리보기 카드에 `카드별 근거 추적`을 추가해 데이터 근거, AI 실행 이력, 연동 수집 기록, 성과 체크포인트, 안전 조건을 카드 안에서 바로 확인하게 했다. 검증은 typecheck, full unit, build, audit, full e2e 3 tests, localhost:3001 browser text scan을 통과했다. 1차 MVP 대비 진행율은 100%다.
+- 클라우드 연결 상태: GitHub `https://github.com/cesign7/marketcrew`의 기본 브랜치는 `main`이며 현재 MVP 커밋이 올라가 있다. Vercel production은 `https://marketcrew.vercel.app`, Railway project는 `marketcrew`, Postgres service는 `Online`이다. Vercel production은 Railway Postgres를 `MARKETCREW_REPOSITORY_MODE=db`로 읽고, `/api/operations/workflow-state` production smoke에서 `approvalRequests=5`, `providerSyncReports=18`, `agentRuns=1`을 확인했다. 기존 GitHub branch `feat-ai-marketing-operations-mvp`는 아직 남아 있으며 삭제는 명시 지시 전까지 하지 않는다.
 - 다음 권장 작업: 1차 MVP는 완료로 닫고, 이후 작업은 실제 LLM adapter dry-run, normalized analytics schema, 실제 provider write executor 설계처럼 후속 확장으로 진행한다. 실제 provider write executor는 별도 PDCA와 명시 승인 전까지 시작하지 않는다.
 
 제품 방향이 바뀌면 위 문서들을 함께 갱신한다. PDCA 단계, 요약, 다음 작업이 바뀌면 `.bkit-memory.json`도 같이 수정한다.
