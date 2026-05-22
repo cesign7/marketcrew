@@ -7,7 +7,12 @@ import {
 import { isHostedFrontendRuntime } from "@/lib/backend/proxy";
 import { clearPostgresReadModelStateCache, readPostgresWorkflowRepositoryState } from "@/lib/persistence/postgres-read-model";
 import type { MarketingWorkflowRepository } from "@/lib/persistence/repositories";
-import { createLocalWorkflowRepository, getWorkflowDatabaseUrl, getWorkflowRepositoryMode } from "@/lib/persistence/workflow-store";
+import {
+  createLocalWorkflowRepository,
+  getWorkflowDatabaseUrl,
+  getWorkflowRepositoryMode,
+  seedSampleWorkflowIfEmpty,
+} from "@/lib/persistence/workflow-store";
 import { buildAgendaRoomViewModel } from "./buildAgendaRoomViewModel";
 import type { AgendaRoomViewModel } from "./types";
 
@@ -16,6 +21,11 @@ const DEFAULT_VIEW_MODEL_CACHE_TTL_MS = 60_000;
 type CachedAgendaRoomViewModel = {
   expiresAt: number;
   viewModel: AgendaRoomViewModel;
+};
+
+type WorkflowReadRepositoryOptions = {
+  env?: NodeJS.ProcessEnv;
+  seedSample?: boolean;
 };
 
 declare global {
@@ -37,7 +47,7 @@ export async function loadAgendaRoomViewModel() {
   const viewModel =
     backendViewModel ??
     buildAgendaRoomViewModel({
-      repository: await createAgendaRoomReadRepository(),
+      repository: await loadWorkflowReadRepository(),
     });
   writeAgendaRoomViewModelCache(viewModel);
 
@@ -92,21 +102,37 @@ function getViewModelCacheTtlMs(env: NodeJS.ProcessEnv = process.env): number {
   return Number.isFinite(parsed) ? Math.max(0, parsed) : DEFAULT_VIEW_MODEL_CACHE_TTL_MS;
 }
 
-async function createAgendaRoomReadRepository(env: NodeJS.ProcessEnv = process.env): Promise<MarketingWorkflowRepository> {
-  if (getWorkflowRepositoryMode(env) !== "db") {
-    return createLocalWorkflowRepository(env);
-  }
-
-  const databaseUrl = getWorkflowDatabaseUrl(env);
-  if (!databaseUrl) {
-    return createLocalWorkflowRepository(env);
-  }
-
+export async function loadWorkflowReadRepository(
+  options: WorkflowReadRepositoryOptions = {},
+): Promise<MarketingWorkflowRepository> {
+  const env = options.env ?? process.env;
   const backendState = await readBackendWorkflowRepositoryState(env);
   if (backendState) {
     return createMemoryMarketingWorkflowRepository(backendState);
   }
 
+  if (isHostedFrontendRuntime(env)) {
+    throw new Error("Vercel 화면 런타임에서는 Railway 백엔드 workflow state가 필요합니다.");
+  }
+
+  if (getWorkflowRepositoryMode(env) !== "db") {
+    return createSeedableLocalRepository(env, options.seedSample);
+  }
+
+  const databaseUrl = getWorkflowDatabaseUrl(env);
+  if (!databaseUrl) {
+    return createSeedableLocalRepository(env, options.seedSample);
+  }
+
   const state = await readPostgresWorkflowRepositoryState(databaseUrl, env);
   return createMemoryMarketingWorkflowRepository(state);
+}
+
+function createSeedableLocalRepository(env: NodeJS.ProcessEnv, seedSample: boolean | undefined): MarketingWorkflowRepository {
+  const repository = createLocalWorkflowRepository(env);
+  if (seedSample) {
+    seedSampleWorkflowIfEmpty(repository);
+  }
+
+  return repository;
 }

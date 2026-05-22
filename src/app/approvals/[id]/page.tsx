@@ -8,8 +8,8 @@ import { OwnerDecisionSubmitPanel } from "@/components/agenda-room/OwnerDecision
 import { OutcomeReportHistoryPanel } from "@/components/agenda-room/OutcomeReportHistoryPanel";
 import { ProviderSyncEvidencePanel } from "@/components/agenda-room/ProviderSyncEvidencePanel";
 import { AppShell } from "@/components/layout/AppShell";
+import { loadWorkflowReadRepository } from "@/features/agenda-room/loadAgendaRoomViewModel";
 import { buildApprovalDetailViewModel } from "@/features/approvals/buildApprovalDetailViewModel";
-import { createLocalWorkflowRepository } from "@/lib/persistence/workflow-store";
 
 type ApprovalDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -17,8 +17,9 @@ type ApprovalDetailPageProps = {
 
 export default async function ApprovalDetailPage({ params }: ApprovalDetailPageProps) {
   const { id } = await params;
+  const repository = await loadWorkflowReadRepository({ seedSample: true });
   const viewModel = buildApprovalDetailViewModel(id, {
-    repository: createLocalWorkflowRepository(),
+    repository,
   });
   if (!viewModel) {
     notFound();

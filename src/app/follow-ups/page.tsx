@@ -3,14 +3,13 @@ import { ClipboardList, ShieldCheck } from "lucide-react";
 import { FollowUpQueueBoard } from "@/components/follow-ups/FollowUpQueueBoard";
 import { OwnerLearningPanel } from "@/components/follow-ups/OwnerLearningPanel";
 import { AppShell } from "@/components/layout/AppShell";
+import { loadWorkflowReadRepository } from "@/features/agenda-room/loadAgendaRoomViewModel";
 import { buildFollowUpQueueViewModel } from "@/features/follow-ups/buildFollowUpQueueViewModel";
-import { createLocalWorkflowRepository, seedSampleWorkflowIfEmpty } from "@/lib/persistence/workflow-store";
 
 export const dynamic = "force-dynamic";
 
-export default function FollowUpsPage() {
-  const repository = createLocalWorkflowRepository();
-  seedSampleWorkflowIfEmpty(repository);
+export default async function FollowUpsPage() {
+  const repository = await loadWorkflowReadRepository({ seedSample: true });
   const viewModel = buildFollowUpQueueViewModel({ repository });
 
   return (
