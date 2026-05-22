@@ -1946,7 +1946,7 @@ button:disabled {
   font-weight: 900;
 }
 
-.data-raw-sample-list {
+.data-source-field-list {
   scroll-margin-top: 110px;
   display: grid;
   gap: 10px;
@@ -1955,11 +1955,11 @@ button:disabled {
   padding-top: 12px;
 }
 
-.data-raw-sample-list > strong {
+.data-source-field-list > strong {
   font-size: 12px;
 }
 
-.data-raw-sample-list > p {
+.data-source-field-list > p {
   margin: -2px 0 0;
   color: var(--ink-muted);
   font-size: 12px;
@@ -1967,26 +1967,26 @@ button:disabled {
   line-height: 1.45;
 }
 
-.data-raw-sample-card {
+.data-source-field-card {
   border: 1px dashed #bfc7c2;
   border-radius: 8px;
   background: #fbfcfa;
   padding: 10px;
 }
 
-.data-raw-sample-card header {
+.data-source-field-card header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.data-raw-sample-card header strong {
+.data-source-field-card header strong {
   overflow-wrap: anywhere;
   font-size: 12px;
 }
 
-.data-raw-sample-card header span {
+.data-source-field-card header span {
   flex: 0 0 auto;
   border-radius: 999px;
   background: #f1f2f4;
@@ -1996,21 +1996,21 @@ button:disabled {
   font-weight: 900;
 }
 
-.data-raw-sample-card p {
+.data-source-field-card p {
   margin: 7px 0 0;
   color: var(--ink-muted);
   font-size: 12px;
   line-height: 1.45;
 }
 
-.data-raw-field-grid {
+.data-source-field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 7px;
   margin-top: 9px;
 }
 
-.data-raw-field-grid span {
+.data-source-field-grid span {
   display: grid;
   gap: 3px;
   min-width: 0;
@@ -2023,13 +2023,13 @@ button:disabled {
   font-weight: 900;
 }
 
-.data-raw-field-grid small {
+.data-source-field-grid small {
   color: var(--ink-muted);
   font-size: 10px;
   font-weight: 900;
 }
 
-.data-raw-field-grid code {
+.data-source-field-grid code {
   overflow-wrap: anywhere;
   color: var(--ink-muted);
   font-size: 11px;
@@ -3397,7 +3397,7 @@ button:disabled {
   .keyword-list,
   .agenda-details,
   .diff-grid,
-  .data-raw-field-grid,
+  .data-source-field-grid,
   .outcome-history-grid,
   .approval-agent-run-summary {
     grid-template-columns: 1fr;

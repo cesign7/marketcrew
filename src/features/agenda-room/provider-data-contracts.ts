@@ -63,18 +63,18 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             ],
           },
         ],
-        rawSampleRows: [
+        sourceFieldGroups: [
           {
-            id: "search-ad-raw-keyword-list",
+            id: "search-ad-source-keyword-list",
             title: "keywordList[0]",
-            description: "키워드 도구 응답의 원천 행 예시입니다. 저장 전 숫자/경쟁도만 정규화합니다.",
-            values: [
-              { key: "keywordList[0].relKeyword", label: "키워드", value: "부처님오신날 선물카드" },
-              { key: "keywordList[0].monthlyPcQcCnt", label: "PC 검색수", value: "420" },
-              { key: "keywordList[0].monthlyMobileQcCnt", label: "모바일 검색수", value: "1,800" },
-              { key: "keywordList[0].compIdx", label: "경쟁도", value: "중간" },
-              { key: "keywordList[0].monthlyAvePcCtr", label: "PC 클릭률", value: "1.2" },
-              { key: "keywordList[0].monthlyAveMobileCtr", label: "모바일 클릭률", value: "1.8" },
+            description: "키워드 도구 응답에서 읽을 수 있는 대표 원천 필드입니다.",
+            fields: [
+              { key: "keywordList[0].relKeyword", label: "키워드", handling: "키워드 수요 요약에 사용" },
+              { key: "keywordList[0].monthlyPcQcCnt", label: "PC 검색수", handling: "숫자로 정규화해 저장" },
+              { key: "keywordList[0].monthlyMobileQcCnt", label: "모바일 검색수", handling: "숫자로 정규화해 저장" },
+              { key: "keywordList[0].compIdx", label: "경쟁도", handling: "경쟁 수준으로 변환" },
+              { key: "keywordList[0].monthlyAvePcCtr", label: "PC 클릭률", handling: "클릭률 후보로 저장" },
+              { key: "keywordList[0].monthlyAveMobileCtr", label: "모바일 클릭률", handling: "클릭률 후보로 저장" },
             ],
           },
         ],
@@ -195,18 +195,18 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             ],
           },
         ],
-        rawSampleRows: [
+        sourceFieldGroups: [
           {
-            id: "datalab-raw-search-result",
+            id: "datalab-source-search-result",
             title: "results[0].data[0]",
-            description: "DataLab 검색 트렌드 응답의 원천 구간 예시입니다. ratio는 절대 검색량이 아니라 상대값입니다.",
-            values: [
-              { key: "startDate", label: "시작일", value: "2026-04-22" },
-              { key: "endDate", label: "종료일", value: "2026-05-22" },
-              { key: "timeUnit", label: "기간 단위", value: "date" },
-              { key: "results[0].title", label: "묶음", value: "부처님오신날" },
-              { key: "results[0].keywords", label: "검색어", value: "부처님오신날 선물카드" },
-              { key: "results[0].data[0].ratio", label: "상대 비율", value: "100" },
+            description: "DataLab 검색 트렌드 응답에서 읽을 수 있는 대표 원천 필드입니다.",
+            fields: [
+              { key: "startDate", label: "시작일", handling: "분석 기간으로 저장" },
+              { key: "endDate", label: "종료일", handling: "분석 기간으로 저장" },
+              { key: "timeUnit", label: "기간 단위", handling: "추이 단위로 저장" },
+              { key: "results[0].title", label: "묶음", handling: "키워드 묶음 이름으로 저장" },
+              { key: "results[0].keywords", label: "검색어", handling: "요청 조건 확인용, 원문 목록은 저장 안 함" },
+              { key: "results[0].data[0].ratio", label: "상대 비율", handling: "절대 검색량이 아닌 상대값으로 저장" },
             ],
           },
         ],
@@ -316,28 +316,28 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             ],
           },
         ],
-        rawSampleRows: [
+        sourceFieldGroups: [
           {
-            id: "smartstore-raw-last-changed",
+            id: "smartstore-source-last-changed",
             title: "lastChangeStatuses[0]",
-            description: "최근 변경 주문 목록에서 상세 조회에 잠깐 쓰는 원천 항목입니다. 주문번호 목록은 저장하지 않습니다.",
-            values: [
-              { key: "lastChangeStatuses[0].productOrderId", label: "상품주문번호", value: "po-****-0001" },
-              { key: "lastChangeStatuses[0].lastChangedDate", label: "변경시각", value: "2026-05-22T09:12:00+09:00" },
-              { key: "lastChangeStatuses[0].productOrderStatus", label: "주문상태", value: "PAYED" },
-              { key: "Authorization", label: "인증 토큰", value: "저장 안 함" },
+            description: "최근 변경 주문 목록에서 상세 조회에 잠깐 쓰는 원천 필드입니다.",
+            fields: [
+              { key: "lastChangeStatuses[0].productOrderId", label: "상품주문번호", handling: "상세 조회에만 사용, 저장 안 함" },
+              { key: "lastChangeStatuses[0].lastChangedDate", label: "변경시각", handling: "조회 창 판단에 사용, 원문 저장 안 함" },
+              { key: "lastChangeStatuses[0].productOrderStatus", label: "주문상태", handling: "필터 판단에 사용, 원문 저장 안 함" },
+              { key: "Authorization", label: "인증 토큰", handling: "요청에만 사용, 저장 안 함" },
             ],
           },
           {
-            id: "smartstore-raw-product-order",
+            id: "smartstore-source-product-order",
             title: "productOrders[0].productOrder",
-            description: "주문 상세 응답의 상품/금액 항목 예시입니다. 고객명, 연락처, 주소 같은 개인정보는 저장하지 않습니다.",
-            values: [
-              { key: "productOrders[0].productOrder.productName", label: "상품명", value: "선물카드" },
-              { key: "productOrders[0].productOrder.totalPaymentAmount", label: "결제 금액", value: "7,000원" },
-              { key: "productOrders[0].productOrder.quantity", label: "수량", value: "1" },
-              { key: "productOrders[0].order.orderId", label: "주문 ID", value: "ord-****-9321" },
-              { key: "productOrders[0].shippingAddress", label: "배송지", value: "저장 안 함" },
+            description: "주문 상세 응답에서 상품/금액 집계에 필요한 대표 원천 필드입니다.",
+            fields: [
+              { key: "productOrders[0].productOrder.productName", label: "상품명", handling: "상위 상품 집계에 사용" },
+              { key: "productOrders[0].productOrder.totalPaymentAmount", label: "결제 금액", handling: "매출 합산에 사용" },
+              { key: "productOrders[0].productOrder.quantity", label: "수량", handling: "주문 집계 확인용, 원문 저장 안 함" },
+              { key: "productOrders[0].order.orderId", label: "주문 ID", handling: "식별자 저장 안 함" },
+              { key: "productOrders[0].shippingAddress", label: "배송지", handling: "개인정보로 저장 안 함" },
             ],
           },
         ],
@@ -459,18 +459,18 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             ],
           },
         ],
-        rawSampleRows: [
+        sourceFieldGroups: [
           {
-            id: "shop-raw-bridge-aggregate",
+            id: "shop-source-bridge-aggregate",
             title: "bridge aggregate response",
-            description: "영카트 브리지가 반환하는 원천 집계 응답 예시입니다. 고객/주문 원문 행은 브리지 밖으로 내보내지 않습니다.",
-            values: [
-              { key: "brandKey", label: "브랜드", value: "COFFEEPRINT" },
-              { key: "windowDays", label: "집계 기간", value: "30" },
-              { key: "orderCount", label: "주문수", value: "28" },
-              { key: "repeatCustomerCount", label: "재구매 고객수", value: "4" },
-              { key: "grossSales", label: "매출", value: "880,000원" },
-              { key: "averageOrderValue", label: "평균 주문금액", value: "51,765원" },
+            description: "영카트 브리지가 반환하는 원천 집계 응답 필드입니다. 고객/주문 원문 행은 브리지 밖으로 내보내지 않습니다.",
+            fields: [
+              { key: "brandKey", label: "브랜드", handling: "쇼핑몰 브랜드 구분에 사용" },
+              { key: "windowDays", label: "집계 기간", handling: "집계 기간으로 저장" },
+              { key: "orderCount", label: "주문수", handling: "주문 집계로 저장" },
+              { key: "repeatCustomerCount", label: "재구매 고객수", handling: "재구매 세그먼트 크기로 저장" },
+              { key: "grossSales", label: "매출", handling: "매출 집계로 저장" },
+              { key: "averageOrderValue", label: "평균 주문금액", handling: "객단가로 저장" },
             ],
           },
         ],

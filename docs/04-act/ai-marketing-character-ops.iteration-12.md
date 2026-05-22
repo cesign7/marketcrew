@@ -23,7 +23,7 @@
 | Data contract model | `ProviderDataContractView`와 `ProviderDataContractDatasetView`를 추가했다. |
 | Contract source | `provider-data-contracts.ts`가 네이버 키워드광고, 네이버 데이터랩, 스마트스토어(스티커씨), 쇼핑몰(커피프린트)의 불러오는 데이터/저장하는 데이터 칼럼을 제공한다. |
 | Data page UI | `ProviderDataContractPanel`을 추가해 채널별 `불러오는 데이터`, `저장하는 데이터` 링크, 칼럼 설명, 샘플 데이터를 보여준다. |
-| Raw example UI | `로우데이터 항목 예시` 링크와 블록을 추가해 API 응답 원천 항목을 마스킹된 예시로 보여준다. |
+| Source field UI | `원천 필드 목록` 링크와 블록을 추가해 API 응답에서 들어올 수 있는 필드와 처리 기준을 보여준다. |
 | Channel filter | 상단 채널 필터를 데이터 명세에도 적용한다. 스티커씨 선택 시 스마트스토어 명세만, 커피프린트 선택 시 쇼핑몰 명세만 보인다. |
 | Korean copy | 연동 근거 문구에서 `행는`, `연결는`처럼 어색하게 조합되던 조사를 보정했다. |
 | Tests | 컴포넌트, view model, E2E 네비게이션 스모크에 데이터 명세 확인을 추가했다. |
@@ -37,9 +37,9 @@
 | 스마트스토어(스티커씨) | 최근 변경 주문 ID와 주문 상세의 상품명/금액 | `CommerceAggregateSnapshot`, 주문수, 매출, 상위 상품 |
 | 쇼핑몰(커피프린트) | 영카트 브리지의 주문/재구매/매출 집계 | `ShopAggregateSnapshot`, 주문수, 재구매 고객수, 매출, 객단가 |
 
-## Raw Data Example Boundary
+## Source Field Boundary
 
-로우데이터 예시는 실제 저장 데이터가 아니다. `lastChangeStatuses[0].productOrderId`, `productOrders[0].productOrder.productName`, `results[0].data[0].ratio`처럼 API 응답에서 들어올 수 있는 항목명을 보여주되, 주문번호는 마스킹하고 배송지/토큰/고객정보는 `저장 안 함`으로 표시한다.
+원천 필드 목록은 실제 저장 데이터가 아니다. `lastChangeStatuses[0].productOrderId`, `productOrders[0].productOrder.productName`, `results[0].data[0].ratio`처럼 API 응답에서 들어올 수 있는 필드명을 보여주되, 값 샘플을 노출하지 않고 `상세 조회에만 사용`, `매출 합산에 사용`, `개인정보로 저장 안 함` 같은 처리 기준만 표시한다.
 
 ## Verification
 
@@ -50,7 +50,7 @@
 | `npm run typecheck` | passed |
 | `npm run build` | passed |
 | Targeted Playwright smoke | `/data` navigation/filter test passed |
-| Local HTTP smoke | `/data` returned `200 OK` and contained `#search-ad-incoming`, `#smartstore-stored`, `로우데이터 항목 예시` |
+| Local HTTP smoke | `/data` returned `200 OK` and contained `#search-ad-incoming`, `#smartstore-stored`, `원천 필드 목록` |
 
 ## MVP Progress
 

@@ -16,9 +16,10 @@ describe("ProviderDataContractPanel", () => {
     expect(html).toContain("CommerceAggregateSnapshot.brandKey");
     expect(html).toContain("ShopAggregateSnapshot.brandKey");
     expect(html).toContain("주문 원문 행은 저장하지 않습니다");
-    expect(html).toContain("로우데이터 항목 예시");
+    expect(html).toContain("원천 필드 목록");
     expect(html).toContain("lastChangeStatuses[0].productOrderId");
-    expect(html).toContain("po-****-0001");
+    expect(html).toContain("상세 조회에만 사용, 저장 안 함");
     expect(html).toContain("배송지");
+    expect(html).not.toContain("po-****-0001");
   });
 });

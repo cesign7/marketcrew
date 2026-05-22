@@ -32,10 +32,10 @@ export function ProviderDataContractPanel({ contracts }: ProviderDataContractPan
                 <FileSearch size={15} aria-hidden="true" />
                 불러오는 데이터
               </a>
-              {contract.incoming.rawSampleRows && contract.incoming.rawSampleRows.length > 0 ? (
-                <a href={`#${contract.incoming.id}-raw`}>
+              {contract.incoming.sourceFieldGroups && contract.incoming.sourceFieldGroups.length > 0 ? (
+                <a href={`#${contract.incoming.id}-source-fields`}>
                   <FileSearch size={15} aria-hidden="true" />
-                  로우데이터 예시
+                  원천 필드 목록
                 </a>
               ) : null}
               <a href={`#${contract.stored.id}`}>
@@ -119,23 +119,27 @@ function DatasetContractCard({
         </table>
       </div>
 
-      {dataset.rawSampleRows && dataset.rawSampleRows.length > 0 ? (
-        <div className="data-raw-sample-list" id={`${dataset.id}-raw`} aria-label={`${dataset.title} 로우데이터 항목 예시`}>
-          <strong>로우데이터 항목 예시</strong>
-          <p>API 응답에 들어올 수 있는 원천 항목 예시입니다. 아래 항목은 확인용이며 원문 그대로 저장하지 않습니다.</p>
-          {dataset.rawSampleRows.map((row) => (
-            <article className="data-raw-sample-card" key={row.id}>
+      {dataset.sourceFieldGroups && dataset.sourceFieldGroups.length > 0 ? (
+        <div
+          className="data-source-field-list"
+          id={`${dataset.id}-source-fields`}
+          aria-label={`${dataset.title} 원천 필드 목록`}
+        >
+          <strong>원천 필드 목록</strong>
+          <p>API 응답에서 들어올 수 있는 필드 목록입니다. 값은 저장하거나 노출하지 않고 처리 기준만 표시합니다.</p>
+          {dataset.sourceFieldGroups.map((group) => (
+            <article className="data-source-field-card" key={group.id}>
               <header>
-                <strong>{row.title}</strong>
-                <span>저장 안 함</span>
+                <strong>{group.title}</strong>
+                <span>처리 기준</span>
               </header>
-              <p>{row.description}</p>
-              <div className="data-raw-field-grid">
-                {row.values.map((item) => (
-                  <span key={`${row.id}-${item.key}`}>
+              <p>{group.description}</p>
+              <div className="data-source-field-grid">
+                {group.fields.map((item) => (
+                  <span key={`${group.id}-${item.key}`}>
                     <small>{item.label}</small>
                     <code>{item.key}</code>
-                    {item.value}
+                    {item.handling}
                   </span>
                 ))}
               </div>

@@ -192,14 +192,14 @@ export type ProviderDataContractDatasetView = {
       value: string;
     }>;
   }>;
-  rawSampleRows?: Array<{
+  sourceFieldGroups?: Array<{
     id: string;
     title: string;
     description: string;
-    values: Array<{
+    fields: Array<{
       key: string;
       label: string;
-      value: string;
+      handling: string;
     }>;
   }>;
 };
