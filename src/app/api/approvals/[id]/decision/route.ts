@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { clearAgendaRoomViewModelCache } from "@/features/agenda-room/loadAgendaRoomViewModel";
 import { processOwnerDecision } from "@/lib/application/approval-workflow";
+import { proxyRequestToBackend } from "@/lib/backend/proxy";
 import type { OwnerDecisionType } from "@/lib/domain";
 import { createLocalWorkflowRepository, seedSampleWorkflowIfEmpty } from "@/lib/persistence/workflow-store";
 
@@ -24,6 +25,12 @@ const ownerDecisionTypes: OwnerDecisionType[] = [
 ];
 
 export async function POST(request: Request, context: DecisionRouteContext) {
+  const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
+  if (proxied) {
+    clearAgendaRoomViewModelCache();
+    return proxied;
+  }
+
   const { id } = await context.params;
   const body = await parseBody(request);
   if (!isOwnerDecisionType(body.decision)) {

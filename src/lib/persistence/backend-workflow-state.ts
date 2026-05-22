@@ -1,3 +1,4 @@
+import type { AgendaRoomViewModel } from "@/features/agenda-room/types";
 import { normalizeWorkflowRepositoryState, type WorkflowRepositoryState } from "./workflow-state";
 
 const DEFAULT_BACKEND_API_TIMEOUT_MS = 1_500;
@@ -6,38 +7,26 @@ type BackendWorkflowStateResponse = {
   state?: Partial<WorkflowRepositoryState>;
 };
 
+type BackendAgendaRoomViewModelResponse = {
+  viewModel?: AgendaRoomViewModel;
+};
+
+export async function readBackendAgendaRoomViewModel(
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<AgendaRoomViewModel | undefined> {
+  const payload = await fetchBackendJson<BackendAgendaRoomViewModelResponse>("/api/operations/view-model", env);
+  return payload?.viewModel;
+}
+
 export async function readBackendWorkflowRepositoryState(
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<WorkflowRepositoryState | undefined> {
-  const baseUrl = getBackendApiUrl(env);
-  if (!baseUrl) {
+  const payload = await fetchBackendJson<BackendWorkflowStateResponse>("/api/operations/workflow-state", env);
+  if (!payload || typeof payload !== "object" || !payload.state) {
     return undefined;
   }
 
-  const abortController = new AbortController();
-  const timeout = setTimeout(() => abortController.abort(), getBackendApiTimeoutMs(env));
-
-  try {
-    const response = await fetch(new URL("/api/workflow-state", baseUrl), {
-      cache: "no-store",
-      headers: buildBackendApiHeaders(env),
-      signal: abortController.signal,
-    });
-    if (!response.ok) {
-      return undefined;
-    }
-
-    const payload = (await response.json()) as BackendWorkflowStateResponse;
-    if (!payload || typeof payload !== "object" || !payload.state) {
-      return undefined;
-    }
-
-    return normalizeWorkflowRepositoryState(payload.state);
-  } catch {
-    return undefined;
-  } finally {
-    clearTimeout(timeout);
-  }
+  return normalizeWorkflowRepositoryState(payload.state);
 }
 
 export async function clearBackendWorkflowStateCache(env: NodeJS.ProcessEnv = process.env): Promise<void> {
@@ -58,6 +47,33 @@ export async function clearBackendWorkflowStateCache(env: NodeJS.ProcessEnv = pr
     });
   } catch {
     // 로컬 캐시 초기화가 더 중요하므로 원격 캐시 초기화 실패는 다음 TTL 갱신에 맡긴다.
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function fetchBackendJson<TPayload>(path: string, env: NodeJS.ProcessEnv): Promise<TPayload | undefined> {
+  const baseUrl = getBackendApiUrl(env);
+  if (!baseUrl) {
+    return undefined;
+  }
+
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), getBackendApiTimeoutMs(env));
+
+  try {
+    const response = await fetch(new URL(path, baseUrl), {
+      cache: "no-store",
+      headers: buildBackendApiHeaders(env),
+      signal: abortController.signal,
+    });
+    if (!response.ok) {
+      return undefined;
+    }
+
+    return (await response.json()) as TPayload;
+  } catch {
+    return undefined;
   } finally {
     clearTimeout(timeout);
   }

@@ -15,8 +15,6 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     generatedAt: viewModel.generatedAt,
-    llmCostGovernance: viewModel.llmCostGovernance,
-    plannerAudit: viewModel.plannerPreview.audit,
-    agentRunSummary: viewModel.agentRunSummary,
+    viewModel,
   });
 }

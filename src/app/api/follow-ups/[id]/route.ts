@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { clearAgendaRoomViewModelCache } from "@/features/agenda-room/loadAgendaRoomViewModel";
+import { proxyRequestToBackend } from "@/lib/backend/proxy";
 import type { FollowUpInternalTask } from "@/lib/domain";
 import { createLocalWorkflowRepository, seedSampleWorkflowIfEmpty } from "@/lib/persistence/workflow-store";
 
@@ -12,6 +13,12 @@ type FollowUpPatchBody = {
 };
 
 export async function PATCH(request: Request, context: FollowUpRouteContext) {
+  const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
+  if (proxied) {
+    clearAgendaRoomViewModelCache();
+    return proxied;
+  }
+
   const { id } = await context.params;
   const body = await parseBody(request);
   if (!isFollowUpStatus(body.status)) {

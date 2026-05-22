@@ -86,7 +86,7 @@ describe("approval decision route", () => {
       { params: Promise.resolve({ id: "approval-agenda-season-plan-buddha-gift-card" }) },
     );
 
-    const response = GET_WORKFLOW_STATE();
+    const response = await GET_WORKFLOW_STATE(new Request("http://127.0.0.1/api/operations/workflow-state"));
     const payload = await response.json();
 
     expect(response.status).toBe(200);

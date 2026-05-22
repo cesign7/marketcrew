@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { buildOutcomeHistory } from "@/features/approvals/buildApprovalDetailViewModel";
+import { proxyRequestToBackend } from "@/lib/backend/proxy";
 import { createLocalWorkflowRepository, seedSampleWorkflowIfEmpty } from "@/lib/persistence/workflow-store";
 
 type OutcomeRouteContext = {
   params: Promise<{ id: string }>;
 };
 
-export async function GET(_request: Request, context: OutcomeRouteContext) {
+export async function GET(request: Request, context: OutcomeRouteContext) {
+  const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
+  if (proxied) {
+    return proxied;
+  }
+
   const { id } = await context.params;
   const repository = createLocalWorkflowRepository();
   seedSampleWorkflowIfEmpty(repository);

@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { AUTH_COOKIE_NAME, isAuthRequired, sanitizeNextPath, verifyOwnerSessionToken } from "./src/lib/auth/session";
 
-const PUBLIC_PATH_PREFIXES = ["/login", "/api/auth", "/_next", "/favicon.ico", "/robots.txt", "/sitemap.xml"];
+const PUBLIC_PATH_PREFIXES = ["/login", "/api/auth", "/api/backend/health", "/_next", "/favicon.ico", "/robots.txt", "/sitemap.xml"];
 
 export async function middleware(request: NextRequest) {
+  if (isAuthorizedBackendRequest(request)) {
+    return NextResponse.next();
+  }
+
   if (!isAuthRequired() || isPublicPath(request.nextUrl.pathname)) {
     return NextResponse.next();
   }
@@ -38,4 +42,13 @@ export const config = {
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
+function isAuthorizedBackendRequest(request: NextRequest) {
+  if (!request.nextUrl.pathname.startsWith("/api/")) {
+    return false;
+  }
+
+  const token = process.env.MARKETCREW_API_TOKEN;
+  return Boolean(token && request.headers.get("authorization") === `Bearer ${token}`);
 }

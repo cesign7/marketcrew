@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { clearBackendWorkflowStateCache, readBackendWorkflowRepositoryState } from "../../src/lib/persistence/backend-workflow-state";
+import {
+  clearBackendWorkflowStateCache,
+  readBackendAgendaRoomViewModel,
+  readBackendWorkflowRepositoryState,
+} from "../../src/lib/persistence/backend-workflow-state";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -48,7 +52,7 @@ describe("readBackendWorkflowRepositoryState", () => {
 
     expect(state?.signals[0]?.id).toBe("signal-from-railway-api");
     expect(state?.approvalRequests).toEqual([]);
-    expect(fetchMock).toHaveBeenCalledWith(new URL("https://api.marketcrew.app/api/workflow-state"), {
+    expect(fetchMock).toHaveBeenCalledWith(new URL("https://api.marketcrew.app/api/operations/workflow-state"), {
       cache: "no-store",
       headers: {
         authorization: "Bearer secret-token",
@@ -69,6 +73,36 @@ describe("readBackendWorkflowRepositoryState", () => {
     }));
 
     expect(state).toBeUndefined();
+  });
+});
+
+describe("readBackendAgendaRoomViewModel", () => {
+  it("Railway API view model을 직접 읽어 화면 빌드 비용을 Vercel에서 줄인다", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        viewModel: {
+          generatedAt: "2026-05-22T00:00:00.000Z",
+          kanbanBuckets: [],
+          approvalPreviewCards: [],
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const viewModel = await readBackendAgendaRoomViewModel(testEnv({
+      MARKETCREW_BACKEND_API_URL: "https://api.marketcrew.app",
+      MARKETCREW_BACKEND_API_TOKEN: "secret-token",
+    }));
+
+    expect(viewModel?.generatedAt).toBe("2026-05-22T00:00:00.000Z");
+    expect(fetchMock).toHaveBeenCalledWith(new URL("https://api.marketcrew.app/api/operations/view-model"), {
+      cache: "no-store",
+      headers: {
+        authorization: "Bearer secret-token",
+      },
+      signal: expect.any(AbortSignal),
+    });
   });
 });
 

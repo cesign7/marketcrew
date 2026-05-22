@@ -1,5 +1,10 @@
 import { createMemoryMarketingWorkflowRepository } from "@/lib/persistence/memory-repository";
-import { clearBackendWorkflowStateCache, readBackendWorkflowRepositoryState } from "@/lib/persistence/backend-workflow-state";
+import {
+  clearBackendWorkflowStateCache,
+  readBackendAgendaRoomViewModel,
+  readBackendWorkflowRepositoryState,
+} from "@/lib/persistence/backend-workflow-state";
+import { isHostedFrontendRuntime } from "@/lib/backend/proxy";
 import { clearPostgresReadModelStateCache, readPostgresWorkflowRepositoryState } from "@/lib/persistence/postgres-read-model";
 import type { MarketingWorkflowRepository } from "@/lib/persistence/repositories";
 import { createLocalWorkflowRepository, getWorkflowDatabaseUrl, getWorkflowRepositoryMode } from "@/lib/persistence/workflow-store";
@@ -24,18 +29,29 @@ export async function loadAgendaRoomViewModel() {
     return cached;
   }
 
-  const viewModel = buildAgendaRoomViewModel({
-    repository: await createAgendaRoomReadRepository(),
-  });
+  const backendViewModel = await readBackendAgendaRoomViewModel();
+  if (!backendViewModel && isHostedFrontendRuntime()) {
+    throw new Error("Vercel 화면 런타임에서는 Railway 백엔드 view model이 필요합니다.");
+  }
+
+  const viewModel =
+    backendViewModel ??
+    buildAgendaRoomViewModel({
+      repository: await createAgendaRoomReadRepository(),
+    });
   writeAgendaRoomViewModelCache(viewModel);
 
   return viewModel;
 }
 
 export function clearAgendaRoomViewModelCache() {
+  clearLocalAgendaRoomViewModelCache();
+  void clearBackendWorkflowStateCache();
+}
+
+export function clearLocalAgendaRoomViewModelCache() {
   globalThis.__marketcrewAgendaRoomViewModelCache = undefined;
   clearPostgresReadModelStateCache();
-  void clearBackendWorkflowStateCache();
 }
 
 function readAgendaRoomViewModelCache() {
