@@ -12,6 +12,7 @@
 | GitHub legacy branch | Still present | `feat-ai-marketing-operations-mvp` |
 | Vercel | Connected and deployed | `https://marketcrew.vercel.app` |
 | Vercel project | Ready | `aipressos-projects/marketcrew` |
+| Vercel production branch | Updated | `main` |
 | Railway | Connected | project `marketcrew` |
 | Railway Postgres | Online | service `Postgres`, production environment |
 
