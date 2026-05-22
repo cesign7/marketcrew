@@ -25,7 +25,7 @@
 - LLM 비용 가드 플랜 문서: `docs/01-plan/features/real-llm-provider-cost-governance.plan.md`
 - LLM 비용 가드 디자인 문서: `docs/02-design/features/real-llm-provider-cost-governance.design.md`
 - LLM 비용 가드 Do 문서: `docs/03-do/real-llm-provider-cost-governance.do.md`
-- LLM 비용 가드 Act 문서: `docs/04-act/real-llm-provider-cost-governance.iteration-1.md`
+- LLM 비용 가드 Act 문서: `docs/04-act/real-llm-provider-cost-governance.iteration-3.md`
 - LLM 비용 가드 Check 문서: `docs/03-analysis/real-llm-provider-cost-governance.analysis.md`
 - LLM 비용 가드 QA 문서: `docs/05-qa/real-llm-provider-cost-governance.qa-report.md`
 - LLM 비용 가드 완료 보고서: `docs/04-report/real-llm-provider-cost-governance.report.md`
@@ -43,6 +43,7 @@
 - 현재 진행 작업 4: `mvp-final-provenance-closeout`은 `/operations` 결재 미리보기 카드에 `카드별 근거 추적`을 추가해 데이터 근거, AI 실행 이력, 연동 수집 기록, 성과 체크포인트, 안전 조건을 카드 안에서 바로 확인하게 했다. 검증은 typecheck, full unit, build, audit, full e2e 3 tests, localhost:3001 browser text scan을 통과했다. 1차 MVP 대비 진행율은 100%다.
 - 현재 진행 작업 5: 2026-05-22 추가 closeout에서 총괄 캐릭터를 화면/문서/코드 내부 키 모두 `모아` / `moa` / `Moa`로 통일했고, 왼쪽 메뉴 접기/펼치기와 간결한 상단 채널/기간 필터를 반영했다. 검증은 `npm run typecheck`, `npm test -- --run` 26 files/79 tests, `npm run build`, `npm audit --omit=dev` 0 vulnerabilities, `npm run test:e2e` 10 tests, `/operations` 787px in-app browser smoke를 통과했다. 이전 총괄 캐릭터 식별자 패턴은 0건이다. 1차 MVP 대비 진행율은 100%로 유지한다.
 - 현재 진행 작업 6: 2026-05-22 속도 개선 후속으로 Railway 백엔드 API를 루트 Next 앱 기반으로 확장했다. Vercel은 로그인과 Railway bridge token만 보유하고, Railway `marketcrew-api`가 DB, provider read, DataLab, LLM readiness, 결재/후속 API mutation, cache clear를 담당한다. hosted Vercel에서 Railway 백엔드가 없거나 실패하면 sample/file fallback 대신 503으로 닫는다. 실제 provider write는 계속 차단한다.
+- 현재 진행 작업 7: 2026-05-23 인사과/AI 예산 후속으로 저장된 `AiOperationsSettings`를 `/operations`와 `/settings`의 AI 비용 가드에 연결했다. env 단가가 없으면 저장된 환율과 공식 모델 가격표로 원화 예상 비용을 계산하고, 저장된 월/일/1회 예산과 토큰 상한을 gate에 반영한다. 검증은 `npm run typecheck`, `npm test -- --run` 32 files/96 tests, `npm run build`, 비용 가드/네비게이션 Playwright smoke 9 tests를 통과했다. 1차 MVP 대비 진행율은 100%로 유지한다.
 - 클라우드 연결 상태: GitHub `https://github.com/cesign7/marketcrew`의 기본 브랜치는 `main`이며 현재 MVP 커밋이 올라가 있다. Vercel production은 `https://marketcrew.vercel.app`이고 Git 연결의 production branch도 `main`이다. Railway project는 `marketcrew`, Postgres service는 `Online`, API service는 `marketcrew-api`, 공개 URL은 `https://marketcrew-api-production.up.railway.app`이다. Vercel production env에는 `MARKETCREW_AUTH_SECRET`, `MARKETCREW_OWNER_PASSWORD_HASH`, `MARKETCREW_BACKEND_API_URL`, `MARKETCREW_BACKEND_API_TOKEN`, `MARKETCREW_BACKEND_API_TIMEOUT_MS`만 남아 있다. Railway 쪽 API 토큰 키는 `MARKETCREW_API_TOKEN`이고, backend health는 `/api/backend/health`, 화면 read model은 `/api/operations/view-model`, workflow summary는 `/api/operations/workflow-state`다. Custom domain `marketcrew.app`과 `www.marketcrew.app`은 Vercel project에 추가됐고 Cloudflare DNS는 `A @ 76.76.21.21`, `A www 76.76.21.21`, DNS only로 설정됐다. 공개 앱은 대표 로그인으로 보호한다. 기존 GitHub branch `feat-ai-marketing-operations-mvp`는 아직 남아 있으며 삭제는 명시 지시 전까지 하지 않는다.
 - 다음 권장 작업: 1차 MVP는 완료로 닫고, 이후 작업은 실제 LLM adapter dry-run, normalized analytics schema, 실제 provider write executor 설계처럼 후속 확장으로 진행한다. 실제 provider write executor는 별도 PDCA와 명시 승인 전까지 시작하지 않는다.
 

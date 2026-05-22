@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildLlmCostGovernanceView } from "../../src/features/agenda-room/buildLlmCostGovernanceView";
+import { buildDefaultAiOperationsSettings } from "../../src/features/people/ai-operations-settings";
 import type { AgentRun, LlmPlannerAuditRun } from "../../src/lib/domain";
 import { buildProviderReadinessReports } from "../../src/lib/integrations/providers/readiness";
 
@@ -68,6 +69,35 @@ describe("LLM cost governance", () => {
     expect(view.gateChecks.find((check) => check.id === "rate-policy")?.tone).toBe("blocked");
     expect(view.gateChecks.find((check) => check.id === "run-budget")?.tone).toBe("blocked");
     expect(view.gateChecks.find((check) => check.id === "daily-budget")?.tone).toBe("blocked");
+  });
+
+  it("저장된 AI 운영 설정이 있으면 예산과 공식 단가를 비용 가드에 적용한다", () => {
+    const env = {
+      AI_LLM_PROVIDER: "gemini",
+      GEMINI_API_KEY: "test-key",
+    };
+    const aiOperationsSettings = buildDefaultAiOperationsSettings({
+      env,
+      now: NOW,
+    });
+
+    const view = buildLlmCostGovernanceView({
+      env,
+      generatedAt: NOW,
+      plannerAudit: buildPlannerAudit(),
+      agentRuns: [buildAgentRun({ estimatedCostKrw: 12 })],
+      providerReadiness: buildProviderReadinessReports(env, NOW),
+      aiOperationsSettings,
+    });
+
+    expect(view.gateChecks.find((check) => check.id === "rate-policy")?.tone).toBe("ready");
+    expect(view.gateChecks.find((check) => check.id === "monthly-budget")?.tone).toBe("ready");
+    expect(view.estimatedRunCostLabel).toBe("이번 예상 10원");
+    expect(view.runBudgetLabel).toBe("1회 한도 1,500원");
+    expect(view.dailyBudgetLabel).toBe("일 예산 10,000원");
+    expect(view.monthlyBudgetLabel).toBe("월 예산 100,000원");
+    expect(view.rateBasisLabel).toContain("운영 설정 단가");
+    expect(view.pricingFormulaLabel).toContain("저장된 AI 예산 설정");
   });
 
   it("역할별 설정 모델 가격을 공식 기준으로 함께 보여준다", () => {

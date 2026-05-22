@@ -24,6 +24,7 @@ import { recordPlannerAgentRun } from "@/lib/application/agent-run-recorder";
 import { buildProviderReadinessReports } from "@/lib/integrations/providers/readiness";
 import { buildDeterministicPlannerResult, buildPlannerAuditRun, buildPlannerInputFromApprovals } from "@/lib/llm/planner";
 import type { MarketingWorkflowRepository } from "@/lib/application/workflow-repository";
+import { resolveAiOperationsSettings } from "@/features/people/ai-operations-settings";
 import { buildLlmCostGovernanceView } from "./buildLlmCostGovernanceView";
 import { buildProviderDataContracts } from "./provider-data-contracts";
 import type {
@@ -88,6 +89,13 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
     recordPlannerAgentRun(input.repository, plannerInput, plannerResult, plannerAudit);
   }
   const agentRuns = input.repository?.listAgentRuns() ?? [];
+  const storedAiOperationsSettings = input.repository?.listAiOperationsSettings()[0];
+  const aiOperationsSettings = storedAiOperationsSettings
+    ? resolveAiOperationsSettings({
+        stored: storedAiOperationsSettings,
+        env: input.env ?? process.env,
+      })
+    : undefined;
   const pendingApprovals = allApprovalRequests.filter((request) => request.status === "PENDING");
   const waitingEvidence = allApprovalRequests.filter((request) => request.status === "NEEDS_EVIDENCE");
   const ownerDecisionFlows = pendingApprovals
@@ -148,6 +156,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
       plannerAudit,
       agentRuns,
       providerReadiness,
+      aiOperationsSettings,
     }),
     agentRunSummary: buildAgentRunSummaryView(agentRuns),
     productGrowthOpportunities: productGrowthOpportunities.map(buildProductGrowthOpportunityView),

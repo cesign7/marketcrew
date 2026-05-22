@@ -243,6 +243,9 @@ export type LlmCostGovernanceView = {
   dailySpentLabel: string;
   dailyBudgetLabel: string;
   dailyRemainingLabel: string;
+  monthlySpentLabel: string;
+  monthlyBudgetLabel: string;
+  monthlyRemainingLabel: string;
   runBudgetLabel: string;
   rateBasisLabel: string;
   officialPricingSourceLabel: string;

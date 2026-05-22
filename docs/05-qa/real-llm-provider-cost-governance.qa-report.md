@@ -51,3 +51,14 @@
 ## QA Decision
 
 `real-llm-provider-cost-governance`는 QA_PASS다. 다음 단계에서 실제 LLM dry-run adapter를 붙일 경우 이 cost governance gate를 선행 조건으로 사용한다.
+
+## 2026-05-23 Follow-up QA
+
+| Test | Command | Result |
+|------|---------|--------|
+| Typecheck | `npm run typecheck` | PASS |
+| Full unit | `npm test -- --run` | PASS, 32 files / 96 tests |
+| Production build | `npm run build` | PASS |
+| E2E smoke | `npm run test:e2e -- tests/e2e/llm-cost-governance-smoke.spec.ts tests/e2e/navigation-structure-smoke.spec.ts` | PASS, 9 chromium tests |
+
+저장된 AI 운영 설정이 비용 가드에 들어가는 후속 hardening도 QA_PASS다.

@@ -2,7 +2,7 @@
   "project": "marketcrew2",
   "currentFeature": "mvp-final-provenance-closeout",
   "phase": "completed",
-  "updatedAt": "2026-05-22T23:43:30+09:00",
+  "updatedAt": "2026-05-23T07:52:53+09:00",
   "features": {
     "ai-marketing-character-ops": {
       "phase": "completed",
@@ -51,10 +51,10 @@
       "analysisPath": "docs/03-analysis/real-llm-provider-cost-governance.analysis.md",
       "qaPath": "docs/05-qa/real-llm-provider-cost-governance.qa-report.md",
       "reportPath": "docs/04-report/real-llm-provider-cost-governance.report.md",
-      "actPath": "docs/04-act/real-llm-provider-cost-governance.iteration-1.md",
-      "summary": "실제 LLM 호출 전에 provider/key readiness, env 단가, 1회/일 예산, AgentRun 누적 비용, token cap, raw row privacy, external write 분리를 운영실에서 확인하는 비용 governance slice다. /operations에 LLM 비용 가드 패널과 /api/operations/llm-cost-governance read-only route를 추가했다.",
-      "matchRate": 99.5,
-      "next": "PDCA cycle #4는 QA_PASS와 completion report까지 완료했다. 현재 local env는 Gemini provider/key가 준비됐지만 단가/예산 env가 없어 의도대로 live call 차단 상태다. 검증은 npm test 21 files/70 tests, typecheck, build, audit 0 vulnerabilities, LLM cost governance Playwright smoke, localhost:3001 HTTP/API smoke를 통과했다. 1차 MVP 대비 진행율은 99.5%다. per-card provenance drilldown은 mvp-final-provenance-closeout에서 완료했다. 실제 provider write는 별도 PDCA와 명시 승인 전까지 계속 차단한다."
+      "actPath": "docs/04-act/real-llm-provider-cost-governance.iteration-3.md",
+      "summary": "실제 LLM 호출 전에 provider/key readiness, env 단가 또는 저장된 AI 운영 설정 기반 공식 단가, 월/일/1회 예산, AgentRun 누적 비용, token cap, raw row privacy, external write 분리를 운영실에서 확인하는 비용 governance slice다. /operations와 /settings에 LLM 비용 가드 패널과 /api/operations/llm-cost-governance read-only route를 둔다.",
+      "matchRate": 100,
+      "next": "PDCA cycle #4는 QA_PASS와 completion report까지 완료했고, 2026-05-23 후속으로 저장된 AiOperationsSettings를 비용 가드에 연결했다. env 단가가 없으면 저장된 환율과 공식 가격표로 원화 예상 비용을 계산하고 저장된 월/일/1회 예산과 토큰 상한을 gate에 반영한다. 검증은 npm run typecheck, npm test 32 files/96 tests, npm run build, 비용 가드/네비게이션 Playwright smoke 9 tests를 통과했다. 1차 MVP 대비 진행율은 100%다. 실제 LLM adapter와 provider write는 별도 PDCA와 명시 승인 전까지 계속 차단한다."
     },
     "mvp-final-provenance-closeout": {
       "phase": "completed",

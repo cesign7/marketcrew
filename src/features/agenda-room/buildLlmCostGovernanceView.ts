@@ -1,10 +1,15 @@
-import type { AgentRun, LlmPlannerAuditRun, ProviderReadinessReport } from "@/lib/domain";
+import type { AgentRun, AiOperationsSettings, LlmPlannerAuditRun, ProviderReadinessReport } from "@/lib/domain";
 import { formatUsdPerMillionTokens, resolveOfficialLlmPricing } from "@/lib/llm/official-pricing";
 import type { LlmCostGovernanceView } from "./types";
 
 type EnvMap = Record<string, string | undefined>;
 type GateTone = LlmCostGovernanceView["gateChecks"][number]["tone"];
 type OfficialPricingRow = LlmCostGovernanceView["officialPricingRows"][number];
+type RatePolicy = {
+  inputRateKrw: number;
+  outputRateKrw: number;
+  source: "env" | "official-pricing";
+};
 
 export type BuildLlmCostGovernanceViewInput = {
   env?: EnvMap;
@@ -12,32 +17,33 @@ export type BuildLlmCostGovernanceViewInput = {
   plannerAudit: LlmPlannerAuditRun;
   agentRuns: AgentRun[];
   providerReadiness: ProviderReadinessReport[];
+  aiOperationsSettings?: AiOperationsSettings;
 };
 
 // Design Ref: real-llm-provider-cost-governance — actual model calls stay blocked until provider, token, and KRW budget gates pass.
 export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInput): LlmCostGovernanceView {
   const env = input.env ?? process.env;
-  const llmReadiness = input.providerReadiness.find((report) => report.provider === "llm");
-  const providerKey = normalizeText(env.AI_LLM_PROVIDER) ?? input.plannerAudit.provider;
-  const modelKey = resolveModelKey(env, input.plannerAudit);
-  const credentialMissingKeys = missingCredentialKeys(env);
-  const credentialReady = llmReadiness?.canRead ?? (hasValue(providerKey) && credentialMissingKeys.length === 0);
+  const providerKey = resolveProviderKey(env, input.plannerAudit, input.aiOperationsSettings);
+  const modelKey = resolveModelKey(env, input.plannerAudit, input.aiOperationsSettings);
+  const credentialMissingKeys = missingCredentialKeys(env, providerKey);
+  const credentialReady = credentialMissingKeys.length === 0;
   const inputTokens = input.plannerAudit.tokenUsage.inputEstimate;
   const outputTokens = input.plannerAudit.tokenUsage.outputEstimate;
   const totalTokens = input.plannerAudit.tokenUsage.totalEstimate;
-  const inputRate = parsePositiveNumber(env.AI_LLM_COST_PER_1K_INPUT_KRW);
-  const outputRate = parsePositiveNumber(env.AI_LLM_COST_PER_1K_OUTPUT_KRW);
-  const hasRatePolicy = inputRate !== undefined && outputRate !== undefined;
-  const estimatedRunCostKrw = hasRatePolicy
-    ? Math.ceil((inputTokens / 1000) * inputRate + (outputTokens / 1000) * outputRate)
+  const ratePolicy = resolveRatePolicy(env, providerKey, modelKey, input.aiOperationsSettings);
+  const estimatedRunCostKrw = ratePolicy
+    ? Math.ceil((inputTokens / 1000) * ratePolicy.inputRateKrw + (outputTokens / 1000) * ratePolicy.outputRateKrw)
     : 0;
-  const dailyBudgetKrw = parsePositiveNumber(env.AI_LLM_DAILY_BUDGET_KRW);
-  const runBudgetKrw = parsePositiveNumber(env.AI_LLM_RUN_BUDGET_KRW);
-  const inputTokenCap = parsePositiveInteger(env.AI_LLM_MAX_INPUT_TOKENS);
-  const outputTokenCap = parsePositiveInteger(env.AI_LLM_MAX_OUTPUT_TOKENS);
-  const totalTokenCap = parsePositiveInteger(env.AI_LLM_MAX_TOTAL_TOKENS);
+  const monthlyBudgetKrw = resolveMonthlyBudgetKrw(env, input.aiOperationsSettings);
+  const dailyBudgetKrw = resolveDailyBudgetKrw(env, input.aiOperationsSettings);
+  const runBudgetKrw = resolveRunBudgetKrw(env, input.aiOperationsSettings);
+  const inputTokenCap = resolveInputTokenCap(env, input.aiOperationsSettings);
+  const outputTokenCap = resolveOutputTokenCap(env, input.aiOperationsSettings);
+  const totalTokenCap = resolveTotalTokenCap(env, input.aiOperationsSettings);
   const todaySpentKrw = calculateSpentToday(input.agentRuns, input.generatedAt);
+  const monthlySpentKrw = calculateSpentThisMonth(input.agentRuns, input.generatedAt);
   const projectedDailyCostKrw = todaySpentKrw + estimatedRunCostKrw;
+  const projectedMonthlyCostKrw = monthlySpentKrw + estimatedRunCostKrw;
   const checks = [
     buildGateCheck({
       id: "provider-credential",
@@ -50,10 +56,12 @@ export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInpu
     buildGateCheck({
       id: "rate-policy",
       label: "단가 정책",
-      blocked: !hasRatePolicy,
-      message: hasRatePolicy
-        ? "입력/출력 1천 토큰 단가가 환경 설정에 고정되어 있습니다."
-        : "AI_LLM_COST_PER_1K_INPUT_KRW와 AI_LLM_COST_PER_1K_OUTPUT_KRW가 필요합니다.",
+      blocked: !ratePolicy,
+      message: ratePolicy
+        ? ratePolicy.source === "env"
+          ? "입력/출력 1천 토큰 단가가 환경 설정에 고정되어 있습니다."
+          : "공식 가격표와 설정 환율로 입력/출력 1천 토큰 단가를 계산합니다."
+        : "환경 단가 또는 공식 가격표가 확인되는 모델 설정이 필요합니다.",
     }),
     buildGateCheck({
       id: "run-budget",
@@ -73,6 +81,16 @@ export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInpu
           ? "AI_LLM_DAILY_BUDGET_KRW 설정 전까지 실제 호출을 열지 않습니다."
           : `오늘 누적+예상 ${formatKrw(projectedDailyCostKrw)} / 한도 ${formatKrw(dailyBudgetKrw)}`,
     }),
+    ...(monthlyBudgetKrw === undefined
+      ? []
+      : [
+          buildGateCheck({
+            id: "monthly-budget",
+            label: "월 예산",
+            blocked: projectedMonthlyCostKrw > monthlyBudgetKrw,
+            message: `이번 달 누적+예상 ${formatKrw(projectedMonthlyCostKrw)} / 한도 ${formatKrw(monthlyBudgetKrw)}`,
+          }),
+        ]),
     buildGateCheck({
       id: "input-token-cap",
       label: "입력 토큰",
@@ -125,7 +143,9 @@ export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInpu
   const hasWarningGate = checks.some((check) => check.tone === "warning");
   const liveCallAllowed = !hasBlockedGate;
   const remainingBudgetKrw = dailyBudgetKrw === undefined ? undefined : Math.max(dailyBudgetKrw - projectedDailyCostKrw, 0);
-  const officialPricingRows = buildOfficialPricingRows(env, providerKey, modelKey);
+  const remainingMonthlyBudgetKrw =
+    monthlyBudgetKrw === undefined ? undefined : Math.max(monthlyBudgetKrw - projectedMonthlyCostKrw, 0);
+  const officialPricingRows = buildOfficialPricingRows(env, providerKey, modelKey, input.aiOperationsSettings);
 
   return {
     statusLabel: liveCallAllowed ? (hasWarningGate ? "주의 후 가능" : "실제 호출 차단 해제") : "실제 호출 차단",
@@ -138,18 +158,26 @@ export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInpu
       input.plannerAudit.mode === "deterministic_fallback"
         ? "현재 규칙 기반 대체"
         : "현재 AI 호출 예상",
-    estimatedRunCostLabel: hasRatePolicy ? `이번 예상 ${formatKrw(estimatedRunCostKrw)}` : "이번 예상 단가 미설정",
+    estimatedRunCostLabel: ratePolicy ? `이번 예상 ${formatKrw(estimatedRunCostKrw)}` : "이번 예상 단가 미설정",
     dailySpentLabel: `오늘 누적 ${formatKrw(todaySpentKrw)}`,
     dailyBudgetLabel: dailyBudgetKrw === undefined ? "일 예산 미설정" : `일 예산 ${formatKrw(dailyBudgetKrw)}`,
     dailyRemainingLabel:
       remainingBudgetKrw === undefined ? "잔여 예산 계산 대기" : `호출 후 잔여 ${formatKrw(remainingBudgetKrw)}`,
+    monthlySpentLabel: `이번 달 누적 ${formatKrw(monthlySpentKrw)}`,
+    monthlyBudgetLabel: monthlyBudgetKrw === undefined ? "월 예산 미설정" : `월 예산 ${formatKrw(monthlyBudgetKrw)}`,
+    monthlyRemainingLabel:
+      remainingMonthlyBudgetKrw === undefined ? "월 잔여 계산 대기" : `월 잔여 ${formatKrw(remainingMonthlyBudgetKrw)}`,
     runBudgetLabel: runBudgetKrw === undefined ? "1회 예산 미설정" : `1회 한도 ${formatKrw(runBudgetKrw)}`,
-    rateBasisLabel: hasRatePolicy
-      ? `환경 단가: 입력 ${formatKrw(inputRate)} / 출력 ${formatKrw(outputRate)} / 1천 토큰`
-      : "공식 USD 가격표는 참고로 표시하고, 실제 원화 계산은 환경 단가가 있을 때만 수행합니다.",
+    rateBasisLabel: ratePolicy
+      ? ratePolicy.source === "env"
+        ? `환경 단가: 입력 ${formatKrw(ratePolicy.inputRateKrw)} / 출력 ${formatKrw(ratePolicy.outputRateKrw)} / 1천 토큰`
+        : `운영 설정 단가: 입력 ${formatKrw(ratePolicy.inputRateKrw)} / 출력 ${formatKrw(ratePolicy.outputRateKrw)} / 1천 토큰`
+      : "공식 USD 가격표는 참고로 표시하고, 실제 원화 계산은 환경 단가 또는 운영 설정이 있을 때 수행합니다.",
     officialPricingSourceLabel: resolvePricingSourceLabel(officialPricingRows),
     pricingFormulaLabel:
-      "공식 USD 단가에 적용 환율을 반영해 AI_LLM_COST_PER_1K_INPUT_KRW와 AI_LLM_COST_PER_1K_OUTPUT_KRW를 정하면 실제 호출 비용 가드가 계산됩니다.",
+      input.aiOperationsSettings
+        ? "저장된 AI 예산 설정의 환율과 공식 USD 단가로 원화 예상 비용을 계산합니다. 환경 단가가 있으면 환경 단가를 우선합니다."
+        : "공식 USD 단가에 적용 환율을 반영해 AI_LLM_COST_PER_1K_INPUT_KRW와 AI_LLM_COST_PER_1K_OUTPUT_KRW를 정하면 실제 호출 비용 가드가 계산됩니다.",
     officialPricingRows,
     plannedTokenLabels: [
       `입력 ${formatCount(inputTokens)}토큰`,
@@ -164,8 +192,13 @@ export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInpu
   };
 }
 
-function buildOfficialPricingRows(env: EnvMap, providerKey: string, activeModelKey: string): OfficialPricingRow[] {
-  const configuredModels = collectConfiguredModels(env, activeModelKey);
+function buildOfficialPricingRows(
+  env: EnvMap,
+  providerKey: string,
+  activeModelKey: string,
+  aiOperationsSettings?: AiOperationsSettings,
+): OfficialPricingRow[] {
+  const configuredModels = collectConfiguredModels(env, activeModelKey, aiOperationsSettings);
 
   return configuredModels.map(({ modelKey, roles }) => {
     const pricing = resolveOfficialLlmPricing(providerKey, modelKey);
@@ -207,13 +240,21 @@ function buildOfficialPricingRows(env: EnvMap, providerKey: string, activeModelK
   });
 }
 
-function collectConfiguredModels(env: EnvMap, activeModelKey: string): Array<{ modelKey: string; roles: string[] }> {
+function collectConfiguredModels(
+  env: EnvMap,
+  activeModelKey: string,
+  aiOperationsSettings?: AiOperationsSettings,
+): Array<{ modelKey: string; roles: string[] }> {
   const rolesByModel = new Map<string, string[]>();
   const roleInputs = [
     { label: "기획", value: env.AI_LLM_MODEL_PLANNER },
     { label: "전략", value: env.AI_LLM_MODEL_STRATEGIC },
     { label: "검토", value: env.AI_LLM_MODEL_REVIEWER },
     { label: "기본", value: env.AI_LLM_MODEL_DEFAULT },
+    ...(aiOperationsSettings?.characterProfiles.map((profile) => ({
+      label: profile.name,
+      value: profile.model,
+    })) ?? []),
   ];
 
   for (const input of roleInputs) {
@@ -256,17 +297,30 @@ function buildGateCheck(input: {
   };
 }
 
-function resolveModelKey(env: EnvMap, audit: LlmPlannerAuditRun): string {
+function resolveProviderKey(
+  env: EnvMap,
+  audit: LlmPlannerAuditRun,
+  aiOperationsSettings?: AiOperationsSettings,
+): string {
+  return (
+    normalizeText(env.AI_LLM_PROVIDER) ??
+    aiOperationsSettings?.characterProfiles.find((profile) => profile.id === "moa")?.provider ??
+    audit.provider
+  );
+}
+
+function resolveModelKey(env: EnvMap, audit: LlmPlannerAuditRun, aiOperationsSettings?: AiOperationsSettings): string {
   return (
     normalizeText(env.AI_LLM_MODEL_PLANNER) ??
     normalizeText(env.AI_LLM_MODEL_STRATEGIC) ??
     normalizeText(env.AI_LLM_MODEL_DEFAULT) ??
+    normalizeText(aiOperationsSettings?.characterProfiles.find((profile) => profile.id === "moa")?.model) ??
     audit.model
   );
 }
 
-function missingCredentialKeys(env: EnvMap): string[] {
-  const provider = normalizeText(env.AI_LLM_PROVIDER);
+function missingCredentialKeys(env: EnvMap, providerKey: string): string[] {
+  const provider = normalizeText(providerKey);
   if (!provider) {
     return ["AI_LLM_PROVIDER"];
   }
@@ -277,7 +331,60 @@ function missingCredentialKeys(env: EnvMap): string[] {
     return ["OPENAI_API_KEY"];
   }
 
-  return [];
+  return provider === "gemini" || provider === "openai" ? [] : ["AI_LLM_PROVIDER"];
+}
+
+function resolveRatePolicy(
+  env: EnvMap,
+  providerKey: string,
+  modelKey: string,
+  aiOperationsSettings?: AiOperationsSettings,
+): RatePolicy | undefined {
+  const inputRate = parsePositiveNumber(env.AI_LLM_COST_PER_1K_INPUT_KRW);
+  const outputRate = parsePositiveNumber(env.AI_LLM_COST_PER_1K_OUTPUT_KRW);
+  if (inputRate !== undefined && outputRate !== undefined) {
+    return {
+      inputRateKrw: inputRate,
+      outputRateKrw: outputRate,
+      source: "env",
+    };
+  }
+
+  const krwPerUsd = aiOperationsSettings?.budget.krwPerUsd;
+  const pricing = resolveOfficialLlmPricing(providerKey, modelKey);
+  if (!krwPerUsd || !pricing) {
+    return undefined;
+  }
+
+  return {
+    inputRateKrw: (pricing.inputUsdPerMillionTokens * krwPerUsd) / 1000,
+    outputRateKrw: (pricing.outputUsdPerMillionTokens * krwPerUsd) / 1000,
+    source: "official-pricing",
+  };
+}
+
+function resolveMonthlyBudgetKrw(env: EnvMap, aiOperationsSettings?: AiOperationsSettings): number | undefined {
+  return aiOperationsSettings?.budget.monthlyBudgetKrw ?? parsePositiveNumber(env.AI_LLM_MONTHLY_BUDGET_KRW);
+}
+
+function resolveDailyBudgetKrw(env: EnvMap, aiOperationsSettings?: AiOperationsSettings): number | undefined {
+  return aiOperationsSettings?.budget.dailyBudgetKrw ?? parsePositiveNumber(env.AI_LLM_DAILY_BUDGET_KRW);
+}
+
+function resolveRunBudgetKrw(env: EnvMap, aiOperationsSettings?: AiOperationsSettings): number | undefined {
+  return aiOperationsSettings?.budget.runBudgetKrw ?? parsePositiveNumber(env.AI_LLM_RUN_BUDGET_KRW);
+}
+
+function resolveInputTokenCap(env: EnvMap, aiOperationsSettings?: AiOperationsSettings): number | undefined {
+  return aiOperationsSettings?.budget.maxInputTokens ?? parsePositiveInteger(env.AI_LLM_MAX_INPUT_TOKENS);
+}
+
+function resolveOutputTokenCap(env: EnvMap, aiOperationsSettings?: AiOperationsSettings): number | undefined {
+  return aiOperationsSettings?.budget.maxOutputTokens ?? parsePositiveInteger(env.AI_LLM_MAX_OUTPUT_TOKENS);
+}
+
+function resolveTotalTokenCap(env: EnvMap, aiOperationsSettings?: AiOperationsSettings): number | undefined {
+  return aiOperationsSettings?.budget.maxTotalTokens ?? parsePositiveInteger(env.AI_LLM_MAX_TOTAL_TOKENS);
 }
 
 function providerDisplayName(provider: string): string {
@@ -298,12 +405,28 @@ function calculateSpentToday(agentRuns: AgentRun[], generatedAt: string): number
     .reduce((sum, run) => sum + run.tokenUsage.estimatedCostKrw, 0);
 }
 
+function calculateSpentThisMonth(agentRuns: AgentRun[], generatedAt: string): number {
+  const month = formatMonthKey(generatedAt);
+
+  return agentRuns
+    .filter((run) => formatMonthKey(run.finishedAt ?? run.startedAt) === month)
+    .reduce((sum, run) => sum + run.tokenUsage.estimatedCostKrw, 0);
+}
+
 function formatDateKey(value: string): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatMonthKey(value: string): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
   }).format(new Date(value));
 }
 

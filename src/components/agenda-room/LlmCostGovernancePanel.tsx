@@ -43,6 +43,9 @@ export function LlmCostGovernancePanel({ governance }: LlmCostGovernancePanelPro
           <span>{governance.dailySpentLabel}</span>
           <span>{governance.dailyBudgetLabel}</span>
           <span>{governance.dailyRemainingLabel}</span>
+          <span>{governance.monthlySpentLabel}</span>
+          <span>{governance.monthlyBudgetLabel}</span>
+          <span>{governance.monthlyRemainingLabel}</span>
         </div>
 
         <div className="llm-governance-token-row" aria-label="AI 모델 토큰 계획">
