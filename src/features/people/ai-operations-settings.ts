@@ -251,6 +251,26 @@ export function buildAiPeopleOfficeView(input: {
   const usageByCharacter = groupUsageByCharacter(billableRuns, input.settings.budget.krwPerUsd);
   const monthlyRemainingKrw = input.settings.budget.monthlyBudgetKrw - totals.costKrw;
   const budgetRatio = input.settings.budget.monthlyBudgetKrw > 0 ? totals.costKrw / input.settings.budget.monthlyBudgetKrw : 1;
+  const baseModelOptions = [
+    ...OFFICIAL_LLM_PRICING.map((pricing) => ({
+      provider: pricing.provider,
+      model: pricing.model,
+      label: `${pricing.displayName} · 입력 ${formatUsd(pricing.inputUsdPerMillionTokens)} / 출력 ${formatUsd(pricing.outputUsdPerMillionTokens)}`,
+    })),
+    {
+      provider: "deterministic" as const,
+      model: "deterministic-fallback",
+      label: "규칙 기반 대체 · 과금 없음",
+    },
+  ];
+  const optionKeys = new Set(baseModelOptions.map((option) => `${option.provider}:${option.model}`));
+  const configuredModelOptions = input.settings.characterProfiles
+    .filter((profile) => !optionKeys.has(`${profile.provider}:${profile.model}`))
+    .map((profile) => ({
+      provider: profile.provider,
+      model: profile.model,
+      label: `${providerLabel(profile.provider)} ${profile.model} · 직접 설정`,
+    }));
 
   return {
     settings: input.settings,
@@ -272,18 +292,7 @@ export function buildAiPeopleOfficeView(input: {
       monthlyRemainingKrw >= 0 ? `잔여 ${formatKrw(monthlyRemainingKrw)}` : `초과 ${formatKrw(Math.abs(monthlyRemainingKrw))}`,
     budgetStatusLabel: budgetRatio >= 1 ? "월 예산 초과" : budgetRatio >= 0.8 ? "주의 구간" : "예산 안정",
     budgetStatusTone: budgetRatio >= 1 ? "blocked" : budgetRatio >= 0.8 ? "warning" : "ready",
-    modelOptions: [
-      ...OFFICIAL_LLM_PRICING.map((pricing) => ({
-        provider: pricing.provider,
-        model: pricing.model,
-        label: `${pricing.displayName} · 입력 ${formatUsd(pricing.inputUsdPerMillionTokens)} / 출력 ${formatUsd(pricing.outputUsdPerMillionTokens)}`,
-      })),
-      {
-        provider: "deterministic",
-        model: "deterministic-fallback",
-        label: "규칙 기반 대체 · 과금 없음",
-      },
-    ],
+    modelOptions: [...baseModelOptions, ...configuredModelOptions],
     sourceNote: "월별 사용량은 저장된 AgentRun의 입력/출력 토큰과 공식 모델 단가 기준 예상금액으로 계산합니다.",
   };
 }
