@@ -48,7 +48,7 @@ export function CharacterDesk({ characters, agendaCards, ownerDecisionFlows, sel
   return (
     <section className="character-desk-section" aria-label="캐릭터별 업무 현황">
       <div className="character-switcher" aria-label="캐릭터 선택">
-        <Link className={!selectedCharacterId ? "is-active" : ""} href="/characters" prefetch={false}>
+        <Link className={!selectedCharacterId ? "is-active" : ""} href="/characters">
           전체
         </Link>
         {characters.map((character) => (
@@ -56,7 +56,6 @@ export function CharacterDesk({ characters, agendaCards, ownerDecisionFlows, sel
             className={selectedCharacterId === character.id ? "is-active" : ""}
             href={`/characters/${character.id}`}
             key={character.id}
-            prefetch={false}
           >
             {character.name}
           </Link>
@@ -104,7 +103,6 @@ function CharacterDeskCard({
           aria-label={`${character.name} 업무 보기`}
           className="icon-button"
           href={`/characters/${character.id}`}
-          prefetch={false}
         >
           <ArrowRight size={18} aria-hidden="true" />
         </Link>

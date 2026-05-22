@@ -166,7 +166,9 @@ export function buildCommerceTokenRequest(input: {
   timestamp: string;
 }): CommerceTokenRequest {
   const clientId = requiredCommerceEnv(input.env, ["NAVER_COMMERCE_CLIENT_ID", "NAVER_SMARTSTORE_CLIENT_ID"]);
-  const clientSecret = requiredCommerceEnv(input.env, ["NAVER_COMMERCE_CLIENT_SECRET", "NAVER_SMARTSTORE_CLIENT_SECRET"]);
+  const clientSecret = normalizeCommerceClientSecret(
+    requiredCommerceEnv(input.env, ["NAVER_COMMERCE_CLIENT_SECRET", "NAVER_SMARTSTORE_CLIENT_SECRET"]),
+  );
   const tokenType = input.env.NAVER_COMMERCE_TOKEN_TYPE ?? "SELF";
   const body = new URLSearchParams({
     client_id: clientId,
@@ -199,9 +201,13 @@ export function createCommerceClientSecretSign(input: {
   clientSecret: string;
   timestamp: string;
 }): string {
-  const hashed = hashSync(`${input.clientId}_${input.timestamp}`, input.clientSecret);
+  const hashed = hashSync(`${input.clientId}_${input.timestamp}`, normalizeCommerceClientSecret(input.clientSecret));
 
   return Buffer.from(hashed, "utf8").toString("base64");
+}
+
+function normalizeCommerceClientSecret(clientSecret: string): string {
+  return clientSecret.trim().replaceAll("\\$", "$");
 }
 
 function resolveCommerceBaseUrl(env: EnvMap): string {

@@ -236,6 +236,19 @@ describe("읽기 전용 연동 수집", () => {
     expect(request.body.get("client_secret_sign")).not.toBe("$2a$10$abcdefghijklmnopqrstuu");
   });
 
+  it("커머스 secret이 쉘 이스케이프된 bcrypt salt 형태여도 토큰 서명을 만든다", () => {
+    const request = buildCommerceTokenRequest({
+      env: {
+        NAVER_COMMERCE_CLIENT_ID: "client-id",
+        NAVER_COMMERCE_CLIENT_SECRET: "\\$2a\\$10\\$abcdefghijklmnopqrstuu",
+      },
+      timestamp: "1790000000000",
+    });
+
+    expect(request.body.get("client_secret_sign")).toBeTruthy();
+    expect(request.body.get("client_secret_sign")).not.toContain("\\$2a");
+  });
+
   it("커머스 성공 응답은 aggregate-only snapshot과 signal로 정규화한다", async () => {
     const report = await import("../../src/lib/integrations/commerce/read-only-sync").then(({ syncCommerceOrderAggregate }) =>
       syncCommerceOrderAggregate({
