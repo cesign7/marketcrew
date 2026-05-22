@@ -10,15 +10,19 @@ export function ProviderDataContractPanel({ contracts }: ProviderDataContractPan
     return null;
   }
 
+  const contractsWithSourceFields = contracts.filter((contract) => contract.incoming.sourceFieldGroups?.length);
+
   return (
     <section className="data-contract-section" aria-labelledby="data-contract-title">
       <div className="section-heading compact">
         <div>
           <span className="eyebrow">데이터 명세</span>
           <h2 id="data-contract-title">불러오는 데이터와 저장하는 데이터</h2>
-          <p>각 연동이 실제로 읽는 칼럼, 화면에 보여줄 샘플, MarketCrew에 남기는 저장 칼럼을 분리해서 확인합니다.</p>
+          <p>원천 응답 필드를 먼저 펼쳐 보고, 그중 운영 화면에서 읽는 칼럼과 MarketCrew에 남기는 저장 칼럼을 분리해서 확인합니다.</p>
         </div>
       </div>
+
+      <SourceFieldOverview contracts={contractsWithSourceFields} />
 
       <div className="data-contract-link-panel" aria-label="채널별 데이터 명세 바로가기">
         {contracts.map((contract) => (
@@ -32,12 +36,6 @@ export function ProviderDataContractPanel({ contracts }: ProviderDataContractPan
                 <FileSearch size={15} aria-hidden="true" />
                 불러오는 데이터
               </a>
-              {contract.incoming.sourceFieldGroups && contract.incoming.sourceFieldGroups.length > 0 ? (
-                <a href={`#${contract.incoming.id}-source-fields`}>
-                  <FileSearch size={15} aria-hidden="true" />
-                  원천 필드 목록
-                </a>
-              ) : null}
               <a href={`#${contract.stored.id}`}>
                 <Database size={15} aria-hidden="true" />
                 저장하는 데이터
@@ -63,6 +61,44 @@ export function ProviderDataContractPanel({ contracts }: ProviderDataContractPan
             <div className="data-contract-grid">
               <DatasetContractCard dataset={contract.incoming} tone="incoming" />
               <DatasetContractCard dataset={contract.stored} tone="stored" />
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SourceFieldOverview({ contracts }: { contracts: ProviderDataContractView[] }) {
+  if (contracts.length === 0) {
+    return null;
+  }
+
+  return (
+    <section
+      className="data-source-field-overview"
+      aria-labelledby="data-source-field-overview-title"
+      id="data-source-field-overview"
+    >
+      <header>
+        <div>
+          <span className="eyebrow">원천 필드 전체 보기</span>
+          <h3 id="data-source-field-overview-title">선택 전 원천 필드 목록</h3>
+          <p>API나 브리지 응답에서 들어올 수 있는 필드를 먼저 모두 보여줍니다. 값 샘플은 노출하지 않고 처리 기준만 표시합니다.</p>
+        </div>
+      </header>
+
+      <div className="data-source-provider-grid">
+        {contracts.map((contract) => (
+          <article className="data-source-provider-card" key={`${contract.providerKey}-${contract.channelKey}-source-fields`}>
+            <header>
+              <span>{contract.brandLabel ?? contract.channelLabel}</span>
+              <strong>{contract.providerLabel}</strong>
+            </header>
+            <div className="data-source-field-list" aria-label={`${contract.providerLabel} 선택 전 원천 필드 목록`}>
+              {contract.incoming.sourceFieldGroups?.map((group) => (
+                <SourceFieldGroupCard group={group} key={group.id} />
+              ))}
             </div>
           </article>
         ))}
@@ -119,35 +155,6 @@ function DatasetContractCard({
         </table>
       </div>
 
-      {dataset.sourceFieldGroups && dataset.sourceFieldGroups.length > 0 ? (
-        <div
-          className="data-source-field-list"
-          id={`${dataset.id}-source-fields`}
-          aria-label={`${dataset.title} 원천 필드 목록`}
-        >
-          <strong>원천 필드 목록</strong>
-          <p>API 응답에서 들어올 수 있는 필드 목록입니다. 값은 저장하거나 노출하지 않고 처리 기준만 표시합니다.</p>
-          {dataset.sourceFieldGroups.map((group) => (
-            <article className="data-source-field-card" key={group.id}>
-              <header>
-                <strong>{group.title}</strong>
-                <span>처리 기준</span>
-              </header>
-              <p>{group.description}</p>
-              <div className="data-source-field-grid">
-                {group.fields.map((item) => (
-                  <span key={`${group.id}-${item.key}`}>
-                    <small>{item.label}</small>
-                    <code>{item.key}</code>
-                    {item.handling}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : null}
-
       <div className="data-sample-list" aria-label={`${dataset.title} 샘플 데이터`}>
         <strong>샘플 데이터</strong>
         {dataset.sampleRows.map((row) => (
@@ -162,5 +169,30 @@ function DatasetContractCard({
         ))}
       </div>
     </section>
+  );
+}
+
+function SourceFieldGroupCard({
+  group,
+}: {
+  group: NonNullable<ProviderDataContractDatasetView["sourceFieldGroups"]>[number];
+}) {
+  return (
+    <article className="data-source-field-card">
+      <header>
+        <strong>{group.title}</strong>
+        <span>처리 기준</span>
+      </header>
+      <p>{group.description}</p>
+      <div className="data-source-field-grid">
+        {group.fields.map((item) => (
+          <span key={`${group.id}-${item.key}`}>
+            <small>{item.label}</small>
+            <code>{item.key}</code>
+            {item.handling}
+          </span>
+        ))}
+      </div>
+    </article>
   );
 }

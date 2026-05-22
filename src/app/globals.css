@@ -1730,6 +1730,67 @@ button:disabled {
   margin-top: 14px;
 }
 
+.data-source-field-overview {
+  scroll-margin-top: 110px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfa;
+  padding: 14px;
+}
+
+.data-source-field-overview > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.data-source-field-overview h3 {
+  margin: 3px 0 0;
+  font-size: 16px;
+}
+
+.data-source-field-overview p {
+  margin: 6px 0 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.data-source-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.data-source-provider-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 12px;
+}
+
+.data-source-provider-card > header {
+  display: grid;
+  gap: 3px;
+}
+
+.data-source-provider-card > header span {
+  color: var(--teal-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.data-source-provider-card > header strong {
+  font-size: 14px;
+  line-height: 1.3;
+}
+
 .data-contract-link-card {
   display: grid;
   gap: 10px;
@@ -1947,24 +2008,8 @@ button:disabled {
 }
 
 .data-source-field-list {
-  scroll-margin-top: 110px;
   display: grid;
   gap: 10px;
-  margin-top: 12px;
-  border-top: 1px solid var(--line);
-  padding-top: 12px;
-}
-
-.data-source-field-list > strong {
-  font-size: 12px;
-}
-
-.data-source-field-list > p {
-  margin: -2px 0 0;
-  color: var(--ink-muted);
-  font-size: 12px;
-  font-weight: 800;
-  line-height: 1.45;
 }
 
 .data-source-field-card {
@@ -3221,6 +3266,7 @@ button:disabled {
   .collection-policy-grid,
   .data-contract-link-panel,
   .data-contract-grid,
+  .data-source-provider-grid,
   .product-opportunity-list,
   .character-desk-grid,
   .settings-grid,

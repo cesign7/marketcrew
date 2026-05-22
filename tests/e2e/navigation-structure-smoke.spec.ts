@@ -49,8 +49,10 @@ test("데이터 연동 메뉴와 상단 채널/기간 필터가 클릭에 반응
   await expect(page).toHaveURL(/\/data$/);
   await expect(page.getByRole("heading", { level: 1, name: "데이터 연동" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "불러오는 데이터와 저장하는 데이터" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "선택 전 원천 필드 목록" })).toBeVisible();
   await expect(page.getByRole("link", { name: "불러오는 데이터" }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "원천 필드 목록" }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "원천 필드 목록" })).toHaveCount(0);
+  await expect(page.locator(".data-source-field-overview")).toContainText("monthlyAvePcClkCnt");
   await expect(page.locator(".data-contract-table").first()).toContainText("칼럼");
 
   const topControls = page.getByRole("region", { name: "화면 보기 기준" });

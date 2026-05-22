@@ -27,9 +27,12 @@ type SearchAdKeywordToolResponse = {
     relKeyword?: string;
     monthlyPcQcCnt?: string | number;
     monthlyMobileQcCnt?: string | number;
+    monthlyAvePcClkCnt?: string | number;
+    monthlyAveMobileClkCnt?: string | number;
     compIdx?: string;
     monthlyAvePcCtr?: string | number;
     monthlyAveMobileCtr?: string | number;
+    plAvgDepth?: string | number;
   }>;
 };
 
