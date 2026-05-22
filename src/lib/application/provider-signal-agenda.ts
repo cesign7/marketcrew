@@ -143,7 +143,7 @@ function buildCharacterReports(candidates: AgendaCandidate[], generatedAt: strin
     id: `report-provider-${character}-${generatedAt.slice(0, 10)}`,
     character,
     title: `${characterName(character)} 읽기 전용 데이터 보고`,
-    summary: `${characterCandidates.length}개 연동 기반 안건을 오피에게 상신했습니다.`,
+    summary: `${characterCandidates.length}개 연동 기반 안건을 모아에게 상신했습니다.`,
     agendaCandidateIds: characterCandidates.map((candidate) => candidate.id),
     evidenceIds: characterCandidates.flatMap((candidate) => candidate.sourceSignalIds),
     createdAt: generatedAt,
@@ -308,7 +308,7 @@ function riskFromConfidence(confidence: DataConfidence): RiskLevel {
 
 function characterName(character: CharacterKey): string {
   const names: Record<CharacterKey, string> = {
-    opi: "오피",
+    opi: "모아",
     gro: "그로",
     maru: "마루",
     day: "데이",

@@ -106,8 +106,8 @@ export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInpu
       label: "원천 행 제외",
       blocked: input.plannerAudit.tokenUsage.rawRowsIncluded,
       message: input.plannerAudit.tokenUsage.rawRowsIncluded
-        ? "원천 행이 포함된 오피 입력은 실제 AI 호출 대상이 아닙니다."
-        : "집계 요약과 근거 ID만 오피 입력에 포함됩니다.",
+        ? "원천 행이 포함된 모아 입력은 실제 AI 호출 대상이 아닙니다."
+        : "집계 요약과 근거 ID만 모아 입력에 포함됩니다.",
     }),
     buildGateCheck({
       id: "external-write",
@@ -152,7 +152,7 @@ export function buildLlmCostGovernanceView(input: BuildLlmCostGovernanceViewInpu
     ],
     decisionSummary: liveCallAllowed
       ? "예산과 토큰 조건을 통과한 요청만 실제 AI 호출 후보가 됩니다. 외부 채널 반영은 계속 별도 결재 대상입니다."
-      : "비용 정책 또는 토큰 조건이 닫혀 있어 오피는 규칙 기반 대체로만 종합합니다.",
+      : "비용 정책 또는 토큰 조건이 닫혀 있어 모아는 규칙 기반 대체로만 종합합니다.",
     gateChecks: checks,
   };
 }

@@ -66,7 +66,7 @@ function buildPreview({
     provenance: {
       summaryLabel: "근거 2개 · 실행 이력 1개 · 연동 수집 2개",
       evidenceLabels: ["매출 근거", "매출 근거"],
-      agentRunLabels: ["오피 계획 · 완료 · 120토큰"],
+      agentRunLabels: ["모아 계획 · 완료 · 120토큰"],
       providerEvidenceLabels,
       checkpointLabels: ["7일 후 확인"],
       safetyLabels: ["원천 행 제외", "원천 행 제외"],

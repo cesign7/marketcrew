@@ -15,7 +15,7 @@
 | Perspective | Content |
 |-------------|---------|
 | **Problem** | 혼자 광고와 마케팅을 관리하려면 대표가 매일 여러 채널을 직접 확인하고, 문제를 발견하고, 실행 여부까지 판단해야 한다. 특히 설날, 추석, 부처님오신날처럼 음력 기준으로 움직이는 시즌에는 작년 양력 날짜와 단순 비교하면 성과와 기회를 잘못 해석하기 쉽고, 키워드 광고는 시즌 검색량 급등으로 예산을 빠르게 소진할 수 있다. |
-| **Solution** | MVP의 첫 루프를 bottom-up 안건 상신으로 잡는다. 하위 캐릭터들이 데이터와 `MarketingCalendar`, `KeywordDemandSnapshot`을 함께 감시해 `AgendaCandidate`, `KeywordOpportunity`, `SeasonalKeywordAdPlan`, `MarketingProposal`, `ProductOpportunity`를 만들고, 오피가 대표 결재용 `ApprovalRequest`와 변경 전/후 미리보기인 `ExecutionPlan`으로 정리한다. |
+| **Solution** | MVP의 첫 루프를 bottom-up 안건 상신으로 잡는다. 하위 캐릭터들이 데이터와 `MarketingCalendar`, `KeywordDemandSnapshot`을 함께 감시해 `AgendaCandidate`, `KeywordOpportunity`, `SeasonalKeywordAdPlan`, `MarketingProposal`, `ProductOpportunity`를 만들고, 모아가 대표 결재용 `ApprovalRequest`와 변경 전/후 미리보기인 `ExecutionPlan`으로 정리한다. |
 | **Function/UX Effect** | 첫 화면은 `오늘 올라온 안건`, `명절/기념일 기회`, `결재하면 바로 반영될 작업`, `성과 추적 중`, `추가 근거 대기`를 보여주는 회사형 지휘실이다. 대표는 올라온 자료와 변경 diff만 보고 승인/반려/수정/추가근거 요청을 선택하며, 승인된 작업은 실행 결과와 성과 체크 일정까지 자동으로 기록된다. |
 | **Core Value** | AI 직원들이 먼저 문제와 시즌 기회를 발견하고, 상품별 키워드/마케팅/상품 발굴 제안과 시즌 광고 운영안을 올리고, 대표 승인 후 즉시 반영하고, 성과까지 다시 보고하는 운영 시스템을 제공한다. |
 
@@ -28,7 +28,7 @@
 | **WHY** | 대표가 먼저 지시하지 않아도 하위 AI 캐릭터들이 데이터 변화와 음력/양력 시즌 이벤트에서 위험/기회를 발견해 안건으로 상신하고, 승인된 변경은 실제 업무 채널에 바로 반영되게 한다. |
 | **WHO** | 스마트스토어, 네이버 광고, 자체 쇼핑몰을 함께 운영하며 매일 올라오는 마케팅 안건을 결재해야 하는 대표/마케팅 운영자. |
 | **RISK** | 하위 캐릭터가 근거 부족한 안건을 과다 생성하거나, 음력 이벤트 비교 기준을 잘못 잡거나, 시즌 키워드 광고가 예산/입찰 안전장치 없이 실행되거나, 승인 후 외부 채널 반영이 잘못 실행되거나, 성과 측정 없이 자동화만 누적될 수 있다. |
-| **SUCCESS** | 샘플 데이터만으로도 음력 이벤트 기준 비교, 상품별 키워드/마케팅/상품 발굴 안건, 시즌 키워드 광고 운영안, 오피 종합, 변경 diff, 대표 승인, 실행 결과, 성과 추적 체크포인트까지 브라우저에서 확인할 수 있다. |
+| **SUCCESS** | 샘플 데이터만으로도 음력 이벤트 기준 비교, 상품별 키워드/마케팅/상품 발굴 안건, 시즌 키워드 광고 운영안, 모아 종합, 변경 diff, 대표 승인, 실행 결과, 성과 추적 체크포인트까지 브라우저에서 확인할 수 있다. |
 | **SCOPE** | Phase 1은 bottom-up 안건 발굴/이벤트 캘린더/시즌 키워드 광고 계획/결재/실행 미리보기/모의 반영/성과 추적 MVP, Phase 2는 실제 API write executor, Phase 3은 owner command와 고위험 승인 정책으로 확장. |
 
 ---
@@ -71,12 +71,12 @@
 - [ ] 키워드 광고는 일반 운영 키워드와 시즌 키워드를 분리하고, 시즌 키워드는 탐색/테스트/증액/축소/회고 생애주기를 가진다.
 - [ ] 시즌 키워드 광고 안건은 검색수, 경쟁도, 현재 광고 성과, 예산 상한, 입찰가 상한, 재고/마진, 랜딩 준비 상태를 함께 근거로 가져야 한다.
 - [ ] 안건 후보는 중요도, 근거 충분성, 중복 여부, 외부 실행 위험으로 triage된다.
-- [ ] triage를 통과한 안건만 `CharacterReport`로 상위 보고자 `오피`에게 올라간다.
-- [ ] 오피는 여러 하위 보고를 묶어 대표 결재용 `ApprovalRequest`를 만든다.
+- [ ] triage를 통과한 안건만 `CharacterReport`로 상위 보고자 `모아`에게 올라간다.
+- [ ] 모아는 여러 하위 보고를 묶어 대표 결재용 `ApprovalRequest`를 만든다.
 - [ ] 대표는 승인, 반려, 수정 요청, 보류, 추가 근거 요청 중 하나를 선택할 수 있다.
 - [ ] 모든 결재 요청에는 변경 전/후 diff, 실행 대상, 예상 효과, 위험, 되돌리기 가능 여부가 포함된 `ExecutionPlan`이 붙는다.
 - [ ] 대표가 승인하면 위험 등급, 권한, write gate, rollback 조건을 통과한 작업은 즉시 외부 채널 또는 내부 시스템에 반영된다.
-- [ ] 실행 결과는 `ExecutionResult`로 기록되고, 실패/부분 성공/재시도 필요 상태를 대표와 오피에게 다시 보고한다.
+- [ ] 실행 결과는 `ExecutionResult`로 기록되고, 실패/부분 성공/재시도 필요 상태를 대표와 모아에게 다시 보고한다.
 - [ ] 승인된 작업은 `PerformanceCheckpoint`를 생성해 1일/3일/7일/14일/30일 후 성과를 추적한다.
 - [ ] 대표 결정과 실행 결과는 다시 하위 캐릭터의 후속 업무 또는 성과 분석 안건으로 내려간다.
 - [ ] 게임형 업무 지휘실 UI는 `오늘 올라온 안건`, `캐릭터별 감지 현황`, `보고 라인`, `결재 대기`를 보여준다.
@@ -85,7 +85,7 @@
 
 ### 2.2 Out of Scope
 
-- 초기 MVP에서 대표가 먼저 오피에게 업무를 지시하는 top-down command inbox.
+- 초기 MVP에서 대표가 먼저 모아에게 업무를 지시하는 top-down command inbox.
 - 대표 승인 없는 광고 입찰가 변경, 예산 변경, 쿠폰 발급, 상품 수정, 고객 메시지 발송 자동 실행.
 - 변경 diff와 되돌리기 정보가 없는 외부 write 실행.
 - Critical 위험 등급 작업의 단일 클릭 즉시 반영.
@@ -103,7 +103,7 @@ MVP must include:
 - 하위 캐릭터의 bottom-up 안건 상신.
 - 상품/키워드/캠페인/상품발굴 후보의 근거 표시.
 - 시즌 키워드 광고 계획의 예산/입찰/중지 조건.
-- 오피의 결재 요청과 변경 diff.
+- 모아의 결재 요청과 변경 diff.
 - mock/sandbox executor와 성과 체크포인트.
 
 MVP must not include yet:
@@ -130,12 +130,12 @@ Rule of thumb:
 | FR-01 | 시스템은 샘플 또는 실제 read-only 데이터를 공통 `Signal` 형식으로 수집해야 한다. | High | Pending |
 | FR-02 | 하위 캐릭터는 담당 데이터에서 위험/기회/이상 징후를 감지해 `AgendaCandidate`를 생성해야 한다. | High | Pending |
 | FR-03 | 안건 후보는 중요도, 근거 수, 중복 여부, 외부 실행 위험을 기준으로 triage되어야 한다. | High | Pending |
-| FR-04 | 통과한 안건은 하위 캐릭터의 `CharacterReport`로 상위 보고자 오피에게 보고되어야 한다. | High | Pending |
-| FR-05 | 오피는 하위 보고를 종합해 대표 결재용 `ApprovalRequest`를 생성해야 한다. | High | Pending |
+| FR-04 | 통과한 안건은 하위 캐릭터의 `CharacterReport`로 상위 보고자 모아에게 보고되어야 한다. | High | Pending |
+| FR-05 | 모아는 하위 보고를 종합해 대표 결재용 `ApprovalRequest`를 생성해야 한다. | High | Pending |
 | FR-06 | 대표는 승인, 반려, 수정 요청, 보류, 추가 근거 요청 중 하나를 선택할 수 있어야 한다. | High | Pending |
 | FR-07 | 대표 결정은 후속 내부 업무로 하위 캐릭터에게 다시 내려가야 한다. | High | Pending |
 | FR-08 | 각 안건/보고/판단에는 데이터 출처, 수집 시각, LLM 모델, 토큰/비용, 판단 근거가 남아야 한다. | Medium | Pending |
-| FR-09 | 게임형 UI는 캐릭터별 감지 상태, 보고 단계, 오피 검토, 대표 결재 대기를 시각적으로 보여줘야 한다. | Medium | Pending |
+| FR-09 | 게임형 UI는 캐릭터별 감지 상태, 보고 단계, 모아 검토, 대표 결재 대기를 시각적으로 보여줘야 한다. | Medium | Pending |
 | FR-10 | API 키가 없어도 샘플 데이터로 bottom-up 안건 상신 루프를 시연할 수 있어야 한다. | High | Pending |
 | FR-11 | 모든 결재 요청은 변경 전/후 diff와 승인 시 실행될 작업 목록을 보여줘야 한다. | High | Pending |
 | FR-12 | 승인된 안건은 위험 등급/권한/write gate를 통과하면 즉시 `ExecutionResult`까지 생성해야 한다. | High | Pending |
@@ -357,7 +357,7 @@ Approval buttons:
 |--------|--------|
 | `APPROVE_AND_APPLY` | 승인 후 즉시 실행한다. 단, risk/write gate/rollback 조건을 통과해야 한다. |
 | `APPROVE_DRAFT_ONLY` | 초안/내부 작업만 생성하고 외부 채널에는 반영하지 않는다. |
-| `REQUEST_REVISION` | 오피와 담당 캐릭터에게 수정 후 재상신을 요청한다. |
+| `REQUEST_REVISION` | 모아와 담당 캐릭터에게 수정 후 재상신을 요청한다. |
 | `REQUEST_MORE_EVIDENCE` | 데이 또는 담당 캐릭터에게 추가 근거를 요청한다. |
 | `HOLD` | 일정 기간 보류하고 재검토 날짜를 둔다. |
 | `REJECT` | 안건을 종료하고 반려 사유를 기록한다. |
@@ -455,7 +455,7 @@ Priority inbox buckets:
 - [ ] 샘플 데이터가 스마트스토어/네이버 키워드광고/자체 쇼핑몰 `Signal`로 수집된다.
 - [ ] 각 하위 캐릭터가 최소 한 개 이상의 안건 후보를 생성하거나 “안건 없음” 판단을 남긴다.
 - [ ] 안건 후보가 triage를 통과하거나 탈락한 이유가 기록된다.
-- [ ] 통과한 안건은 캐릭터 보고서와 오피 종합 보고서로 UI에서 구분되어 보인다.
+- [ ] 통과한 안건은 캐릭터 보고서와 모아 종합 보고서로 UI에서 구분되어 보인다.
 - [ ] 대표 결재 요청에는 변경 전/후 diff, 실행 작업 목록, 위험 등급, 되돌리기 가능 여부가 포함된다.
 - [ ] 대표는 `승인 후 바로 반영`, `초안만 승인`, `반려`, `수정 요청`, `보류`, `추가 근거 요청`을 선택할 수 있다.
 - [ ] 승인 후 바로 반영을 선택하면 preflight를 통과한 작업이 executor를 통해 실행되고 `ExecutionResult`가 기록된다.
@@ -522,8 +522,8 @@ Priority inbox buckets:
 | `ProductOpportunity` | Domain Model | 시즌/이벤트/성과 기반 신상품, 묶음상품, 프로모션 발굴 제안. |
 | `AgendaTriage` | Domain Service | 안건 후보의 중요도, 중복, 근거 충분성, 결재 필요성을 판정한다. |
 | `CharacterReport` | Domain Model | 담당 캐릭터가 상위 보고자에게 제출한 근거 기반 보고. |
-| `OpiSynthesisReport` | Domain Model | 오피가 하위 보고를 종합한 대표 결재 전 보고. |
-| `ApprovalRequest` | Domain Model | 오피가 대표에게 올리는 결재 요청. |
+| `OpiSynthesisReport` | Domain Model | 모아가 하위 보고를 종합한 대표 결재 전 보고. |
+| `ApprovalRequest` | Domain Model | 모아가 대표에게 올리는 결재 요청. |
 | `ExecutionPlan` | Domain Model | 대표가 승인하면 실행될 변경 diff, 위험 등급, preflight, rollback 계획. |
 | `OwnerDecision` | Domain Model | 대표의 승인/반려/수정/보류/추가근거 요청 결정. |
 | `ExecutionResult` | Domain Model | 승인 후 즉시 반영 시도 결과와 실패/부분성공/재시도 정보. |
@@ -548,13 +548,13 @@ Priority inbox buckets:
 | `AgendaCandidate` | CREATE/READ | character watchers, agenda triage | 신규 구현 |
 | `KeywordOpportunity` | CREATE/READ | gro keyword scout, approval preview | 신규 구현 |
 | `SeasonalKeywordAdPlan` | CREATE/READ | gro seasonal keyword planner, approval preview, preflight | 신규 구현 |
-| `MarketingProposal` | CREATE/READ | copy campaign scout, opi synthesis | 신규 구현 |
+| `MarketingProposal` | CREATE/READ | copy campaign scout, Moa synthesis | 신규 구현 |
 | `ProductOpportunity` | CREATE/READ | pro/maru product scout, approval preview | 신규 구현 |
 | `AgendaTriage` | READ/EVALUATE | agenda workflow engine, tests | 신규 구현 |
 | `CharacterReport` | CREATE/READ | specialist character runners, report UI | 신규 구현 |
-| `OpiSynthesisReport` | CREATE/READ | Opi review engine, operations UI | 신규 구현 |
+| `OpiSynthesisReport` | CREATE/READ | Moa review engine, operations UI | 신규 구현 |
 | `ApprovalRequest` | CREATE/READ/UPDATE | approvals UI, owner decision action | 신규 구현 |
-| `ExecutionPlan` | CREATE/READ | Opi review engine, approval preview UI, preflight | 신규 구현 |
+| `ExecutionPlan` | CREATE/READ | Moa review engine, approval preview UI, preflight | 신규 구현 |
 | `OwnerDecision` | CREATE/READ | approval actions, follow-up planner | 신규 구현 |
 | `ExecutionResult` | CREATE/READ | provider executors, execution status UI | 신규 구현 |
 | `RollbackSnapshot` | CREATE/READ | preflight, executor, rollback UI | 신규 구현 |
@@ -676,7 +676,7 @@ Deferred top-down flow:
 
 ```text
 OwnerCommand
-  -> OpiCommandPlanner
+  -> MoaCommandPlanner
   -> CharacterAssignment[]
 ```
 
@@ -686,13 +686,15 @@ Initial character map:
 
 | Character | Korean Role | Role Model | Primary Responsibility | Agenda Creation Criteria | Not Responsible For |
 |-----------|-------------|------------|------------------------|--------------------------|---------------------|
-| `opi` | 오피 | AI Chief of Staff / 마케팅 운영실장 | 하위 보고 검토, 안건 묶음, 대표 결재 요청, 후속 업무 배분 | 여러 캐릭터 보고가 같은 문제를 가리키거나 대표 결재가 필요한 외부 영향 의사결정일 때 `ApprovalRequest`로 승격한다. | 원천 데이터를 직접 해석해 단독 안건을 만들지 않는다. 하위 보고 없는 결재 요청을 만들지 않는다. |
+| `opi` | 모아 | AI Chief of Staff / 마케팅 운영실장 | 하위 보고 검토, 안건 묶음, 대표 결재 요청, 후속 업무 배분 | 여러 캐릭터 보고가 같은 문제를 가리키거나 대표 결재가 필요한 외부 영향 의사결정일 때 `ApprovalRequest`로 승격한다. | 원천 데이터를 직접 해석해 단독 안건을 만들지 않는다. 하위 보고 없는 결재 요청을 만들지 않는다. |
 | `gro` | 그로 | Performance Marketer / Attribution Analyst | 네이버 키워드광고 성과 하락, 성장 기회, 예산 낭비, 상품별 키워드 기회, 시즌 키워드 광고 생애주기 안건 발굴 | 캠페인/광고그룹/키워드 단위에서 클릭률, 전환율, 전환비용, 매출, 예산 소진이 기준선을 벗어나거나 이벤트/상품 조합에 새 키워드 기회가 있을 때 안건을 만든다. 시즌 키워드는 탐색/테스트/증액/축소/회고 단계로 올린다. | 승인 전에는 광고 입찰가, 예산, 키워드를 직접 변경하지 않는다. 승인 후에는 executor와 write gate를 통해서만 반영한다. |
 | `maru` | 마루 | Commerce Operations Analyst | 스마트스토어/자체 쇼핑몰 매출, 주문, 상품 운영 이슈와 이벤트 운영 준비 안건 발굴 | 채널별 매출 급변, 주문 급증/급감, 특정 상품 판매 이상, 품절/운영 리스크, 이벤트 상품 준비 부족이 보일 때 안건을 만든다. | 가격/마진 전략을 최종 판단하지 않는다. 상품 경제성 판단은 `pro`에게 넘긴다. |
 | `day` | 데이 | Data QA / Evidence Auditor | 데이터 정합성, 이상치, 근거 품질 안건 발굴 및 모든 안건의 신뢰도 보조 평가 | 데이터 누락, 수치 불일치, API 실패, 근거 부족, 표본 부족이 있으면 데이터 품질 안건을 만든다. 다른 캐릭터 안건에는 evidence score를 붙인다. | 사업 액션을 직접 추천하지 않는다. 안건 승인권자가 아니라 검증자다. |
 | `copy` | 카피 | Campaign Composer / Creative Strategist | 광고문구, 상품 메시지, 상세페이지/콘텐츠 개선, 이벤트 캠페인 초안 생성 | 성과가 낮은 키워드/상품/고객군에 대해 문구 개선 여지가 있거나 이벤트/상품 조합에 캠페인 메시지가 필요할 때 안건을 만든다. | 매체 예산이나 상품 가격을 판단하지 않는다. 카피는 실행 초안이며 발송/게시 전 결재가 필요하다. |
 | `ripi` | 리피 | Retention / CRM Marketer | 재구매, 휴면 고객, VIP, 고객군 변화, 이벤트별 고객군 안건 발굴 | 재구매율 하락, VIP 반응 변화, 휴면 고객 증가, 특정 세그먼트 매출 변화, 이벤트 선물 수요가 감지되면 CRM 안건을 만든다. | 신규 유입 광고 최적화나 상품 마진 판단을 맡지 않는다. 메시지/쿠폰 발송은 승인, 세그먼트 diff, 발송 수량, rollback/중지 조건이 있어야만 executor로 넘긴다. |
 | `pro` | 프로 | Merchandising / Profit Strategist | 상품, 가격, 마진, 프로모션, 신상품/묶음상품 판단 안건 발굴 | 판매량은 좋지만 마진이 낮거나, 가격/할인/묶음상품/프로모션 조정 여지가 있거나 이벤트에 맞는 상품 발굴 기회가 있을 때 안건을 만든다. | 채널 운영 장애나 CRM 세그먼트 운영을 맡지 않는다. 가격/프로모션 변경은 승인, 마진 검증, rollback snapshot이 있어야만 executor로 넘긴다. |
+
+표시명은 `모아`로 통일한다. 단, 기존 저장 데이터와 코드 호환을 위해 내부 키 `opi`, 실행 타입 `opi_planner`, 도메인 타입 `OpiSynthesisReport`는 유지한다.
 
 Execution and outcome responsibilities:
 
@@ -775,7 +777,7 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 |----------|---------|-------|:-------------:|
 | `DATABASE_URL` | 안건/보고/결재/감사 로그 저장 DB | Server | ☐ |
 | `AI_LLM_PROVIDER` | LLM provider 선택 | Server | ☐ |
-| `AI_LLM_MODEL_PLANNER` 또는 `AI_LLM_MODEL_STRATEGIC` / `AI_LLM_MODEL_DEFAULT` | 안건 triage/오피 종합 planner 모델 | Server | ☐ |
+| `AI_LLM_MODEL_PLANNER` 또는 `AI_LLM_MODEL_STRATEGIC` / `AI_LLM_MODEL_DEFAULT` | 안건 triage/모아 종합 planner 모델 | Server | ☐ |
 | `GEMINI_API_KEY` 또는 `OPENAI_API_KEY` | LLM 호출 | Server | ☐ |
 | `MARKETING_CALENDAR_SOURCE` | 양력/음력 마케팅 이벤트 캘린더 source | Server | ☐ |
 | `LUNAR_CALENDAR_PROVIDER` | 음력-양력 변환 provider 또는 local table | Server | ☐ |
@@ -825,7 +827,7 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 - Next.js 앱 scaffold.
 - 캐릭터 프로필/역할 정의.
 - `오늘 올라온 안건`, `승인하면 바로 반영될 작업`, `성과 추적 중`, `추가 근거 대기` 중심 UI.
-- 샘플 데이터 기반 캐릭터별 안건 후보/보고/오피 종합/대표 결재 미리보기.
+- 샘플 데이터 기반 캐릭터별 안건 후보/보고/모아 종합/대표 결재 미리보기.
 - 브라우저 smoke로 첫 화면 검증.
 
 ### Slice 2: Signal, Agenda, and Guardrail Domain Engine
@@ -876,7 +878,7 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 
 ### Slice 8: Owner Command Extension
 
-- 대표가 오피에게 직접 지시하는 top-down command inbox.
+- 대표가 모아에게 직접 지시하는 top-down command inbox.
 - 이 slice는 bottom-up 안건 상신, 승인 즉시 반영, 성과 보고 루프가 동작한 뒤 추가한다.
 
 ---
@@ -891,11 +893,11 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 | 첫 LLM provider는 무엇인가? | pluggable 구조로 두고 scaffold 후 사용 가능한 키 기준으로 연결한다. |
 | 게임형 UI 강도는 어느 정도인가? | 업무 속도를 해치지 않는 캐릭터 지휘실 수준으로 시작한다. |
 | 외부 실행 자동화는 언제 허용하는가? | MVP 이후 별도 phase에서 명시 승인 후 구현한다. |
-| 캐릭터명은 확정인가? | 오피 중심 7개 역할을 초안으로 사용하고 UI에서 교체 가능하게 둔다. |
+| 캐릭터명은 확정인가? | 모아 중심 7개 역할을 초안으로 사용하고 UI에서 교체 가능하게 둔다. |
 | 실제 외부 반영은 언제 허용하는가? | mock/sandbox executor로 계약을 먼저 검증하고, provider별 write gate와 rollback 검증 후 실제 executor를 켠다. |
 | Critical 작업도 즉시 반영하는가? | 아니다. Critical은 2차 확인 또는 별도 승인 정책이 필요하다. |
 | 음력 이벤트 날짜는 어떻게 잡는가? | `MarketingCalendar`가 이벤트별 lunar/solar type, lunar month/day, 연도별 양력 환산일, D-n 이벤트 윈도우를 저장한다. |
-| 상품/키워드 기회는 누가 올리는가? | `gro`는 키워드, `copy`는 캠페인 문구, `pro`/`maru`는 상품/묶음/운영, `ripi`는 고객군 기회를 올리고 오피가 결재 안건으로 묶는다. |
+| 상품/키워드 기회는 누가 올리는가? | `gro`는 키워드, `copy`는 캠페인 문구, `pro`/`maru`는 상품/묶음/운영, `ripi`는 고객군 기회를 올리고 모아가 결재 안건으로 묶는다. |
 | 시즌 키워드 광고는 상품 시즌성과 같은가? | 아니다. 같은 `MarketingCalendar`를 참조하지만 `SeasonalKeywordAdPlan`으로 별도 생애주기, 예산/입찰 상한, 중지 조건, 제외 키워드 후보를 관리한다. |
 | 플랜이 너무 방대한가? | 비전 문서로는 적정하지만 구현 플랜으로는 넓다. MVP는 “대표가 오늘 결재할 수 있는 근거 있는 안건”에 직접 필요한 것만 포함하고 나머지는 후속 slice로 미룬다. |
 | 대표 직접 지시는 언제 구현하는가? | bottom-up 안건 상신, 승인 즉시 반영, 성과 보고 루프 이후 Slice 8로 구현한다. |

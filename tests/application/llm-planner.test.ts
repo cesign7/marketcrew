@@ -35,7 +35,7 @@ describe("LLM planner interface", () => {
     expect(result.summary).toContain("원천 행");
   });
 
-  it("오피 플래너 감사 정보에 모델, 토큰, 근거 수, 과금 상태를 남긴다", () => {
+  it("모아 플래너 감사 정보에 모델, 토큰, 근거 수, 과금 상태를 남긴다", () => {
     const cycle = runSampleAgendaCycle();
     const input = buildPlannerInputFromApprovals(cycle.approvalRequests, cycle.generatedAt);
     const result = buildDeterministicPlannerResult(input);

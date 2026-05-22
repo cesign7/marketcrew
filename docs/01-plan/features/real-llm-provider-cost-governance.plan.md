@@ -23,7 +23,7 @@
 | Key | Value |
 |-----|-------|
 | **WHY** | 30일 비교, 시즌성, 전년도 비교가 늘어날수록 LLM 비용이 커질 수 있어 호출 전 budget gate가 필요하다. |
-| **WHO** | 대표, 오피, 데이는 실제 LLM 호출 가능 여부와 비용 근거를 운영실에서 확인한다. |
+| **WHO** | 대표, 모아, 데이는 실제 LLM 호출 가능 여부와 비용 근거를 운영실에서 확인한다. |
 | **RISK** | 단가를 코드에 고정하거나, key가 있다는 이유만으로 live call을 열거나, 원천 row가 LLM 입력에 섞일 수 있다. |
 | **SUCCESS** | env 예산/단가/token cap이 없거나 초과하면 live call은 차단되고 deterministic fallback은 계속 동작한다. |
 | **SCOPE** | view model, `/operations` UI panel, read-only API, tests, docs. 실제 LLM provider 호출 구현은 제외한다. |

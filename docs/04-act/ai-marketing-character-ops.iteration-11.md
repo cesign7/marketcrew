@@ -37,7 +37,7 @@ Iteration 10에서 대표가 결재 상세 화면에서 provider sync 성공/실
 | `checkpointSummary` | 언제 무엇을 다시 확인해야 하는지 표시한다. |
 | `evidenceLabels` | 키워드광고, 데이터랩, 스마트스토어, 자체몰 같은 provider 근거 label을 보존한다. |
 | `sourceReportIds` | 내부 추적을 위한 provider sync report ID를 보존한다. |
-| `followUpAgendaTitle` | 오피가 만든 후속 내부 업무를 상세 화면에서 이어 보게 한다. |
+| `followUpAgendaTitle` | 모아가 만든 후속 내부 업무를 상세 화면에서 이어 보게 한다. |
 
 ## Verification
 

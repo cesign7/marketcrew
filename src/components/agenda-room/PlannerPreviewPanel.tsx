@@ -14,7 +14,7 @@ export function PlannerPreviewPanel({ preview }: PlannerPreviewPanelProps) {
             <BrainCircuit size={18} aria-hidden="true" />
           </span>
           <div>
-            <span className="eyebrow">오피 플래너</span>
+            <span className="eyebrow">모아 플래너</span>
             <h2 id="planner-preview-title">{preview.title}</h2>
           </div>
           <span className="planner-mode">{preview.modeLabel}</span>
@@ -34,7 +34,7 @@ export function PlannerPreviewPanel({ preview }: PlannerPreviewPanelProps) {
             <span key={constraint}>{constraint}</span>
           ))}
         </div>
-        <div className="planner-audit-grid" aria-label="오피 플래너 감사 정보">
+        <div className="planner-audit-grid" aria-label="모아 플래너 감사 정보">
           <span>{preview.audit.providerLabel}</span>
           <span>{preview.audit.modelLabel}</span>
           <span>{preview.audit.tokenUsageLabel}</span>

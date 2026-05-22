@@ -39,7 +39,7 @@ QA Verdict:      QA_PASS
 |-------------|---------|
 | **Problem** | 대표 결정 이후 후속 업무가 데이터로는 생성됐지만, 담당 캐릭터별 큐와 다음 추천 기준으로 보이지 않았다. |
 | **Solution** | `/follow-ups` 전용 화면, 캐릭터별 후속 업무 큐, owner learning summary, `OPEN`/`DONE` 상태 변경 API를 구현했다. |
-| **Function/UX Effect** | 대표는 결재 이후 오피/데이 등에게 내려간 일을 보고, 완료 처리하며, 대표 결정/메모/write gate/preflight/outcome이 다음 추천 기준으로 어떻게 남는지 확인한다. |
+| **Function/UX Effect** | 대표는 결재 이후 모아/데이 등에게 내려간 일을 보고, 완료 처리하며, 대표 결정/메모/write gate/preflight/outcome이 다음 추천 기준으로 어떻게 남는지 확인한다. |
 | **Core Value** | “올라온 자료를 보고 승인하면 바로 반영”이라는 흐름 뒤에 생기는 내부 일이 사라지지 않고, AI 직원의 책임 업무와 향후 판단 기준으로 남는다. |
 
 ---

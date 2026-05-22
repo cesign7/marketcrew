@@ -18,7 +18,7 @@
 | **WHY** | 대표가 먼저 지시하지 않아도 하위 AI 캐릭터들이 데이터 변화와 음력/양력 시즌 이벤트에서 위험/기회를 발견해 안건으로 상신하고, 승인된 변경은 안전 게이트를 거쳐 실행/성과 보고까지 이어지게 한다. |
 | **WHO** | 스마트스토어, 네이버 광고, 자체 쇼핑몰을 함께 운영하며 매일 올라오는 마케팅 안건을 결재해야 하는 대표/마케팅 운영자. |
 | **RISK** | 근거 부족 안건 과다 생성, 음력 이벤트 비교 오류, 시즌 키워드 광고 예산 과소통제, 승인 후 외부 write 오작동, 성과 측정 부재. |
-| **SUCCESS** | 샘플과 read-only provider 근거만으로도 안건 발굴, 오피 종합, 변경 diff, 대표 승인, write gate 차단, 실행 결과, 성과 체크포인트, 저장된 outcome report 재조회가 브라우저에서 확인된다. |
+| **SUCCESS** | 샘플과 read-only provider 근거만으로도 안건 발굴, 모아 종합, 변경 diff, 대표 승인, write gate 차단, 실행 결과, 성과 체크포인트, 저장된 outcome report 재조회가 브라우저에서 확인된다. |
 | **SCOPE** | Phase 1은 bottom-up 안건/결재/모의 실행/성과 추적 MVP, Phase 2는 운영 DB 전환과 실제 write executor 준비, Phase 3은 owner command와 고위험 승인 정책 확장. |
 
 ## Strategic Alignment Check
@@ -47,7 +47,7 @@ PRD 문서는 `docs/00-pm/ai-marketing-character-ops.prd.md` 형태로 존재하
 | SC-2 | 샘플과 provider read-only 데이터가 공통 signal/agenda로 변환된다. | Met | sample provider, provider signal agenda tests. |
 | SC-3 | 하위 캐릭터가 안건 후보를 생성한다. | Met | `AgendaCandidate`, `CharacterReport`, `OpiSynthesisReport`. |
 | SC-4 | triage 통과/탈락 이유가 기록된다. | Partial | 중복 제거와 근거 기준은 있으나 탈락 사유 UI는 아직 약하다. |
-| SC-5 | 캐릭터 보고서와 오피 종합 보고서가 구분된다. | Met | domain/application flow and view model. |
+| SC-5 | 캐릭터 보고서와 모아 종합 보고서가 구분된다. | Met | domain/application flow and view model. |
 | SC-6 | 결재 요청에 diff, 실행 작업, 위험, rollback이 포함된다. | Met | `ApprovalPreviewPanel`. |
 | SC-7 | 대표가 6개 결정을 선택할 수 있다. | Met | `OwnerDecisionSubmitPanel`. |
 | SC-8 | 승인 후 바로 반영은 preflight/executor/ExecutionResult를 만든다. | Met for safe MVP | write gate 닫힘 시 423, `NEEDS_MANUAL_ACTION`, `WRITE_GATE_CLOSED`. |
@@ -137,7 +137,7 @@ Accepted deferrals:  4
 |----|----------|-----|----------------|------------------|
 | G-1 | High | 운영 DB schema가 없다. | local JSON 저장소는 MVP 검증에는 충분하지만 운영 감사/동시성/백업에는 약하다. | `Signal`부터 `OutcomeReport`까지 DB schema와 migration 설계. |
 | G-2 | Medium | AgentRun/model/token/cost provenance가 아직 없다. | LLM 비용과 판단 근거를 대표가 감사하려면 모델 실행 로그가 필요하다. | planner run/audit table, token estimate, UI provenance panel. |
-| G-3 | Medium | 후속 내부 업무 큐가 얕다. | outcome 이후 오피가 아래 캐릭터에게 내리는 일을 계속 추적해야 한다. | `FollowUpInternalTask` 목록/상태 변경 UI. |
+| G-3 | Medium | 후속 내부 업무 큐가 얕다. | outcome 이후 모아가 아래 캐릭터에게 내리는 일을 계속 추적해야 한다. | `FollowUpInternalTask` 목록/상태 변경 UI. |
 
 ### Accepted MVP Deferrals
 

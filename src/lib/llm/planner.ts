@@ -56,7 +56,7 @@ export function buildDeterministicPlannerResult(input: LlmPlannerInput): LlmPlan
   return {
     id: `planner-result-${input.generatedAt}`,
     mode: "deterministic_fallback",
-    title: "오피 규칙 기반 계획 요약",
+    title: "모아 규칙 기반 계획 요약",
     summary: [
       `후보 ${input.candidateSummaries.length}건 중 승인 가능 ${readyCount}건, 보강 필요 ${blockedCount}건을 우선순위로 정리했습니다.`,
       "AI 모델 설정이 준비되기 전까지도 같은 입력 계약으로 대표 결재 문서를 만들 수 있습니다.",

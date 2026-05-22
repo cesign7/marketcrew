@@ -21,7 +21,7 @@ export type BuildFollowUpQueueViewModelInput = {
 };
 
 const characterProfiles: Record<CharacterKey, { name: string; role: string }> = {
-  opi: { name: "오피", role: "업무실장" },
+  opi: { name: "모아", role: "업무실장" },
   gro: { name: "그로", role: "성장 담당" },
   pro: { name: "프로", role: "상품 담당" },
   copy: { name: "카피", role: "메시지 담당" },
@@ -193,7 +193,7 @@ function buildOwnerLearningSignals(input: {
       value: `${externalWriteBlockedCount.toLocaleString("ko-KR")}건`,
       detail:
         externalWriteBlockedCount > 0
-          ? "외부 반영은 계속 차단되어 있으므로 오피가 수동 확인 업무로 내려야 합니다."
+          ? "외부 반영은 계속 차단되어 있으므로 모아가 수동 확인 업무로 내려야 합니다."
           : "외부 반영 차단 실행은 아직 기록되지 않았습니다.",
       tone: externalWriteBlockedCount > 0 ? "blocked" : "ready",
     },
@@ -241,7 +241,7 @@ function buildLearningNote(input: {
   }
 
   if (input.blockerLabels.includes("WRITE_GATE_CLOSED")) {
-    return "외부 반영 잠금이 닫힌 결정입니다. 오피는 수동 처리 또는 재결재 조건을 먼저 확인해야 합니다.";
+    return "외부 반영 잠금이 닫힌 결정입니다. 모아는 수동 처리 또는 재결재 조건을 먼저 확인해야 합니다.";
   }
 
   if (input.sourceApproval?.status === "NEEDS_EVIDENCE") {

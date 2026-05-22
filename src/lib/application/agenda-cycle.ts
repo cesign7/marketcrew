@@ -203,7 +203,7 @@ function buildCharacterReports(candidates: AgendaCandidate[], generatedAt: strin
     id: `report-${character}-${generatedAt.slice(0, 10)}`,
     character,
     title: `${characterName(character)} 보고`,
-    summary: `${characterCandidates.length}개 안건을 오피에게 상신했습니다.`,
+    summary: `${characterCandidates.length}개 안건을 모아에게 상신했습니다.`,
     agendaCandidateIds: characterCandidates.map((candidate) => candidate.id),
     evidenceIds: characterCandidates.flatMap((candidate) => candidate.sourceSignalIds),
     createdAt: generatedAt,
@@ -304,7 +304,7 @@ function buildOpiSynthesisReport(input: {
 
   return {
     id: input.id,
-    title: "오피 종합 보고",
+    title: "모아 종합 보고",
     summary: `대표 결재 대기 ${pendingCount}건, 추가 근거 대기 ${waitingEvidenceCount}건으로 정리했습니다.`,
     characterReportIds: input.characterReports.map((report) => report.id),
     approvalRequestIds: input.approvalRequests.map((request) => request.id),
@@ -346,7 +346,7 @@ function riskFromConfidence(confidence: DataConfidence): RiskLevel {
 
 function characterName(character: CharacterKey): string {
   const names: Record<CharacterKey, string> = {
-    opi: "오피",
+    opi: "모아",
     gro: "그로",
     maru: "마루",
     day: "데이",

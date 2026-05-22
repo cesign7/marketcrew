@@ -15,7 +15,7 @@
 | Key | Value |
 |-----|-------|
 | **WHY** | 승인/보류/근거 요청/쓰기 차단 이후의 내부 일이 관리되지 않으면 대표는 다시 직접 기억하고 챙겨야 한다. |
-| **WHO** | 대표와 오피는 결재 이후 내려간 업무를 담당 캐릭터별로 확인하고 닫아야 한다. |
+| **WHO** | 대표와 모아는 결재 이후 내려간 업무를 담당 캐릭터별로 확인하고 닫아야 한다. |
 | **RISK** | 후속 업무 큐가 실제 외부 실행처럼 보이거나, 완료 상태가 저장되지 않거나, 대표 메모가 다음 추천 기준으로 연결되지 않을 수 있다. |
 | **SUCCESS** | `/follow-ups`에서 후속 업무, source approval, 최신 대표 결정, 차단 사유, outcome, owner learning 신호가 보이고 OPEN/DONE 상태 변경이 저장된다. |
 | **SCOPE** | view model, `/follow-ups` UI, follow-up status API, tests, docs. 실제 provider write나 자동 실행은 제외한다. |

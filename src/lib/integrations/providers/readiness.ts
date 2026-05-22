@@ -125,7 +125,7 @@ function buildLlmReadinessReport(env: EnvMap, checkedAt: string): ProviderReadin
       "AI 모델 입력은 후보 요약, 신뢰도, 위험도, 근거 ID만 포함합니다.",
       "원천 행과 고객 식별 정보는 계획 입력에 포함하지 않습니다.",
     ],
-    disabledReason: canRead ? undefined : "AI 모델 설정이 없어도 규칙 기반 대체로 오피 종합을 계속 생성합니다.",
+    disabledReason: canRead ? undefined : "AI 모델 설정이 없어도 규칙 기반 대체로 모아 종합을 계속 생성합니다.",
   };
 }
 

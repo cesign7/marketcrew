@@ -10,7 +10,7 @@ export default function CharactersPage() {
   return (
     <AppShell
       active="characters"
-      description="오피, 그로, 프로, 카피, 리피, 마루, 데이가 각각 올린 안건과 막힌 업무를 한눈에 봅니다."
+      description="모아, 그로, 프로, 카피, 리피, 마루, 데이가 각각 올린 안건과 막힌 업무를 한눈에 봅니다."
       eyebrow="직원별 업무 현황"
       generatedAt={viewModel.generatedAt}
       title="캐릭터 업무데스크"

@@ -78,7 +78,7 @@ export function ApprovalAgentRunTimelinePanel({ runs }: ApprovalAgentRunTimeline
       ) : (
         <div className="empty-panel">
           <FileSearch size={18} aria-hidden="true" />
-          <p>이 결재에 직접 연결된 AI 실행 기록이 아직 없습니다. 오피 계획, 연동 수집, 대표 결정이 저장되면 여기에 표시됩니다.</p>
+          <p>이 결재에 직접 연결된 AI 실행 기록이 아직 없습니다. 모아 계획, 연동 수집, 대표 결정이 저장되면 여기에 표시됩니다.</p>
         </div>
       )}
     </section>

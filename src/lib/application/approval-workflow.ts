@@ -385,7 +385,7 @@ function followUpCharacterFromDecision(decision: OwnerDecisionType): FollowUpInt
 
 function followUpTitleFromDecision(decision: OwnerDecisionType): string {
   const titles: Record<Exclude<OwnerDecisionType, "APPROVE_AND_APPLY" | "APPROVE_DRAFT_ONLY">, string> = {
-    REQUEST_REVISION: "대표 수정 요청 반영 후 오피가 재상신",
+    REQUEST_REVISION: "대표 수정 요청 반영 후 모아가 재상신",
     REQUEST_MORE_EVIDENCE: "데이가 추가 근거를 수집하고 결재 가능 여부 재판정",
     HOLD: "보류 사유와 재검토 날짜를 기록",
     REJECT: "반려 사유를 기록하고 같은 안건 재상신을 제한",

@@ -8,7 +8,7 @@
 
 ## 설계 기준
 
-- 하위 담당 캐릭터가 안건을 만들고 `오피`가 묶어 대표 승인 대기열로 올린다.
+- 하위 담당 캐릭터가 안건을 만들고 `모아`가 묶어 대표 승인 대기열로 올린다.
 - 대표가 승인하기 전에는 네이버 키워드광고, 스마트스토어, 자체 쇼핑몰에 쓰기 작업을 하지 않는다.
 - 시즌성 판단은 양력과 음력을 모두 다루며, 설날/추석/부처님오신날처럼 음력 기준 행사는 음력 상대일로 비교한다.
 - LLM 비용을 줄이기 위해 화면은 원천 데이터 전체가 아니라 집계된 근거와 판단 결과를 보여주는 구조로 둔다.
@@ -34,7 +34,7 @@
 ### module-3
 
 - `SampleProviderAdapter`가 부처님오신날/스승의날 이벤트와 키워드 수요 스냅샷을 제공한다.
-- `MemoryMarketingWorkflowRepository`가 signal, 시즌 키워드 광고안, 안건 후보, 캐릭터 보고, 오피 종합, 결재 요청, 성과 체크포인트를 저장한다.
+- `MemoryMarketingWorkflowRepository`가 signal, 시즌 키워드 광고안, 안건 후보, 캐릭터 보고, 모아 종합, 결재 요청, 성과 체크포인트를 저장한다.
 - `runAgendaCycle`이 샘플 입력을 `Signal -> SeasonalKeywordAdPlan -> AgendaCandidate -> CharacterReport -> OpiSynthesisReport -> ApprovalRequest -> PerformanceCheckpoint`로 변환한다.
 - `MockProviderExecutor`는 write gate가 닫힌 상태에서 외부 쓰기를 호출하지 않고 `WRITE_GATE_CLOSED` 차단 결과를 만든다.
 - 업무실 view model은 정적 샘플 객체 대신 `runSampleAgendaCycle()` 결과를 읽는다.
@@ -53,7 +53,7 @@
 - `processOwnerDecision`이 대표 결정 이후 `APPROVE_AND_APPLY`, `APPROVE_DRAFT_ONLY`, 수정/근거요청/보류/반려 흐름을 처리한다.
 - `APPROVE_AND_APPLY`는 결재 상태, 데이터 신뢰도, rollback, 성과 측정, 2차 확인, write gate를 preflight로 확인한다.
 - 실제 provider write gate가 닫혀 있으면 preflight는 통과하되 warning을 남기고, mock executor는 `NEEDS_MANUAL_ACTION`과 `WRITE_GATE_CLOSED`를 기록한다.
-- 승인 후 성과 체크포인트, `INCONCLUSIVE` outcome report, 오피 후속 업무를 생성한다.
+- 승인 후 성과 체크포인트, `INCONCLUSIVE` outcome report, 모아 후속 업무를 생성한다.
 - `/api/approvals/[id]/decision` route가 샘플 결재 요청에 대표 결정을 적용하고, write gate 닫힘은 423으로 반환한다.
 - `/approvals/[id]` 결재 상세 화면에서 결재 미리보기, 대표 결정 후 흐름, 실행 결과, 성과 체크포인트를 함께 보여준다.
 - `/operations` 카드에서 결재 상세 화면으로 이동할 수 있게 했다.
@@ -64,12 +64,12 @@
 
 - `LlmPlannerInput`, `LlmPlannerResult`, `ProviderReadinessReport` 도메인 타입을 추가했다.
 - `buildPlannerInputFromApprovals`가 결재 후보를 원천 행 없이 `candidate summary`, `confidence`, `risk`, `evidenceIds`만 포함하는 LLM 입력으로 축약한다.
-- `DeterministicLlmPlanner`와 `buildDeterministicPlannerResult`가 실제 LLM 설정 전에도 같은 계약으로 오피 planner preview를 만든다.
+- `DeterministicLlmPlanner`와 `buildDeterministicPlannerResult`가 실제 LLM 설정 전에도 같은 계약으로 모아 planner preview를 만든다.
 - `buildSearchAdReadinessReport`가 네이버 검색광고 공식 인증 구조에 맞춰 `NAVER_SEARCH_AD_ACCESS_LICENSE`(`NAVER_SEARCH_AD_API_KEY` alias 허용), `NAVER_SEARCH_AD_SECRET_KEY`, `NAVER_SEARCH_AD_CUSTOMER_ID` 누락과 `X-Timestamp`, `X-API-KEY`, `X-Customer`, `X-Signature` 요구 헤더를 표시한다.
 - `buildDatalabReadinessReport`가 네이버 데이터랩 `Client ID/Secret` 설정과 `ratio`가 절대 검색량이 아닌 상대 비율이라는 주석을 유지한다.
 - `buildProviderReadinessReports`가 검색광고, 데이터랩, 스마트스토어, 자체 쇼핑몰, LLM의 읽기 준비상태와 쓰기 차단 상태를 한 번에 반환한다.
 - `/api/operations/readiness` route가 readiness와 planner preview를 JSON으로 반환한다.
-- `/operations`에 연동 준비상태 카드와 오피 planner preview 패널을 추가했다.
+- `/operations`에 연동 준비상태 카드와 모아 planner preview 패널을 추가했다.
 - module-6에서는 설정/계약/화면/API 검증을 먼저 수행했다. 실제 Search Ad/DataLab read-only 호출은 Act iteration 3에서 별도 slice로 열었고, provider write는 계속 차단한다.
 - Act iteration 4에서 Playwright smoke를 추가해 결재 상세 화면의 대표 클릭, API 응답 상태 알림, `WRITE_GATE_CLOSED` 차단 표시를 실제 브라우저에서 검증했다.
 - Act iteration 5에서 스마트스토어/커머스와 자체 쇼핑몰/영카트 read-only adapter를 추가했다. 네이버 커머스는 token + 주문 조회 aggregate, 영카트는 token-protected bridge aggregate로 동작하며 둘 다 raw row와 token을 저장하지 않는다.
@@ -134,7 +134,7 @@
 - `curl` 렌더링 확인: 결재함 버킷, 대표 결재 미리보기, 변경 전/후, rollback, 근거 보강 차단 문구가 HTML에 포함됨.
 - `curl http://127.0.0.1:3000/approvals/approval-agenda-season-plan-buddha-gift-card`: 200 OK, 결재 상세/preflight/mock 실행/성과 추적 문구 확인.
 - `POST /api/approvals/approval-agenda-season-plan-buddha-gift-card/decision`: write gate 닫힘 상태에서 423, `NEEDS_MANUAL_ACTION`, `WRITE_GATE_CLOSED`, `INCONCLUSIVE` 반환 확인.
-- `curl http://127.0.0.1:3000/operations`: 200 OK, `연동 준비상태`, `네이버 키워드광고`, `네이버 데이터랩`, `오피 deterministic planner 요약`, `원천 행 제외` 렌더링 확인.
+- `curl http://127.0.0.1:3000/operations`: 200 OK, `연동 준비상태`, `네이버 키워드광고`, `네이버 데이터랩`, `모아 deterministic planner 요약`, `원천 행 제외` 렌더링 확인.
 - `curl http://127.0.0.1:3000/api/operations/readiness`: 200 OK, Search Ad/DataLab 누락 env, required headers, DataLab ratio 주석, planner preview JSON 확인.
 - `curl http://127.0.0.1:3000/approvals/approval-agenda-season-plan-buddha-gift-card`: 200 OK, `대표 결정 입력`, `API 연결됨`, `결정 메모`, 6개 결정 버튼 렌더링 확인.
 - `POST /api/approvals/approval-agenda-season-plan-buddha-gift-card/decision` with `APPROVE_DRAFT_ONLY`: 200 OK, `draft-only:mock-search-ad-keyword-executor`, `INCONCLUSIVE` outcome 반환 확인.

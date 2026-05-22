@@ -7,7 +7,7 @@ import { buildDeterministicPlannerResult, buildPlannerAuditRun, buildPlannerInpu
 import { createMemoryMarketingWorkflowRepository } from "../../src/lib/persistence/memory-repository";
 
 describe("AgentRunRecorder", () => {
-  it("오피 planner 감사 정보를 AgentRun과 approval link로 저장한다", () => {
+  it("모아 planner 감사 정보를 AgentRun과 approval link로 저장한다", () => {
     const repository = createMemoryMarketingWorkflowRepository();
     const cycle = runSampleAgendaCycle();
     const input = buildPlannerInputFromApprovals(cycle.approvalRequests, cycle.generatedAt);

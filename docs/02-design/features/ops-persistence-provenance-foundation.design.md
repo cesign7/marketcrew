@@ -139,7 +139,7 @@ export interface WorkflowMigrationRepository {
 | `workflow_signals` | `id`, `source`, `signal_type`, `entity_type`, `entity_id`, `period_start`, `period_end`, `payload_json` | signal type별 세부 값은 payload에 보관하되 query key는 column으로 둔다. |
 | `agenda_candidates` | `id`, `owner_key`, `status`, `confidence`, `risk_level`, `payload_json` | 하위 캐릭터 상신 후보. |
 | `character_reports` | `id`, `character_key`, `agenda_candidate_ids_json`, `payload_json` | 캐릭터별 보고서. |
-| `opi_synthesis_reports` | `id`, `status`, `recommended_approval_ids_json`, `payload_json` | 오피 종합 보고서. |
+| `opi_synthesis_reports` | `id`, `status`, `recommended_approval_ids_json`, `payload_json` | 모아 종합 보고서. |
 | `approval_requests` | `id`, `status`, `owner_key`, `risk_level`, `created_at`, `payload_json` | 대표 결재 단위. |
 | `owner_decisions` | `id`, `approval_request_id`, `decision_type`, `decided_at`, `payload_json` | 대표 결정 이력. |
 | `execution_results` | `id`, `approval_request_id`, `status`, `write_attempted`, `created_at`, `payload_json` | mock/sandbox execution 결과. |

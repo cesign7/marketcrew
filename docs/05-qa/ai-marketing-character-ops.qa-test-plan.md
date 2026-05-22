@@ -34,7 +34,7 @@
 |----|--------|-------------|----------|-----------|
 | L1-001 | MarketingCalendar | 음력 이벤트가 연도별 양력 날짜와 비교 윈도우를 만든다. | High | 부처님오신날 fixture |
 | L1-002 | SeasonalKeywordAdPlan | 예산/입찰/중지 조건이 없는 시즌 광고안을 차단한다. | High | seasonal keyword fixture |
-| L1-003 | AgendaCycle | 하위 캐릭터 안건, 오피 종합, 결재 요청을 생성한다. | High | SampleProviderAdapter |
+| L1-003 | AgendaCycle | 하위 캐릭터 안건, 모아 종합, 결재 요청을 생성한다. | High | SampleProviderAdapter |
 | L1-004 | ApprovalWorkflow | `APPROVE_AND_APPLY`가 write gate 닫힘을 안전하게 기록한다. | High | mock executor |
 | L1-005 | ProviderOutcomeAnalysis | outcome report가 provider evidence/source report ID를 보존한다. | High | provider sync reports |
 | L1-006 | ApprovalDetailViewModel | 결재 상세에 provider evidence와 outcome history를 모은다. | High | memory repository |

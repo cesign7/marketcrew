@@ -1,6 +1,6 @@
 # AI Marketing Character Operations Design Document
 
-> **Summary**: 하위 AI 캐릭터가 마케팅 데이터를 읽고 근거 있는 안건을 상신하면, 오피가 대표 결재용 실행 계획으로 묶고, 승인 후 mock/sandbox executor와 성과 추적까지 이어지는 bottom-up AI 마케팅 운영실 설계.
+> **Summary**: 하위 AI 캐릭터가 마케팅 데이터를 읽고 근거 있는 안건을 상신하면, 모아가 대표 결재용 실행 계획으로 묶고, 승인 후 mock/sandbox executor와 성과 추적까지 이어지는 bottom-up AI 마케팅 운영실 설계.
 >
 > **Project**: marketcrew2
 > **Version**: 0.1
@@ -27,7 +27,7 @@
 | **WHY** | 대표가 먼저 지시하지 않아도 하위 AI 캐릭터들이 데이터 변화와 음력/양력 시즌 이벤트에서 위험/기회를 발견해 안건으로 상신하고, 승인된 변경은 실제 업무 채널에 바로 반영되게 한다. |
 | **WHO** | 스마트스토어, 네이버 광고, 자체 쇼핑몰을 함께 운영하며 매일 올라오는 마케팅 안건을 결재해야 하는 대표/마케팅 운영자. |
 | **RISK** | 하위 캐릭터가 근거 부족한 안건을 과다 생성하거나, 음력 이벤트 비교 기준을 잘못 잡거나, 시즌 키워드 광고가 예산/입찰 안전장치 없이 실행되거나, 승인 후 외부 채널 반영이 잘못 실행되거나, 성과 측정 없이 자동화만 누적될 수 있다. |
-| **SUCCESS** | 샘플 데이터만으로도 음력 이벤트 기준 비교, 상품별 키워드/마케팅/상품 발굴 안건, 시즌 키워드 광고 운영안, 오피 종합, 변경 diff, 대표 승인, 실행 결과, 성과 추적 체크포인트까지 브라우저에서 확인할 수 있다. |
+| **SUCCESS** | 샘플 데이터만으로도 음력 이벤트 기준 비교, 상품별 키워드/마케팅/상품 발굴 안건, 시즌 키워드 광고 운영안, 모아 종합, 변경 diff, 대표 승인, 실행 결과, 성과 추적 체크포인트까지 브라우저에서 확인할 수 있다. |
 | **SCOPE** | Phase 1은 bottom-up 안건 발굴/이벤트 캘린더/시즌 키워드 광고 계획/결재/실행 미리보기/모의 반영/성과 추적 MVP, Phase 2는 실제 API write executor, Phase 3은 owner command와 고위험 승인 정책으로 확장. |
 
 ---
@@ -91,7 +91,7 @@ Application Services
   ├─ SignalCollectionService
   ├─ CharacterWatcherService
   ├─ AgendaTriageService
-  ├─ OpiSynthesisService
+  ├─ MoaSynthesisService
   ├─ ApprovalWorkflowService
   ├─ ExecutionWorkflowService
   └─ OutcomeTrackingService
@@ -146,7 +146,7 @@ Sample or read-only provider data
 | `SignalCollectionService` | `ProviderAdapter[]`, `MarketingCalendarProvider` | read-only data를 공통 signal로 변환 |
 | `SeasonalKeywordService` | `KeywordDemandSnapshotRepository`, `SearchTrendSnapshotRepository`, `MarketingCalendarRepository` | 시즌 키워드 광고 후보 생성 |
 | `AgendaTriageService` | domain rules only | 중복/근거/위험/우선순위 판정 |
-| `OpiSynthesisService` | `LlmPlanner`, deterministic fallback | 하위 보고를 대표 결재 문서로 묶음 |
+| `MoaSynthesisService` | `LlmPlanner`, deterministic fallback | 하위 보고를 대표 결재 문서로 묶음 |
 | `ApprovalWorkflowService` | `PreflightService`, `ProviderExecutor` | 대표 결정 처리와 실행 |
 | `OutcomeTrackingService` | repositories, signal rollups | 승인 후 성과 checkpoint와 outcome 생성 |
 
@@ -465,7 +465,7 @@ Initial implementation may use server actions, but route handlers should keep th
 │ 상단: MarketCrew 운영실 / 오늘 날짜 / 데이터 신뢰도 / 동기화 │
 ├─────────────────────────────────────────────────────────────┤
 │ 좌측: 캐릭터 상태             │ 우측: 오늘 올라온 안건        │
-│ 오피/그로/마루/데이/카피/... │ TODAY_APPROVAL cards         │
+│ 모아/그로/마루/데이/카피/... │ TODAY_APPROVAL cards         │
 ├─────────────────────────────────────────────────────────────┤
 │ 시즌/명절 기회                │ 승인하면 바로 반영될 작업     │
 │ 이벤트 윈도우, 키워드 계획    │ Execution preview list        │
@@ -516,7 +516,7 @@ Operations Room
 
 #### Approval Detail
 
-- [ ] Section: 오피 종합 보고.
+- [ ] Section: 모아 종합 보고.
 - [ ] Section: 하위 캐릭터 보고 list with evidence references.
 - [ ] Section: 변경 전/후 diff.
 - [ ] Section: 실행 대상 operations.
@@ -615,7 +615,7 @@ Operations Room
 
 | # | Scenario | Steps | Success Criteria |
 |---|----------|-------|-----------------|
-| 1 | Bottom-up agenda loop | Generate sample data -> open Operations -> open approval | 오피 종합과 하위 보고가 보인다. |
+| 1 | Bottom-up agenda loop | Generate sample data -> open Operations -> open approval | 모아 종합과 하위 보고가 보인다. |
 | 2 | Seasonal keyword guarded approval | Open seasonal keyword approval -> inspect guard fields -> approve draft | budget/bid/stop conditions visible and draft result recorded. |
 | 3 | Block unsafe execution | Remove budget guard in fixture -> try approve/apply | preflight blocks execution and shows reason. |
 | 4 | Outcome loop | Approve mock execution -> open outcome tracking | checkpoint and outcome placeholder created. |

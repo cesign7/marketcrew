@@ -4,7 +4,7 @@ import type { AgendaRoomViewModel } from "./types";
 export const agendaRoomSample: AgendaRoomViewModel = {
   generatedAt: "2026-05-22 09:20",
   opiReport: {
-    title: "오피 종합 보고",
+    title: "모아 종합 보고",
     summary: "대표 결재 대기 3건, 추가 근거 대기 2건으로 정리했습니다.",
     reportCount: 6,
   },
@@ -61,7 +61,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
   characters: [
     {
       id: "opi",
-      name: "오피",
+      name: "모아",
       role: "업무실장",
       tone: "coordinator",
       status: "담당자 안건을 묶어 대표 승인 대기열로 정리 중",
@@ -209,7 +209,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
       provenance: {
         summaryLabel: "근거 3개 · 실행 이력 1개 · 연동 수집 1개",
         evidenceLabels: ["키워드 수요 2개", "데이터 시그널 1개"],
-        agentRunLabels: ["오피 계획 · 성공 · 240토큰 추정"],
+        agentRunLabels: ["모아 계획 · 성공 · 240토큰 추정"],
         providerEvidenceLabels: ["네이버 키워드광고 · 동기화 완료 · 키워드 수요 2건"],
         checkpointLabels: ["D+1 2026-05-23 · 클릭률, 전환단가, 광고수익률"],
         safetyLabels: ["데이터 승인 가능", "위험 중간", "외부 반영 잠금 확인 필요", "원천 행 제외"],
@@ -240,7 +240,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
       outcomeStateLabel: "판단 보류",
       outcomeSummary: "성과 판단은 체크포인트 도래 후 진행합니다.",
       outcomeEvidenceLabels: [],
-      followUpTasks: ["오피: 외부 반영 잠금 상태를 대표에게 보고하고 수동 반영 또는 잠금 해제 여부 확인"],
+      followUpTasks: ["모아: 외부 반영 잠금 상태를 대표에게 보고하고 수동 반영 또는 잠금 해제 여부 확인"],
     },
   ],
   providerReadiness: [
@@ -284,7 +284,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
     },
   ],
   plannerPreview: {
-    title: "오피 규칙 기반 계획 요약",
+    title: "모아 규칙 기반 계획 요약",
     modeLabel: "규칙 기반 대체",
     summary: "원천 행 없이 집계 요약과 근거 ID만 사용합니다.",
     selectedAgendaIds: ["approval-agenda-001"],
@@ -319,7 +319,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
     runBudgetLabel: "1회 예산 미설정",
     rateBasisLabel: "공식 가격을 코드에 고정하지 않고 환경 단가가 있을 때만 추정합니다.",
     plannedTokenLabels: ["입력 240토큰", "출력 140토큰", "총 380토큰", "원천 행 제외"],
-    decisionSummary: "비용 정책 또는 토큰 잠금이 닫혀 있어 오피는 규칙 기반 대체로만 종합합니다.",
+    decisionSummary: "비용 정책 또는 토큰 잠금이 닫혀 있어 모아는 규칙 기반 대체로만 종합합니다.",
     gateChecks: [
       {
         id: "provider-credential",
@@ -352,7 +352,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
     recentRuns: [
       {
         id: "planner-audit-sample",
-        runnerLabel: "오피 계획",
+        runnerLabel: "모아 계획",
         statusLabel: "성공",
         modelLabel: "규칙 기반 / 규칙 기반 대체",
         tokenLabel: "380토큰 추정",

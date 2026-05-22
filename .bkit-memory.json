@@ -8,7 +8,7 @@
       "phase": "completed",
       "planPath": "docs/01-plan/features/ai-marketing-character-ops.plan.md",
       "designPath": "docs/02-design/features/ai-marketing-character-ops.design.md",
-      "summary": "AI/LLM 기반 마케팅 캐릭터 업무시스템. 첫 MVP는 하위 캐릭터가 데이터와 음력/양력 MarketingCalendar, KeywordDemandSnapshot을 읽고 안건, 키워드 기회, SeasonalKeywordAdPlan, 마케팅 제안, 상품 발굴 후보를 만들어 오피와 대표에게 상신하며, 대표가 승인하면 risk/write gate/preflight/rollback 조건을 통과한 작업이 즉시 반영되고 이후 성과 체크포인트와 outcome report까지 이어지는 회사형 보고/결재/실행 루프다.",
+      "summary": "AI/LLM 기반 마케팅 캐릭터 업무시스템. 첫 MVP는 하위 캐릭터가 데이터와 음력/양력 MarketingCalendar, KeywordDemandSnapshot을 읽고 안건, 키워드 기회, SeasonalKeywordAdPlan, 마케팅 제안, 상품 발굴 후보를 만들어 모아와 대표에게 상신하며, 대표가 승인하면 risk/write gate/preflight/rollback 조건을 통과한 작업이 즉시 반영되고 이후 성과 체크포인트와 outcome report까지 이어지는 회사형 보고/결재/실행 루프다.",
       "doPath": "docs/03-do/ai-marketing-character-ops.do.md",
       "analysisPath": "docs/03-analysis/ai-marketing-character-ops.analysis.md",
       "qaPath": "docs/05-qa/ai-marketing-character-ops.qa-report.md",

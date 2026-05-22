@@ -12,7 +12,7 @@
 | Area | Result |
 |------|--------|
 | Recorder | `recordPlannerAgentRun`, `recordProviderSyncAgentRuns`, `recordOwnerDecisionAgentRun`을 추가했다. |
-| Planner | 오피 deterministic planner audit이 `AgentRun`으로 저장되고 추천 approval에 연결된다. |
+| Planner | 모아 deterministic planner audit이 `AgentRun`으로 저장되고 추천 approval에 연결된다. |
 | Provider Sync | read-only provider sync report가 provider sync `AgentRun`으로 저장된다. |
 | Owner Decision | 대표 결정 처리 결과가 local `AgentRun`으로 저장되고 approval/execution/outcome/follow-up에 연결된다. |
 | Operations UI | `/operations`에 `AI 실행 감사 로그` 패널을 추가해 runs, tokens, cost, 최근 실행 근거를 표시한다. |

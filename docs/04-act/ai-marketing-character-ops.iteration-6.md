@@ -12,7 +12,7 @@
 
 ## Act Target
 
-Iteration 5에서 Search Ad/DataLab/Smartstore/Youngcart가 같은 read-only provider sync 흐름에 들어왔다. 이번 iteration은 그중 스마트스토어/커머스와 영카트 aggregate `Signal`을 실제 담당 캐릭터 안건으로 올린다. 대표 화면은 더 이상 "데이터를 읽었다"에서 멈추지 않고, `프로`, `리피`, `마루`가 하위 안건을 만들어 오피 결재 대기열로 올린 상태를 보여야 한다.
+Iteration 5에서 Search Ad/DataLab/Smartstore/Youngcart가 같은 read-only provider sync 흐름에 들어왔다. 이번 iteration은 그중 스마트스토어/커머스와 영카트 aggregate `Signal`을 실제 담당 캐릭터 안건으로 올린다. 대표 화면은 더 이상 "데이터를 읽었다"에서 멈추지 않고, `프로`, `리피`, `마루`가 하위 안건을 만들어 모아 결재 대기열로 올린 상태를 보여야 한다.
 
 ## Implemented Change
 
@@ -60,4 +60,4 @@ Iteration 5에서 Search Ad/DataLab/Smartstore/Youngcart가 같은 read-only pro
 
 ## Act Decision
 
-`module-7`은 local MVP 기준으로 완료됐다. read-only aggregate가 저장되면 이제 `프로`, `리피`, `마루`가 담당하는 안건과 결재 요청으로 올라오며, 오피 summary와 planner 후보에도 포함된다. 다음 iteration은 대표가 근거를 더 빠르게 확인할 수 있도록 provider sync report/snapshot을 `/operations` 근거 패널로 노출하는 것이다.
+`module-7`은 local MVP 기준으로 완료됐다. read-only aggregate가 저장되면 이제 `프로`, `리피`, `마루`가 담당하는 안건과 결재 요청으로 올라오며, 모아 summary와 planner 후보에도 포함된다. 다음 iteration은 대표가 근거를 더 빠르게 확인할 수 있도록 provider sync report/snapshot을 `/operations` 근거 패널로 노출하는 것이다.

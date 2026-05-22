@@ -55,7 +55,7 @@ Note: `npm run test:e2e` could not start its own configured web server because t
 ### Completed
 
 - `src/lib/application/agent-run-recorder.ts`를 추가했다.
-- 오피 planner audit을 `AgentRun`으로 저장하고 추천 approval에 workflow link를 건다.
+- 모아 planner audit을 `AgentRun`으로 저장하고 추천 approval에 workflow link를 건다.
 - provider sync report를 provider read-only `AgentRun`으로 저장하고 provider report/signal에 link를 건다.
 - owner decision workflow 결과를 local `AgentRun`으로 저장하고 approval, decision, execution, outcome, checkpoint, follow-up task에 link를 건다.
 - `/operations`를 `force-dynamic`으로 고정해 local workflow store 최신 상태를 읽게 했다.

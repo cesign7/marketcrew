@@ -53,7 +53,7 @@
 | FR-02 | repository contract를 DB-backed 구현으로 교체 가능하게 정리한다. | 현재 local file repository 테스트가 깨지지 않고, DB repository가 같은 application query/action에서 동작한다. |
 | FR-03 | local JSON store import 경로를 제공한다. | 기존 `.marketcrew/workflow-store.json`의 핵심 count와 approval/outcome 관계가 유지된다. |
 | FR-04 | `AgentRun` provenance model을 추가한다. | provider, model, run type, status, prompt/input summary, output summary, evidence IDs, token usage, cost estimate, error가 저장된다. |
-| FR-05 | 주요 workflow object와 `AgentRun`을 연결한다. | 안건, 오피 종합, 결재 요청, provider sync, outcome report에서 linked run을 조회할 수 있다. |
+| FR-05 | 주요 workflow object와 `AgentRun`을 연결한다. | 안건, 모아 종합, 결재 요청, provider sync, outcome report에서 linked run을 조회할 수 있다. |
 | FR-06 | `/operations`에 provenance summary를 노출한다. | 안건 카드나 evidence 영역에서 source count, linked run, model/token/cost 요약이 보인다. |
 | FR-07 | `/approvals/[id]`에 감사 근거를 노출한다. | 결재 상세에서 provider evidence, AgentRun, model/token/cost, failure reason을 확인할 수 있다. |
 | FR-08 | provider write gate는 계속 닫아 둔다. | `EXTERNAL_WRITE_ENABLED`, `SEARCH_AD_WRITE_ENABLED`는 false 기본값이며 테스트에서 write attempt가 발생하지 않는다. |

@@ -12,7 +12,7 @@ export function AgentRunSummaryPanel({ summary }: AgentRunSummaryPanelProps) {
         <div>
           <span className="eyebrow">실행 근거</span>
           <h2 id="agent-run-title">AI 실행 감사 로그</h2>
-          <p>오피 계획, 연동 수집, 대표 결정이 남긴 모델/토큰/비용/근거 이력입니다.</p>
+          <p>모아 계획, 연동 수집, 대표 결정이 남긴 모델/토큰/비용/근거 이력입니다.</p>
         </div>
       </div>
       <div className="agent-run-card">
@@ -57,7 +57,7 @@ export function AgentRunSummaryPanel({ summary }: AgentRunSummaryPanelProps) {
         ) : (
           <div className="empty-panel">
             <FileSearch size={18} aria-hidden="true" />
-            <p>아직 저장된 AI 실행 기록이 없습니다. 오피 계획이나 연동 수집이 실행되면 이곳에 표시됩니다.</p>
+            <p>아직 저장된 AI 실행 기록이 없습니다. 모아 계획이나 연동 수집이 실행되면 이곳에 표시됩니다.</p>
           </div>
         )}
       </div>

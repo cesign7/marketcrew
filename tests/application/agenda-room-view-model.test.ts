@@ -32,7 +32,7 @@ describe("buildAgendaRoomViewModel", () => {
 
     expect(viewModel.ownerDecisionFlows[0]?.preflightStatusLabel).toBe("실행 전 점검 통과");
     expect(viewModel.ownerDecisionFlows[0]?.executionStateLabel).toBe("수동 처리 필요");
-    expect(viewModel.ownerDecisionFlows[0]?.followUpTasks[0]).toContain("오피");
+    expect(viewModel.ownerDecisionFlows[0]?.followUpTasks[0]).toContain("모아");
     expect(viewModel.providerReadiness.map((provider) => provider.id)).toEqual([
       "search_ad",
       "datalab",
@@ -96,7 +96,7 @@ describe("buildAgendaRoomViewModel", () => {
     expect(viewModel.productGrowthOpportunities[0]?.keywords).toContain("추석 선물카드");
     const smartstorePreview = viewModel.approvalPreviews.find((preview) => preview.title === "스마트스토어 상위 상품 키워드 확장 안건");
     expect(smartstorePreview?.provenance.providerEvidenceLabels[0]).toContain("스마트스토어");
-    expect(smartstorePreview?.provenance.agentRunLabels[0]).toContain("오피 계획");
+    expect(smartstorePreview?.provenance.agentRunLabels[0]).toContain("모아 계획");
     expect(viewModel.plannerPreview.audit.sourceCountLabels).toContain("후보 5건");
     expect(viewModel.ownerDecisionFlows).toHaveLength(2);
     expect(viewModel.ownerDecisionFlows[0]?.outcomeEvidenceLabels).toContain("키워드광고 월검색 최대 16,000회");

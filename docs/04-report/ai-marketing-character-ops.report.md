@@ -38,7 +38,7 @@ QA Verdict:    QA_PASS
 | Perspective | Content |
 |-------------|---------|
 | **Problem** | 대표 혼자 스마트스토어, 네이버 키워드광고, 자체 쇼핑몰 데이터를 매일 확인하고 시즌성까지 판단하기 어렵다. 특히 음력 명절과 시즌 키워드는 작년 같은 양력 날짜 비교만으로는 결재 판단이 흔들린다. |
-| **Solution** | 하위 캐릭터가 read-only 데이터와 음력/양력 캘린더를 읽어 안건을 상신하고, 오피가 대표 결재용 diff/위험/rollback/성과 계획으로 묶는 bottom-up 업무실을 구현했다. |
+| **Solution** | 하위 캐릭터가 read-only 데이터와 음력/양력 캘린더를 읽어 안건을 상신하고, 모아가 대표 결재용 diff/위험/rollback/성과 계획으로 묶는 bottom-up 업무실을 구현했다. |
 | **Function/UX Effect** | `/operations`에서 오늘 안건, provider 근거, 상품/키워드/마케팅 후보를 보고, `/approvals/[id]`에서 승인 버튼, write gate 차단, provider evidence, 저장된 outcome report를 확인할 수 있다. |
 | **Core Value** | 실제 provider write를 열지 않고도 “올라온 자료만 보고 승인할 수 있는가”를 검증했다. 최신 회귀는 26개 테스트 파일/79개 테스트, Playwright e2e, API/browser smoke를 통과한다. |
 
@@ -52,7 +52,7 @@ QA Verdict:    QA_PASS
 | SC-2 | 샘플과 provider read-only 데이터가 공통 signal/agenda로 변환된다. | Met | `runAgendaCycle`, provider signal tests |
 | SC-3 | 하위 캐릭터가 안건 후보를 생성한다. | Met | `AgendaCandidate`, `CharacterReport`, `OpiSynthesisReport` |
 | SC-4 | triage 통과/탈락 이유가 기록된다. | Partial | 중복 제거와 근거 기준은 있으나 탈락 사유 UI는 후속 |
-| SC-5 | 캐릭터 보고서와 오피 종합 보고서가 구분된다. | Met | agenda room view model |
+| SC-5 | 캐릭터 보고서와 모아 종합 보고서가 구분된다. | Met | agenda room view model |
 | SC-6 | 대표 결재 요청에 diff, 실행 작업, 위험, rollback이 포함된다. | Met | `ApprovalPreviewPanel` |
 | SC-7 | 대표가 6개 결정을 선택할 수 있다. | Met | `OwnerDecisionSubmitPanel` |
 | SC-8 | 승인 후 바로 반영은 preflight/executor/ExecutionResult를 만든다. | Met | e2e write gate block, route tests |
@@ -104,10 +104,10 @@ QA Verdict:    QA_PASS
 | Area | Status | Notes |
 |------|--------|-------|
 | Korean operations room | Complete | `/operations` route and first screen |
-| Character role model | Complete | 7 visible roles: 오피, 그로, 프로, 카피, 리피, 마루, 데이 |
+| Character role model | Complete | 7 visible roles: 모아, 그로, 프로, 카피, 리피, 마루, 데이 |
 | Calendar/seasonality | Complete | Lunar/solar event windows and YoY comparison |
 | Seasonal keyword ads | Complete | Budget, bid, stop condition, negative keyword guardrails |
-| Bottom-up agenda loop | Complete | Signal, agenda, character report, opi synthesis, approval request |
+| Bottom-up agenda loop | Complete | Signal, agenda, character report, Moa synthesis, approval request |
 | Approval detail | Complete | diff, risk, rollback, measurement plan, provider evidence |
 | Owner decisions | Complete | approve/apply, draft-only, reject, revise, hold, request evidence |
 | Safe execution | Complete for MVP | mock executor and write gate block |

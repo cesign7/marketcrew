@@ -26,7 +26,7 @@ export default function OperationsPage() {
           </Link>
         </>
       }
-      description="대표가 매일 처음 보는 화면입니다. 결재 대기, 긴급 신호, 오피 요약만 먼저 확인합니다."
+      description="대표가 매일 처음 보는 화면입니다. 결재 대기, 긴급 신호, 모아 요약만 먼저 확인합니다."
       eyebrow="마켓크루 업무실"
       generatedAt={viewModel.generatedAt}
       title="오늘 업무실"
@@ -54,7 +54,7 @@ export default function OperationsPage() {
 
       <div className="daily-brief-grid">
         <section className="opi-brief-panel" aria-labelledby="opi-brief-title">
-          <span className="eyebrow">오피 종합</span>
+          <span className="eyebrow">모아 종합</span>
           <h2 id="opi-brief-title">{viewModel.opiReport.title}</h2>
           <p>{viewModel.opiReport.summary}</p>
           <div className="brief-action-row">

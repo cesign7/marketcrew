@@ -216,7 +216,7 @@ function countBy<TItem, TKey>(items: TItem[], keyFn: (item: TItem) => TKey): Map
 
 function agentRunTypeLabel(runType: AgentRun["runType"]): string {
   const labels: Record<AgentRun["runType"], string> = {
-    opi_planner: "오피 계획",
+    opi_planner: "모아 계획",
     provider_sync: "연동 수집",
     provider_signal_agenda: "연동 안건 생성",
     owner_decision: "대표 결정",
@@ -744,7 +744,7 @@ function buildPlannerPreviewView(
     rawRowsLabel: result.rawRowsIncluded ? "원천 행 포함" : "원천 행 제외",
     constraints: ["집계 요약만 사용", "근거 ID 유지", "외부 반영 불가", "고객 식별 정보 제외"],
     audit: {
-      runId: "오피 계획 실행 기록",
+      runId: "모아 계획 실행 기록",
       inputId: "입력 요약",
       resultId: "결과 요약",
       providerLabel: `연동 ${plannerProviderLabel(audit.provider)}`,
@@ -775,7 +775,7 @@ function buildCharacterStatuses(characterReports: CharacterReport[]): AgendaRoom
   return [
     {
       id: "opi",
-      name: "오피",
+      name: "모아",
       role: "업무실장",
       tone: "coordinator",
       status: "하위 보고를 대표 결재 요청으로 묶는 중",
@@ -1093,7 +1093,7 @@ function opportunityKindLabel(kind: ProductGrowthOpportunity["kind"]): string {
 
 function characterName(character: CharacterKey): string {
   const names: Record<CharacterKey, string> = {
-    opi: "오피",
+    opi: "모아",
     gro: "그로",
     maru: "마루",
     day: "데이",

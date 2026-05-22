@@ -16,7 +16,7 @@
 ## Completed
 
 - `/follow-ups` route를 추가했다.
-- `FollowUpInternalTask`를 오피/그로/프로/카피/리피/마루/데이 큐로 나눴다.
+- `FollowUpInternalTask`를 모아/그로/프로/카피/리피/마루/데이 큐로 나눴다.
 - 각 업무에 source approval link, approval status, latest owner decision, outcome state, blocker, learning note를 붙였다.
 - owner learning signal 6개를 계산했다.
 - `PATCH /api/follow-ups/[id]`로 `OPEN`/`DONE` 상태를 저장한다.

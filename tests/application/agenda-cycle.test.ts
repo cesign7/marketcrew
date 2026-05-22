@@ -5,7 +5,7 @@ import { SampleProviderAdapter } from "../../src/lib/integrations/sample/provide
 import { createMemoryMarketingWorkflowRepository } from "../../src/lib/persistence/memory-repository";
 
 describe("runAgendaCycle", () => {
-  it("샘플 데이터로 signal부터 오피 결재 요청과 성과 체크포인트까지 생성한다", () => {
+  it("샘플 데이터로 signal부터 모아 결재 요청과 성과 체크포인트까지 생성한다", () => {
     const repository = createMemoryMarketingWorkflowRepository();
     const result = runAgendaCycle({
       sampleProvider: new SampleProviderAdapter(),
