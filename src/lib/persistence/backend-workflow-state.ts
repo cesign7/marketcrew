@@ -1,7 +1,7 @@
 import type { AgendaRoomViewModel } from "@/features/agenda-room/types";
 import { normalizeWorkflowRepositoryState, type WorkflowRepositoryState } from "./workflow-state";
 
-const DEFAULT_BACKEND_API_TIMEOUT_MS = 1_500;
+const DEFAULT_BACKEND_API_TIMEOUT_MS = 5_000;
 
 type BackendWorkflowStateResponse = {
   state?: Partial<WorkflowRepositoryState>;

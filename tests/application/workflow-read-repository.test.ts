@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { loadWorkflowReadRepository } from "../../src/features/agenda-room/loadAgendaRoomViewModel";
+import {
+  clearLocalAgendaRoomViewModelCache,
+  loadAgendaRoomViewModel,
+  loadWorkflowReadRepository,
+} from "../../src/features/agenda-room/loadAgendaRoomViewModel";
 
 afterEach(() => {
+  clearLocalAgendaRoomViewModelCache();
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("loadWorkflowReadRepository", () => {
@@ -65,6 +71,52 @@ describe("loadWorkflowReadRepository", () => {
       },
       signal: expect.any(AbortSignal),
     });
+  });
+});
+
+describe("loadAgendaRoomViewModel", () => {
+  it("Vercel 화면 런타임에서 view model API가 비어도 workflow state API로 복구한다", async () => {
+    clearLocalAgendaRoomViewModelCache();
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("MARKETCREW_BACKEND_API_URL", "https://api.marketcrew.app");
+    vi.stubEnv("MARKETCREW_BACKEND_API_TOKEN", "secret-token");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+      })
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          state: {
+            providerSyncReports: [
+              {
+                id: "provider-sync-search-ad-test",
+                provider: "search_ad",
+                label: "네이버 키워드광고 read-only sync",
+                status: "SYNCED",
+                readOnly: true,
+                networkAttempted: true,
+                writeAttempted: false,
+                endpoint: "https://api.searchad.naver.com/keywordstool",
+                sourceUrl: "http://naver.github.io/searchad-apidoc/",
+                missingEnvKeys: [],
+                evidenceNotes: ["workflow state fallback"],
+                checkedAt: "2026-05-22T00:00:00.000Z",
+              },
+            ],
+          },
+        }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const viewModel = await loadAgendaRoomViewModel();
+
+    expect(viewModel.providerSyncEvidence[0]?.id).toBe("provider-sync-search-ad-test");
+    const calledUrls = fetchMock.mock.calls.map(([url]) => String(url));
+    expect(calledUrls).toContain("https://api.marketcrew.app/api/operations/view-model");
+    expect(calledUrls).toContain("https://api.marketcrew.app/api/operations/workflow-state");
   });
 });
 

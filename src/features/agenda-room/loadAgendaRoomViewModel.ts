@@ -34,15 +34,14 @@ export async function loadAgendaRoomViewModel() {
   }
 
   const backendViewModel = await readBackendAgendaRoomViewModel();
-  if (!backendViewModel && isHostedFrontendRuntime()) {
-    throw new Error("Vercel 화면 런타임에서는 Railway 백엔드 view model이 필요합니다.");
+  if (backendViewModel) {
+    writeAgendaRoomViewModelCache(backendViewModel);
+    return backendViewModel;
   }
 
-  const viewModel =
-    backendViewModel ??
-    buildAgendaRoomViewModel({
-      repository: await loadWorkflowReadRepository(),
-    });
+  const viewModel = buildAgendaRoomViewModel({
+    repository: await loadWorkflowReadRepository(),
+  });
   writeAgendaRoomViewModelCache(viewModel);
 
   return viewModel;
