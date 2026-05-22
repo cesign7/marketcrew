@@ -61,17 +61,28 @@ export function ProviderCollectionPolicyPanel({
               <span>{policy.providerLabel}</span>
               <strong>{policy.historyPolicy.apiLimitLabel}</strong>
             </header>
-            <ul>
-              <li>{policy.historyPolicy.requestWindowLabel}</li>
-              <li>{policy.historyPolicy.backfillLabel}</li>
-              <li>{policy.historyPolicy.baseScheduleLabel}</li>
-              <li>{policy.historyPolicy.intensiveScheduleLabel}</li>
-              <li>{policy.historyPolicy.manualRefreshLabel}</li>
-              <li>{policy.historyPolicy.freshnessLabel}</li>
-              <li>{policy.historyPolicy.dedupeKeyLabel}</li>
-              <li>{policy.historyPolicy.seasonalityLabel}</li>
-              <li>{policy.historyPolicy.storageLabel}</li>
-            </ul>
+            <dl>
+              <div>
+                <dt>자동</dt>
+                <dd>{policy.historyPolicy.baseScheduleLabel}</dd>
+              </div>
+              <div>
+                <dt>강화</dt>
+                <dd>{policy.historyPolicy.intensiveScheduleLabel}</dd>
+              </div>
+              <div>
+                <dt>수동</dt>
+                <dd>{policy.historyPolicy.manualRefreshLabel}</dd>
+              </div>
+              <div>
+                <dt>중복</dt>
+                <dd>{policy.historyPolicy.dedupeKeyLabel}</dd>
+              </div>
+              <div>
+                <dt>저장</dt>
+                <dd>{policy.historyPolicy.storageLabel}</dd>
+              </div>
+            </dl>
           </article>
         ))}
       </div>

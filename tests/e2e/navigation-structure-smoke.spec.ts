@@ -108,6 +108,12 @@ test("앱 브라우저 폭에서도 왼쪽 메뉴와 본문 카드가 읽히게 
     .locator(".daily-brief-grid")
     .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
   expect(dailyBriefColumns).toBe(1);
+
+  await page.goto("/data");
+  const overflowingPolicyCards = await page.locator(".collection-policy-card").evaluateAll((cards) =>
+    cards.filter((card) => card.scrollWidth > Math.ceil(card.getBoundingClientRect().width) + 1).length,
+  );
+  expect(overflowingPolicyCards).toBe(0);
 });
 
 test("캐릭터 업무데스크에서 캐릭터별 업무 화면으로 이동한다", async ({ page }) => {
