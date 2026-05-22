@@ -18,7 +18,7 @@ export function ProviderDataContractPanel({ contracts }: ProviderDataContractPan
         <div>
           <span className="eyebrow">데이터 명세</span>
           <h2 id="data-contract-title">불러오는 데이터와 저장하는 데이터</h2>
-          <p>원천 응답 필드를 먼저 펼쳐 보고, 그중 운영 화면에서 읽는 칼럼과 MarketCrew에 남기는 저장 칼럼을 분리해서 확인합니다.</p>
+          <p>원문 필드 점검표를 먼저 확인하고, 그중 운영 화면에서 읽는 칼럼과 MarketCrew에 남기는 저장 칼럼을 분리해서 확인합니다.</p>
         </div>
       </div>
 
@@ -82,9 +82,9 @@ function SourceFieldOverview({ contracts }: { contracts: ProviderDataContractVie
     >
       <header>
         <div>
-          <span className="eyebrow">원천 필드 전체 보기</span>
-          <h3 id="data-source-field-overview-title">선택 전 원천 필드 목록</h3>
-          <p>API나 브리지 응답에서 들어올 수 있는 필드를 먼저 모두 보여줍니다. 값 샘플은 노출하지 않고 처리 기준만 표시합니다.</p>
+          <span className="eyebrow">원문 필드 점검</span>
+          <h3 id="data-source-field-overview-title">원문 필드 점검표</h3>
+          <p>공식 API 응답과 브리지 계약에서 확인해야 할 원문 필드 후보입니다. 그룹을 클릭하면 펼쳐지고, 값 샘플은 노출하지 않고 처리 기준만 표시합니다.</p>
         </div>
       </header>
 
@@ -95,7 +95,7 @@ function SourceFieldOverview({ contracts }: { contracts: ProviderDataContractVie
               <span>{contract.brandLabel ?? contract.channelLabel}</span>
               <strong>{contract.providerLabel}</strong>
             </header>
-            <div className="data-source-field-list" aria-label={`${contract.providerLabel} 선택 전 원천 필드 목록`}>
+            <div className="data-source-field-list" aria-label={`${contract.providerLabel} 원문 필드 점검표`}>
               {contract.incoming.sourceFieldGroups?.map((group) => (
                 <SourceFieldGroupCard group={group} key={group.id} />
               ))}
@@ -178,21 +178,21 @@ function SourceFieldGroupCard({
   group: NonNullable<ProviderDataContractDatasetView["sourceFieldGroups"]>[number];
 }) {
   return (
-    <article className="data-source-field-card">
-      <header>
+    <details className="data-source-field-card">
+      <summary>
         <strong>{group.title}</strong>
-        <span>처리 기준</span>
-      </header>
+        <span>{group.fields.length.toLocaleString("ko-KR")}개 필드</span>
+      </summary>
       <p>{group.description}</p>
       <div className="data-source-field-grid">
         {group.fields.map((item) => (
           <span key={`${group.id}-${item.key}`}>
             <small>{item.label}</small>
             <code>{item.key}</code>
-            {item.handling}
+            <em>{item.handling}</em>
           </span>
         ))}
       </div>
-    </article>
+    </details>
   );
 }

@@ -1759,7 +1759,7 @@ button:disabled {
 
 .data-source-provider-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
   gap: 12px;
   margin-top: 12px;
 }
@@ -2019,19 +2019,44 @@ button:disabled {
   padding: 10px;
 }
 
-.data-source-field-card header {
+.data-source-field-card summary {
   display: flex;
+  cursor: pointer;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  list-style: none;
 }
 
-.data-source-field-card header strong {
+.data-source-field-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.data-source-field-card summary::before {
+  content: "+";
+  display: grid;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--teal-strong);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.data-source-field-card[open] summary::before {
+  content: "-";
+}
+
+.data-source-field-card summary strong {
+  flex: 1 1 auto;
   overflow-wrap: anywhere;
   font-size: 12px;
 }
 
-.data-source-field-card header span {
+.data-source-field-card summary span {
   flex: 0 0 auto;
   border-radius: 999px;
   background: #f1f2f4;
@@ -2050,14 +2075,16 @@ button:disabled {
 
 .data-source-field-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 7px;
   margin-top: 9px;
 }
 
 .data-source-field-grid span {
   display: grid;
-  gap: 3px;
+  grid-template-columns: minmax(78px, 0.32fr) minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: start;
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -2079,6 +2106,12 @@ button:disabled {
   color: var(--ink-muted);
   font-size: 11px;
   font-weight: 800;
+}
+
+.data-source-field-grid em {
+  grid-column: 1 / -1;
+  color: var(--ink);
+  font-style: normal;
 }
 
 .provider-sync-view-switch {

@@ -23,7 +23,7 @@
 | Data contract model | `ProviderDataContractView`와 `ProviderDataContractDatasetView`를 추가했다. |
 | Contract source | `provider-data-contracts.ts`가 네이버 키워드광고, 네이버 데이터랩, 스마트스토어(스티커씨), 쇼핑몰(커피프린트)의 불러오는 데이터/저장하는 데이터 칼럼을 제공한다. |
 | Data page UI | `ProviderDataContractPanel`을 추가해 채널별 `불러오는 데이터`, `저장하는 데이터` 링크, 칼럼 설명, 샘플 데이터를 보여준다. |
-| Source field UI | `선택 전 원천 필드 목록`을 데이터 명세 상단에 먼저 펼쳐 API/브리지 응답에서 들어올 수 있는 필드와 처리 기준을 보여준다. |
+| Source field UI | `원문 필드 점검표`를 데이터 명세 상단에 두고, API/브리지 원문 필드 후보를 그룹별로 접었다 펼쳐 처리 기준과 함께 확인하게 한다. |
 | Channel filter | 상단 채널 필터를 데이터 명세에도 적용한다. 스티커씨 선택 시 스마트스토어 명세만, 커피프린트 선택 시 쇼핑몰 명세만 보인다. |
 | Korean copy | 연동 근거 문구에서 `행는`, `연결는`처럼 어색하게 조합되던 조사를 보정했다. |
 | Tests | 컴포넌트, view model, E2E 네비게이션 스모크에 데이터 명세 확인을 추가했다. |
@@ -39,7 +39,7 @@
 
 ## Source Field Boundary
 
-원천 필드 목록은 실제 저장 데이터가 아니다. `keywordList[0].monthlyAvePcClkCnt`, `lastChangeStatuses[0].productOrderId`, `productOrders[0].productOrder.productName`, `results[0].data[0].period`, `results[0].data[0].ratio`처럼 API 응답에서 들어올 수 있는 필드명을 선택 전에 먼저 보여주되, 값 샘플을 노출하지 않고 `상세 조회에만 사용`, `매출 합산에 사용`, `개인정보로 저장 안 함` 같은 처리 기준만 표시한다.
+원천 필드 점검표는 실제 저장 데이터가 아니다. `keywordList[0].monthlyAvePcClkCnt`, `lastChangeStatuses[0].productOrderId`, `productOrders[0].productOrder.productName`, `productOrders[0].completedClaims[0].claimRequestReason`, `results[0].data[0].period`, `results[0].data[0].ratio`처럼 API/브리지 응답에서 점검할 원문 필드 후보를 먼저 보여주되, 값 샘플을 노출하지 않고 `상세 조회에만 사용`, `매출 합산에 사용`, `개인정보로 저장 안 함` 같은 처리 기준만 표시한다.
 
 ## Verification
 
@@ -50,11 +50,11 @@
 | `npm run typecheck` | passed |
 | `npm run build` | passed |
 | Targeted Playwright smoke | `/data` navigation/filter test passed |
-| Local HTTP smoke | `/data` returned `200 OK` and contained `#search-ad-incoming`, `#smartstore-stored`, `선택 전 원천 필드 목록` |
+| Local HTTP smoke | `/data` returned `200 OK` and contained `#search-ad-incoming`, `#smartstore-stored`, `원문 필드 점검표` |
 
 ## MVP Progress
 
-1차 MVP 대비 진행율은 **97%**로 본다. 대표가 결재 전에 수집 근거, 저장 근거, 성과 이력, 비용/토큰 경계를 볼 수 있는 흐름은 갖춰졌다. 남은 3%는 실제 운영 전 데이터 스키마 고정, 배포 환경 회귀검증, 운영용 백필/스케줄 UI의 최종 정리다.
+1차 MVP 대비 진행율은 **100%**로 유지한다. 대표가 결재 전에 수집 근거, 원문 필드 점검표, 저장 근거, 성과 이력, 비용/토큰 경계를 볼 수 있는 흐름은 갖춰졌다. 실제 외부 provider write, 운영용 자동 백필/스케줄 실행, 운영 DB 확장은 1차 MVP 밖의 후속 확장으로 둔다.
 
 ## Act Decision
 

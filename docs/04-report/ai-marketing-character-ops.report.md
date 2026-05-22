@@ -24,11 +24,11 @@
 ### 1.2 Results Summary
 
 ```text
-Completion Rate: 92%
+Completion Rate: 100% for the accepted first-MVP boundary
 
-Complete:      13 / 15 first-MVP success criteria
-Partial:        1 / 15 first-MVP success criteria
-Deferred:       1 / 15 first-MVP success criteria
+Complete:      15 / 16 first-MVP success criteria
+Partial:        1 / 16 first-MVP success criteria
+Deferred:       0 / 16 first-MVP success criteria
 Critical Issues: 0
 QA Verdict:    QA_PASS
 ```
@@ -66,7 +66,7 @@ QA Verdict:    QA_PASS
 | SC-16 | 외부 API 조회 한계와 백필/일별 저장 정책이 데이터 연동 화면에 보인다. | Met | `ProviderSyncReport.historyPolicy`, `/data` policy panel |
 
 **Success Rate**: 15 Met / 1 Partial within the first-MVP boundary.
-**Operator MVP Rate**: 95%.
+**Operator MVP Rate**: 100%.
 
 ## 1.5 Decision Record Summary
 
@@ -190,7 +190,7 @@ QA Verdict:    QA_PASS
 | `npm audit --omit=dev` | 0 vulnerabilities |
 | Targeted Playwright `/data` smoke | 1 chromium smoke passed |
 | `/operations` smoke | 200 OK |
-| `/data` HTTP smoke | 200 OK, data contract and pre-selection source field list visible |
+| `/data` HTTP smoke | 200 OK, data contract and collapsible raw field checklist visible |
 | `/approvals/[id]` smoke | 200 OK |
 | outcomes API | 1 report, `판단 보류` |
 | Browser smoke | provider evidence and saved outcome visible |
@@ -204,7 +204,7 @@ QA Verdict:    QA_PASS
 | Missing persistence | Added local file repository and workflow-state API | Resolved for MVP |
 | Missing provider evidence | Added readiness, read-only sync, evidence panels | Resolved for MVP |
 | Missing outcome re-read | Added outcomes API and outcome history panel | Resolved |
-| Missing data contract visibility | Added `/data` contract panel for incoming fields, pre-selection source field lists, stored fields, samples, and safety notes | Resolved |
+| Missing data contract visibility | Added `/data` contract panel for incoming fields, collapsible raw field checklists, stored fields, samples, and safety notes | Resolved |
 | Risk of external writes | Kept provider write gates closed | Resolved for MVP |
 
 ---
@@ -272,7 +272,7 @@ QA Verdict:    QA_PASS
 - Bottom-up agenda/report/approval workflow.
 - Lunar/solar marketing calendar and seasonal keyword guardrails.
 - Provider readiness and read-only sync evidence.
-- Provider data contract panel for incoming data, pre-selection source field lists, stored data, column descriptions, and sample values.
+- Provider data contract panel for incoming data, collapsible raw field checklists, stored data, column descriptions, and sample values.
 - Product keyword/marketing/product discovery candidates.
 - Approval detail with provider evidence, owner decision submit, execution result, checkpoints, and outcome history.
 - Local file repository, workflow-state API, outcomes API.
