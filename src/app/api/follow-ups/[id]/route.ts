@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clearAgendaRoomViewModelCache } from "@/features/agenda-room/loadAgendaRoomViewModel";
 import type { FollowUpInternalTask } from "@/lib/domain";
 import { createLocalWorkflowRepository, seedSampleWorkflowIfEmpty } from "@/lib/persistence/workflow-store";
 
@@ -45,6 +46,7 @@ export async function PATCH(request: Request, context: FollowUpRouteContext) {
     status: body.status,
   };
   repository.saveFollowUpInternalTasks([updatedTask]);
+  clearAgendaRoomViewModelCache();
 
   return NextResponse.json({ task: updatedTask });
 }

@@ -111,6 +111,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
                 className={`app-nav-link${isActive ? " is-active" : ""}`}
                 href={item.href}
                 key={item.key}
+                prefetch
               >
                 <Icon size={18} aria-hidden="true" />
                 <span>

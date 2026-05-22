@@ -46,6 +46,11 @@ export function recordPlannerAgentRun(
     buildWorkflowLink(run.id, { objectType: "approval_request", objectId: approvalId }, "generated", result.createdAt),
   );
 
+  const existingRun = repository.listAgentRuns().find((candidate) => candidate.id === run.id);
+  if (existingRun && isSameAgentRun(existingRun, run) && hasExpectedWorkflowLinks(repository, run.id, links)) {
+    return existingRun;
+  }
+
   repository.saveAgentRuns([run]);
   repository.saveAgentRunWorkflowLinks(links);
 
@@ -230,6 +235,29 @@ function buildWorkflowLink(
     relation,
     createdAt,
   };
+}
+
+function isSameAgentRun(left: AgentRun, right: AgentRun): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function hasExpectedWorkflowLinks(
+  repository: MarketingWorkflowRepository,
+  agentRunId: string,
+  expectedLinks: AgentRunWorkflowLink[],
+): boolean {
+  const existingLinkKeys = new Set(
+    repository
+      .listAgentRunWorkflowLinks()
+      .filter((link) => link.agentRunId === agentRunId)
+      .map(workflowLinkIdentity),
+  );
+
+  return expectedLinks.every((link) => existingLinkKeys.has(workflowLinkIdentity(link)));
+}
+
+function workflowLinkIdentity(link: AgentRunWorkflowLink): string {
+  return [link.agentRunId, link.objectType, link.objectId, link.relation, link.createdAt].join("|");
 }
 
 function statusFromProviderSyncReport(report: ProviderSyncReport): AgentRunStatus {

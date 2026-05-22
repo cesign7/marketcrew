@@ -34,6 +34,8 @@ test("데이터 연동 메뉴와 상단 채널/기간 필터가 클릭에 반응
   await topControls.getByRole("button", { name: "스티커씨" }).click();
   await expect(page).toHaveURL(/\/data\?channel=stickersee$/);
   await expect(topControls.getByRole("button", { name: "스티커씨" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".provider-card").filter({ hasText: "스마트스토어(스티커씨)" })).toHaveCount(1);
+  await expect(page.locator(".provider-card").filter({ hasText: "쇼핑몰(커피프린트)" })).toHaveCount(0);
 
   await topControls.getByRole("button", { name: "30일" }).click();
   await expect(page).toHaveURL(/\/data\?channel=stickersee&period=30d$/);

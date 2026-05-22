@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { clearAgendaRoomViewModelCache } from "@/features/agenda-room/loadAgendaRoomViewModel";
 import { processOwnerDecision } from "@/lib/application/approval-workflow";
 import type { OwnerDecisionType } from "@/lib/domain";
 import { createLocalWorkflowRepository, seedSampleWorkflowIfEmpty } from "@/lib/persistence/workflow-store";
@@ -63,6 +64,7 @@ export async function POST(request: Request, context: DecisionRouteContext) {
     repository,
     now: new Date().toISOString(),
   });
+  clearAgendaRoomViewModelCache();
 
   return NextResponse.json(
     {
