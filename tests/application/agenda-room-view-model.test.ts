@@ -106,6 +106,15 @@ describe("buildAgendaRoomViewModel", () => {
       "마케팅 제안",
       "상품 발굴",
     ]);
+    expect(viewModel.aiEvidenceBriefs.map((brief) => [brief.providerKey, brief.decisionLabel])).toEqual([
+      ["search_ad", "판단 가능"],
+      ["smartstore", "판단 가능"],
+      ["shop", "판단 가능"],
+      ["commerce_cross_channel", "판단 가능"],
+    ]);
+    expect(viewModel.aiEvidenceBriefs.find((brief) => brief.providerKey === "search_ad")?.blockedUseCases).toContain(
+      "광고비/입찰가 즉시 변경",
+    );
     expect(viewModel.productGrowthOpportunities[0]?.keywords).toContain("추석 선물카드");
     const smartstorePreview = viewModel.approvalPreviews.find((preview) => preview.title === "스마트스토어 상위 상품 키워드 확장 안건");
     expect(smartstorePreview?.provenance.providerEvidenceLabels[0]).toContain("스마트스토어");

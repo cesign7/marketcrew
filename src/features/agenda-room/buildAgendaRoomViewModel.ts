@@ -1,4 +1,5 @@
 import { runSampleAgendaCycle } from "@/lib/application/agenda-cycle";
+import { buildAiEvidenceBriefs } from "@/lib/application/ai-evidence-briefs";
 import { processOwnerDecision } from "@/lib/application/approval-workflow";
 import {
   buildProductGrowthOpportunities,
@@ -58,6 +59,10 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
         performanceCheckpoints: [],
       };
   const productGrowthOpportunities = buildProductGrowthOpportunities({
+    providerSyncReports,
+    generatedAt: agendaCycle.generatedAt,
+  });
+  const aiEvidenceBriefs = buildAiEvidenceBriefs({
     providerSyncReports,
     generatedAt: agendaCycle.generatedAt,
   });
@@ -160,6 +165,10 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
     }),
     agentRunSummary: buildAgentRunSummaryView(agentRuns),
     productGrowthOpportunities: productGrowthOpportunities.map(buildProductGrowthOpportunityView),
+    aiEvidenceBriefs: aiEvidenceBriefs.map((brief) => ({
+      ...brief,
+      checkedAt: formatKoreanDateTime(brief.checkedAt),
+    })),
     executionResults: [
       ...ownerDecisionFlows.map((flow) => ({
         id: `decision-flow-${flow.id}`,

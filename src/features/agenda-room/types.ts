@@ -289,6 +289,22 @@ export type ProductGrowthOpportunityView = {
   sourceReportIds: string[];
 };
 
+export type AiEvidenceBriefView = {
+  id: string;
+  providerKey: "search_ad" | "datalab" | "smartstore" | "shop" | "commerce_cross_channel";
+  channelLabel: string;
+  title: string;
+  decisionLabel: string;
+  tone: "ready" | "warning" | "blocked";
+  summary: string;
+  allowedUseCases: string[];
+  blockedUseCases: string[];
+  evidenceIds: string[];
+  sourceReportIds: string[];
+  checkedAt: string;
+  rawDataPolicyLabel: string;
+};
+
 export type AgentRunSummaryView = {
   totalRuns: number;
   totalTokensLabel: string;
@@ -332,6 +348,7 @@ export type AgendaRoomViewModel = {
   llmCostGovernance: LlmCostGovernanceView;
   agentRunSummary: AgentRunSummaryView;
   productGrowthOpportunities: ProductGrowthOpportunityView[];
+  aiEvidenceBriefs: AiEvidenceBriefView[];
   executionResults: ExecutionResultView[];
   outcomeCheckpoints: OutcomeCheckpointView[];
 };

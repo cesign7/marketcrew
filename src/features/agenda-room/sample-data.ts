@@ -414,6 +414,23 @@ export const agendaRoomSample: AgendaRoomViewModel = {
       sourceReportIds: ["provider-sync-sample"],
     },
   ],
+  aiEvidenceBriefs: [
+    {
+      id: "ai-evidence-sample-search-ad",
+      providerKey: "search_ad",
+      channelLabel: "네이버 키워드광고",
+      title: "네이버 키워드광고 AI 판독 근거",
+      decisionLabel: "판단 가능",
+      tone: "ready",
+      summary: "상위 키워드 2개와 시즌 검색 수요를 요약 근거로 사용합니다.",
+      allowedUseCases: ["키워드 확장 후보 선별", "시즌 검색 수요 우선순위 판단"],
+      blockedUseCases: ["광고비/입찰가 즉시 변경", "원천 검색어 전체 재해석"],
+      evidenceIds: ["kw-demand-buddha-gift-card"],
+      sourceReportIds: ["provider-sync-sample"],
+      checkedAt: "2026-05-22 11:00",
+      rawDataPolicyLabel: "원천 행 제외, 요약 근거와 근거 ID만 사용",
+    },
+  ],
   executionResults: [
     {
       id: "exec-001",

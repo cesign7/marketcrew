@@ -28,6 +28,7 @@ export default async function DataPage({ searchParams }: DataPageProps) {
     >
       <DataIntegrationPanels
         agentRunSummary={viewModel.agentRunSummary}
+        aiEvidenceBriefs={viewModel.aiEvidenceBriefs}
         initialChannel={selectedChannel}
         initialPeriod={selectedPeriod}
         plannerPreview={viewModel.plannerPreview}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type {
+  AiEvidenceBriefView,
   AgentRunSummaryView,
   PlannerPreviewView,
   ProviderDataContractView,
@@ -9,6 +10,7 @@ import type {
   ProviderSyncEvidenceView,
 } from "@/features/agenda-room/types";
 import {
+  filterAiEvidenceBriefs,
   filterProviderDataContracts,
   filterProviderReadiness,
   filterProviderSyncEvidence,
@@ -20,6 +22,7 @@ import {
   type DataPeriodFilter,
 } from "@/features/agenda-room/data-filters";
 import { AgentRunSummaryPanel } from "./AgentRunSummaryPanel";
+import { AiEvidenceBriefPanel } from "./AiEvidenceBriefPanel";
 import { PlannerPreviewPanel } from "./PlannerPreviewPanel";
 import { ProviderCollectionPolicyPanel } from "./ProviderCollectionPolicyPanel";
 import { ProviderDataContractPanel } from "./ProviderDataContractPanel";
@@ -28,6 +31,7 @@ import { ProviderSyncEvidencePanel } from "./ProviderSyncEvidencePanel";
 
 type DataIntegrationPanelsProps = {
   agentRunSummary: AgentRunSummaryView;
+  aiEvidenceBriefs: AiEvidenceBriefView[];
   initialChannel: DataChannelFilter;
   initialPeriod: DataPeriodFilter;
   plannerPreview: PlannerPreviewView;
@@ -43,6 +47,7 @@ type ViewFilterChangeEvent = CustomEvent<{
 
 export function DataIntegrationPanels({
   agentRunSummary,
+  aiEvidenceBriefs,
   initialChannel,
   initialPeriod,
   plannerPreview,
@@ -80,6 +85,10 @@ export function DataIntegrationPanels({
     () => filterProviderDataContracts(providerDataContracts, selectedFilter.channel),
     [providerDataContracts, selectedFilter.channel],
   );
+  const filteredAiEvidenceBriefs = useMemo(
+    () => filterAiEvidenceBriefs(aiEvidenceBriefs, selectedFilter.channel),
+    [aiEvidenceBriefs, selectedFilter.channel],
+  );
   const periodLabel = dataPeriodLabel(selectedFilter.period);
   const periodPolicyLabel = dataPeriodPolicyLabel(selectedFilter.period);
 
@@ -91,6 +100,7 @@ export function DataIntegrationPanels({
         periodPolicyLabel={periodPolicyLabel}
         reports={filteredProviderSyncEvidence}
       />
+      <AiEvidenceBriefPanel briefs={filteredAiEvidenceBriefs} />
       <ProviderDataContractPanel contracts={filteredProviderDataContracts} />
       <ProviderReadinessPanel providers={filteredProviderReadiness} />
       <ProviderSyncEvidencePanel reports={filteredProviderSyncEvidence} showHistoryPolicy />

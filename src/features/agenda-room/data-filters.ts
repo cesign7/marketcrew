@@ -1,4 +1,9 @@
-import type { ProviderDataContractView, ProviderReadinessView, ProviderSyncEvidenceView } from "./types";
+import type {
+  AiEvidenceBriefView,
+  ProviderDataContractView,
+  ProviderReadinessView,
+  ProviderSyncEvidenceView,
+} from "./types";
 
 export type DataChannelFilter = "all" | "stickersee" | "coffeeprint";
 export type DataPeriodFilter = "today" | "7d" | "30d" | "last-year" | "holiday";
@@ -88,5 +93,22 @@ export function filterProviderDataContracts(
       return contract.providerKey === "smartstore";
     }
     return contract.providerKey === "shop";
+  });
+}
+
+export function filterAiEvidenceBriefs(
+  briefs: AiEvidenceBriefView[],
+  selectedChannel: DataChannelFilter,
+): AiEvidenceBriefView[] {
+  if (selectedChannel === "all") {
+    return briefs;
+  }
+
+  return briefs.filter((brief) => {
+    if (selectedChannel === "stickersee") {
+      return brief.providerKey === "smartstore" || brief.providerKey === "search_ad";
+    }
+
+    return brief.providerKey === "shop";
   });
 }
