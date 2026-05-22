@@ -98,6 +98,52 @@ describe("buildAgendaRoomViewModel", () => {
     expect(viewModel.ownerDecisionFlows[1]?.outcomeSummary).toContain("내부 초안 실행");
     expect(viewModel.ownerDecisionFlows[1]?.outcomeEvidenceLabels).toContain("스마트스토어 매출 600,120원");
   });
+
+  it("같은 근거의 연동 수집 이력은 결재 미리보기에서 최신 1건과 누적 횟수로 접는다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    const reports = buildProviderAggregateReports();
+    const smartstoreReport = reports.find((report) => report.provider === "smartstore")!;
+    const shopReport = reports.find((report) => report.provider === "shop")!;
+    const repeatedReports: ProviderSyncReport[] = [
+      ...reports,
+      {
+        ...smartstoreReport,
+        id: "provider-sync-smartstore-2026-05-22T02:30:00.000Z",
+        checkedAt: "2026-05-22T02:30:00.000Z",
+        commerceAggregateSnapshot: smartstoreReport.commerceAggregateSnapshot
+          ? {
+              ...smartstoreReport.commerceAggregateSnapshot,
+              grossSales: 602620,
+              collectedAt: "2026-05-22T02:30:00.000Z",
+            }
+          : undefined,
+      },
+      {
+        ...shopReport,
+        id: "provider-sync-shop-2026-05-22T02:30:00.000Z",
+        checkedAt: "2026-05-22T02:30:00.000Z",
+        shopAggregateSnapshot: shopReport.shopAggregateSnapshot
+          ? {
+              ...shopReport.shopAggregateSnapshot,
+              collectedAt: "2026-05-22T02:30:00.000Z",
+            }
+          : undefined,
+      },
+    ];
+    repository.saveProviderSyncReports(repeatedReports);
+    repository.saveSignals(repeatedReports.flatMap((report) => (report.generatedSignal ? [report.generatedSignal] : [])));
+
+    const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
+
+    const balancePreview = viewModel.approvalPreviews.find(
+      (preview) => preview.title === "스마트스토어/자체몰 매출 균형 점검 안건",
+    );
+    expect(balancePreview?.provenance.summaryLabel).toContain("연동 수집 2개 (누적 4회)");
+    expect(balancePreview?.provenance.providerEvidenceLabels).toEqual([
+      "스마트스토어(스티커씨) · 최신 동기화 완료 · 스티커씨 주문 100건, 스티커씨 매출 602,620원 · 누적 2회",
+      "쇼핑몰(커피프린트) · 최신 동기화 완료 · 커피프린트 주문 28건, 커피프린트 재구매 4명 · 누적 2회",
+    ]);
+  });
 });
 
 function buildProviderAggregateReports(): ProviderSyncReport[] {

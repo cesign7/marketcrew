@@ -468,6 +468,7 @@ function buildApprovalProvenanceView(
         .sort((left, right) => (right.finishedAt ?? right.startedAt).localeCompare(left.finishedAt ?? left.startedAt))
     : [];
   const relatedReports = providerSyncReports.filter((report) => hasSharedEvidence(providerEvidenceIds(report), evidenceIds));
+  const providerEvidenceGroups = compactProviderEvidenceReports(relatedReports);
   const checkpointLabels = request.executionPlan.measurementPlan.checkpoints.map(
     (checkpoint) =>
       `${checkpoint.label} ${checkpoint.dueDate} · ${request.executionPlan.measurementPlan.metrics.map(metricLabel).join(", ")}`,
@@ -476,7 +477,9 @@ function buildApprovalProvenanceView(
   return {
     summaryLabel: `근거 ${evidenceIds.length.toLocaleString("ko-KR")}개 · 실행 이력 ${relatedRuns.length.toLocaleString(
       "ko-KR",
-    )}개 · 연동 수집 ${relatedReports.length.toLocaleString("ko-KR")}개`,
+    )}개 · 연동 수집 ${providerEvidenceGroups.length.toLocaleString("ko-KR")}개${
+      relatedReports.length > providerEvidenceGroups.length ? ` (누적 ${relatedReports.length.toLocaleString("ko-KR")}회)` : ""
+    }`,
     evidenceLabels: buildEvidenceCategoryLabels(evidenceIds),
     agentRunLabels:
       relatedRuns.length > 0
@@ -490,13 +493,8 @@ function buildApprovalProvenanceView(
             )
         : ["연결된 AI 실행 이력 없음"],
     providerEvidenceLabels:
-      relatedReports.length > 0
-        ? relatedReports.map((report) => {
-            const snapshotLabels = buildProviderSnapshotLabels(report).slice(0, 2);
-            return `${providerKeyLabel(report.provider)} · ${providerSyncStatusLabel(report.status)}${
-              snapshotLabels.length > 0 ? ` · ${snapshotLabels.join(", ")}` : ""
-            }`;
-          })
+      providerEvidenceGroups.length > 0
+        ? providerEvidenceGroups.map((group) => buildProviderEvidenceGroupLabel(group.latestReport, group.reportCount))
         : ["직접 연결된 연동 수집 기록 없음"],
     checkpointLabels,
     safetyLabels: [
@@ -558,6 +556,49 @@ function hasSharedEvidence(leftIds: string[], rightIds: string[]): boolean {
   const rightSet = new Set(rightIds);
 
   return leftIds.some((id) => rightSet.has(id));
+}
+
+type ProviderEvidenceGroup = {
+  provider: ProviderSyncReport["provider"];
+  latestReport: ProviderSyncReport;
+  reportCount: number;
+};
+
+function compactProviderEvidenceReports(reports: ProviderSyncReport[]): ProviderEvidenceGroup[] {
+  const reportsByProvider = new Map<ProviderSyncReport["provider"], ProviderSyncReport[]>();
+
+  for (const report of reports) {
+    const providerReports = reportsByProvider.get(report.provider) ?? [];
+    providerReports.push(report);
+    reportsByProvider.set(report.provider, providerReports);
+  }
+
+  const providerOrder: ProviderSyncReport["provider"][] = ["search_ad", "datalab", "smartstore", "shop"];
+
+  return providerOrder
+    .map((provider) => {
+      const providerReports = reportsByProvider.get(provider);
+      if (!providerReports?.length) {
+        return undefined;
+      }
+
+      const latestReport = [...providerReports].sort((left, right) => right.checkedAt.localeCompare(left.checkedAt))[0];
+      return {
+        provider,
+        latestReport,
+        reportCount: providerReports.length,
+      };
+    })
+    .filter((group): group is ProviderEvidenceGroup => Boolean(group));
+}
+
+function buildProviderEvidenceGroupLabel(report: ProviderSyncReport, reportCount: number): string {
+  const snapshotLabels = buildProviderSnapshotLabels(report).slice(0, 2);
+  const historyLabel = reportCount > 1 ? ` · 누적 ${reportCount.toLocaleString("ko-KR")}회` : "";
+
+  return `${providerKeyLabel(report.provider)} · 최신 ${providerSyncStatusLabel(report.status)}${
+    snapshotLabels.length > 0 ? ` · ${snapshotLabels.join(", ")}` : ""
+  }${historyLabel}`;
 }
 
 function buildOwnerDecisionFlowView(
