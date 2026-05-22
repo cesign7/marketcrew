@@ -9,7 +9,7 @@ import { buildFollowUpQueueViewModel } from "@/features/follow-ups/buildFollowUp
 export const dynamic = "force-dynamic";
 
 export default async function FollowUpsPage() {
-  const repository = await loadWorkflowReadRepository({ seedSample: true });
+  const repository = await loadWorkflowReadRepository();
   const viewModel = buildFollowUpQueueViewModel({ repository });
 
   return (

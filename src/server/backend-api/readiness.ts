@@ -1,0 +1,20 @@
+import { NextResponse } from "next/server";
+import { runSampleAgendaCycle } from "@/lib/application/agenda-cycle";
+import { buildReadOnlyProviderSyncReports } from "@/lib/integrations/providers/read-only-sync";
+import { buildProviderReadinessReports } from "@/lib/integrations/providers/readiness";
+import { buildDeterministicPlannerResult, buildPlannerInputFromApprovals } from "@/lib/llm/planner";
+
+export function handleReadiness() {
+  const agendaCycle = runSampleAgendaCycle();
+  const providerReadiness = buildProviderReadinessReports(process.env, agendaCycle.generatedAt);
+  const providerSyncReports = buildReadOnlyProviderSyncReports(process.env, agendaCycle.generatedAt);
+  const plannerInput = buildPlannerInputFromApprovals(agendaCycle.approvalRequests, agendaCycle.generatedAt);
+  const plannerPreview = buildDeterministicPlannerResult(plannerInput);
+
+  return NextResponse.json({
+    generatedAt: agendaCycle.generatedAt,
+    providerReadiness,
+    providerSyncReports,
+    plannerPreview,
+  });
+}

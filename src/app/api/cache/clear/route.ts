@@ -6,6 +6,6 @@ export async function POST() {
 
   return NextResponse.json({
     ok: true,
-    cleared: ["agendaRoomViewModel", "postgresReadModel"],
+    cleared: ["agendaRoomViewModel", "backendWorkflowState"],
   });
 }

@@ -1,7 +1,4 @@
-import { NextResponse } from "next/server";
-import { buildAgendaRoomViewModel } from "@/features/agenda-room/buildAgendaRoomViewModel";
 import { proxyRequestToBackend } from "@/lib/backend/proxy";
-import { createLocalWorkflowRepository } from "@/lib/persistence/workflow-store";
 
 export async function GET(request: Request) {
   const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
@@ -9,14 +6,6 @@ export async function GET(request: Request) {
     return proxied;
   }
 
-  const viewModel = buildAgendaRoomViewModel({
-    repository: createLocalWorkflowRepository(),
-  });
-
-  return NextResponse.json({
-    generatedAt: viewModel.generatedAt,
-    llmCostGovernance: viewModel.llmCostGovernance,
-    plannerAudit: viewModel.plannerPreview.audit,
-    agentRunSummary: viewModel.agentRunSummary,
-  });
+  const { handleLlmCostGovernance } = await import("@/server/backend-api/llm-cost-governance");
+  return handleLlmCostGovernance();
 }

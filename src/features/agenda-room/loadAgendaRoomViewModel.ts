@@ -1,18 +1,13 @@
-import { createMemoryMarketingWorkflowRepository } from "@/lib/persistence/memory-repository";
 import {
   clearBackendWorkflowStateCache,
   readBackendAgendaRoomViewModel,
   readBackendWorkflowRepositoryState,
 } from "@/lib/persistence/backend-workflow-state";
 import { isHostedFrontendRuntime } from "@/lib/backend/proxy";
-import { clearPostgresReadModelStateCache, readPostgresWorkflowRepositoryState } from "@/lib/persistence/postgres-read-model";
+import { runAgendaCycle } from "@/lib/application/agenda-cycle";
+import { SampleProviderAdapter } from "@/lib/integrations/sample/provider";
+import { createMemoryMarketingWorkflowRepository } from "@/lib/persistence/memory-repository";
 import type { MarketingWorkflowRepository } from "@/lib/persistence/repositories";
-import {
-  createLocalWorkflowRepository,
-  getWorkflowDatabaseUrl,
-  getWorkflowRepositoryMode,
-  seedSampleWorkflowIfEmpty,
-} from "@/lib/persistence/workflow-store";
 import { buildAgendaRoomViewModel } from "./buildAgendaRoomViewModel";
 import type { AgendaRoomViewModel } from "./types";
 
@@ -25,7 +20,6 @@ type CachedAgendaRoomViewModel = {
 
 type WorkflowReadRepositoryOptions = {
   env?: NodeJS.ProcessEnv;
-  seedSample?: boolean;
 };
 
 declare global {
@@ -61,7 +55,6 @@ export function clearAgendaRoomViewModelCache() {
 
 export function clearLocalAgendaRoomViewModelCache() {
   globalThis.__marketcrewAgendaRoomViewModelCache = undefined;
-  clearPostgresReadModelStateCache();
 }
 
 function readAgendaRoomViewModelCache() {
@@ -115,24 +108,15 @@ export async function loadWorkflowReadRepository(
     throw new Error("Vercel 화면 런타임에서는 Railway 백엔드 workflow state가 필요합니다.");
   }
 
-  if (getWorkflowRepositoryMode(env) !== "db") {
-    return createSeedableLocalRepository(env, options.seedSample);
-  }
-
-  const databaseUrl = getWorkflowDatabaseUrl(env);
-  if (!databaseUrl) {
-    return createSeedableLocalRepository(env, options.seedSample);
-  }
-
-  const state = await readPostgresWorkflowRepositoryState(databaseUrl, env);
-  return createMemoryMarketingWorkflowRepository(state);
+  return createSampleWorkflowReadRepository();
 }
 
-function createSeedableLocalRepository(env: NodeJS.ProcessEnv, seedSample: boolean | undefined): MarketingWorkflowRepository {
-  const repository = createLocalWorkflowRepository(env);
-  if (seedSample) {
-    seedSampleWorkflowIfEmpty(repository);
-  }
+function createSampleWorkflowReadRepository(): MarketingWorkflowRepository {
+  const repository = createMemoryMarketingWorkflowRepository();
+  runAgendaCycle({
+    repository,
+    sampleProvider: new SampleProviderAdapter(),
+  });
 
   return repository;
 }

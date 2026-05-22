@@ -1,6 +1,4 @@
-import { NextResponse } from "next/server";
 import { proxyRequestToBackend } from "@/lib/backend/proxy";
-import { buildWorkflowStateSummary, createLocalWorkflowRepository, getWorkflowStoreLabel } from "@/lib/persistence/workflow-store";
 
 export async function GET(request: Request) {
   const proxied = await proxyRequestToBackend(request, "/api/operations/workflow-state", { failClosed: true });
@@ -8,10 +6,6 @@ export async function GET(request: Request) {
     return proxied;
   }
 
-  const storePath = getWorkflowStoreLabel();
-  const repository = createLocalWorkflowRepository();
-
-  return NextResponse.json({
-    state: buildWorkflowStateSummary(repository, storePath),
-  });
+  const { handleWorkflowState } = await import("@/server/backend-api/workflow-state");
+  return handleWorkflowState();
 }

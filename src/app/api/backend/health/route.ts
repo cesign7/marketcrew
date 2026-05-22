@@ -1,26 +1,11 @@
-import { NextResponse } from "next/server";
-import { readPostgresWorkflowRepositoryState } from "@/lib/persistence/postgres-read-model";
-import { getWorkflowDatabaseUrl, getWorkflowRepositoryMode } from "@/lib/persistence/workflow-store";
+import { proxyRequestToBackend } from "@/lib/backend/proxy";
 
-export async function GET() {
-  const databaseUrl = getWorkflowDatabaseUrl();
-  let counts: Record<string, number> | undefined;
-  if (databaseUrl) {
-    const state = await readPostgresWorkflowRepositoryState(databaseUrl, {
-      ...process.env,
-      MARKETCREW_POSTGRES_READ_MODEL_CACHE_TTL_MS: "1000",
-    });
-    counts = {
-      approvalRequests: state.approvalRequests.length,
-      providerSyncReports: state.providerSyncReports.length,
-      agentRuns: state.agentRuns.length,
-    };
+export async function GET(request: Request) {
+  const proxied = await proxyRequestToBackend(request, "/api/backend/health", { failClosed: true });
+  if (proxied) {
+    return proxied;
   }
 
-  return NextResponse.json({
-    ok: Boolean(databaseUrl),
-    service: "marketcrew-api",
-    repositoryMode: getWorkflowRepositoryMode(),
-    counts,
-  });
+  const { handleBackendHealth } = await import("@/server/backend-api/backend-health");
+  return handleBackendHealth();
 }

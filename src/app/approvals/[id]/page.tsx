@@ -17,7 +17,7 @@ type ApprovalDetailPageProps = {
 
 export default async function ApprovalDetailPage({ params }: ApprovalDetailPageProps) {
   const { id } = await params;
-  const repository = await loadWorkflowReadRepository({ seedSample: true });
+  const repository = await loadWorkflowReadRepository();
   const viewModel = buildApprovalDetailViewModel(id, {
     repository,
   });
