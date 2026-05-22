@@ -4,6 +4,7 @@ const DEFAULT_BACKEND_PROXY_TIMEOUT_MS = 5_000;
 
 type BackendProxyOptions = {
   failClosed?: boolean;
+  timeoutMs?: number;
 };
 
 export async function proxyRequestToBackend(
@@ -27,7 +28,7 @@ export async function proxyRequestToBackend(
   const sourceUrl = new URL(request.url);
   const targetUrl = new URL(pathOverride ?? `${sourceUrl.pathname}${sourceUrl.search}`, baseUrl);
   const abortController = new AbortController();
-  const timeout = setTimeout(() => abortController.abort(), getBackendProxyTimeoutMs());
+  const timeout = setTimeout(() => abortController.abort(), getBackendProxyTimeoutMs(process.env, options.timeoutMs));
 
   try {
     const response = await fetch(targetUrl, {
@@ -101,7 +102,11 @@ function pickResponseHeaders(headers: Headers): HeadersInit {
   return picked;
 }
 
-function getBackendProxyTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
+function getBackendProxyTimeoutMs(env: NodeJS.ProcessEnv = process.env, overrideMs?: number): number {
+  if (typeof overrideMs === "number" && Number.isFinite(overrideMs)) {
+    return Math.max(250, overrideMs);
+  }
+
   const parsed = Number.parseInt(env.MARKETCREW_BACKEND_PROXY_TIMEOUT_MS ?? env.MARKETCREW_BACKEND_API_TIMEOUT_MS ?? "", 10);
   return Number.isFinite(parsed) ? Math.max(250, parsed) : DEFAULT_BACKEND_PROXY_TIMEOUT_MS;
 }

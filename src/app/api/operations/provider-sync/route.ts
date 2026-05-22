@@ -2,7 +2,7 @@ import { clearAgendaRoomViewModelCache } from "@/features/agenda-room/loadAgenda
 import { proxyRequestToBackend } from "@/lib/backend/proxy";
 
 export async function GET(request: Request) {
-  const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
+  const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true, timeoutMs: 30_000 });
   if (proxied) {
     await clearAgendaRoomViewModelCache();
     return proxied;
