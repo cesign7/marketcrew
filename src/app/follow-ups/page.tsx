@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft, ClipboardList, ShieldCheck } from "lucide-react";
-import { LogoutButton } from "@/components/auth/LogoutButton";
+import { ClipboardList, ShieldCheck } from "lucide-react";
 import { FollowUpQueueBoard } from "@/components/follow-ups/FollowUpQueueBoard";
 import { OwnerLearningPanel } from "@/components/follow-ups/OwnerLearningPanel";
+import { AppShell } from "@/components/layout/AppShell";
 import { buildFollowUpQueueViewModel } from "@/features/follow-ups/buildFollowUpQueueViewModel";
 import { createLocalWorkflowRepository, seedSampleWorkflowIfEmpty } from "@/lib/persistence/workflow-store";
 
@@ -14,27 +14,19 @@ export default function FollowUpsPage() {
   const viewModel = buildFollowUpQueueViewModel({ repository });
 
   return (
-    <main className="operations-shell followups-shell">
-      <header className="topbar">
-        <div>
-          <span className="eyebrow">후속 업무 큐</span>
-          <h1>대표 결정 이후 내려간 일</h1>
-          <p>승인, 보류, 근거 요청, 외부 반영 차단 결과를 담당 캐릭터의 내부 업무와 다음 추천 기준으로 이어 봅니다.</p>
-        </div>
-        <div className="topbar-actions">
-          <span>생성 시각 {viewModel.generatedAt}</span>
-          <Link className="secondary-button" href="/operations">
-            <ArrowLeft size={16} aria-hidden="true" />
-            업무실
-          </Link>
-          <Link className="primary-button" href="/operations#owner-decision-submit">
-            <ShieldCheck size={16} aria-hidden="true" />
-            결재 확인
-          </Link>
-          <LogoutButton />
-        </div>
-      </header>
-
+    <AppShell
+      active="approvals"
+      actions={
+        <Link className="primary-button" href="/approvals">
+          <ShieldCheck size={16} aria-hidden="true" />
+          결재 확인
+        </Link>
+      }
+      description="승인, 보류, 근거 요청, 외부 반영 차단 결과를 담당 캐릭터의 내부 업무와 다음 추천 기준으로 이어 봅니다."
+      eyebrow="후속 업무 큐"
+      generatedAt={viewModel.generatedAt}
+      title="대표 결정 이후 내려간 일"
+    >
       <section className="summary-strip" aria-label="후속 업무 요약">
         <article>
           <span>열린 후속 업무</span>
@@ -64,6 +56,6 @@ export default function FollowUpsPage() {
 
       <OwnerLearningPanel signals={viewModel.ownerLearningSignals} />
       <FollowUpQueueBoard queues={viewModel.characterQueues} />
-    </main>
+    </AppShell>
   );
 }

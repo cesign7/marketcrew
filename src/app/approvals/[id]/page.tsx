@@ -1,14 +1,13 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { ApprovalAgentRunTimelinePanel } from "@/components/agenda-room/ApprovalAgentRunTimelinePanel";
 import { ApprovalPreviewPanel } from "@/components/agenda-room/ApprovalPreviewPanel";
 import { ExecutionPanel } from "@/components/agenda-room/ExecutionPanel";
-import { LogoutButton } from "@/components/auth/LogoutButton";
 import { OwnerDecisionFlowPanel } from "@/components/agenda-room/OwnerDecisionFlowPanel";
 import { OwnerDecisionSubmitPanel } from "@/components/agenda-room/OwnerDecisionSubmitPanel";
 import { OutcomeReportHistoryPanel } from "@/components/agenda-room/OutcomeReportHistoryPanel";
 import { ProviderSyncEvidencePanel } from "@/components/agenda-room/ProviderSyncEvidencePanel";
+import { AppShell } from "@/components/layout/AppShell";
 import { buildApprovalDetailViewModel } from "@/features/approvals/buildApprovalDetailViewModel";
 import { createLocalWorkflowRepository } from "@/lib/persistence/workflow-store";
 
@@ -26,27 +25,19 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
   }
 
   return (
-    <main className="operations-shell approval-detail-shell">
-      <header className="topbar">
-        <div>
-          <span className="eyebrow">대표 결재 상세</span>
-          <h1>{viewModel.title}</h1>
-          <p>{viewModel.opiSummary}</p>
-        </div>
-        <div className="topbar-actions">
-          <span>생성 시각 {viewModel.generatedAt}</span>
-          <Link className="secondary-button" href="/operations">
-            <ArrowLeft size={16} aria-hidden="true" />
-            업무실
-          </Link>
-          <a className="primary-button" href="#owner-decision-submit" aria-disabled={Boolean(viewModel.approvalPreview.disabledReason)}>
-            <ShieldCheck size={16} aria-hidden="true" />
-            승인 후 바로 반영
-          </a>
-          <LogoutButton />
-        </div>
-      </header>
-
+    <AppShell
+      active="approvals"
+      actions={
+        <a className="primary-button" href="#owner-decision-submit" aria-disabled={Boolean(viewModel.approvalPreview.disabledReason)}>
+          <ShieldCheck size={16} aria-hidden="true" />
+          승인 후 바로 반영
+        </a>
+      }
+      description={viewModel.opiSummary}
+      eyebrow="대표 결재 상세"
+      generatedAt={viewModel.generatedAt}
+      title={viewModel.title}
+    >
       <ApprovalPreviewPanel previews={[viewModel.approvalPreview]} />
       <ProviderSyncEvidencePanel
         reports={viewModel.providerSyncEvidence}
@@ -61,6 +52,6 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
       <OutcomeReportHistoryPanel reports={viewModel.outcomeHistory} />
       <OwnerDecisionFlowPanel flows={viewModel.ownerDecisionFlows} />
       <ExecutionPanel results={viewModel.executionResults} checkpoints={viewModel.outcomeCheckpoints} />
-    </main>
+    </AppShell>
   );
 }
