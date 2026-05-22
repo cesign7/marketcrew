@@ -94,8 +94,7 @@ const periodFilters: ViewFilterOption[] = [
 ];
 
 const sidebarStorageKey = "marketcrew:sidebar-collapsed";
-const navWarmupDelayMs = 80;
-const navWarmupStepMs = 90;
+const navWarmupStepMs = 60;
 
 type MarketCrewWindow = Window &
   typeof globalThis & {
@@ -149,25 +148,12 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
 
     const warmableRoutes = navItems.map((item) => item.href).filter((href) => href !== activeItem.href);
     const timeoutIds: number[] = [];
-    const scheduleWarmup = () => {
-      warmableRoutes.forEach((href, index) => {
-        timeoutIds.push(window.setTimeout(() => warmRoute(href), navWarmupDelayMs + index * navWarmupStepMs));
-      });
-    };
-    const cancelWarmup =
-      typeof window.requestIdleCallback === "function"
-        ? (() => {
-            const idleCallbackId = window.requestIdleCallback(scheduleWarmup, { timeout: 1600 });
-            return () => window.cancelIdleCallback(idleCallbackId);
-          })()
-        : (() => {
-            const timeoutId = window.setTimeout(scheduleWarmup, navWarmupDelayMs);
-            return () => window.clearTimeout(timeoutId);
-          })();
+    warmableRoutes.forEach((href, index) => {
+      timeoutIds.push(window.setTimeout(() => warmRoute(href), index * navWarmupStepMs));
+    });
 
     return () => {
       timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
-      cancelWarmup();
     };
   }, [activeItem.href, warmRoute]);
 
