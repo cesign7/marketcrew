@@ -29,9 +29,26 @@ import {
 } from "./workflow-state";
 
 const bridgeScriptPath = resolve(process.cwd(), "scripts", "postgres-workflow-bridge.mjs");
+const DEFAULT_POSTGRES_STATE_CACHE_TTL_MS = 15_000;
+
+type CachedWorkflowRepositoryState = {
+  expiresAt: number;
+  state: WorkflowRepositoryState;
+};
+
+const sharedStateCache = new Map<string, CachedWorkflowRepositoryState>();
 
 export function createPostgresMarketingWorkflowRepository(databaseUrl: string): MarketingWorkflowRepository {
   return new PostgresMarketingWorkflowRepository(databaseUrl);
+}
+
+export function clearPostgresWorkflowStateCache(databaseUrl?: string): void {
+  if (databaseUrl) {
+    sharedStateCache.delete(databaseUrl);
+    return;
+  }
+
+  sharedStateCache.clear();
 }
 
 class PostgresMarketingWorkflowRepository implements MarketingWorkflowRepository {
@@ -198,6 +215,7 @@ class PostgresMarketingWorkflowRepository implements MarketingWorkflowRepository
       ...currentState,
       [key]: nextCollection,
     };
+    writeSharedStateCache(this.databaseUrl, this.cachedState);
   }
 
   private listCollection<K extends WorkflowCollectionKey>(key: K): WorkflowRepositoryState[K] {
@@ -206,8 +224,15 @@ class PostgresMarketingWorkflowRepository implements MarketingWorkflowRepository
 
   private readState(): WorkflowRepositoryState {
     if (!this.cachedState) {
+      const sharedState = readSharedStateCache(this.databaseUrl);
+      if (sharedState) {
+        this.cachedState = sharedState;
+        return this.cachedState;
+      }
+
       const output = this.runBridge("read-state");
       this.cachedState = normalizeWorkflowRepositoryState(JSON.parse(output));
+      writeSharedStateCache(this.databaseUrl, this.cachedState);
     }
 
     return this.cachedState;
@@ -224,4 +249,46 @@ class PostgresMarketingWorkflowRepository implements MarketingWorkflowRepository
       maxBuffer: 1024 * 1024 * 64,
     });
   }
+}
+
+function readSharedStateCache(databaseUrl: string): WorkflowRepositoryState | undefined {
+  const ttlMs = getPostgresStateCacheTtlMs();
+  if (ttlMs <= 0) {
+    return undefined;
+  }
+
+  const cached = sharedStateCache.get(databaseUrl);
+  if (!cached) {
+    return undefined;
+  }
+
+  if (cached.expiresAt <= Date.now()) {
+    sharedStateCache.delete(databaseUrl);
+    return undefined;
+  }
+
+  return cached.state;
+}
+
+function writeSharedStateCache(databaseUrl: string, state: WorkflowRepositoryState): void {
+  const ttlMs = getPostgresStateCacheTtlMs();
+  if (ttlMs <= 0) {
+    sharedStateCache.delete(databaseUrl);
+    return;
+  }
+
+  sharedStateCache.set(databaseUrl, {
+    expiresAt: Date.now() + ttlMs,
+    state,
+  });
+}
+
+function getPostgresStateCacheTtlMs(env: NodeJS.ProcessEnv = process.env): number {
+  const rawValue = env.MARKETCREW_POSTGRES_STATE_CACHE_TTL_MS;
+  if (!rawValue) {
+    return DEFAULT_POSTGRES_STATE_CACHE_TTL_MS;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : DEFAULT_POSTGRES_STATE_CACHE_TTL_MS;
 }

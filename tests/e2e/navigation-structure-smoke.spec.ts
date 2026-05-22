@@ -45,3 +45,15 @@ test("캐릭터 업무데스크에서 캐릭터별 업무 화면으로 이동한
   await expect(page.getByRole("heading", { level: 1, name: "그로 업무데스크" })).toBeVisible();
   await expect(page.getByText("시즌 키워드 테스트 안건 상신")).toBeVisible();
 });
+
+test("모바일 캐릭터 업무데스크는 첫 화면 안에서 업무 카드를 보여준다", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/characters");
+
+  const firstCharacterCard = page.locator(".character-desk-card").first();
+  await expect(firstCharacterCard).toBeVisible();
+
+  await expect(page.getByRole("link", { name: "캐릭터 업무데스크" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "오피", exact: true })).toBeVisible();
+  await expect(firstCharacterCard).toBeInViewport();
+});
