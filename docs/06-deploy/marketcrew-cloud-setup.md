@@ -17,6 +17,7 @@
 | Owner login | Enabled | password session gate |
 | Railway | Connected | project `marketcrew` |
 | Railway Postgres | Online | service `Postgres`, production environment |
+| Railway API | Online | service `marketcrew-api`, `https://marketcrew-api-production.up.railway.app` |
 
 ## Production Runtime
 
@@ -33,8 +34,28 @@ Required production keys currently registered in Vercel:
 | DataLab | `NAVER_DATALAB_CLIENT_ID`, `NAVER_DATALAB_CLIENT_SECRET` |
 | AI model readiness | `AI_AGENT_MODE`, `AI_AGENT_PROVIDER`, `AI_AGENT_MODEL`, `AI_LLM_PROVIDER`, `AI_LLM_MODEL_DEFAULT`, `AI_LLM_MODEL_STRATEGIC`, `AI_LLM_MODEL_REVIEWER`, `GEMINI_API_KEY` |
 | Owner login | `MARKETCREW_AUTH_SECRET`, `MARKETCREW_OWNER_PASSWORD_HASH` |
+| Railway API bridge | `MARKETCREW_BACKEND_API_URL`, `MARKETCREW_BACKEND_API_TOKEN`, `MARKETCREW_BACKEND_API_TIMEOUT_MS` |
 
 `OPENAI_API_KEY` was not registered because the local value was blank.
+
+## Railway Backend API
+
+The first backend split keeps Vercel as the UI/login surface and moves the read-heavy workflow state access closer to Railway Postgres.
+
+| Surface | Detail |
+|---------|--------|
+| Service root | `services/marketcrew-api` |
+| Runtime | Node.js HTTP server |
+| Production URL | `https://marketcrew-api-production.up.railway.app` |
+| Health check | `GET /health` |
+| Read model | `GET /api/workflow-state` |
+| Cache clear | `POST /api/cache/clear` |
+| Required Railway vars | `DATABASE_URL` or `MARKETCREW_DATABASE_URL`, `MARKETCREW_API_TOKEN`, `MARKETCREW_API_CACHE_TTL_MS` |
+| Required Vercel vars | `MARKETCREW_BACKEND_API_URL`, `MARKETCREW_BACKEND_API_TOKEN` |
+
+The Vercel loader uses the Railway API first when `MARKETCREW_BACKEND_API_URL` is configured. If the API is unavailable, unauthorized, or too slow, it falls back to the existing direct Postgres read path.
+
+This split is intentionally read-first. Provider writes, ad budget changes, customer messaging, and other external writes remain blocked unless a later PDCA explicitly opens that path with write gates and rollback rules.
 
 ## Owner Login
 

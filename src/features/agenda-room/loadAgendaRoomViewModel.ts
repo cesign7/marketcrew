@@ -1,4 +1,5 @@
 import { createMemoryMarketingWorkflowRepository } from "@/lib/persistence/memory-repository";
+import { clearBackendWorkflowStateCache, readBackendWorkflowRepositoryState } from "@/lib/persistence/backend-workflow-state";
 import { clearPostgresReadModelStateCache, readPostgresWorkflowRepositoryState } from "@/lib/persistence/postgres-read-model";
 import type { MarketingWorkflowRepository } from "@/lib/persistence/repositories";
 import { createLocalWorkflowRepository, getWorkflowDatabaseUrl, getWorkflowRepositoryMode } from "@/lib/persistence/workflow-store";
@@ -34,6 +35,7 @@ export async function loadAgendaRoomViewModel() {
 export function clearAgendaRoomViewModelCache() {
   globalThis.__marketcrewAgendaRoomViewModelCache = undefined;
   clearPostgresReadModelStateCache();
+  void clearBackendWorkflowStateCache();
 }
 
 function readAgendaRoomViewModelCache() {
@@ -82,6 +84,11 @@ async function createAgendaRoomReadRepository(env: NodeJS.ProcessEnv = process.e
   const databaseUrl = getWorkflowDatabaseUrl(env);
   if (!databaseUrl) {
     return createLocalWorkflowRepository(env);
+  }
+
+  const backendState = await readBackendWorkflowRepositoryState(env);
+  if (backendState) {
+    return createMemoryMarketingWorkflowRepository(backendState);
   }
 
   const state = await readPostgresWorkflowRepositoryState(databaseUrl, env);
