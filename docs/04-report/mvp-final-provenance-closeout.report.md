@@ -10,6 +10,8 @@
 
 대표가 `/operations`에서 결재 미리보기 카드만 보고도 해당 안건의 근거 흐름을 확인할 수 있게 했다. 카드별로 데이터 근거, AI 실행 이력, 연동 수집 기록, 성과 체크포인트, 안전 조건을 한 화면에 묶어 표시한다.
 
+2026-05-22 추가 closeout에서는 서비스 전 혼동을 없애기 위해 총괄 캐릭터 표시명과 내부 식별자를 모두 `모아` / `moa` / `Moa`로 통일했다. 또한 왼쪽 업무 메뉴를 접고 펼칠 수 있게 하고, 상단 채널/기간 필터를 짧은 한글 라벨로 줄여 첫 화면의 업무 밀도를 낮췄다.
+
 ## Completed
 
 | Area | Result |
@@ -20,17 +22,20 @@
 | AgentRun linkage | 연결된 모아 계획/대표 결정/연동 수집 실행 이력을 카드에서 확인 |
 | Safety copy | 원천 행 제외, 외부 반영 잠금, 데이터 신뢰도, 위험도를 카드별 안전 조건으로 표시 |
 | E2E stability | 병렬 실행에서도 결재/후속 업무 smoke가 충돌하지 않도록 조정 |
+| Coordinator naming | 화면 문구, 라우트, 도메인 타입, 저장소 collection, 실행 타입, CSS hook을 `모아/moa/Moa`로 통일 |
+| Operations shell | 왼쪽 메뉴 접기/펼치기, 간결한 상단 필터, 앱 브라우저 폭 카드 가독성 보정 |
 
 ## Verification
 
 | Command / Check | Result |
 |-----------------|--------|
 | `npm run typecheck` | passed |
-| `npm test -- --run` | passed, 21 files / 70 tests |
+| `npm test -- --run` | passed, 26 files / 79 tests |
 | `npm run build` | passed |
 | `npm audit --omit=dev` | 0 vulnerabilities |
-| `npm run test:e2e -- --project=chromium` | passed, 3 tests |
-| `localhost:3001` browser text scan | `/operations`, `/approvals/[id]`, `/follow-ups` all OK |
+| `npm run test:e2e` | passed, 10 tests |
+| legacy coordinator scan | 이전 총괄 캐릭터 식별자 패턴 0건 |
+| `localhost:3001` browser smoke | `/operations` 787px에서 모아 표시, 접기/펼치기, 축약 필터, 콘솔 오류 0건 확인 |
 
 ## MVP Boundary
 
