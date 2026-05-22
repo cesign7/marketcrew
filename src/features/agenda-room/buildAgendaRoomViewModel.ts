@@ -660,7 +660,10 @@ function buildProviderSyncEvidenceViews(reports: ProviderSyncReport[]): AgendaRo
 function buildProviderSyncEvidenceView(report: ProviderSyncReport): AgendaRoomViewModel["providerSyncEvidence"][number] {
   const providerDisplay = buildProviderDisplayInfo(report);
   const snapshotLabels = buildProviderSnapshotLabels(report);
-  const historyPolicy = report.historyPolicy ?? getProviderHistoryPolicy(report.provider);
+  const historyPolicy = {
+    ...(report.historyPolicy ?? {}),
+    ...getProviderHistoryPolicy(report.provider),
+  };
   const evidenceCount =
     snapshotLabels.length +
     (report.keywordDemandSnapshots?.length ?? 0) +
@@ -694,6 +697,11 @@ function buildProviderSyncEvidenceView(report: ProviderSyncReport): AgendaRoomVi
       seasonalityLabel: historyPolicy.seasonalityLabel,
       storageLabel: historyPolicy.storageLabel,
       costGuardLabel: historyPolicy.costGuardLabel,
+      baseScheduleLabel: historyPolicy.baseScheduleLabel,
+      intensiveScheduleLabel: historyPolicy.intensiveScheduleLabel,
+      manualRefreshLabel: historyPolicy.manualRefreshLabel,
+      freshnessLabel: historyPolicy.freshnessLabel,
+      dedupeKeyLabel: historyPolicy.dedupeKeyLabel,
       sourceUrl: historyPolicy.sourceUrl,
     },
   };

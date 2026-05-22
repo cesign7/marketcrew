@@ -34,7 +34,7 @@ describe("읽기 전용 연동 수집", () => {
       "NAVER_SEARCH_AD_SECRET_KEY",
       "NAVER_SEARCH_AD_CUSTOMER_ID",
     ]);
-    expect(report.historyPolicy?.requestWindowLabel).toContain("92일");
+    expect(report.historyPolicy?.apiLimitLabel).toContain("7~90일");
     expect(report.generatedSignal?.source).toBe("search_ad");
   });
 
@@ -297,7 +297,8 @@ describe("읽기 전용 연동 수집", () => {
       dataScope: "aggregate_only",
     });
     expect(report.generatedSignal?.source).toBe("smartstore");
-    expect(report.historyPolicy?.apiLimitLabel).toContain("180일");
+    expect(report.historyPolicy?.apiLimitLabel).toContain("24시간");
+    expect(report.historyPolicy?.manualRefreshLabel).toContain("결재 직전");
     expect(JSON.stringify(report)).not.toContain("commerce-access-token");
   });
 

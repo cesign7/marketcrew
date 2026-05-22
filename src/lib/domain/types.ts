@@ -86,6 +86,11 @@ export interface ProviderHistoryPolicy {
   seasonalityLabel: string;
   storageLabel: string;
   costGuardLabel: string;
+  baseScheduleLabel: string;
+  intensiveScheduleLabel: string;
+  manualRefreshLabel: string;
+  freshnessLabel: string;
+  dedupeKeyLabel: string;
   sourceUrl: string;
 }
 

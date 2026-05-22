@@ -86,6 +86,7 @@ export function DataIntegrationPanels({
   return (
     <>
       <ProviderCollectionPolicyPanel
+        contracts={filteredProviderDataContracts}
         periodLabel={periodLabel}
         periodPolicyLabel={periodPolicyLabel}
         reports={filteredProviderSyncEvidence}

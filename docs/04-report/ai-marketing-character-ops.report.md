@@ -64,8 +64,9 @@ QA Verdict:    QA_PASS
 | SC-14 | 최소 단위 테스트와 브라우저 smoke가 통과한다. | Met | Vitest 79 tests, Playwright 8 e2e |
 | SC-15 | 저장된 성과 보고를 다시 조회할 수 있다. | Met | `/api/approvals/[id]/outcomes`, `OutcomeReportHistoryPanel` |
 | SC-16 | 외부 API 조회 한계와 백필/일별 저장 정책이 데이터 연동 화면에 보인다. | Met | `ProviderSyncReport.historyPolicy`, `/data` policy panel |
+| SC-17 | 자동 스케줄, 수동 수집, 결재 전 최신성, 중복 방지 기준이 데이터 연동 화면에 보인다. | Met | `/data` collection schedule board, provider별 schedule labels |
 
-**Success Rate**: 15 Met / 1 Partial within the first-MVP boundary.
+**Success Rate**: 16 Met / 1 Partial within the first-MVP boundary.
 **Operator MVP Rate**: 100%.
 
 ## 1.5 Decision Record Summary
@@ -81,6 +82,7 @@ QA Verdict:    QA_PASS
 | Act | provider read-only sync 근거를 대표 화면과 결재 상세에 노출한다. | Yes | provider readiness/sync/evidence panels 구현 |
 | Act | 생성된 outcome report는 상세 화면/API에서 다시 읽힌다. | Yes | outcome history panel과 outcomes API 구현 |
 | Act | API 과거 조회 한계는 화면에서 운영 정책으로 드러나야 한다. | Yes | provider별 조회 한계/백필/음력 시즌 비교/AI 입력 제한 표시 |
+| Act | 자동 스케줄과 수동 수집은 역할을 나누고 중복 저장은 최신 스냅샷 갱신으로 처리한다. | Yes | `/data` 추천 수집 주기, 결재 전 최신성, provider별 dedupe key 표시 |
 
 ---
 

@@ -14,8 +14,8 @@ describe("ProviderSyncEvidencePanel", () => {
       }),
     );
 
-    expect(html).toContain("주문 조건 조회는 시작일 기준 180일");
-    expect(html).toContain("주문 조회는 1회 최대 24시간 범위");
+    expect(html).toContain("변경 주문은 24시간 창 기준");
+    expect(html).toContain("주문 상세 조회는 상품주문번호 묶음 단위");
     expect(html).toContain("AI에는 상품별 매출/주문 요약");
   });
 });

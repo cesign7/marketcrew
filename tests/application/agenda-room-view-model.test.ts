@@ -91,11 +91,15 @@ describe("buildAgendaRoomViewModel", () => {
     );
     const smartstoreEvidence = viewModel.providerSyncEvidence.find((report) => report.providerKey === "smartstore");
     expect(smartstoreEvidence?.brandLabel).toBe("스티커씨");
-    expect(smartstoreEvidence?.historyPolicy.requestWindowLabel).toContain("24시간");
+    expect(smartstoreEvidence?.historyPolicy.apiLimitLabel).toContain("24시간");
+    expect(smartstoreEvidence?.historyPolicy.requestWindowLabel).toContain("상품주문번호");
+    expect(smartstoreEvidence?.historyPolicy.baseScheduleLabel).toContain("07:10");
+    expect(smartstoreEvidence?.historyPolicy.dedupeKeyLabel).toContain("최신 집계");
     expect(smartstoreEvidence?.historyPolicy.seasonalityLabel).toContain("전년도 명절");
     expect(smartstoreEvidence?.snapshotLabels).toContain(
       "스티커씨 주문 100건",
     );
+    expect(viewModel.providerSyncEvidence.find((report) => report.providerKey === "search_ad")?.historyPolicy.intensiveScheduleLabel).toContain("15:05");
     expect(viewModel.providerSyncEvidence.find((report) => report.providerKey === "shop")?.brandLabel).toBe("커피프린트");
     expect(viewModel.productGrowthOpportunities.map((opportunity) => opportunity.kindLabel)).toEqual([
       "키워드 확장",

@@ -1685,6 +1685,92 @@ button:disabled {
   line-height: 1.45;
 }
 
+.collection-schedule-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.collection-schedule-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.collection-schedule-rule,
+.collection-schedule-timeline {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfa;
+  padding: 12px;
+}
+
+.collection-schedule-rule {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.collection-schedule-rule > span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 8px;
+  background: #eef4f1;
+  color: var(--teal-strong);
+}
+
+.collection-schedule-rule strong,
+.collection-schedule-timeline strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.collection-schedule-rule p,
+.collection-schedule-timeline p {
+  margin: 5px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.collection-schedule-timeline header {
+  display: grid;
+  gap: 4px;
+}
+
+.collection-schedule-timeline header span {
+  color: var(--teal-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.collection-schedule-timeline ol {
+  display: grid;
+  gap: 9px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.collection-schedule-timeline li {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  gap: 10px;
+  border-top: 1px solid #e4e7e2;
+  padding-top: 9px;
+}
+
+.collection-schedule-timeline time {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 950;
+}
+
 .collection-policy-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin-top: 12px;
@@ -3210,7 +3296,8 @@ button:disabled {
   }
 
   .daily-brief-grid,
-  .workspace-grid {
+  .workspace-grid,
+  .collection-schedule-board {
     grid-template-columns: 1fr;
   }
 
@@ -3228,6 +3315,10 @@ button:disabled {
 @media (max-width: 1180px) and (min-width: 921px) {
   .bucket-bar {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .collection-schedule-board {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -3296,6 +3387,8 @@ button:disabled {
   .bucket-bar,
   .provider-readiness-grid,
   .provider-sync-grid,
+  .collection-schedule-board,
+  .collection-schedule-rule-grid,
   .collection-policy-grid,
   .data-contract-link-panel,
   .data-contract-grid,
