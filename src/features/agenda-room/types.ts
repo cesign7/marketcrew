@@ -1,14 +1,18 @@
 import type { CharacterKey, EvidenceRequestStatus } from "@/lib/domain";
 import type { LlmDryRunQueue } from "@/lib/application/llm-dry-run-queue";
+import type { CharacterAvailability } from "@/features/characters/keyword-pilot";
 
 export type CharacterTone = "coordinator" | "growth" | "product" | "copy" | "crm" | "finance" | "data";
 
 export type CharacterStatus = {
-  id: string;
+  id: CharacterKey;
   name: string;
   role: string;
   tone: CharacterTone;
   status: string;
+  availability: CharacterAvailability;
+  availabilityLabel: string;
+  workloadFormulaLabel: string;
   workload: number;
   queueCount: number;
 };

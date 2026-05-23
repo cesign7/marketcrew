@@ -7,6 +7,8 @@ import type {
   CharacterKey,
 } from "@/lib/domain";
 import { OFFICIAL_LLM_PRICING, resolveOfficialLlmPricing } from "@/lib/llm/official-pricing";
+import { keywordPilotAvailability } from "@/features/characters/keyword-pilot";
+import type { CharacterAvailability } from "@/features/characters/keyword-pilot";
 
 export type AiModelUsageRow = {
   id: string;
@@ -21,6 +23,9 @@ export type AiModelUsageRow = {
 };
 
 export type AiCharacterProfileView = AiCharacterProfileSettings & {
+  availability: CharacterAvailability;
+  availabilityLabel: string;
+  availabilityDescription: string;
   usageSummaryLabel: string;
   estimatedCostLabel: string;
 };
@@ -374,8 +379,12 @@ export function buildAiPeopleOfficeView(input: {
     explorationPolicy: explorationPolicyView,
     characterProfiles: input.settings.characterProfiles.map((profile) => {
       const usage = usageByCharacter.get(profile.id) ?? { inputTokens: 0, outputTokens: 0, costKrw: 0 };
+      const availability = keywordPilotAvailability(profile.id);
       return {
         ...profile,
+        availability: availability.availability,
+        availabilityLabel: availability.availabilityLabel,
+        availabilityDescription: availability.profileDescription,
         usageSummaryLabel: `입력 ${formatCount(usage.inputTokens)} / 출력 ${formatCount(usage.outputTokens)}토큰`,
         estimatedCostLabel: formatKrw(usage.costKrw),
       };

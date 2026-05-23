@@ -4,6 +4,7 @@ import { Save, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import type { AgentRunProvider, AiCharacterProfileSettings, AiOperationsSettings } from "@/lib/domain";
 import type { AiPeopleOfficeView } from "@/features/people/ai-operations-settings";
+import { keywordPilotScopeLabel } from "@/features/characters/keyword-pilot";
 
 type AiPeopleOfficeProps = {
   view: AiPeopleOfficeView;
@@ -101,7 +102,7 @@ export function AiPeopleOffice({ view }: AiPeopleOfficeProps) {
         <div>
           <span className="eyebrow">캐릭터 롤모델</span>
           <h2>AI 직원 기본 역할</h2>
-          <p>각 캐릭터가 어떤 직무 관점으로 판단하고, 어떤 형식으로 보고할지 조정합니다.</p>
+          <p>{keywordPilotScopeLabel}에 필요한 캐릭터부터 활성화하고, 나머지 역할은 준비중으로 둡니다.</p>
         </div>
         <button className="primary-button" disabled={saveState === "saving"} onClick={saveSettings} type="button">
           <Save size={16} aria-hidden="true" />
@@ -114,7 +115,10 @@ export function AiPeopleOffice({ view }: AiPeopleOfficeProps) {
         {settings.characterProfiles.map((profile) => {
           const usage = view.characterProfiles.find((item) => item.id === profile.id);
           return (
-            <article className="ai-person-card" key={profile.id}>
+            <article
+              className={`ai-person-card${usage?.availability === "PREPARING" ? " is-preparing" : ""}`}
+              key={profile.id}
+            >
               <header>
                 <div className="avatar" aria-hidden="true">
                   {profile.name.slice(0, 1)}
@@ -123,14 +127,20 @@ export function AiPeopleOffice({ view }: AiPeopleOfficeProps) {
                   <span className="eyebrow">{profile.departmentRole}</span>
                   <h3>{profile.name}</h3>
                 </div>
-                <span>
-                  <ShieldCheck size={14} aria-hidden="true" />
-                  {usage?.estimatedCostLabel ?? "0원"}
-                </span>
+                <div className="ai-person-badges">
+                  <span className={`character-availability-badge availability-${usage?.availability.toLowerCase() ?? "preparing"}`}>
+                    {usage?.availabilityLabel ?? "준비중"}
+                  </span>
+                  <span>
+                    <ShieldCheck size={14} aria-hidden="true" />
+                    {usage?.estimatedCostLabel ?? "0원"}
+                  </span>
+                </div>
               </header>
 
               <div className="ai-person-usage">
                 <span>{usage?.usageSummaryLabel ?? "입력 0 / 출력 0토큰"}</span>
+                <span>{usage?.availabilityDescription ?? "준비중"}</span>
               </div>
 
               <label>

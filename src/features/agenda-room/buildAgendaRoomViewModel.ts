@@ -46,6 +46,11 @@ import { buildProviderReadinessReports } from "@/lib/integrations/providers/read
 import { buildDeterministicPlannerResult, buildPlannerAuditRun, buildPlannerInputFromApprovals } from "@/lib/llm/planner";
 import type { MarketingWorkflowRepository } from "@/lib/application/workflow-repository";
 import { resolveAiOperationsSettings } from "@/features/people/ai-operations-settings";
+import {
+  isKeywordPilotActiveCharacter,
+  keywordPilotAvailability,
+  keywordPilotScopeLabel,
+} from "@/features/characters/keyword-pilot";
 import { buildLlmCostGovernanceView } from "./buildLlmCostGovernanceView";
 import { buildProviderDataContracts } from "./provider-data-contracts";
 import { buildProviderEvidenceExpansionPlans } from "./provider-evidence-expansion-plans";
@@ -154,6 +159,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
   const ownerDecisionFlows = pendingApprovals
     .slice(0, providerSyncReports.length > 0 ? 2 : 1)
     .map((request) => buildOwnerDecisionFlowView(request, agendaCycle.generatedAt, providerSyncReports));
+  const workDeskCards = buildWorkDeskCards(providerSyncReports, agendaCycle.generatedAt);
   const failedExecutionCount =
     agendaCycle.executionResults.filter((result) => result.state !== "APPLIED").length +
     ownerDecisionFlows.filter((flow) => !["실행됨", "내부 초안 기록됨"].includes(flow.executionStateLabel)).length;
@@ -179,8 +185,14 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
       autoHoldCount: allAgendaCandidates.length - agendaCycle.promotedAgendaCandidates.length - providerArtifacts.agendaCandidates.length,
       failedExecutionCount,
     }),
-    characters: buildCharacterStatuses(allCharacterReports),
-    workDeskCards: buildWorkDeskCards(providerSyncReports, agendaCycle.generatedAt),
+    characters: buildCharacterStatuses({
+      characterReports: allCharacterReports,
+      openEvidenceRequestCount,
+      pendingApprovalCount: pendingApprovals.length,
+      waitingEvidenceCount: waitingEvidence.length,
+      workDeskCards,
+    }),
+    workDeskCards,
     agendaCards: allApprovalRequests.map((request) =>
       buildAgendaCardView(
         request,
@@ -1421,78 +1433,205 @@ function buildPlannerPreviewView(
   };
 }
 
-function buildCharacterStatuses(characterReports: CharacterReport[]): AgendaRoomViewModel["characters"] {
+function buildCharacterStatuses(input: {
+  characterReports: CharacterReport[];
+  workDeskCards: WorkDeskCardView[];
+  pendingApprovalCount: number;
+  waitingEvidenceCount: number;
+  openEvidenceRequestCount: number;
+}): AgendaRoomViewModel["characters"] {
   const queueCounts = new Map<CharacterKey, number>();
-  for (const report of characterReports) {
+  for (const report of input.characterReports) {
     queueCounts.set(report.character, (queueCounts.get(report.character) ?? 0) + report.agendaCandidateIds.length);
   }
   const activeSet = new Set(queueCounts.keys());
-
-  return [
+  const workCardCounts = countBy(input.workDeskCards, (card) => card.ownerId);
+  const importantWorkCardCounts = countBy(
+    input.workDeskCards.filter((card) => card.priorityLabel === "높음" || card.priorityLabel === "중간"),
+    (card) => card.ownerId,
+  );
+  const ownerFirstApprovalCount = input.workDeskCards.filter(
+    (card) => card.delegation.state === "OWNER_FIRST_APPROVAL_REQUIRED",
+  ).length;
+  const dataReviewCardCount = input.workDeskCards.filter((card) => card.delegation.state === "NEEDS_DATA_REVIEW").length;
+  const characterDefinitions = [
     {
-      id: "moa",
+      id: "moa" as const,
       name: "모아",
       role: "업무실장",
-      tone: "coordinator",
-      status: "하위 보고를 대표 결재 요청으로 묶는 중",
-      workload: 72,
-      queueCount: characterReports.length,
+      tone: "coordinator" as const,
+      activeStatus: "키워드 성과/추천 안건을 대표 결재 흐름으로 묶는 중",
+      preparingStatus: "키워드 결재 종합 이후 추가 업무 준비중",
+      queue: input.pendingApprovalCount,
+      cards: ownerFirstApprovalCount,
+      priority: importantWorkCardCounts.get("gro") ?? 0,
+      evidence: dataReviewCardCount,
+      base: 18,
     },
     {
-      id: "gro",
+      id: "gro" as const,
       name: "그로",
-      role: "성장 담당",
-      tone: "growth",
-      status: activeSet.has("gro") ? "시즌 키워드 테스트 안건 상신" : "신규 성장 안건 없음",
-      workload: 66,
-      queueCount: queueCounts.get("gro") ?? 0,
+      role: "키워드 성과 담당",
+      tone: "growth" as const,
+      activeStatus: activeSet.has("gro") ? "키워드 성과/추천 안건 상신" : "키워드 성과 카드 확인 중",
+      preparingStatus: "키워드 기능 이후 성장 업무 준비중",
+      queue: queueCounts.get("gro") ?? 0,
+      cards: workCardCounts.get("gro") ?? 0,
+      priority: importantWorkCardCounts.get("gro") ?? 0,
+      evidence: 0,
+      base: 14,
     },
     {
-      id: "pro",
+      id: "pro" as const,
       name: "프로",
       role: "상품 담당",
-      tone: "product",
-      status: activeSet.has("pro") ? "스마트스토어 상품/키워드 안건 상신" : "상품 묶음 후보 대기",
-      workload: 42,
-      queueCount: queueCounts.get("pro") ?? 0,
+      tone: "product" as const,
+      activeStatus: activeSet.has("pro") ? "스마트스토어 상품/키워드 안건 상신" : "상품 묶음 후보 대기",
+      preparingStatus: "상품 전략 업무는 준비중",
+      queue: queueCounts.get("pro") ?? 0,
+      cards: workCardCounts.get("pro") ?? 0,
+      priority: importantWorkCardCounts.get("pro") ?? 0,
+      evidence: 0,
+      base: 12,
     },
     {
-      id: "copy",
+      id: "copy" as const,
       name: "카피",
       role: "메시지 담당",
-      tone: "copy",
-      status: "승인 후 문구 초안 준비",
-      workload: 38,
-      queueCount: 0,
+      tone: "copy" as const,
+      activeStatus: "승인 후 문구 초안 준비",
+      preparingStatus: "문안 업무는 준비중",
+      queue: queueCounts.get("copy") ?? 0,
+      cards: workCardCounts.get("copy") ?? 0,
+      priority: importantWorkCardCounts.get("copy") ?? 0,
+      evidence: 0,
+      base: 12,
     },
     {
-      id: "ripi",
+      id: "ripi" as const,
       name: "리피",
       role: "재구매 담당",
-      tone: "crm",
-      status: activeSet.has("ripi") ? "영카트 재구매 고객군 안건 상신" : "이벤트 구매 고객군 관찰",
-      workload: 33,
-      queueCount: queueCounts.get("ripi") ?? 0,
+      tone: "crm" as const,
+      activeStatus: activeSet.has("ripi") ? "영카트 재구매 고객군 안건 상신" : "이벤트 구매 고객군 관찰",
+      preparingStatus: "재구매 업무는 준비중",
+      queue: queueCounts.get("ripi") ?? 0,
+      cards: workCardCounts.get("ripi") ?? 0,
+      priority: importantWorkCardCounts.get("ripi") ?? 0,
+      evidence: 0,
+      base: 12,
     },
     {
-      id: "maru",
+      id: "maru" as const,
       name: "마루",
       role: "커머스 운영",
-      tone: "finance",
-      status: activeSet.has("maru") ? "브랜드별 주문/판매채널 상태 점검안 상신" : "브랜드별 주문, 상품 흐름, 판매채널 상태 확인",
-      workload: 58,
-      queueCount: queueCounts.get("maru") ?? 0,
+      tone: "finance" as const,
+      activeStatus: activeSet.has("maru") ? "브랜드별 주문/판매채널 상태 점검안 상신" : "브랜드별 주문, 상품 흐름, 판매채널 상태 확인",
+      preparingStatus: "커머스 운영 업무는 준비중",
+      queue: queueCounts.get("maru") ?? 0,
+      cards: workCardCounts.get("maru") ?? 0,
+      priority: importantWorkCardCounts.get("maru") ?? 0,
+      evidence: 0,
+      base: 12,
     },
     {
-      id: "day",
+      id: "day" as const,
       name: "데이",
-      role: "데이터 담당",
-      tone: "data",
-      status: activeSet.has("day") ? "오래된 키워드 근거 보강 요청" : "데이터 품질 정상",
-      workload: 63,
-      queueCount: queueCounts.get("day") ?? 0,
+      role: "근거 확인 담당",
+      tone: "data" as const,
+      activeStatus: activeSet.has("day") ? "키워드 근거와 전환 추적 확인" : "키워드 근거 품질 확인 중",
+      preparingStatus: "데이터 감사 확장 업무는 준비중",
+      queue: (queueCounts.get("day") ?? 0) + input.openEvidenceRequestCount,
+      cards: workCardCounts.get("day") ?? 0,
+      priority: importantWorkCardCounts.get("day") ?? 0,
+      evidence: input.waitingEvidenceCount + input.openEvidenceRequestCount + dataReviewCardCount,
+      base: 14,
     },
   ];
+
+  return characterDefinitions.map((definition) => {
+    const availability = keywordPilotAvailability(definition.id);
+    if (!isKeywordPilotActiveCharacter(definition.id)) {
+      return {
+        id: definition.id,
+        name: definition.name,
+        role: definition.role,
+        tone: definition.tone,
+        status: `${definition.preparingStatus} · 현재 범위: ${keywordPilotScopeLabel}`,
+        availability: availability.availability,
+        availabilityLabel: availability.availabilityLabel,
+        workload: 0,
+        workloadFormulaLabel: "준비중 = 0%",
+        queueCount: 0,
+      };
+    }
+
+    const workload = calculateWorkloadPercent({
+      base: definition.base,
+      queue: definition.queue,
+      cards: definition.cards,
+      priority: definition.priority,
+      evidence: definition.evidence,
+    });
+
+    return {
+      id: definition.id,
+      name: definition.name,
+      role: definition.role,
+      tone: definition.tone,
+      status: definition.activeStatus,
+      availability: availability.availability,
+      availabilityLabel: availability.availabilityLabel,
+      workload,
+      workloadFormulaLabel: workloadFormulaLabel({
+        base: definition.base,
+        queue: definition.queue,
+        cards: definition.cards,
+        priority: definition.priority,
+        evidence: definition.evidence,
+        workload,
+      }),
+      queueCount: definition.queue + definition.cards,
+    };
+  });
+}
+
+function calculateWorkloadPercent(input: {
+  base: number;
+  queue: number;
+  cards: number;
+  priority: number;
+  evidence: number;
+}): number {
+  return clampPercent(input.base + input.queue * 8 + input.cards * 10 + input.priority * 6 + input.evidence * 6);
+}
+
+function workloadFormulaLabel(input: {
+  base: number;
+  queue: number;
+  cards: number;
+  priority: number;
+  evidence: number;
+  workload: number;
+}): string {
+  const terms = [`기본 ${input.base}`];
+  if (input.queue > 0) {
+    terms.push(`대기 ${input.queue}×8`);
+  }
+  if (input.cards > 0) {
+    terms.push(`카드 ${input.cards}×10`);
+  }
+  if (input.priority > 0) {
+    terms.push(`중요 ${input.priority}×6`);
+  }
+  if (input.evidence > 0) {
+    terms.push(`근거 ${input.evidence}×6`);
+  }
+
+  return `${terms.join(" + ")} = ${input.workload}%`;
+}
+
+function clampPercent(value: number): number {
+  return Math.max(0, Math.min(100, Math.round(value)));
 }
 
 function providerStatusLabel(report: ProviderReadinessReport): string {

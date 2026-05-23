@@ -62,11 +62,14 @@ export function CharacterDesk({
       <div className="character-switcher" aria-label="캐릭터 선택">
         {characters.map((character) => (
           <Link
-            className={selectedCharacterId === character.id ? "is-active" : ""}
+            className={`${selectedCharacterId === character.id ? "is-active" : ""}${
+              character.availability === "PREPARING" ? " is-preparing" : ""
+            }`}
             href={`/characters/${character.id}`}
             key={character.id}
           >
-            {character.name}
+            <span>{character.name}</span>
+            <small>{character.availabilityLabel}</small>
           </Link>
         ))}
       </div>
@@ -89,11 +92,7 @@ export function CharacterDesk({
             ? `${selectedCharacter.name}가 확인하거나 모아에게 보고할 업무카드입니다.`
             : "키워드, 근거 확인, 위임 후보 업무를 카드 단위로 압축해서 봅니다."
         }
-        emptyMessage={
-          selectedCharacter
-            ? `${selectedCharacter.name}가 담당하는 업무카드는 아직 없습니다.`
-            : "현재 캐릭터별 업무카드가 없습니다."
-        }
+        emptyMessage={workDeskEmptyMessage(selectedCharacter)}
         eyebrow={selectedCharacter ? `${selectedCharacter.name} 데스크` : "전체 데스크"}
         title={selectedCharacter ? `${selectedCharacter.name} 업무카드` : "최근 업무카드"}
       />
@@ -107,6 +106,18 @@ function workDeskCardsForCharacter(cards: WorkDeskCardView[], characterId: strin
   }
 
   return cards.filter((card) => card.ownerId === characterId);
+}
+
+function workDeskEmptyMessage(character?: CharacterStatus): string {
+  if (!character) {
+    return "현재 캐릭터별 업무카드가 없습니다.";
+  }
+
+  if (character.availability === "PREPARING") {
+    return `${character.name}는 현재 준비중입니다. 키워드 성과/추천 범위가 안정화된 뒤 담당 업무카드를 연결합니다.`;
+  }
+
+  return `${character.name}가 담당하는 업무카드는 아직 없습니다.`;
 }
 
 function CharacterDeskCard({
@@ -123,7 +134,7 @@ function CharacterDeskCard({
   const relatedFlows = ownerDecisionFlows.filter((flow) => flow.title.includes(character.name)).slice(0, 2);
 
   return (
-    <article className={`character-desk-card tone-${character.tone}`}>
+    <article className={`character-desk-card tone-${character.tone}${character.availability === "PREPARING" ? " is-preparing" : ""}`}>
       <header>
         <div className="avatar" aria-hidden="true">
           {character.name.slice(0, 1)}
@@ -132,13 +143,18 @@ function CharacterDeskCard({
           <span className="eyebrow">{character.role}</span>
           <h2>{character.name}</h2>
         </div>
-        <Link
-          aria-label={`${character.name} 업무 보기`}
-          className="icon-button"
-          href={`/characters/${character.id}`}
-        >
-          <ArrowRight size={18} aria-hidden="true" />
-        </Link>
+        <div className="character-card-actions">
+          <span className={`character-availability-badge availability-${character.availability.toLowerCase()}`}>
+            {character.availabilityLabel}
+          </span>
+          <Link
+            aria-label={`${character.name} 업무 보기`}
+            className="icon-button"
+            href={`/characters/${character.id}`}
+          >
+            <ArrowRight size={18} aria-hidden="true" />
+          </Link>
+        </div>
       </header>
 
       <p>{focus.focus}</p>
@@ -154,13 +170,14 @@ function CharacterDeskCard({
         </span>
         <span>
           <Clock3 size={15} aria-hidden="true" />
-          다음 보고 예정
+          {character.availability === "PREPARING" ? "준비중" : "다음 보고 예정"}
         </span>
       </div>
 
       <div className="workload" aria-label={`${character.name} 업무량 ${character.workload}%`}>
         <span style={{ width: `${character.workload}%` }} />
       </div>
+      <p className="workload-formula">계산식: {character.workloadFormulaLabel}</p>
 
       <section className="character-desk-block" aria-label={`${character.name} 현재 업무`}>
         <strong>현재 업무</strong>

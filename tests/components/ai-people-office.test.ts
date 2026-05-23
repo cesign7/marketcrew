@@ -23,6 +23,29 @@ describe("AiPeopleOffice", () => {
     expect(html).toContain("없는 데이터를 근거처럼 말하지 않음");
   });
 
+  it("키워드 성과와 추천에 필요한 캐릭터만 활성 상태로 보여준다", () => {
+    const view = buildAiPeopleOfficeView({
+      settings: buildDefaultAiOperationsSettings({ now: "2026-05-23T00:00:00.000Z" }),
+      agentRuns: [],
+      generatedAt: "2026-05-23T00:00:00.000Z",
+    });
+    const html = renderToString(createElement(AiPeopleOffice, { view }));
+
+    expect(view.characterProfiles.filter((profile) => profile.availabilityLabel === "활성").map((profile) => profile.id)).toEqual([
+      "moa",
+      "gro",
+      "day",
+    ]);
+    expect(view.characterProfiles.filter((profile) => profile.availabilityLabel === "준비중").map((profile) => profile.id)).toEqual([
+      "pro",
+      "copy",
+      "ripi",
+      "maru",
+    ]);
+    expect(html.replaceAll("<!-- -->", "")).toContain("키워드 성과/추천에 필요한 캐릭터부터 활성화");
+    expect(html).toContain("준비중");
+  });
+
   it("모의 실행 큐 내부 모델명을 화면에 그대로 노출하지 않는다", () => {
     const dryRunAgentRun: AgentRun = {
       id: "agent-run-llm-dry-run-test",

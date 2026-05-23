@@ -15,6 +15,8 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useState, type ReactNode } from "react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { keywordPilotAvailability } from "@/features/characters/keyword-pilot";
+import type { CharacterKey } from "@/lib/domain";
 import { ViewFilterControls, type ViewFilterOption } from "./ViewFilterControls";
 
 export type AppNavKey = "operations" | "characters" | "approvals" | "data" | "growth" | "people" | "settings";
@@ -80,21 +82,28 @@ const navItems = [
   icon: typeof LayoutDashboard;
 }>;
 
-const characterDeskItems = [
-  { label: "모아", menuLabel: "모아 데스크", description: "대표 결재 분류", href: "/characters/moa", initial: "모" },
-  { label: "그로", menuLabel: "그로 데스크", description: "광고 키워드", href: "/characters/gro", initial: "그" },
-  { label: "마루", menuLabel: "마루 데스크", description: "브랜드 운영", href: "/characters/maru", initial: "마" },
-  { label: "프로", menuLabel: "프로 데스크", description: "상품 전략", href: "/characters/pro", initial: "프" },
-  { label: "리피", menuLabel: "리피 데스크", description: "재구매", href: "/characters/ripi", initial: "리" },
-  { label: "카피", menuLabel: "카피 데스크", description: "문안", href: "/characters/copy", initial: "카" },
-  { label: "데이", menuLabel: "데이 데스크", description: "근거 확인", href: "/characters/day", initial: "데" },
+const characterDeskItems = ([
+  { id: "moa", label: "모아", menuLabel: "모아 데스크", href: "/characters/moa", initial: "모" },
+  { id: "gro", label: "그로", menuLabel: "그로 데스크", href: "/characters/gro", initial: "그" },
+  { id: "maru", label: "마루", menuLabel: "마루 데스크", href: "/characters/maru", initial: "마" },
+  { id: "pro", label: "프로", menuLabel: "프로 데스크", href: "/characters/pro", initial: "프" },
+  { id: "ripi", label: "리피", menuLabel: "리피 데스크", href: "/characters/ripi", initial: "리" },
+  { id: "copy", label: "카피", menuLabel: "카피 데스크", href: "/characters/copy", initial: "카" },
+  { id: "day", label: "데이", menuLabel: "데이 데스크", href: "/characters/day", initial: "데" },
 ] satisfies Array<{
+  id: CharacterKey;
   label: string;
   menuLabel: string;
-  description: string;
   href: string;
   initial: string;
-}>;
+}>).map((item) => {
+  const availability = keywordPilotAvailability(item.id);
+  return {
+    ...item,
+    ...availability,
+    description: availability.menuDescription,
+  };
+});
 
 const businessFilters: ViewFilterOption[] = [
   { label: "전체", value: "all" },
@@ -238,7 +247,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
                             aria-label={characterItem.menuLabel}
                             className={`app-character-menu-link${isCharacterActive ? " is-active" : ""}${
                               pendingHref === characterItem.href && !isCharacterActive ? " is-pending" : ""
-                            }`}
+                            }${characterItem.availability === "PREPARING" ? " is-preparing" : ""}`}
                             href={characterItem.href}
                             key={characterItem.href}
                             onClick={() => {

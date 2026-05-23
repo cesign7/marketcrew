@@ -174,9 +174,27 @@ describe("buildAgendaRoomViewModel", () => {
     );
     expect(viewModel.agendaCards.map((card) => card.title)).not.toContain("스마트스토어/자체몰 매출 균형 점검 안건");
     expect(viewModel.agendaCards.find((card) => card.owner === "프로")?.source).toContain("연동 수집");
-    expect(viewModel.characters.find((character) => character.id === "pro")?.queueCount).toBe(1);
-    expect(viewModel.characters.find((character) => character.id === "ripi")?.queueCount).toBe(1);
-    expect(viewModel.characters.find((character) => character.id === "maru")?.queueCount).toBe(0);
+    expect(viewModel.characters.find((character) => character.id === "moa")).toMatchObject({
+      availabilityLabel: "활성",
+      workloadFormulaLabel: expect.stringContaining("기본"),
+    });
+    expect(viewModel.characters.find((character) => character.id === "gro")?.availabilityLabel).toBe("활성");
+    expect(viewModel.characters.find((character) => character.id === "day")?.availabilityLabel).toBe("활성");
+    expect(viewModel.characters.find((character) => character.id === "pro")).toMatchObject({
+      availabilityLabel: "준비중",
+      workload: 0,
+      queueCount: 0,
+    });
+    expect(viewModel.characters.find((character) => character.id === "ripi")).toMatchObject({
+      availabilityLabel: "준비중",
+      workload: 0,
+      queueCount: 0,
+    });
+    expect(viewModel.characters.find((character) => character.id === "maru")).toMatchObject({
+      availabilityLabel: "준비중",
+      workload: 0,
+      queueCount: 0,
+    });
     expect(viewModel.providerSyncEvidence.map((report) => report.providerLabel)).toEqual([
       "네이버 키워드광고",
       "스마트스토어(스티커씨)",
@@ -250,6 +268,9 @@ describe("buildAgendaRoomViewModel", () => {
       expect.arrayContaining(["최근 7일 클릭 64회", "비용 38,400원", "주문 0건"]),
     );
     expect(noOrderCard?.reasonLabel).toContain("즉시 중지 전 유지 예외");
+    const gro = viewModel.characters.find((character) => character.id === "gro");
+    expect(gro?.workload).toBeGreaterThan(0);
+    expect(gro?.workloadFormulaLabel).toContain("카드");
 
     const deviceGapCard = viewModel.workDeskCards.find(
       (card) => card.keywordLabel === "생일축하스티커" && card.reasonLabel.includes("키워드 전체 중지"),
