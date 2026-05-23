@@ -410,8 +410,9 @@ Promotion guard:
 - `HypothesisCandidate.status`가 `VERIFIED`가 되기 전에는 `ApprovalRequest`로 승격하지 않는다.
 - 데이는 원천 필드/집계 기준/비교 기간을 확인하고, 부족하면 연결된 `EvidenceRequest`를 `REQUESTED`, `COLLECTING`, `INSUFFICIENT` 중 하나로 유지한다.
 - 모아는 가설과 연결된 모든 근거 요청이 `VERIFIED`일 때만 `AgendaCandidate`로 승격한다.
+- 데이의 상태 변경은 `PATCH /api/evidence-requests/[id]`로 저장하고, `evidence_request_review` AgentRun이 `evidence_request`, `hypothesis_candidate`, 승격된 `agenda_candidate`를 연결한다.
 - `/people` 인사과 화면은 이 정책을 캐릭터 롤모델과 판단 방식 카드로 보여준다.
-- `/operations` 업무실은 이 정책을 `근거 요청 큐` 패널로 보여주며, 검증 전 가설은 `WAITING_EVIDENCE` bucket에 포함한다.
+- `/operations` 업무실은 이 정책을 `근거 요청 큐` 패널로 보여주며, 검증 전 가설은 `WAITING_EVIDENCE` bucket에 포함하고 `수집 시작`, `근거 충분`, `근거 부족` 액션을 제공한다.
 
 ### 3.6 Persistence Shape
 
@@ -885,6 +886,7 @@ src/
 | 검색/커머스 분석 확장 | `module-18` | 데이터랩 세그먼트와 스마트스토어 데이터솔루션 권한 기반 확장 | 30-40 |
 | 자유 탐색 정책 UI | `module-19` | 인사과 판단 방식 카드와 캐릭터별 자유 탐색/근거 요청 롤모델 | 8-12 |
 | 근거 요청 큐와 승격 가드 | `module-20` | `HypothesisCandidate`, `EvidenceRequest`, 데이 검증, 모아 승격 제한 | Done in iteration 15 |
+| 근거 요청 처리 API | `module-21` | 데이 상태 변경, AgentRun 감사 이력, 검증 후 `AgendaCandidate` 승격 | Done in iteration 16 |
 
 #### Recommended Session Plan
 

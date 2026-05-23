@@ -1,5 +1,6 @@
 import { CheckCircle2, ClipboardCheck, SearchCheck, ShieldAlert } from "lucide-react";
 import type { EvidenceRequestQueueView } from "@/features/agenda-room/types";
+import { EvidenceRequestReviewActions } from "./EvidenceRequestReviewActions";
 
 type EvidenceRequestQueuePanelProps = {
   queue: EvidenceRequestQueueView;
@@ -52,6 +53,7 @@ export function EvidenceRequestQueuePanel({ queue }: EvidenceRequestQueuePanelPr
               </div>
 
               <footer>{item.reason}</footer>
+              <EvidenceRequestReviewActions requestId={item.id} requestStatus={item.requestStatus} />
             </article>
           ))}
         </div>

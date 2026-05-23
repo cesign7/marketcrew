@@ -219,6 +219,7 @@ function agentRunTypeLabel(runType: AgentRunType): string {
     moa_planner: "모아 계획",
     provider_sync: "연동 수집",
     provider_signal_agenda: "연동 안건 생성",
+    evidence_request_review: "근거 검증",
     owner_decision: "대표 결정",
     mock_execution: "모의 실행",
     outcome_analysis: "성과 분석",
@@ -245,6 +246,7 @@ function agentRunModelLabel(model: string): string {
   const labels: Record<string, string> = {
     "deterministic-fallback": "규칙 기반 대체",
     "read-only-adapter": "읽기 전용 어댑터",
+    "evidence-request-review-workflow": "근거 검증 기록기",
     "owner-decision-workflow": "대표 결정 기록기",
   };
 

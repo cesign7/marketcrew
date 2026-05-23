@@ -4,6 +4,9 @@ import type {
   AgentRunProvider,
   AgentRunStatus,
   AgentRunWorkflowLink,
+  AgendaCandidate,
+  EvidenceRequest,
+  HypothesisCandidate,
   LlmPlannerAuditRun,
   LlmPlannerInput,
   LlmPlannerResult,
@@ -122,6 +125,52 @@ export function recordOwnerDecisionAgentRun(
   return run;
 }
 
+export function recordEvidenceRequestReviewAgentRun(
+  repository: MarketingWorkflowRepository,
+  input: {
+    evidenceRequest: EvidenceRequest;
+    hypothesis?: HypothesisCandidate;
+    promotedAgendaCandidate?: AgendaCandidate;
+    reviewedAt: string;
+  },
+): AgentRun {
+  const run: AgentRun = {
+    id: `agent-run-evidence-request-review-${input.evidenceRequest.id}-${compactTimestamp(input.reviewedAt)}`,
+    runnerKey: "day_evidence_request_review",
+    runType: "evidence_request_review",
+    mode: "deterministic_fallback",
+    provider: "local",
+    model: "evidence-request-review-workflow",
+    status: "SUCCEEDED",
+    inputSummary: `데이가 ${evidenceSourceLabel(input.evidenceRequest.neededSource)} 근거 요청을 ${evidenceRequestStatusLabel(
+      input.evidenceRequest.status,
+    )} 상태로 검토했습니다.`,
+    outputSummary: input.promotedAgendaCandidate
+      ? `${input.hypothesis?.title ?? "자유 탐색 가설"}을 근거 확인 후 ${input.promotedAgendaCandidate.title}으로 승격했습니다.`
+      : `${input.hypothesis?.title ?? "자유 탐색 가설"}은 ${evidenceRequestStatusLabel(
+          input.evidenceRequest.status,
+        )} 상태로 저장하고 대표 결재 승격을 보류했습니다.`,
+    rawRowsIncluded: false,
+    tokenUsage: {
+      inputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      estimated: false,
+      estimatedCostKrw: 0,
+      basis: "데이의 로컬 근거 검증 기록",
+    },
+    evidenceIds: input.evidenceRequest.verifiedEvidenceIds,
+    startedAt: input.reviewedAt,
+    finishedAt: input.reviewedAt,
+  };
+  const links = buildEvidenceRequestReviewLinks(run.id, input);
+
+  repository.saveAgentRuns([run]);
+  repository.saveAgentRunWorkflowLinks(links);
+
+  return run;
+}
+
 function buildProviderSyncAgentRun(report: ProviderSyncReport): AgentRun {
   const evidenceIds = Array.from(
     new Set([
@@ -206,6 +255,39 @@ function buildOwnerDecisionLinks(agentRunId: string, result: OwnerDecisionWorkfl
   return refs.map(({ ref, relation }) => buildWorkflowLink(agentRunId, ref, relation, createdAt));
 }
 
+function buildEvidenceRequestReviewLinks(
+  agentRunId: string,
+  input: {
+    evidenceRequest: EvidenceRequest;
+    hypothesis?: HypothesisCandidate;
+    promotedAgendaCandidate?: AgendaCandidate;
+    reviewedAt: string;
+  },
+): AgentRunWorkflowLink[] {
+  const refs: Array<{ ref: WorkflowObjectRef; relation: AgentRunWorkflowLink["relation"] }> = [
+    {
+      ref: { objectType: "evidence_request", objectId: input.evidenceRequest.id },
+      relation: "decided",
+    },
+  ];
+
+  if (input.hypothesis) {
+    refs.push({
+      ref: { objectType: "hypothesis_candidate", objectId: input.hypothesis.id },
+      relation: "decided",
+    });
+  }
+
+  if (input.promotedAgendaCandidate) {
+    refs.push({
+      ref: { objectType: "agenda_candidate", objectId: input.promotedAgendaCandidate.id },
+      relation: "generated",
+    });
+  }
+
+  return refs.map(({ ref, relation }) => buildWorkflowLink(agentRunId, ref, relation, input.reviewedAt));
+}
+
 function providerSyncRunId(report: ProviderSyncReport): string {
   return `agent-run-provider-sync-${report.id}`;
 }
@@ -235,6 +317,33 @@ function buildWorkflowLink(
     relation,
     createdAt,
   };
+}
+
+function compactTimestamp(value: string): string {
+  return value.replace(/[^0-9A-Za-z]/g, "");
+}
+
+function evidenceRequestStatusLabel(status: EvidenceRequest["status"]): string {
+  const labels: Record<EvidenceRequest["status"], string> = {
+    REQUESTED: "확인 대기",
+    COLLECTING: "수집 중",
+    VERIFIED: "근거 충분",
+    INSUFFICIENT: "근거 부족",
+  };
+
+  return labels[status];
+}
+
+function evidenceSourceLabel(source: EvidenceRequest["neededSource"]): string {
+  const labels: Record<EvidenceRequest["neededSource"], string> = {
+    search_ad: "검색광고",
+    smartstore: "스마트스토어",
+    shop: "쇼핑몰",
+    datalab: "데이터랩",
+    internal: "내부",
+  };
+
+  return labels[source];
 }
 
 function isSameAgentRun(left: AgentRun, right: AgentRun): boolean {

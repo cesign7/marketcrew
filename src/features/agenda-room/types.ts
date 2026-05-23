@@ -1,3 +1,5 @@
+import type { EvidenceRequestStatus } from "@/lib/domain";
+
 export type CharacterTone = "coordinator" | "growth" | "product" | "copy" | "crm" | "finance" | "data";
 
 export type CharacterStatus = {
@@ -327,6 +329,7 @@ export type EvidenceRequestQueueView = {
   verifiedHypothesisCount: number;
   items: Array<{
     id: string;
+    requestStatus?: EvidenceRequestStatus;
     title: string;
     ownerName: string;
     verifierName: string;

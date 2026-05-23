@@ -2,7 +2,7 @@
   "project": "marketcrew2",
   "currentFeature": "mvp-final-provenance-closeout",
   "phase": "completed",
-  "updatedAt": "2026-05-23T08:14:47+09:00",
+  "updatedAt": "2026-05-23T10:23:33+09:00",
   "features": {
     "ai-marketing-character-ops": {
       "phase": "completed",
@@ -13,9 +13,9 @@
       "analysisPath": "docs/03-analysis/ai-marketing-character-ops.analysis.md",
       "qaPath": "docs/05-qa/ai-marketing-character-ops.qa-report.md",
       "reportPath": "docs/04-report/ai-marketing-character-ops.report.md",
-      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-11.md",
-      "matchRate": 92,
-      "next": "1차 MVP completion report를 작성했고 PDCA cycle #1은 completed 상태다. matchRate는 92%, QA verdict는 QA_PASS다. 대표는 /operations에서 올라온 안건을 보고 /approvals/[id]에서 provider 근거, diff, 대표 결정, write gate 차단, 저장된 outcome report를 확인할 수 있다. 다음 PDCA 후보는 운영 DB schema + repository migration, AgentRun/model/token/cost provenance, FollowUpInternalTask 전용 큐다. 실제 provider write는 계속 차단한다."
+      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-16.md",
+      "matchRate": 100,
+      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속 module-21에서 /operations 근거 요청 큐의 수집 시작/근거 충분/근거 부족 액션, PATCH /api/evidence-requests/[id], evidence_request_review AgentRun 감사 이력, 검증 후 AgendaCandidate 승격을 구현했다. 다음 후보는 비용 가드 안에서 실제 LLM adapter dry-run 실행 큐를 설계하는 것이다. 실제 provider write는 계속 차단한다."
     },
     "ops-persistence-provenance-foundation": {
       "phase": "completed",

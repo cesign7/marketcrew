@@ -480,7 +480,8 @@ API로 더 가져올 수 있는 모든 항목을 한 번에 LLM 판단에 넣지
 - 확인 전에는 외부 광고/상품/CRM에 반영하지 않는다.
 - 자유 탐색 결과가 반복적으로 반려되면 캐릭터별 월간 평가에서 탐색 범위를 조정한다.
 - 2026-05-23 구현 기준으로 `HypothesisCandidate`와 `EvidenceRequest`를 저장소 컬렉션에 분리하고, `/operations`는 `근거 요청 큐`에서 검증 대기와 승격 가능 가설을 한글로 표시한다.
-- 승격 규칙은 `HypothesisCandidate.status=VERIFIED`이고 연결된 모든 `EvidenceRequest.status=VERIFIED`일 때만 `AgendaCandidate`로 변환한다. 그 외 상태는 `WAITING_EVIDENCE` bucket에 남긴다.
+- 데이는 `/operations`에서 근거 요청을 `수집 시작`, `근거 충분`, `근거 부족`으로 처리할 수 있고, `PATCH /api/evidence-requests/[id]`는 처리 결과를 저장한다.
+- 승격 규칙은 연결된 모든 `EvidenceRequest.status=VERIFIED`일 때만 가설을 `AgendaCandidate`로 변환한다. 처리 이력은 `evidence_request_review` AgentRun으로 남기며 그 외 상태는 `WAITING_EVIDENCE` bucket에 남긴다.
 
 ---
 
@@ -901,13 +902,13 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 
 ### Slice 5A: 자유 탐색과 근거 요청 루프
 
-- Status: `module-19`에서 인사과 롤모델 정책을 구현했고, `module-20`에서 근거 요청 큐와 승격 가드를 구현했다.
+- Status: `module-19`에서 인사과 롤모델 정책을 구현했고, `module-20`에서 근거 요청 큐와 승격 가드를 구현했다. `module-21`에서 데이의 근거 요청 상태 변경 API, 화면 액션, 감사 이력, 검증 후 `AgendaCandidate` 승격을 구현했다.
 - 담당 캐릭터는 정해진 `Signal` 후보 외에도 상품/키워드/기기/시간대/고객군 조합 가설을 생성한다.
 - 모든 가설은 `Hypothesis` 상태로 시작하며, 필요한 원천 필드와 비교 기준을 함께 남긴다.
 - 데이는 근거 후보를 검증하고 `확인됨`, `근거 부족`, `수집 필요`, `판단 보류`로 표시한다.
 - 모아는 확인된 가설만 대표 결재 안건으로 승격하고, 미확인 가설은 추가 근거 대기 또는 월간 학습 대상으로 남긴다.
 - `/people` 인사과 화면은 캐릭터별 롤모델에 자유 탐색과 검증 책임을 보여주고 수정 가능해야 한다.
-- `/operations`는 검증 전 가설을 결재 목록과 분리해 `근거 요청 큐`로 보여주며, 검증 완료 가설만 `승격 가능`으로 표시한다.
+- `/operations`는 검증 전 가설을 결재 목록과 분리해 `근거 요청 큐`로 보여주며, 데이가 요청 상태를 바꾸면 검증 완료 가설만 `AgendaCandidate`로 승격한다.
 
 ### Slice 6: Real Provider Executors
 

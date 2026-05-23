@@ -1,8 +1,14 @@
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { EvidenceRequestQueuePanel } from "../../src/components/agenda-room/EvidenceRequestQueuePanel";
 import { buildAgendaRoomViewModel } from "../../src/features/agenda-room/buildAgendaRoomViewModel";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    refresh: vi.fn(),
+  }),
+}));
 
 describe("EvidenceRequestQueuePanel", () => {
   it("검증 대기 가설과 승격 가능한 가설을 한글로 보여준다", () => {
@@ -18,6 +24,9 @@ describe("EvidenceRequestQueuePanel", () => {
     expect(html).toContain("부처님오신날 선물카드 모바일 저녁 광고 가설");
     expect(html).toContain("데이 확인 대기");
     expect(html).toContain("승격 가능");
+    expect(html).toContain("수집 시작");
+    expect(html).toContain("근거 충분");
+    expect(html).toContain("근거 부족");
     expect(html).not.toContain("WAITING_EVIDENCE");
     expect(html).not.toContain("VERIFIED");
     expect(html).not.toContain("REQUESTED");

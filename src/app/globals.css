@@ -1338,6 +1338,27 @@ button:disabled {
   font-weight: 800;
 }
 
+.evidence-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.evidence-request-actions .primary-button,
+.evidence-request-actions .secondary-button {
+  min-height: 34px;
+  padding: 7px 9px;
+  font-size: 12px;
+}
+
+.evidence-request-actions > span {
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .planner-audit-grid span {
   border-radius: 8px;
   color: var(--teal-strong);

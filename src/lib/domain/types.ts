@@ -190,6 +190,7 @@ export type AgentRunType =
   | "moa_planner"
   | "provider_sync"
   | "provider_signal_agenda"
+  | "evidence_request_review"
   | "owner_decision"
   | "mock_execution"
   | "outcome_analysis";
