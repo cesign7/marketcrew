@@ -20,12 +20,18 @@ export function ProductGrowthOpportunityPanel({ opportunities }: ProductGrowthOp
           {opportunities.map((opportunity) => (
             <article className="product-opportunity-card" key={opportunity.id}>
               <header>
-                <span className="product-opportunity-icon">
-                  <OpportunityIcon kindLabel={opportunity.kindLabel} />
+                <span className="product-opportunity-thumb">
+                  <img src={opportunity.productImageUrl} alt={opportunity.productImageAlt} loading="lazy" />
+                  <span className="product-opportunity-icon" aria-hidden="true">
+                    <OpportunityIcon kindLabel={opportunity.kindLabel} />
+                  </span>
                 </span>
-                <div>
+                <div className="product-opportunity-title-block">
                   <span className="eyebrow">{opportunity.owner} · {opportunity.kindLabel}</span>
-                  <h3>{opportunity.title}</h3>
+                  <div className="product-opportunity-title-wrap">
+                    <h3 tabIndex={0} title={opportunity.title}>{opportunity.title}</h3>
+                    <span className="product-opportunity-title-popover" aria-hidden="true">{opportunity.title}</span>
+                  </div>
                 </div>
                 <span className="confidence-pill">{opportunity.confidenceLabel}</span>
               </header>

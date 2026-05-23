@@ -436,6 +436,8 @@ export const agendaRoomSample: AgendaRoomViewModel = {
       confidenceLabel: "승인 가능",
       title: "선물카드 상품 키워드 확장 후보",
       targetLabel: "선물카드",
+      productImageUrl: "https://cdn.example.test/products/gift-card.jpg",
+      productImageAlt: "선물카드 상품 이미지",
       summary: "스마트스토어 집계와 키워드 수요를 묶어 내부 검색광고 초안을 만들 후보입니다.",
       keywords: ["부처님오신날 선물카드", "추석 선물카드"],
       evidenceLabels: ["키워드 후보 2개", "읽기 전용 집계"],

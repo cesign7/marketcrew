@@ -328,6 +328,7 @@ function buildCommerceAggregateSnapshot(input: {
     paidOrderCount: input.productOrderIds.length,
     grossSales: sumProductOrderAmounts(input.productOrders),
     topProductName: getTopProductName(input.productOrders) ?? undefined,
+    topProductImageUrl: getTopProductImageUrl(input.productOrders) ?? undefined,
     dataSolutionAvailable: input.dataSolutionAvailable,
     collectedAt: input.checkedAt,
     dataScope: "aggregate_only",
@@ -431,6 +432,39 @@ function getProductOrderName(item: JsonRecord): string | null {
   const productOrder = isRecord(item.productOrder) ? item.productOrder : item;
 
   return stringOrNull(productOrder.productName ?? item.productName);
+}
+
+function getTopProductImageUrl(productOrders: readonly JsonRecord[]): string | null {
+  const imageUrls = productOrders.map(getProductOrderImageUrl).filter((url): url is string => Boolean(url));
+
+  return imageUrls[0] ?? null;
+}
+
+function getProductOrderImageUrl(item: JsonRecord): string | null {
+  const productOrder = isRecord(item.productOrder) ? item.productOrder : item;
+  const product = isRecord(item.product) ? item.product : null;
+  const candidates = [
+    productOrder.productImageUrl,
+    productOrder.productImgUrl,
+    productOrder.productThumbnailUrl,
+    productOrder.imageUrl,
+    productOrder.thumbnailUrl,
+    product?.productImageUrl,
+    product?.imageUrl,
+    item.productImageUrl,
+    item.productImgUrl,
+    item.imageUrl,
+    item.thumbnailUrl,
+  ];
+
+  for (const candidate of candidates) {
+    const url = stringOrNull(candidate);
+    if (url) {
+      return url;
+    }
+  }
+
+  return null;
 }
 
 function requiredCommerceEnv(env: EnvMap, keys: readonly string[]): string {

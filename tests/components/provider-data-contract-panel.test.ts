@@ -14,6 +14,7 @@ describe("ProviderDataContractPanel", () => {
     expect(html).toContain("relKeyword");
     expect(html).toContain("KeywordDemandSnapshot.keyword");
     expect(html).toContain("CommerceAggregateSnapshot.brandKey");
+    expect(html).toContain("topProductImageUrl");
     expect(html).toContain("ShopAggregateSnapshot.brandKey");
     expect(html).toContain("주문 원문 행은 저장하지 않습니다");
     expect(html).toContain("원문 필드 점검표");

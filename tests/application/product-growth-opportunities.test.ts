@@ -21,6 +21,7 @@ describe("buildProductGrowthOpportunities", () => {
       "스승의날 선물",
     ]);
     expect(opportunities[0]?.evidenceLabels).toContain("최대 월검색 16,000회");
+    expect(opportunities[0]?.productImageUrl).toBe("https://cdn.example.test/products/birthday-sticker.jpg");
     expect(opportunities[2]?.summary).toContain("재구매 고객 4명");
     expect(opportunities.every((opportunity) => opportunity.guardrail.includes("외부 반영 잠금"))).toBe(true);
   });
@@ -124,6 +125,7 @@ function buildSyncedReports(): ProviderSyncReport[] {
         paidOrderCount: 100,
         grossSales: 600120,
         topProductName: "생일축하스티커",
+        topProductImageUrl: "https://cdn.example.test/products/birthday-sticker.jpg",
         dataSolutionAvailable: false,
         collectedAt: "2026-05-22T02:00:00.000Z",
         dataScope: "aggregate_only",

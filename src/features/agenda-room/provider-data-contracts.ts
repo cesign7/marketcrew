@@ -540,7 +540,7 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
       stored: {
         id: "smartstore-stored",
         title: "저장하는 데이터",
-        description: "스티커씨 운영 판단에 필요한 주문 수, 매출, 상위 상품만 집계 스냅샷으로 저장합니다.",
+        description: "스티커씨 운영 판단에 필요한 주문 수, 매출, 상위 상품, 대표 이미지만 집계 스냅샷으로 저장합니다.",
         safetyNote: "고객 정보와 주문 원문은 DB에 남기지 않는 집계 전용 계약입니다.",
         columns: [
           {
@@ -574,6 +574,12 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             sample: "선물카드",
           },
           {
+            key: "topProductImageUrl",
+            label: "대표 이미지",
+            description: "상위 상품 카드에 보여줄 상품 이미지 URL입니다. 값이 없으면 화면에서 상품명 기반 썸네일을 대신 만듭니다.",
+            sample: "https://example.test/products/gift-card.jpg",
+          },
+          {
             key: "dataScope",
             label: "저장 범위",
             description: "원천 행이 아닌 집계만 저장한다는 표시입니다.",
@@ -588,6 +594,7 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
               { key: "orders", label: "주문", value: "100건" },
               { key: "grossSales", label: "매출", value: "600,120원" },
               { key: "topProductName", label: "상위 상품", value: "선물카드" },
+              { key: "topProductImageUrl", label: "대표 이미지", value: "상품 이미지 URL 또는 자동 썸네일" },
             ],
           },
         ],

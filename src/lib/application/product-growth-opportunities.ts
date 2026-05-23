@@ -17,6 +17,7 @@ export type ProductGrowthOpportunity = {
   targetName: string;
   summary: string;
   keywordCandidates: string[];
+  productImageUrl?: string;
   evidenceIds: string[];
   evidenceLabels: string[];
   sourceReportIds: string[];
@@ -90,6 +91,7 @@ function buildKeywordExpansionOpportunity(input: {
     owner: "gro",
     title: `${targetName} 상품 키워드 확장 후보`,
     targetName,
+    productImageUrl: input.commerce.topProductImageUrl,
     summary: `스마트스토어 최근 ${input.commerce.windowDays}일 주문 ${input.commerce.paidOrderCount.toLocaleString(
       "ko-KR",
     )}건과 네이버 키워드 수요 상위 후보를 묶어 검색광고/랜딩 초안을 만들 수 있습니다.`,
@@ -135,6 +137,7 @@ function buildMarketingProposalOpportunity(input: {
     owner: "copy",
     title: `${targetName} 시즌 메시지/기획전 초안 후보`,
     targetName,
+    productImageUrl: input.commerce.topProductImageUrl,
     summary: `상위 판매 상품을 시즌 검색어와 연결해 상세페이지 문구, 배너, 기획전 카피 초안을 만들 후보입니다.`,
     keywordCandidates: selectedKeywords.map((snapshot) => snapshot.keyword),
     evidenceIds: [input.commerce.id, ...selectedKeywords.map((snapshot) => snapshot.id)],
@@ -174,6 +177,7 @@ function buildProductDiscoveryOpportunity(input: {
     owner: "pro",
     title: "시즌 선물형 상품/묶음 발굴 후보",
     targetName,
+    productImageUrl: input.commerce.topProductImageUrl,
     summary: `스마트스토어 판매 상품과 자체몰 재구매 고객 ${input.shop.repeatCustomerCount.toLocaleString(
       "ko-KR",
     )}명을 함께 보면 시즌 선물형 묶음, 감사 카드, 재구매 제안을 검토할 수 있습니다.`,

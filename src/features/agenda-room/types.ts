@@ -300,6 +300,8 @@ export type ProductGrowthOpportunityView = {
   confidenceLabel: string;
   title: string;
   targetLabel: string;
+  productImageUrl: string;
+  productImageAlt: string;
   summary: string;
   keywords: string[];
   evidenceLabels: string[];

@@ -287,7 +287,13 @@ describe("읽기 전용 연동 수집", () => {
             return jsonResponse({
               data: {
                 productOrders: [
-                  { productOrder: { productName: "선물카드", totalPaymentAmount: 7000 } },
+                  {
+                    productOrder: {
+                      productName: "선물카드",
+                      productImageUrl: "https://cdn.example.test/products/gift-card.jpg",
+                      totalPaymentAmount: 7000,
+                    },
+                  },
                   { productOrder: { productName: "감사카드", totalPaymentAmount: 5000 } },
                 ],
               },
@@ -307,6 +313,7 @@ describe("읽기 전용 연동 수집", () => {
       paidOrderCount: 2,
       grossSales: 12000,
       topProductName: "선물카드",
+      topProductImageUrl: "https://cdn.example.test/products/gift-card.jpg",
       dataScope: "aggregate_only",
     });
     expect(report.generatedSignal?.source).toBe("smartstore");

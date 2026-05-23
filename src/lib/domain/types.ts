@@ -105,6 +105,7 @@ export interface CommerceAggregateSnapshot {
   paidOrderCount: number;
   grossSales: number;
   topProductName?: string;
+  topProductImageUrl?: string;
   dataSolutionAvailable: boolean;
   collectedAt: string;
   dataScope: "aggregate_only";

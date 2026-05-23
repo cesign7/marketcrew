@@ -128,6 +128,10 @@ describe("buildAgendaRoomViewModel", () => {
       "마케팅 제안",
       "상품 발굴",
     ]);
+    expect(viewModel.productGrowthOpportunities[0]?.productImageUrl).toBe(
+      "https://cdn.example.test/products/birthday-sticker.jpg",
+    );
+    expect(viewModel.productGrowthOpportunities[0]?.productImageAlt).toBe("생일축하스티커 상품 이미지");
     expect(viewModel.aiEvidenceBriefs.map((brief) => [brief.providerKey, brief.decisionLabel])).toEqual([
       ["search_ad", "판단 가능"],
       ["smartstore", "판단 가능"],
@@ -219,6 +223,23 @@ describe("buildAgendaRoomViewModel", () => {
     expect(normalizedViewModel.summary.waitingEvidence).toBe(currentViewModel.summary.waitingEvidence);
     expect(normalizedViewModel.inboxBuckets.find((bucket) => bucket.id === "WAITING_EVIDENCE")?.count).toBe(2);
   });
+
+  it("이전 백엔드 view model의 상품 후보에는 이미지 기본값을 보강한다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    repository.saveProviderSyncReports(buildProviderAggregateReports());
+    const currentViewModel = buildAgendaRoomViewModel({ repository, env: {} });
+    const staleBackendViewModel = {
+      ...currentViewModel,
+      productGrowthOpportunities: currentViewModel.productGrowthOpportunities.map(
+        ({ productImageAlt: _productImageAlt, productImageUrl: _productImageUrl, ...opportunity }) => opportunity,
+      ),
+    } as unknown as typeof currentViewModel;
+
+    const normalizedViewModel = normalizeAgendaRoomViewModelCompatibility(staleBackendViewModel);
+
+    expect(normalizedViewModel.productGrowthOpportunities[0]?.productImageUrl).toMatch(/^data:image\/svg\+xml/);
+    expect(normalizedViewModel.productGrowthOpportunities[0]?.productImageAlt).toContain("상품 이미지");
+  });
 });
 
 function buildProviderAggregateReports(): ProviderSyncReport[] {
@@ -287,6 +308,7 @@ function buildProviderAggregateReports(): ProviderSyncReport[] {
         paidOrderCount: 100,
         grossSales: 600120,
         topProductName: "생일축하스티커",
+        topProductImageUrl: "https://cdn.example.test/products/birthday-sticker.jpg",
         dataSolutionAvailable: false,
         collectedAt: "2026-05-22T02:00:00.000Z",
         dataScope: "aggregate_only",

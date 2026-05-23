@@ -890,13 +890,17 @@ function buildProviderSyncEvidenceView(report: ProviderSyncReport): AgendaRoomVi
 }
 
 function buildProductGrowthOpportunityView(opportunity: ProductGrowthOpportunity): AgendaRoomViewModel["productGrowthOpportunities"][number] {
+  const targetLabel = toOperatorKorean(opportunity.targetName);
+
   return {
     id: opportunity.id,
     owner: characterName(opportunity.owner),
     kindLabel: opportunityKindLabel(opportunity.kind),
     confidenceLabel: confidenceLabel(opportunity.confidence),
     title: toOperatorKorean(opportunity.title),
-    targetLabel: toOperatorKorean(opportunity.targetName),
+    targetLabel,
+    productImageUrl: opportunity.productImageUrl ?? buildProductThumbnailDataUri(opportunity.kind, targetLabel),
+    productImageAlt: `${targetLabel} 상품 이미지`,
     summary: toOperatorKorean(opportunity.summary),
     keywords: opportunity.keywordCandidates,
     evidenceLabels: opportunity.evidenceLabels.map(toOperatorKorean),
@@ -904,6 +908,41 @@ function buildProductGrowthOpportunityView(opportunity: ProductGrowthOpportunity
     guardrail: toOperatorKorean(opportunity.guardrail),
     sourceReportIds: opportunity.sourceReportIds.map((_, index) => `연동 수집 기록 ${index + 1}`),
   };
+}
+
+function buildProductThumbnailDataUri(kind: ProductGrowthOpportunity["kind"], targetLabel: string): string {
+  const palette =
+    kind === "MARKETING_PROPOSAL"
+      ? { background: "#fdf0e7", accent: "#c85a2a", soft: "#f8c9a8" }
+      : kind === "PRODUCT_DISCOVERY"
+        ? { background: "#edf6f1", accent: "#17745f", soft: "#b7dfcf" }
+        : { background: "#eaf1fb", accent: "#245c9f", soft: "#bdd3ee" };
+  const label = compactProductLabel(targetLabel);
+  const svg = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">`,
+    `<rect width="96" height="96" rx="14" fill="${palette.background}"/>`,
+    `<rect x="18" y="20" width="60" height="48" rx="8" fill="#ffffff" stroke="${palette.soft}" stroke-width="3"/>`,
+    `<path d="M24 34h48M24 47h36M24 60h28" stroke="${palette.accent}" stroke-width="4" stroke-linecap="round" opacity="0.72"/>`,
+    `<circle cx="72" cy="26" r="10" fill="${palette.accent}" opacity="0.9"/>`,
+    `<text x="48" y="84" text-anchor="middle" font-size="14" font-family="Arial, sans-serif" font-weight="700" fill="${palette.accent}">${escapeSvgText(label)}</text>`,
+    `</svg>`,
+  ].join("");
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function compactProductLabel(targetLabel: string): string {
+  const normalized = targetLabel.split("/")[0]?.trim() ?? targetLabel.trim();
+
+  return [...normalized].slice(0, 5).join("") || "상품";
+}
+
+function escapeSvgText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function buildProviderReadinessView(report: ProviderReadinessReport): AgendaRoomViewModel["providerReadiness"][number] {

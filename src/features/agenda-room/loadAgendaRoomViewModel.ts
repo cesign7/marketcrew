@@ -52,7 +52,7 @@ export async function loadAgendaRoomViewModel() {
 export function normalizeAgendaRoomViewModelCompatibility(viewModel: AgendaRoomViewModel): AgendaRoomViewModel {
   const partialViewModel = viewModel as Partial<AgendaRoomViewModel>;
   if (partialViewModel.evidenceRequestQueue && partialViewModel.llmDryRunQueue) {
-    return viewModel;
+    return normalizeProductGrowthOpportunityImages(viewModel);
   }
 
   const fallbackViewModel = buildAgendaRoomViewModel();
@@ -76,10 +76,10 @@ export function normalizeAgendaRoomViewModelCompatibility(viewModel: AgendaRoomV
         evidenceRequestQueue: fallbackQueue,
       };
 
-  return {
+  return normalizeProductGrowthOpportunityImages({
     ...withEvidenceQueue,
     llmDryRunQueue: partialViewModel.llmDryRunQueue ?? fallbackViewModel.llmDryRunQueue,
-  };
+  });
 }
 
 export async function clearAgendaRoomViewModelCache() {
@@ -154,4 +154,49 @@ function createSampleWorkflowReadRepository(): MarketingWorkflowRepository {
   });
 
   return repository;
+}
+
+function normalizeProductGrowthOpportunityImages(viewModel: AgendaRoomViewModel): AgendaRoomViewModel {
+  return {
+    ...viewModel,
+    productGrowthOpportunities: viewModel.productGrowthOpportunities.map((opportunity) => {
+      const legacyOpportunity = opportunity as typeof opportunity & {
+        productImageAlt?: string;
+        productImageUrl?: string;
+      };
+      if (legacyOpportunity.productImageUrl && legacyOpportunity.productImageAlt) {
+        return opportunity;
+      }
+
+      const targetLabel = legacyOpportunity.targetLabel || legacyOpportunity.title || "상품";
+      return {
+        ...opportunity,
+        productImageUrl: legacyOpportunity.productImageUrl ?? buildCompatibilityProductThumbnailDataUri(targetLabel),
+        productImageAlt: legacyOpportunity.productImageAlt ?? `${targetLabel} 상품 이미지`,
+      };
+    }),
+  };
+}
+
+function buildCompatibilityProductThumbnailDataUri(targetLabel: string): string {
+  const label = [...targetLabel.split("/")[0]!.trim()].slice(0, 5).join("") || "상품";
+  const svg = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">`,
+    `<rect width="96" height="96" rx="14" fill="#eaf1fb"/>`,
+    `<rect x="18" y="20" width="60" height="48" rx="8" fill="#ffffff" stroke="#bdd3ee" stroke-width="3"/>`,
+    `<path d="M24 34h48M24 47h36M24 60h28" stroke="#245c9f" stroke-width="4" stroke-linecap="round" opacity="0.72"/>`,
+    `<circle cx="72" cy="26" r="10" fill="#245c9f" opacity="0.9"/>`,
+    `<text x="48" y="84" text-anchor="middle" font-size="14" font-family="Arial, sans-serif" font-weight="700" fill="#245c9f">${escapeCompatibilitySvgText(label)}</text>`,
+    `</svg>`,
+  ].join("");
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function escapeCompatibilitySvgText(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
