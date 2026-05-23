@@ -22,6 +22,7 @@
 | Application | `buildSampleHypothesisEvidenceQueue`, `canPromoteHypothesis`, `promoteVerifiedHypothesesToAgendaCandidates`로 검증 후 승격 규칙을 고정했다. |
 | Repository | memory/file/Postgres workflow repository에 `hypothesisCandidates`, `evidenceRequests` 컬렉션을 추가했다. |
 | Operations view model | 검증 전 근거 요청을 `WAITING_EVIDENCE` count에 포함하고 `evidenceRequestQueue` view model을 제공한다. |
+| Backend compatibility | 아직 새 view model을 주지 않는 백엔드 응답도 프론트에서 기본 근거 요청 큐로 보강한다. |
 | Operations UI | `/operations`에 `근거 요청 큐` 패널을 추가해 검증 대기, 승격 가능, 확인할 필드, 비교 기간을 한글로 보여준다. |
 | Docs | Plan v0.8, Design v0.4에 module-20 구현 상태와 실제 타입 계약을 반영했다. |
 
@@ -40,7 +41,7 @@
 |-------|--------|
 | TDD red check | `evidence-request-guard`, `EvidenceRequestQueuePanel`, view model count가 없는 상태에서 대상 테스트 실패 확인 |
 | 대상 테스트 | `tests/application/evidence-request-guard.test.ts`, `tests/application/agenda-room-view-model.test.ts`, `tests/components/evidence-request-queue-panel.test.ts` passed |
-| 전체 단위 테스트 | 40 files, 109 tests passed |
+| 전체 단위 테스트 | 40 files, 110 tests passed |
 | 타입체크 | `npm run typecheck` passed |
 | Production build | `npm run build` passed |
 | Diff whitespace check | `git diff --check` passed |

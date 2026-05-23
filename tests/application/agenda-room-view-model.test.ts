@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildAgendaRoomViewModel } from "../../src/features/agenda-room/buildAgendaRoomViewModel";
+import { normalizeAgendaRoomViewModelCompatibility } from "../../src/features/agenda-room/loadAgendaRoomViewModel";
 import type { ProviderSyncReport } from "../../src/lib/domain";
 import { createMemoryMarketingWorkflowRepository } from "../../src/lib/persistence/memory-repository";
 
@@ -191,6 +192,32 @@ describe("buildAgendaRoomViewModel", () => {
       "스마트스토어(스티커씨) · 최신 동기화 완료 · 스티커씨 주문 100건, 스티커씨 매출 602,620원 · 누적 2회",
       "쇼핑몰(커피프린트) · 최신 동기화 완료 · 커피프린트 주문 28건, 커피프린트 재구매 4명 · 누적 2회",
     ]);
+  });
+
+  it("이전 백엔드 view model에는 근거 요청 큐 기본값을 보강한다", () => {
+    const currentViewModel = buildAgendaRoomViewModel({ env: {} });
+    const staleBackendViewModel = {
+      ...currentViewModel,
+      summary: {
+        ...currentViewModel.summary,
+        waitingEvidence: currentViewModel.summary.waitingEvidence - currentViewModel.evidenceRequestQueue.openRequestCount,
+      },
+      inboxBuckets: currentViewModel.inboxBuckets.map((bucket) =>
+        bucket.id === "WAITING_EVIDENCE"
+          ? {
+              ...bucket,
+              count: bucket.count - currentViewModel.evidenceRequestQueue.openRequestCount,
+            }
+          : bucket,
+      ),
+      evidenceRequestQueue: undefined,
+    } as unknown as typeof currentViewModel;
+
+    const normalizedViewModel = normalizeAgendaRoomViewModelCompatibility(staleBackendViewModel);
+
+    expect(normalizedViewModel.evidenceRequestQueue.title).toBe("근거 요청 큐");
+    expect(normalizedViewModel.summary.waitingEvidence).toBe(currentViewModel.summary.waitingEvidence);
+    expect(normalizedViewModel.inboxBuckets.find((bucket) => bucket.id === "WAITING_EVIDENCE")?.count).toBe(2);
   });
 });
 

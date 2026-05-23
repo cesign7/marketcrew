@@ -31,21 +31,47 @@ declare global {
 export async function loadAgendaRoomViewModel() {
   const cached = readAgendaRoomViewModelCache();
   if (cached) {
-    return cached;
+    return normalizeAgendaRoomViewModelCompatibility(cached);
   }
 
   const backendViewModel = await readBackendAgendaRoomViewModel();
   if (backendViewModel) {
-    writeAgendaRoomViewModelCache(backendViewModel);
-    return backendViewModel;
+    const normalizedViewModel = normalizeAgendaRoomViewModelCompatibility(backendViewModel);
+    writeAgendaRoomViewModelCache(normalizedViewModel);
+    return normalizedViewModel;
   }
 
-  const viewModel = buildAgendaRoomViewModel({
+  const viewModel = normalizeAgendaRoomViewModelCompatibility(buildAgendaRoomViewModel({
     repository: await loadWorkflowReadRepository(),
-  });
+  }));
   writeAgendaRoomViewModelCache(viewModel);
 
   return viewModel;
+}
+
+export function normalizeAgendaRoomViewModelCompatibility(viewModel: AgendaRoomViewModel): AgendaRoomViewModel {
+  if ((viewModel as Partial<AgendaRoomViewModel>).evidenceRequestQueue) {
+    return viewModel;
+  }
+
+  const fallbackQueue = buildAgendaRoomViewModel().evidenceRequestQueue;
+
+  return {
+    ...viewModel,
+    summary: {
+      ...viewModel.summary,
+      waitingEvidence: viewModel.summary.waitingEvidence + fallbackQueue.openRequestCount,
+    },
+    inboxBuckets: viewModel.inboxBuckets.map((bucket) =>
+      bucket.id === "WAITING_EVIDENCE"
+        ? {
+            ...bucket,
+            count: bucket.count + fallbackQueue.openRequestCount,
+          }
+        : bucket,
+    ),
+    evidenceRequestQueue: fallbackQueue,
+  };
 }
 
 export async function clearAgendaRoomViewModelCache() {
