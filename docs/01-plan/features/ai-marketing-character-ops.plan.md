@@ -3,7 +3,7 @@
 > **Summary**: 스마트스토어, 네이버 키워드광고, 자체 쇼핑몰 데이터와 음력/양력 이벤트 캘린더를 함께 읽고 하위 캐릭터들이 먼저 안건을 발굴해 대표 결재를 올리며, 대표가 승인하면 즉시 반영하고 이후 성과까지 보고하는 회사형 AI 마케팅 업무시스템을 만든다. 키워드 광고는 상품 시즌성과 별도로 시즌 키워드 생애주기, 예산/입찰 안전장치, 검색수 캐시를 가진다.
 >
 > **Project**: marketcrew2
-> **Version**: 0.5
+> **Version**: 0.6
 > **Author**: Codex
 > **Date**: 2026-05-22 KST
 > **Status**: Draft
@@ -149,6 +149,7 @@ Rule of thumb:
 | FR-20 | 키워드 광고는 일반 운영 키워드와 시즌 키워드를 구분하고 시즌 키워드별 생애주기 상태를 가져야 한다. | High | Pending |
 | FR-21 | 시즌 키워드 광고 안건은 예산 상한, 입찰가 상한, 중지 조건, 제외 키워드 후보, 재고/마진 조건을 포함해야 한다. | High | Pending |
 | FR-22 | 키워드 수요 조회 결과는 `KeywordDemandSnapshot`으로 캐시하고, LLM에는 상위 후보 요약과 근거 ID만 전달해야 한다. | High | Pending |
+| FR-23 | 데이터 연동 화면은 PC/모바일 광고 설정, 시간대 성과, 스마트스토어 순매출/클레임, 데이터랩 세그먼트, 판매 분석 확장을 어떤 순서로 반영할지 보여줘야 한다. | Medium | Pending |
 
 ### 3.2 Non-Functional Requirements
 
@@ -444,6 +445,20 @@ Priority inbox buckets:
 | `WAITING_EVIDENCE` | 추가 근거를 기다리는 안건 |
 | `AUTO_HOLD` | 중요도/근거 부족으로 자동 보류된 후보 |
 | `FAILED_EXECUTION` | 승인됐지만 반영 실패 또는 부분 실패한 작업 |
+
+### 3.9 공급자 판단 근거 확장 순서
+
+API로 더 가져올 수 있는 모든 항목을 한 번에 LLM 판단에 넣지 않는다. 먼저 결재 품질을 크게 올리는 근거부터 코드가 수집/요약하고, LLM은 그 요약과 근거 ID만 읽는다.
+
+| 순서 | 모듈 목표 | 공급자 | 추가할 근거 | 판단 영향 |
+|------|-----------|--------|---------------|-----------|
+| 1 | 광고그룹 실제 설정 | 네이버 키워드광고 | PC/모바일 집행 여부, 기기별 입찰 가중치, 일예산, 기본 입찰가, ON/OFF 상태, 요일/시간/지역/연령/성별 타겟 | 검색 수요가 있는데 광고가 꺼져 있거나 모바일만 비싸게 태우는 문제를 먼저 잡는다. |
+| 2 | 기기·시간대·요일 성과 | 네이버 키워드광고 | PC/모바일별 노출·클릭·광고비, 시간대별 성과, 요일별 성과, 구매 전환수/전환액, 광고수익률 | 입찰 조정, 시간대 제외, 예산 배분 안건의 근거를 만든다. |
+| 3 | 스마트스토어 순매출과 클레임 | 스마트스토어(스티커씨) | 상품/옵션별 주문수, 할인액/배송비 반영 순매출 후보, 취소/반품/교환, 구매확정일, 상품 코드 매핑 | 광고 성과가 주문 품질과 실제 매출로 이어지는지 판단한다. |
+| 4 | 데이터랩 세그먼트 | 네이버 데이터랩 | 성별, 연령, 기기, 기간 단위별 상대 검색 추이 | 시즌 키워드가 어느 고객군에서 움직이는지 보조 근거로 쓴다. |
+| 5 | 스마트스토어 데이터솔루션 | 네이버 커머스 API | 판매 분석, 고객 분석, 결제 고객, 유입/전환 분석 가능 범위 | API 권한이 열리는 경우 상품 발굴과 채널별 수요 판단을 확장한다. |
+
+이 순서는 `/data` 화면에도 그대로 보여준다. 단, 실제 수집 구현은 각 항목의 공식 API 권한, 조회 가능 기간, 호출 제한, 개인정보 저장 금지 조건을 통과한 뒤 별도 iteration으로 진행한다.
 
 ---
 
@@ -868,6 +883,15 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 - 공식 API 문서와 샘플로 endpoint, auth, write scope, rate limit, rollback 가능성을 확인한다.
 - Critical 작업은 단일 클릭 반영 금지.
 
+### Slice 6A: 공급자 판단 근거 확장
+
+- 완료 목표: `/data`에서 판단 근거 확장 순서를 보여주고, 다음 구현이 어느 provider 근거를 먼저 보강해야 하는지 명확히 한다.
+- 1순위는 검색광고 광고그룹 실제 설정이다. PC/모바일 집행 설정, 입찰 가중치, 예산, ON/OFF 상태, 요일/시간/지역/연령/성별 타겟을 우선 확인한다.
+- 2순위는 기기·시간대·요일 성과다. 광고 판단은 키워드 단위 평균만으로 끝내지 않고 실제 집행 설정과 성과 분해를 함께 본다.
+- 3순위는 스마트스토어 순매출과 클레임이다. 광고 효율이 주문 품질, 취소/반품/교환, 구매확정까지 이어지는지 본다.
+- 4순위는 데이터랩 세그먼트다. 상대 지표이므로 절대 수요가 아니라 시즌 고객군 보조 근거로 표시한다.
+- 5순위는 스마트스토어 데이터솔루션이다. 판매/고객/유입 분석 권한이 열리면 상품 발굴과 채널 판단을 확장한다.
+
 ### Slice 7: Outcome Tracking and Performance Reports
 
 - 승인 전 baseline 저장.
@@ -925,3 +949,4 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 | 0.3 | 2026-05-22 | Added approval-to-execution, risk gates, rollback, priority inbox, and performance outcome loop | Codex |
 | 0.4 | 2026-05-22 | Added lunar event comparison, marketing calendar, and product-keyword-campaign opportunity generation | Codex |
 | 0.5 | 2026-05-22 | Added seasonal keyword ad lifecycle, keyword demand snapshots, ad budget/bid guardrails, API cache/backoff policy, and MVP cutline | Codex |
+| 0.6 | 2026-05-23 | Added provider evidence expansion order for ad settings, device/time performance, Smartstore net sales and claims, DataLab segments, and sales analytics expansion | Codex |

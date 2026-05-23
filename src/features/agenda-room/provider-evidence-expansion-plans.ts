@@ -1,0 +1,134 @@
+import type { ProviderEvidenceExpansionPlanView } from "./types";
+
+export function buildProviderEvidenceExpansionPlans(): ProviderEvidenceExpansionPlanView[] {
+  return [
+    {
+      id: "evidence-plan-search-ad-adgroup-settings",
+      phaseLabel: "1단계",
+      priorityLabel: "가장 먼저",
+      providerKeys: ["search_ad"],
+      title: "광고그룹 실제 설정",
+      summary: "키워드 수요와 실제 집행 설정이 맞는지 확인하는 근거를 먼저 추가합니다.",
+      evidenceToAdd: [
+        "PC/모바일 집행 설정",
+        "PC/모바일 입찰 가중치",
+        "일예산과 기본 입찰가",
+        "광고그룹 켜짐/꺼짐과 예산 제한 상태",
+        "요일·시간·지역·연령·성별 타겟",
+      ],
+      judgmentExamples: [
+        "모바일 검색 수요가 큰데 모바일 집행이 약한지 확인",
+        "피크 시간대가 타겟에서 빠졌는지 확인",
+        "예산 제한으로 노출이 막힌 광고그룹인지 확인",
+      ],
+      acceptanceChecks: [
+        "광고 설정 원문은 저장하지 않고 광고그룹별 요약 스냅샷만 저장",
+        "설정 근거가 없으면 입찰/예산 결재를 보강 필요로 표시",
+      ],
+      sourceLabel: "네이버 검색광고 광고그룹/타겟 API",
+      sourceUrl: "https://naver.github.io/searchad-apidoc/",
+    },
+    {
+      id: "evidence-plan-search-ad-device-hour-performance",
+      phaseLabel: "2단계",
+      priorityLabel: "광고 판단 핵심",
+      providerKeys: ["search_ad"],
+      title: "기기·시간대·요일 성과",
+      summary: "광고비를 어느 기기와 시간대에 집중할지 판단할 성과 근거를 추가합니다.",
+      evidenceToAdd: [
+        "PC/모바일별 노출·클릭·광고비",
+        "시간대별 노출·클릭·광고비",
+        "요일별 성과",
+        "구매 전환수와 구매 전환액",
+        "광고수익률과 클릭단가",
+      ],
+      judgmentExamples: [
+        "모바일 저녁 시간대만 강화할지 판단",
+        "PC 광고비를 줄이거나 보류할지 판단",
+        "시즌 피크 요일에 예산을 앞당길지 판단",
+      ],
+      acceptanceChecks: [
+        "기기와 시간대 성과가 없으면 자동 예산 변경 금지",
+        "성과 표본이 부족한 시간대는 결재 전 보강 필요로 표시",
+      ],
+      sourceLabel: "네이버 검색광고 통계/대용량 보고서",
+      sourceUrl: "https://naver.github.io/searchad-apidoc/",
+    },
+    {
+      id: "evidence-plan-smartstore-net-sales-claim-option",
+      phaseLabel: "3단계",
+      priorityLabel: "판매 품질 보강",
+      providerKeys: ["smartstore"],
+      title: "스마트스토어 순매출과 클레임",
+      summary: "매출만 보고 광고를 키우지 않도록 주문 상태, 할인, 배송비, 클레임을 집계합니다.",
+      evidenceToAdd: [
+        "상품/옵션별 주문수와 수량",
+        "할인액·배송비를 반영한 순매출 후보",
+        "취소·반품·교환 상태",
+        "구매확정일과 발송기한",
+        "판매자 상품 코드와 채널 상품 번호 매핑",
+      ],
+      judgmentExamples: [
+        "매출은 높지만 반품이 많은 상품은 광고 확대 보류",
+        "특정 옵션만 팔리는 상품은 옵션별 키워드 제안",
+        "발송 지연 위험이 있으면 시즌 광고 강화 보류",
+      ],
+      acceptanceChecks: [
+        "개인정보와 주문 원문 행은 저장하지 않고 집계만 저장",
+        "클레임 영향이 큰 상품은 성과 판단에서 별도 표시",
+      ],
+      sourceLabel: "네이버 커머스 주문 조회 API",
+      sourceUrl: "https://apicenter.commerce.naver.com/docs/commerce-api/current/%EC%A3%BC%EB%AC%B8-%EC%A1%B0%ED%9A%8C",
+    },
+    {
+      id: "evidence-plan-datalab-segments",
+      phaseLabel: "4단계",
+      priorityLabel: "수요 세분화",
+      providerKeys: ["datalab"],
+      title: "데이터랩 세그먼트",
+      summary: "상대 검색 추이를 기기, 연령, 성별 조건으로 나눠 시즌 수요의 방향을 보강합니다.",
+      evidenceToAdd: [
+        "PC/모바일 검색 추이",
+        "연령대별 검색 추이",
+        "성별 검색 추이",
+        "명절 D-기간별 전년동기 상대 추이",
+      ],
+      judgmentExamples: [
+        "모바일 특정 연령대에서 먼저 검색량이 오르는지 확인",
+        "시즌 키워드가 실제 구매 고객군과 맞는지 보조 판단",
+      ],
+      acceptanceChecks: [
+        "상대 비율은 절대 검색량으로 해석하지 않음",
+        "데이터랩 단독으로 광고비 변경 결재를 만들지 않음",
+      ],
+      sourceLabel: "네이버 데이터랩 통합 검색어 트렌드",
+      sourceUrl: "https://developers.naver.com/docs/serviceapi/datalab/search/search.md",
+    },
+    {
+      id: "evidence-plan-commerce-data-solution",
+      phaseLabel: "5단계",
+      priorityLabel: "가능 시 확장",
+      providerKeys: ["smartstore", "commerce_cross_channel"],
+      title: "스마트스토어 데이터솔루션",
+      summary: "브랜드스토어 권한과 구독이 가능할 때 상품별 검색/마케팅/시간대 결제 성과를 붙입니다.",
+      evidenceToAdd: [
+        "시간대별 유입과 결제 성과",
+        "검색 채널 키워드별 유입과 결제 성과",
+        "상품별 주요 검색 키워드",
+        "상품별 결제 성과",
+        "재구매 통계",
+      ],
+      judgmentExamples: [
+        "광고 키워드가 실제 결제 키워드와 맞는지 확인",
+        "상품별로 돈 되는 검색어를 발굴",
+        "스마트스토어 결제 피크와 광고 성과 피크를 대조",
+      ],
+      acceptanceChecks: [
+        "브랜드스토어/데이터솔루션 권한이 없으면 선택 확장으로 표시",
+        "결제 성과는 상품·키워드 집계로만 저장",
+      ],
+      sourceLabel: "네이버 커머스 API 데이터솔루션",
+      sourceUrl: "https://apicenter.commerce.naver.com/docs/commerce-api/current/%ED%8C%90%EB%A7%A4-%EB%B6%84%EC%84%9D",
+    },
+  ];
+}

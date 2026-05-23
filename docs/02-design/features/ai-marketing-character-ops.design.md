@@ -3,7 +3,7 @@
 > **Summary**: 하위 AI 캐릭터가 마케팅 데이터를 읽고 근거 있는 안건을 상신하면, 모아가 대표 결재용 실행 계획으로 묶고, 승인 후 mock/sandbox executor와 성과 추적까지 이어지는 bottom-up AI 마케팅 운영실 설계.
 >
 > **Project**: marketcrew2
-> **Version**: 0.1
+> **Version**: 0.2
 > **Author**: Codex
 > **Date**: 2026-05-22 KST
 > **Status**: Draft
@@ -355,6 +355,20 @@ Design decisions:
 - 30일 집계를 반복해서 LLM에 넣지 않고, 코드가 일별 집계/전년동기/음력 이벤트 윈도우를 먼저 계산한 뒤 요약만 보낸다.
 - API로 다시 가져올 수 없는 기간은 `INSUFFICIENT_HISTORY` 또는 추가 백필 필요로 표시한다.
 - 결재 근거는 광고/주문 데이터 기준 2시간 이내를 권장하고 24시간을 넘기면 수동 갱신 필요로 표시한다.
+
+#### 공급자 판단 근거 확장 순서
+
+`/data`는 현재 원천/저장 필드 계약과 함께 다음 보강 순서를 보여준다. 이 순서는 실제 코드 구현 순서의 기준이며, 먼저 결재 판단 품질을 크게 올리는 근거부터 수집한다.
+
+| 순서 | 모듈 | 공급자 | 화면 이름 | 구현 계약 |
+|------|------|--------|-----------|-----------|
+| 1 | `module-14` | 네이버 키워드광고 | 광고그룹 실제 설정 | PC/모바일 집행 설정, 입찰 가중치, 예산, ON/OFF, 요일/시간/지역/연령/성별 타겟을 읽어 `AdGroupSettingSnapshot` 후보로 정규화한다. |
+| 2 | `module-15` | 네이버 키워드광고 | 기기·시간대·요일 성과 | 기기, 시간대, 요일별 성과와 전환 데이터를 `AdPerformanceBreakdownSnapshot` 후보로 정규화한다. |
+| 3 | `module-16` | 스마트스토어(스티커씨) | 스마트스토어 순매출과 클레임 | 할인액, 배송비, 취소, 반품, 교환, 구매확정 상태를 `CommerceQualitySnapshot` 후보로 정규화한다. |
+| 4 | `module-17` | 네이버 데이터랩 | 데이터랩 세그먼트 | 성별, 연령, 기기, 기간 단위 상대 추이를 `SearchTrendSegmentSnapshot` 후보로 정규화한다. |
+| 5 | `module-18` | 스마트스토어 데이터솔루션 | 스마트스토어 데이터솔루션 | 판매 분석, 고객 분석, 유입/전환 분석 권한이 확인된 범위만 `CommerceAnalyticsSnapshot` 후보로 정규화한다. |
+
+다섯 모듈은 write gate, 배포 안전장치, rollback 근거가 명시적으로 열리기 전까지 모두 read-only로 유지한다. 화면 문구는 한국어로 쓰되, 원천 필드 상세 안의 provider 필드명과 API 식별자는 정확성을 위해 원문을 유지한다.
 
 ### 3.5 Persistence Shape
 
@@ -821,6 +835,11 @@ src/
 | Operations Room UI | `module-4` | cards, buckets, character rail, approval preview | 35-45 |
 | Approval and outcome loop | `module-5` | owner decisions, preflight, execution result, checkpoints, outcome UI | 35-45 |
 | LLM/provider readiness | `module-6` | LLM interface, readiness cards, Search Ad/DataLab read adapters | 40-60 |
+| 판단 근거 확장 로드맵 | `module-14` | `/data` 판단 근거 확장 순서와 공식 문서 출처 표시 | 10-15 |
+| 광고 설정 스냅샷 | `module-15` | 검색광고 광고그룹 설정, PC/모바일, 예산, 타겟 스냅샷 | 25-35 |
+| 광고 성과 분해 | `module-16` | 기기, 시간대, 요일별 광고 성과와 전환 근거 | 25-35 |
+| 커머스 품질 스냅샷 | `module-17` | 스마트스토어 순매출, 취소/반품/교환, 구매확정 근거 | 25-35 |
+| 검색/커머스 분석 확장 | `module-18` | 데이터랩 세그먼트와 스마트스토어 데이터솔루션 권한 기반 확장 | 30-40 |
 
 #### Recommended Session Plan
 
@@ -833,6 +852,11 @@ src/
 | Session 5 | Do | `--scope module-5` | 35-45 |
 | Session 6 | Do | `--scope module-6` | 40-60 |
 | Session 7 | Check/Act | all MVP modules | 30-40 |
+| Session 8 | Act | `--scope module-14` | 10-15 |
+| Session 9 | Act | `--scope module-15` | 25-35 |
+| Session 10 | Act | `--scope module-16` | 25-35 |
+| Session 11 | Act | `--scope module-17` | 25-35 |
+| Session 12 | Act | `--scope module-18` | 30-40 |
 
 ---
 
@@ -841,3 +865,4 @@ src/
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
 | 0.1 | 2026-05-22 | Initial PDCA design document from v0.5 plan, selected Pragmatic Balance architecture, defined domain/API/UI/test/session contracts | Codex |
+| 0.2 | 2026-05-23 | Added provider evidence expansion order and module map for ad settings, performance breakdown, commerce quality, DataLab segments, and commerce analytics | Codex |

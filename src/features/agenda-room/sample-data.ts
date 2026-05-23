@@ -1,5 +1,6 @@
 import { getProviderHistoryPolicy } from "@/lib/domain";
 import { buildProviderDataContracts } from "./provider-data-contracts";
+import { buildProviderEvidenceExpansionPlans } from "./provider-evidence-expansion-plans";
 import type { AgendaRoomViewModel } from "./types";
 
 export const agendaRoomSample: AgendaRoomViewModel = {
@@ -245,6 +246,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
     },
   ],
   providerDataContracts: buildProviderDataContracts(),
+  providerEvidenceExpansionPlans: buildProviderEvidenceExpansionPlans(),
   providerReadiness: [
     {
       id: "search_ad",

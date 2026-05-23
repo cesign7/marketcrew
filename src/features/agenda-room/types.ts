@@ -209,6 +209,20 @@ export type ProviderDataContractDatasetView = {
   }>;
 };
 
+export type ProviderEvidenceExpansionPlanView = {
+  id: string;
+  phaseLabel: string;
+  priorityLabel: string;
+  providerKeys: Array<ProviderDataContractView["providerKey"] | "commerce_cross_channel">;
+  title: string;
+  summary: string;
+  evidenceToAdd: string[];
+  judgmentExamples: string[];
+  acceptanceChecks: string[];
+  sourceLabel: string;
+  sourceUrl: string;
+};
+
 export type PlannerPreviewView = {
   title: string;
   modeLabel: string;
@@ -342,6 +356,7 @@ export type AgendaRoomViewModel = {
   approvalPreviews: ApprovalPreviewView[];
   ownerDecisionFlows: OwnerDecisionFlowView[];
   providerDataContracts: ProviderDataContractView[];
+  providerEvidenceExpansionPlans: ProviderEvidenceExpansionPlanView[];
   providerReadiness: ProviderReadinessView[];
   providerSyncEvidence: ProviderSyncEvidenceView[];
   plannerPreview: PlannerPreviewView;

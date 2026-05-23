@@ -33,6 +33,7 @@ export default async function DataPage({ searchParams }: DataPageProps) {
         initialPeriod={selectedPeriod}
         plannerPreview={viewModel.plannerPreview}
         providerDataContracts={viewModel.providerDataContracts}
+        providerEvidenceExpansionPlans={viewModel.providerEvidenceExpansionPlans}
         providerReadiness={viewModel.providerReadiness}
         providerSyncEvidence={viewModel.providerSyncEvidence}
       />

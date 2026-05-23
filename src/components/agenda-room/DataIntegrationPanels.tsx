@@ -6,11 +6,13 @@ import type {
   AgentRunSummaryView,
   PlannerPreviewView,
   ProviderDataContractView,
+  ProviderEvidenceExpansionPlanView,
   ProviderReadinessView,
   ProviderSyncEvidenceView,
 } from "@/features/agenda-room/types";
 import {
   filterAiEvidenceBriefs,
+  filterProviderEvidenceExpansionPlans,
   filterProviderDataContracts,
   filterProviderReadiness,
   filterProviderSyncEvidence,
@@ -26,6 +28,7 @@ import { AiEvidenceBriefPanel } from "./AiEvidenceBriefPanel";
 import { PlannerPreviewPanel } from "./PlannerPreviewPanel";
 import { ProviderCollectionPolicyPanel } from "./ProviderCollectionPolicyPanel";
 import { ProviderDataContractPanel } from "./ProviderDataContractPanel";
+import { ProviderEvidenceExpansionPlanPanel } from "./ProviderEvidenceExpansionPlanPanel";
 import { ProviderReadinessPanel } from "./ProviderReadinessPanel";
 import { ProviderSyncEvidencePanel } from "./ProviderSyncEvidencePanel";
 
@@ -36,6 +39,7 @@ type DataIntegrationPanelsProps = {
   initialPeriod: DataPeriodFilter;
   plannerPreview: PlannerPreviewView;
   providerDataContracts: ProviderDataContractView[];
+  providerEvidenceExpansionPlans: ProviderEvidenceExpansionPlanView[];
   providerReadiness: ProviderReadinessView[];
   providerSyncEvidence: ProviderSyncEvidenceView[];
 };
@@ -52,6 +56,7 @@ export function DataIntegrationPanels({
   initialPeriod,
   plannerPreview,
   providerDataContracts,
+  providerEvidenceExpansionPlans,
   providerReadiness,
   providerSyncEvidence,
 }: DataIntegrationPanelsProps) {
@@ -85,6 +90,10 @@ export function DataIntegrationPanels({
     () => filterProviderDataContracts(providerDataContracts, selectedFilter.channel),
     [providerDataContracts, selectedFilter.channel],
   );
+  const filteredProviderEvidenceExpansionPlans = useMemo(
+    () => filterProviderEvidenceExpansionPlans(providerEvidenceExpansionPlans, selectedFilter.channel),
+    [providerEvidenceExpansionPlans, selectedFilter.channel],
+  );
   const filteredAiEvidenceBriefs = useMemo(
     () => filterAiEvidenceBriefs(aiEvidenceBriefs, selectedFilter.channel),
     [aiEvidenceBriefs, selectedFilter.channel],
@@ -101,6 +110,7 @@ export function DataIntegrationPanels({
         reports={filteredProviderSyncEvidence}
       />
       <AiEvidenceBriefPanel briefs={filteredAiEvidenceBriefs} />
+      <ProviderEvidenceExpansionPlanPanel plans={filteredProviderEvidenceExpansionPlans} />
       <ProviderDataContractPanel contracts={filteredProviderDataContracts} />
       <ProviderReadinessPanel providers={filteredProviderReadiness} />
       <ProviderSyncEvidencePanel reports={filteredProviderSyncEvidence} showHistoryPolicy />

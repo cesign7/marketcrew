@@ -1,6 +1,7 @@
 import type {
   AiEvidenceBriefView,
   ProviderDataContractView,
+  ProviderEvidenceExpansionPlanView,
   ProviderReadinessView,
   ProviderSyncEvidenceView,
 } from "./types";
@@ -93,6 +94,27 @@ export function filterProviderDataContracts(
       return contract.providerKey === "smartstore";
     }
     return contract.providerKey === "shop";
+  });
+}
+
+export function filterProviderEvidenceExpansionPlans(
+  plans: ProviderEvidenceExpansionPlanView[],
+  selectedChannel: DataChannelFilter,
+): ProviderEvidenceExpansionPlanView[] {
+  if (selectedChannel === "all") {
+    return plans;
+  }
+
+  return plans.filter((plan) => {
+    const hasSharedMarketingEvidence = plan.providerKeys.some(
+      (providerKey) => providerKey === "search_ad" || providerKey === "datalab",
+    );
+
+    if (selectedChannel === "stickersee") {
+      return hasSharedMarketingEvidence || plan.providerKeys.some((providerKey) => providerKey === "smartstore");
+    }
+
+    return hasSharedMarketingEvidence || plan.providerKeys.some((providerKey) => providerKey === "shop");
   });
 }
 

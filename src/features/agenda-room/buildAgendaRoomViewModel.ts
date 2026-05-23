@@ -28,6 +28,7 @@ import type { MarketingWorkflowRepository } from "@/lib/application/workflow-rep
 import { resolveAiOperationsSettings } from "@/features/people/ai-operations-settings";
 import { buildLlmCostGovernanceView } from "./buildLlmCostGovernanceView";
 import { buildProviderDataContracts } from "./provider-data-contracts";
+import { buildProviderEvidenceExpansionPlans } from "./provider-evidence-expansion-plans";
 import type {
   AgendaRoomViewModel,
   ApprovalPreviewView,
@@ -152,6 +153,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
     ),
     ownerDecisionFlows,
     providerDataContracts: buildProviderDataContracts(),
+    providerEvidenceExpansionPlans: buildProviderEvidenceExpansionPlans(),
     providerReadiness: providerReadiness.map(buildProviderReadinessView),
     providerSyncEvidence: buildProviderSyncEvidenceViews(providerSyncReports),
     plannerPreview: buildPlannerPreviewView(plannerResult, plannerAudit),

@@ -94,7 +94,7 @@ QA Verdict:    QA_PASS
 | Design | [ai-marketing-character-ops.design.md](../02-design/features/ai-marketing-character-ops.design.md) | Finalized |
 | Do | [ai-marketing-character-ops.do.md](../03-do/ai-marketing-character-ops.do.md) | Complete |
 | Check | [ai-marketing-character-ops.analysis.md](../03-analysis/ai-marketing-character-ops.analysis.md) | Complete |
-| Act | [ai-marketing-character-ops.iteration-11.md](../04-act/ai-marketing-character-ops.iteration-11.md) | Complete |
+| Act | [ai-marketing-character-ops.iteration-13.md](../04-act/ai-marketing-character-ops.iteration-13.md) | Complete |
 | QA | [ai-marketing-character-ops.qa-report.md](../05-qa/ai-marketing-character-ops.qa-report.md) | QA_PASS |
 
 ---
@@ -117,6 +117,7 @@ QA Verdict:    QA_PASS
 | Provider readiness | Complete | Search Ad, DataLab, Smartstore, Shop, LLM readiness |
 | Read-only provider sync | Complete for MVP | aggregate snapshots and evidence labels |
 | Provider history policy | Complete for MVP | API 조회 한계, 백필 분할, 일별 스냅샷, AI 요약 입력 기준 |
+| 판단 근거 확장 로드맵 | MVP 보강 완료 | 광고 설정, 기기/시간대 성과, 순매출/클레임, 데이터랩 세그먼트, 판매 분석 확장 순서 |
 | Product growth candidates | Complete for MVP | keyword, marketing, product discovery candidates |
 
 ### 3.2 Non-Functional Requirements
@@ -297,3 +298,4 @@ QA Verdict:    QA_PASS
 |---------|------|---------|--------|
 | 1.0 | 2026-05-22 | Completion report created | Codex |
 | 1.1 | 2026-05-22 | Added `/data` provider data contract transparency slice | Codex |
+| 1.2 | 2026-05-23 | Added `/data` provider evidence expansion roadmap for post-MVP judgment hardening | Codex |
