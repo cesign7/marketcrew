@@ -59,6 +59,38 @@ export function clearPostgresWorkflowStateCache(databaseUrl?: string): void {
   sharedStateCache.clear();
 }
 
+export type PostgresWorkflowResetResult = {
+  status: "DRY_RUN" | "RESET";
+  collections: WorkflowCollectionKey[];
+  deletedCounts: Partial<Record<WorkflowCollectionKey, number>>;
+  totalDeleted: number;
+};
+
+export function resetPostgresWorkflowCollections(input: {
+  databaseUrl: string;
+  collections: WorkflowCollectionKey[];
+  dryRun?: boolean;
+}): PostgresWorkflowResetResult {
+  const output = execFileSync(process.execPath, [bridgeScriptPath, "reset-collections"], {
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      MARKETCREW_DATABASE_URL: input.databaseUrl,
+    },
+    input: JSON.stringify({
+      collections: input.collections,
+      dryRun: input.dryRun ?? true,
+    }),
+    maxBuffer: 1024 * 1024 * 64,
+  });
+  const result = JSON.parse(output) as PostgresWorkflowResetResult;
+  if (result.status === "RESET") {
+    clearPostgresWorkflowStateCache(input.databaseUrl);
+  }
+
+  return result;
+}
+
 class PostgresMarketingWorkflowRepository implements MarketingWorkflowRepository {
   private cachedState: WorkflowRepositoryState | undefined;
 

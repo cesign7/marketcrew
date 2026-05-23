@@ -28,6 +28,21 @@ Production is split into a thin Vercel frontend and a Railway backend.
 - Railway owns Postgres, provider API credentials, DataLab credentials, LLM readiness keys, cache settings, and write gates.
 - External writes are still disabled by default. Moving secrets to Railway does not enable ad/product/customer writes.
 
+## Web-First Development
+
+개발과 검증의 기준은 이제 운영 웹사이트다. 로컬은 코드 작성, 타입 검사, 단위 테스트, 빌드 검증에만 쓰고, 실제 데이터 확인은 `marketcrew.app`과 `api.marketcrew.app`에서 한다.
+
+권장 흐름:
+
+1. 로컬에서 작은 단위로 수정한다.
+2. 변경 범위에 맞는 표적 테스트와 `npm run typecheck`를 먼저 돌린다.
+3. 배포 전에는 `npm run build`와 필요한 Playwright smoke만 추가한다.
+4. GitHub `main`에 push하면 Vercel과 Railway가 자동 배포한다.
+5. 배포 후 `npm run smoke:prod`로 Railway API, Vercel bridge, 로그인 보호를 빠르게 확인한다.
+6. 실제 데이터 수집과 AI 판단 확인은 운영 웹사이트에서만 진행한다.
+
+로컬 Postgres는 기본 운영 경로에서 제외한다. 과거 데이터 마이그레이션이나 오프라인 재현이 필요할 때만 `docker start marketcrew-postgres`로 잠깐 켠다.
+
 Required production keys on Vercel:
 
 | Group | Keys |
@@ -66,12 +81,52 @@ The backend now runs the same Next.js application on Railway, with backend mode 
 | Approval mutation | `POST /api/approvals/[id]/decision` |
 | Follow-up mutation | `PATCH /api/follow-ups/[id]` |
 | Cache clear | `POST /api/cache/clear` |
+| Test data reset preview | `GET /api/operations/reset-test-data` |
+| Test data reset apply | `POST /api/operations/reset-test-data` |
 | Required Railway vars | `MARKETCREW_BACKEND_MODE=1`, `MARKETCREW_REPOSITORY_MODE=db`, `DATABASE_URL` or `MARKETCREW_DATABASE_URL`, `MARKETCREW_API_TOKEN` |
 | Required Vercel vars | `MARKETCREW_BACKEND_API_URL`, `MARKETCREW_BACKEND_API_TOKEN` |
 
 Vercel uses the Railway API first when `MARKETCREW_BACKEND_API_URL` is configured. On hosted Vercel, the backend is required; if Railway is unavailable, API calls fail closed instead of silently showing local sample data.
 
 This split is intentionally backend-first but still write-safe. Provider writes, ad budget changes, customer messaging, and other external writes remain blocked unless a later PDCA explicitly opens that path with write gates and rollback rules.
+
+## Test Data Reset
+
+운영 시작 직전에는 테스트로 쌓인 workflow 데이터를 지울 수 있다. 이 기능은 Railway/Postgres 저장소에서만 실행되며, 인사과/AI 예산 설정인 `aiOperationsSettings`는 보존한다.
+
+초기화 대상:
+
+- 결재 후보와 결재안
+- 대표 결정, 실행 전 점검, 모의 실행 결과
+- 성과 체크포인트와 결과 보고
+- 연동 수집 이력
+- AI 실행 이력과 workflow 연결 기록
+- 근거 요청, 가설 후보, 캐릭터 보고, 모아 종합
+
+보존 대상:
+
+- `aiOperationsSettings`
+- Vercel/Railway 환경변수
+- 대표 로그인 비밀값
+- 외부 provider 원장 데이터
+
+초기화 전 미리보기:
+
+```bash
+curl -s https://api.marketcrew.app/api/operations/reset-test-data \
+  -H "Authorization: Bearer $MARKETCREW_API_TOKEN"
+```
+
+초기화 실행은 아래 확인 문구가 정확히 들어와야 한다.
+
+```bash
+curl -s -X POST https://api.marketcrew.app/api/operations/reset-test-data \
+  -H "Authorization: Bearer $MARKETCREW_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"confirmation":"운영 시작 전 테스트 데이터 초기화"}'
+```
+
+이 명령은 외부 광고, 상품, 고객 데이터에는 쓰지 않는다. MarketCrew 내부 workflow 기록만 비운다.
 
 ## Owner Login
 
@@ -166,6 +221,7 @@ curl -I https://marketcrew.app/operations
 | `/follow-ups` production smoke | 200, key Korean terms present |
 | `/approvals/approval-agenda-season-plan-buddha-gift-card` production smoke | 200, key Korean terms present |
 | `/api/operations/workflow-state` | `repositoryMode=db`, approvalRequests 5, providerSyncReports 42, agentRuns 25 |
+| `/api/operations/reset-test-data` route tests | PASS, preview/confirmation/file-mode guard |
 | Vercel recent error logs after pruned-env smoke | no errors in latest 3 minutes |
 | `marketcrew.app` DNS | public resolvers return `76.76.21.21` |
 | Owner login unit tests | PASS |

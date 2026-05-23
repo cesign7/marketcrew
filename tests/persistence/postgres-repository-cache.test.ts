@@ -12,6 +12,7 @@ vi.mock("node:child_process", () => ({
 import {
   clearPostgresWorkflowStateCache,
   createPostgresMarketingWorkflowRepository,
+  resetPostgresWorkflowCollections,
 } from "../../src/lib/persistence/postgres-repository";
 
 const databaseUrl = "postgresql://marketcrew:secret@localhost:5432/marketcrew";
@@ -58,5 +59,34 @@ describe("PostgresMarketingWorkflowRepository cache", () => {
     createPostgresMarketingWorkflowRepository(databaseUrl).listSignals();
 
     expect(execFileSyncMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("지정한 collection만 reset-collections bridge로 초기화한다", () => {
+    execFileSyncMock.mockReturnValue(
+      `${JSON.stringify({
+        status: "RESET",
+        collections: ["signals", "agentRuns"],
+        deletedCounts: { signals: 2, agentRuns: 3 },
+        totalDeleted: 5,
+      })}\n`,
+    );
+
+    const result = resetPostgresWorkflowCollections({
+      databaseUrl,
+      collections: ["signals", "agentRuns"],
+      dryRun: false,
+    });
+
+    expect(result.totalDeleted).toBe(5);
+    expect(execFileSyncMock).toHaveBeenCalledWith(
+      process.execPath,
+      expect.arrayContaining(["reset-collections"]),
+      expect.objectContaining({
+        input: JSON.stringify({
+          collections: ["signals", "agentRuns"],
+          dryRun: false,
+        }),
+      }),
+    );
   });
 });

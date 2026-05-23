@@ -36,7 +36,7 @@ if (!databaseUrl) {
 }
 
 if (!operation) {
-  throw new Error("operation이 필요합니다. read-state 또는 save-collection을 사용하세요.");
+  throw new Error("operation이 필요합니다. read-state, save-collection 또는 reset-collections를 사용하세요.");
 }
 
 if (collection && !workflowCollectionKeys.includes(collection)) {
@@ -102,6 +102,52 @@ try {
 
     await client.query("COMMIT");
     process.stdout.write(`${JSON.stringify({ status: "SAVED", collection, count: items.length })}\n`);
+  } else if (operation === "reset-collections") {
+    const rawInput = await readStdin();
+    const input = JSON.parse(rawInput || "{}");
+    const collections = Array.isArray(input.collections) ? input.collections : [];
+    const dryRun = input.dryRun !== false;
+
+    if (collections.length === 0) {
+      throw new Error("reset-collections에는 collections 배열이 필요합니다.");
+    }
+
+    for (const resetCollection of collections) {
+      if (!workflowCollectionKeys.includes(resetCollection)) {
+        throw new Error(`알 수 없는 workflow collection입니다: ${resetCollection}`);
+      }
+    }
+
+    await client.query("BEGIN");
+    await client.query(schemaSql);
+
+    const countResult = await client.query(
+      `
+        SELECT collection, COUNT(*)::int AS count
+        FROM workflow_records
+        WHERE collection = ANY($1::text[])
+        GROUP BY collection
+      `,
+      [collections],
+    );
+    const deletedCounts = Object.fromEntries(collections.map((key) => [key, 0]));
+    for (const row of countResult.rows) {
+      deletedCounts[row.collection] = Number(row.count);
+    }
+
+    if (!dryRun) {
+      await client.query("DELETE FROM workflow_records WHERE collection = ANY($1::text[])", [collections]);
+    }
+
+    await client.query("COMMIT");
+    process.stdout.write(
+      `${JSON.stringify({
+        status: dryRun ? "DRY_RUN" : "RESET",
+        collections,
+        deletedCounts,
+        totalDeleted: Object.values(deletedCounts).reduce((sum, count) => sum + count, 0),
+      })}\n`,
+    );
   } else {
     throw new Error(`지원하지 않는 workflow bridge operation입니다: ${operation}`);
   }

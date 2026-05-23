@@ -2,7 +2,7 @@
   "project": "marketcrew2",
   "currentFeature": "ai-marketing-character-ops",
   "phase": "completed",
-      "updatedAt": "2026-05-23T18:16:00+09:00",
+      "updatedAt": "2026-05-23T18:40:00+09:00",
   "features": {
     "ai-marketing-character-ops": {
       "phase": "completed",
@@ -15,7 +15,7 @@
       "reportPath": "docs/04-report/ai-marketing-character-ops.report.md",
       "actPath": "docs/04-act/ai-marketing-character-ops.iteration-30.md",
       "matchRate": 100,
-      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속 module-32에서 쇼핑검색광고 상품형/카탈로그형 검색어 성과를 별도 read-only 근거로 붙였다. Search Ad 수집은 기존 /keywordstool, /stats 전체/pcMblTp/hh24를 유지하고, 쇼핑 캠페인 광고그룹과 /ncc/product-groups를 제한적으로 읽은 뒤 /stats?id={adgroupId}&statType=NPLA_SCH_KEYWORD 응답을 ShoppingSearchAdPerformanceSnapshot으로 정규화한다. 로컬 실제 read-only sync에서 쇼핑검색광고 원본 성과 8,181건을 확인했고, 직접전환 없음과 광고비/클릭 기준 상위 500건을 저장했다. Gemini 실제 파일럿도 쇼핑검색광고 스냅샷 ID를 판단 근거로 채택했다. 실제 provider write는 계속 차단한다."
+      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속으로 개발/검증 기준을 웹사이트 우선으로 전환했다. 로컬 Postgres는 기본 운영 경로에서 제외하고, 실제 데이터 확인은 marketcrew.app과 api.marketcrew.app에서 진행한다. 운영 시작 전 테스트 workflow 기록 정리를 위해 GET/POST /api/operations/reset-test-data를 추가했다. 이 API는 Railway/Postgres에서만 실행되며 정확한 확인 문구가 필요하고 aiOperationsSettings, env/login/provider 원장 데이터는 보존한다. 실제 provider write는 계속 차단한다."
     },
     "ops-persistence-provenance-foundation": {
       "phase": "completed",
