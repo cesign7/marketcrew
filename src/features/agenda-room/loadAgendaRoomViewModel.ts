@@ -23,6 +23,10 @@ type WorkflowReadRepositoryOptions = {
   env?: NodeJS.ProcessEnv;
 };
 
+type ClearAgendaRoomViewModelCacheOptions = {
+  remoteWorkflowState?: boolean;
+};
+
 declare global {
   // eslint-disable-next-line no-var
   var __marketcrewAgendaRoomViewModelCache: CachedAgendaRoomViewModel | undefined;
@@ -83,10 +87,12 @@ export function normalizeAgendaRoomViewModelCompatibility(viewModel: AgendaRoomV
   });
 }
 
-export async function clearAgendaRoomViewModelCache() {
+export async function clearAgendaRoomViewModelCache(options: ClearAgendaRoomViewModelCacheOptions = {}) {
   clearLocalAgendaRoomViewModelCache();
   await clearBackendReadThroughCache();
-  await clearBackendWorkflowStateCache();
+  if (options.remoteWorkflowState ?? true) {
+    await clearBackendWorkflowStateCache();
+  }
 }
 
 export function clearLocalAgendaRoomViewModelCache() {

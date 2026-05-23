@@ -12,6 +12,7 @@ import { buildReadOnlyProviderSyncReports } from "../../src/lib/integrations/pro
 import {
   buildSearchAdKeywordToolRequest,
   buildSearchAdReadOnlySyncReport,
+  buildSearchAdStatsRequest,
   createSearchAdSignature,
 } from "../../src/lib/integrations/search-ad/read-only-sync";
 import {
@@ -63,6 +64,29 @@ describe("읽기 전용 연동 수집", () => {
     expect(JSON.stringify(request.headers)).not.toContain("secret");
   });
 
+  it("Search Ad 성과 요청은 /stats 공식 조회 계약을 따른다", () => {
+    const signature = createSearchAdSignature("123", "GET", "/stats", "secret");
+    const request = buildSearchAdStatsRequest({
+      env: {
+        NAVER_SEARCH_AD_ACCESS_LICENSE: "access-license",
+        NAVER_SEARCH_AD_SECRET_KEY: "secret",
+        NAVER_SEARCH_AD_CUSTOMER_ID: "customer-id",
+      },
+      ids: ["nkw-a001"],
+      timestamp: "123",
+      datePreset: "last7days",
+      breakdown: "pcMblTp",
+    });
+    const decodedUrl = decodeURIComponent(request.url);
+
+    expect(request.url).toContain("https://api.searchad.naver.com/stats");
+    expect(decodedUrl).toContain("ids=nkw-a001");
+    expect(decodedUrl).toContain('"clkCnt"');
+    expect(decodedUrl).toContain("datePreset=last7days");
+    expect(decodedUrl).toContain("breakdown=pcMblTp");
+    expect(request.headers["X-Signature"]).toBe(signature);
+  });
+
   it("Search Ad 성공 응답은 KeywordDemandSnapshot으로 정규화한다", async () => {
     const report = await import("../../src/lib/integrations/search-ad/read-only-sync").then(({ syncSearchAdKeywordTool }) =>
       syncSearchAdKeywordTool({
@@ -100,6 +124,173 @@ describe("읽기 전용 연동 수집", () => {
       monthlyMobileSearches: 1800,
       competitionIndex: "MEDIUM",
     });
+  });
+
+  it("Search Ad 성공 응답은 성과 /stats를 집계 스냅샷으로 함께 정규화한다", async () => {
+    const requestedPaths: string[] = [];
+    const report = await import("../../src/lib/integrations/search-ad/read-only-sync").then(({ syncSearchAdKeywordTool }) =>
+      syncSearchAdKeywordTool({
+        checkedAt: NOW,
+        env: {
+          NAVER_SEARCH_AD_ACCESS_LICENSE: "access-license",
+          NAVER_SEARCH_AD_SECRET_KEY: "secret",
+          NAVER_SEARCH_AD_CUSTOMER_ID: "customer-id",
+        },
+        fetchImpl: async (url) => {
+          const parsed = new URL(String(url));
+          requestedPaths.push(`${parsed.pathname}?${parsed.searchParams.get("breakdown") ?? "all"}`);
+
+          if (parsed.pathname === "/keywordstool") {
+            return new Response(
+              JSON.stringify({
+                keywordList: [
+                  {
+                    relKeyword: "부처님오신날 선물카드",
+                    monthlyPcQcCnt: "420",
+                    monthlyMobileQcCnt: "1,800",
+                    compIdx: "중간",
+                  },
+                ],
+              }),
+              { status: 200 },
+            );
+          }
+
+          if (parsed.pathname === "/ncc/campaigns") {
+            return new Response(
+              JSON.stringify([
+                {
+                  nccCampaignId: "cmp-a001",
+                  name: "스티커씨 시즌 캠페인",
+                  status: "ELIGIBLE",
+                  trackingMode: "AUTO_TRACKING_MODE",
+                },
+              ]),
+              { status: 200 },
+            );
+          }
+
+          if (parsed.pathname === "/ncc/adgroups") {
+            return new Response(
+              JSON.stringify([
+                {
+                  nccAdgroupId: "grp-a001",
+                  name: "부처님오신날 모바일",
+                  status: "ELIGIBLE",
+                },
+              ]),
+              { status: 200 },
+            );
+          }
+
+          if (parsed.pathname === "/ncc/keywords") {
+            return new Response(
+              JSON.stringify([
+                {
+                  nccKeywordId: "nkw-a001",
+                  keyword: "부처님오신날 선물카드",
+                  status: "ELIGIBLE",
+                },
+              ]),
+              { status: 200 },
+            );
+          }
+
+          if (parsed.pathname === "/stats" && parsed.searchParams.get("breakdown") === "pcMblTp") {
+            return new Response(
+              JSON.stringify({
+                summaryStatResponse: {
+                  data: [
+                    {
+                      id: "nkw-a001",
+                      breakdowns: [
+                        { name: "PC", impCnt: 100, clkCnt: 5, salesAmt: 2500, ccnt: 1, convAmt: 12000 },
+                        { name: "Mobile", impCnt: 900, clkCnt: 35, salesAmt: 24500, ccnt: 0, convAmt: 0 },
+                      ],
+                    },
+                  ],
+                },
+              }),
+              { status: 200 },
+            );
+          }
+
+          if (parsed.pathname === "/stats" && parsed.searchParams.get("breakdown") === "hh24") {
+            return new Response(
+              JSON.stringify({
+                summaryStatResponse: {
+                  data: [
+                    {
+                      id: "nkw-a001",
+                      breakdowns: [{ name: "18", impCnt: 400, clkCnt: 30, salesAmt: 21000, ccnt: 0, convAmt: 0 }],
+                    },
+                  ],
+                },
+              }),
+              { status: 200 },
+            );
+          }
+
+          if (parsed.pathname === "/stats") {
+            return new Response(
+              JSON.stringify({
+                summaryStatResponse: {
+                  data: [{ id: "nkw-a001", impCnt: 1000, clkCnt: 40, salesAmt: 27000, ccnt: 1, convAmt: 12000 }],
+                },
+              }),
+              { status: 200 },
+            );
+          }
+
+          return new Response("{}", { status: 404 });
+        },
+      }),
+    );
+
+    expect(report.status).toBe("SYNCED");
+    expect(requestedPaths).toEqual(
+      expect.arrayContaining(["/ncc/campaigns?all", "/ncc/adgroups?all", "/ncc/keywords?all", "/stats?all", "/stats?pcMblTp", "/stats?hh24"]),
+    );
+    expect(report.searchAdPerformanceSnapshots).toHaveLength(4);
+    expect(report.searchAdPerformanceSnapshots?.[0]).toMatchObject({
+      provider: "naver_search_ad",
+      brandKey: "stickersee",
+      keyword: "부처님오신날 선물카드",
+      device: "ALL",
+      clicks: 40,
+      conversions: 1,
+      trackingVerified: true,
+      dataScope: "aggregate_only",
+    });
+    expect(report.searchAdPerformanceSnapshots?.some((snapshot) => snapshot.device === "MOBILE")).toBe(true);
+    expect(report.searchAdPerformanceSnapshots?.some((snapshot) => snapshot.timeSlot === "18시")).toBe(true);
+    expect(report.evidenceNotes.join(" ")).toContain("성과 스냅샷 4건");
+  });
+
+  it("Search Ad 성과 대상이 없으면 키워드 수요 수집은 유지하고 원인을 남긴다", async () => {
+    const report = await import("../../src/lib/integrations/search-ad/read-only-sync").then(({ syncSearchAdKeywordTool }) =>
+      syncSearchAdKeywordTool({
+        checkedAt: NOW,
+        env: {
+          NAVER_SEARCH_AD_ACCESS_LICENSE: "access-license",
+          NAVER_SEARCH_AD_SECRET_KEY: "secret",
+          NAVER_SEARCH_AD_CUSTOMER_ID: "customer-id",
+          MARKETCREW_SEARCH_AD_STAT_DISCOVERY_ENABLED: "false",
+        },
+        fetchImpl: async () =>
+          new Response(
+            JSON.stringify({
+              keywordList: [{ relKeyword: "추석 선물카드", monthlyPcQcCnt: "500", monthlyMobileQcCnt: "2,200" }],
+            }),
+            { status: 200 },
+          ),
+      }),
+    );
+
+    expect(report.status).toBe("SYNCED");
+    expect(report.keywordDemandSnapshots).toHaveLength(1);
+    expect(report.searchAdPerformanceSnapshots).toBeUndefined();
+    expect(report.evidenceNotes.join(" ")).toContain("성과 조회 대상 ID가 없어");
   });
 
   it("DataLab 인증값이 없으면 네트워크 호출 없이 상대 ratio 주석을 남긴다", () => {

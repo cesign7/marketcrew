@@ -468,6 +468,8 @@ API로 더 가져올 수 있는 모든 항목을 한 번에 LLM 판단에 넣지
 
 2026-05-23 후속 `module-30`에서는 2순위 성과 판단의 첫 계약을 구현했다. 네이버 검색광고 `/stats` 계열에서 만들 수 있는 집계 스냅샷을 `SearchAdPerformanceSnapshot`으로 모델링하고, LLM 호출 전에 deterministic 규칙 엔진이 낮은 전환율, 클릭은 있는데 주문이 없는 키워드, 높은 CPA, 기기/시간대 성과 차이, 전환 추적 미확인을 먼저 판정한다. 조정 가능한 광고 성과 안건은 `그로`, 추적/주문 연결 검증은 `데이`가 맡는다.
 
+2026-05-23 후속 `module-31`에서는 이 규칙 엔진이 실제 연동 수집 데이터를 읽도록 네이버 검색광고 read-only 수집기에 `/stats` 성과 스냅샷 경로를 붙였다. `MARKETCREW_SEARCH_AD_STAT_IDS` 또는 `MARKETCREW_SEARCH_AD_STAT_TARGETS`가 있으면 지정 대상을 쓰고, 없으면 캠페인 -> 광고그룹 -> 키워드를 제한된 개수만 자동 발견한 뒤 전체/기기/시간대 성과를 `SearchAdPerformanceSnapshot`으로 정규화한다. 실제 키워드/입찰/예산 변경은 계속 호출하지 않는다.
+
 ### 3.10 자유 탐색과 근거 요청 정책
 
 정해진 `Signal` 기준은 누락을 막기 위한 기본 안전망이다. LLM 캐릭터의 역할은 여기서 멈추지 않고, 대표가 미처 생각하지 못한 상품/키워드/기기/시간대/고객군 조합을 가설로 제안하는 데 있다. 다만 가설은 곧바로 결재 안건이 아니며, 실제 원천 필드와 집계 근거가 확인될 때만 모아가 대표 결재 안건으로 승격한다.
@@ -950,6 +952,14 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 - 규칙 엔진은 `CLICKS_NO_ORDER`, `LOW_CVR`, `HIGH_CPA`, `DEVICE_GAP`, `TIME_SLOT_GAP`, `TRACKING_UNVERIFIED`를 만든다.
 - 담당 배정은 `TRACKING_UNVERIFIED -> 데이`, 그 외 조정 가능한 성과 이상은 `그로`가 기본이다.
 - 모아와 LLM은 이 결과를 요약 근거로 읽고 결재문 초안을 보완한다. 원천 행 전체는 전달하지 않는다.
+
+### Slice 6C: 검색광고 성과 read-only 수집기
+
+- 완료 목표: 규칙 엔진 입력이 샘플이 아니라 실제 네이버 검색광고 집계 성과에서 만들어지게 한다.
+- `/keywordstool` 수요 수집 뒤 `/ncc/campaigns`, `/ncc/adgroups`, `/ncc/keywords`를 제한된 개수로 읽어 성과 조회 대상 ID를 자동 발견한다.
+- `MARKETCREW_SEARCH_AD_STAT_IDS` 또는 `MARKETCREW_SEARCH_AD_STAT_TARGETS`가 있으면 자동 발견 대신 지정 대상만 사용한다.
+- `/stats`는 전체, `pcMblTp`, `hh24` 세 경로로 호출해 전체/PC/모바일/시간대 스냅샷을 만든다.
+- 모든 호출은 GET read-only이며 실제 입찰가, 예산, 키워드 ON/OFF 변경은 별도 write executor 전까지 하지 않는다.
 
 ### Slice 7: Outcome Tracking and Performance Reports
 

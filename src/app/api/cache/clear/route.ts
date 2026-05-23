@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { clearAgendaRoomViewModelCache } from "@/features/agenda-room/loadAgendaRoomViewModel";
 
 export async function POST() {
-  await clearAgendaRoomViewModelCache();
+  await clearAgendaRoomViewModelCache({ remoteWorkflowState: false });
 
   return NextResponse.json({
     ok: true,

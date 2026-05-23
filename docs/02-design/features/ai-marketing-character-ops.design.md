@@ -432,6 +432,31 @@ type SearchAdPerformanceSnapshot = {
 
 Gemini planner prompt에는 `SearchAdPerformanceSnapshot`의 집계 요약과 근거 ID만 포함한다. provider sync AgentRun, AI 판독 근거, Outcome 기준선은 같은 snapshot ID를 추적한다.
 
+#### 검색광고 성과 read-only 수집기
+
+`module-31`은 `module-30`의 규칙 엔진 입력을 실제 provider sync에서 생성한다. Search Ad 수집은 기존 `/keywordstool` 키워드 수요를 유지한 뒤, 아래 순서로 성과 대상을 찾는다.
+
+```text
+MARKETCREW_SEARCH_AD_STAT_TARGETS 또는 MARKETCREW_SEARCH_AD_STAT_IDS
+  -> 없으면 /ncc/campaigns
+  -> /ncc/adgroups
+  -> /ncc/keywords
+  -> /stats 전체
+  -> /stats breakdown=pcMblTp
+  -> /stats breakdown=hh24
+  -> SearchAdPerformanceSnapshot[]
+```
+
+기본 자동 발견 제한은 캠페인 5개, 캠페인별 광고그룹 10개, 키워드 50개다. 계정이 커져도 무제한 탐색하지 않고, 정밀 운영이 필요하면 `MARKETCREW_SEARCH_AD_STAT_TARGETS`에 브랜드, 키워드명, 목표 CPA/ROAS, 전환 추적 확인 여부를 명시한다.
+
+| 입력 | 저장 | 화면 |
+|---|---|---|
+| `/stats` 전체 | `device=ALL`, `timeSlot` 없음 | 키워드 전체 성과 |
+| `/stats?breakdown=pcMblTp` | `device=PC/MOBILE` | PC/모바일 성과 차이 |
+| `/stats?breakdown=hh24` | `device=ALL`, `timeSlot=HH시` | 시간대 성과 차이 |
+
+수집 실패는 전체 화면을 깨뜨리지 않는다. 키워드 수요는 그대로 저장하고, 성과 조회 대상 ID 없음 또는 `/stats` HTTP 실패는 `ProviderSyncReport.evidenceNotes`에 한국어로 남긴다.
+
 ### 3.5 LLM 자유 탐색과 근거 요청 루프
 
 정형 `SignalSummary`는 LLM 입력 비용을 통제하기 위한 기본 입력이다. 다만 캐릭터는 이 요약만 해석하는 수동 보고자가 아니라, 정해진 신호 밖의 조합을 `HypothesisCandidate`로 제안하고 필요한 근거를 `EvidenceRequest`로 요청할 수 있어야 한다.
@@ -963,6 +988,7 @@ src/
 | 결재 실행 범위 선택 | `module-26` | AI가 검색광고 실행 범위를 제안하고 대표가 그대로 확정하거나 수정값을 저장 | Done in iteration 24 |
 | 실행 범위 소급 적용 | `module-27` | 기존 저장 결재안과 대표 결정에 실행 범위 제안/선택값을 백필 | Done in iteration 25 |
 | 검색광고 성과 규칙 엔진 | `module-30` | 낮은 전환율, 주문 없는 클릭, 높은 CPA, 기기/시간대 차이, 전환 추적 미확인을 LLM 전 규칙으로 판정하고 그로/데이에 배정 | Done in iteration 28 |
+| 검색광고 성과 수집기 | `module-31` | Search Ad 캠페인/광고그룹/키워드를 read-only로 발견하고 `/stats` 전체/기기/시간대 성과를 `SearchAdPerformanceSnapshot`으로 저장 | Done in iteration 29 |
 
 #### Recommended Session Plan
 
