@@ -30,6 +30,7 @@ describe("Gemini planner pilot", () => {
                       evidenceIds: [
                         "commerce-aggregate-stickersee-2026-05-23",
                         "ad-perf-stickersee-no-order-2026-05-23",
+                        "shopping-search-ad-performance-stickersee-grp-shopping-a001-season-gift-2026-05-23",
                         "unknown-evidence",
                       ],
                       judgmentNotes: ["스마트스토어 주문 집계가 충분합니다."],
@@ -119,6 +120,26 @@ describe("Gemini planner pilot", () => {
                 dataScope: "aggregate_only",
               },
             ],
+            shoppingSearchAdPerformanceSnapshots: [
+              {
+                id: "shopping-search-ad-performance-stickersee-grp-shopping-a001-season-gift-2026-05-23",
+                provider: "naver_search_ad",
+                brandKey: "stickersee",
+                campaignName: "스티커씨 쇼핑검색광고",
+                adGroupName: "선물카드 상품형",
+                adGroupId: "grp-shopping-a001",
+                searchKeyword: "시즌 선물카드",
+                productGroupName: "스티커씨 선물카드",
+                mallName: "스티커씨",
+                registeredProductType: "GENERAL",
+                windowDays: 30,
+                clicks: 51,
+                directConversionRate: 0,
+                cost: 61200,
+                collectedAt: GENERATED_AT,
+                dataScope: "aggregate_only",
+              },
+            ],
           },
         ],
         keywordDemandSnapshots: [],
@@ -147,6 +168,7 @@ describe("Gemini planner pilot", () => {
     expect(pilot.result.evidenceIds).toEqual([
       "commerce-aggregate-stickersee-2026-05-23",
       "ad-perf-stickersee-no-order-2026-05-23",
+      "shopping-search-ad-performance-stickersee-grp-shopping-a001-season-gift-2026-05-23",
     ]);
     expect(pilot.result.rawRowsIncluded).toBe(false);
     expect(pilot.audit.provider).toBe("gemini");

@@ -75,6 +75,7 @@ export interface ProviderSyncReport {
   keywordDemandSnapshots?: KeywordDemandSnapshot[];
   searchTrendSnapshots?: SearchTrendSnapshot[];
   searchAdPerformanceSnapshots?: SearchAdPerformanceSnapshot[];
+  shoppingSearchAdPerformanceSnapshots?: ShoppingSearchAdPerformanceSnapshot[];
   commerceAggregateSnapshot?: CommerceAggregateSnapshot;
   shopAggregateSnapshot?: ShopAggregateSnapshot;
   generatedSignal?: Signal;
@@ -384,6 +385,26 @@ export interface SearchAdPerformanceSnapshot {
   targetCpa?: number;
   targetRoas?: number;
   trackingVerified: boolean;
+  collectedAt: string;
+  dataScope: "aggregate_only";
+}
+
+export interface ShoppingSearchAdPerformanceSnapshot {
+  id: string;
+  provider: "naver_search_ad";
+  brandKey: string;
+  campaignName: string;
+  adGroupName: string;
+  adGroupId: string;
+  searchKeyword: string;
+  productGroupId?: string;
+  productGroupName?: string;
+  mallName?: string;
+  registeredProductType?: string;
+  windowDays: 30;
+  clicks: number;
+  directConversionRate: number;
+  cost: number;
   collectedAt: string;
   dataScope: "aggregate_only";
 }

@@ -171,6 +171,17 @@ function buildOutcomeEvidenceLabels(report: ProviderSyncReport): string[] {
     );
   }
 
+  if (report.shoppingSearchAdPerformanceSnapshots?.length) {
+    labels.push(
+      ...report.shoppingSearchAdPerformanceSnapshots.slice(0, 3).map(
+        (snapshot) =>
+          `쇼핑검색광고 성과 ${snapshot.searchKeyword} 클릭 ${snapshot.clicks.toLocaleString("ko-KR")}회 직접전환율 ${formatPercent(
+            snapshot.directConversionRate,
+          )}`,
+      ),
+    );
+  }
+
   if (report.searchTrendSnapshots?.length) {
     labels.push(`데이터랩 상대 추이 ${report.searchTrendSnapshots.length.toLocaleString("ko-KR")}건`);
   }
@@ -185,8 +196,13 @@ function buildOutcomeEvidenceIds(report: ProviderSyncReport): string[] {
     ...(report.keywordDemandSnapshots ?? []).map((snapshot) => snapshot.id),
     ...(report.searchTrendSnapshots ?? []).map((snapshot) => snapshot.id),
     ...(report.searchAdPerformanceSnapshots ?? []).map((snapshot) => snapshot.id),
+    ...(report.shoppingSearchAdPerformanceSnapshots ?? []).map((snapshot) => snapshot.id),
     report.generatedSignal?.id,
   ].filter((id): id is string => Boolean(id));
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toLocaleString("ko-KR", { maximumFractionDigits: 1 })}%`;
 }
 
 function keywordSearchVolume(snapshot: NonNullable<ProviderSyncReport["keywordDemandSnapshots"]>[number]): number {

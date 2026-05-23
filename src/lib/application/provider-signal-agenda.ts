@@ -10,7 +10,6 @@ import type {
   PerformanceCheckpoint,
   ProviderSyncReport,
   RiskLevel,
-  SearchAdPerformanceSnapshot,
   ShopAggregateSnapshot,
   Signal,
 } from "../domain";
@@ -35,10 +34,13 @@ export function buildProviderSignalAgendaArtifacts(input: {
   const signalsById = new Map(input.signals.map((signal) => [signal.id, signal]));
   const commerceReport = latestSyncedReport(input.providerSyncReports, "smartstore", "commerceAggregateSnapshot");
   const shopReport = latestSyncedReport(input.providerSyncReports, "shop", "shopAggregateSnapshot");
-  const searchAdPerformanceReport = latestSyncedReport(input.providerSyncReports, "search_ad", "searchAdPerformanceSnapshots");
+  const searchAdPerformanceReport =
+    latestSyncedReport(input.providerSyncReports, "search_ad", "searchAdPerformanceSnapshots") ??
+    latestSyncedReport(input.providerSyncReports, "search_ad", "shoppingSearchAdPerformanceSnapshots");
   const searchAdPerformanceDiagnoses = searchAdPerformanceReport
     ? buildAdPerformanceDiagnoses({
         snapshots: searchAdPerformanceReport.searchAdPerformanceSnapshots ?? [],
+        shoppingSnapshots: searchAdPerformanceReport.shoppingSearchAdPerformanceSnapshots ?? [],
         generatedAt,
       })
     : [];
@@ -133,9 +135,13 @@ function buildSearchAdPerformanceAgendaCandidate(
   const evidenceIds = Array.from(new Set(representativeDiagnoses.flatMap((diagnosis) => diagnosis.evidenceIds)));
   const title =
     owner === "gro" ? "저성과 검색광고 키워드 조정 안건" : "검색광고 전환 추적 근거 확인 요청";
+  const brandSlug = brandSlugFromSnapshots([
+    ...(report.searchAdPerformanceSnapshots ?? []),
+    ...(report.shoppingSearchAdPerformanceSnapshots ?? []),
+  ]);
 
   return {
-    id: `agenda-provider-search-ad-performance-${brandSlugFromSnapshots(report.searchAdPerformanceSnapshots ?? [])}-${report.checkedAt.slice(0, 10)}`,
+    id: `agenda-provider-search-ad-performance-${brandSlug}-${report.checkedAt.slice(0, 10)}`,
     character: owner,
     title,
     summary:
@@ -148,10 +154,7 @@ function buildSearchAdPerformanceAgendaCandidate(
     sourceSignalIds: report.generatedSignal ? [report.generatedSignal.id] : [],
     opportunityIds: evidenceIds,
     dataConfidence: owner === "gro" ? "READY_TO_APPROVE" : "AD_TRACKING_UNVERIFIED",
-    duplicateKey: `provider-agenda:search-ad-performance:${brandSlugFromSnapshots(report.searchAdPerformanceSnapshots ?? [])}:${report.checkedAt.slice(
-      0,
-      10,
-    )}`,
+    duplicateKey: `provider-agenda:search-ad-performance:${brandSlug}:${report.checkedAt.slice(0, 10)}`,
     createdAt: generatedAt,
   };
 }
@@ -276,7 +279,13 @@ function buildPerformanceCheckpoints(
     );
 }
 
-function latestSyncedReport<K extends "commerceAggregateSnapshot" | "shopAggregateSnapshot" | "searchAdPerformanceSnapshots">(
+function latestSyncedReport<
+  K extends
+    | "commerceAggregateSnapshot"
+    | "shopAggregateSnapshot"
+    | "searchAdPerformanceSnapshots"
+    | "shoppingSearchAdPerformanceSnapshots",
+>(
   reports: ProviderSyncReport[],
   provider: ProviderSyncReport["provider"],
   snapshotKey: K,
@@ -376,7 +385,7 @@ function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function brandSlugFromSnapshots(snapshots: SearchAdPerformanceSnapshot[]): string {
+function brandSlugFromSnapshots(snapshots: Array<{ brandKey: string }>): string {
   const brandKeys = Array.from(new Set(snapshots.map((snapshot) => snapshot.brandKey).filter(Boolean))).sort();
   return slugify(brandKeys.join("-") || "unknown");
 }

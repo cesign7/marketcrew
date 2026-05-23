@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildAdPerformanceDiagnoses } from "../../src/lib/application/ad-performance-diagnostics";
-import type { SearchAdPerformanceSnapshot } from "../../src/lib/domain";
+import type { SearchAdPerformanceSnapshot, ShoppingSearchAdPerformanceSnapshot } from "../../src/lib/domain";
 
 const GENERATED_AT = "2026-05-23T08:00:00.000Z";
 
@@ -117,6 +117,38 @@ describe("buildAdPerformanceDiagnoses", () => {
       recommendedAction: expect.stringContaining("전환 추적"),
     });
   });
+
+  it("쇼핑검색광고 검색어의 클릭 대비 직접 전환율도 데이터 규칙으로 판정한다", () => {
+    const diagnoses = buildAdPerformanceDiagnoses({
+      snapshots: [],
+      shoppingSnapshots: [
+        buildShoppingSnapshot({
+          id: "shopping-perf-no-order",
+          searchKeyword: "스승의날 카드",
+          clicks: 42,
+          directConversionRate: 0,
+          cost: 18900,
+        }),
+        buildShoppingSnapshot({
+          id: "shopping-perf-low-cvr",
+          searchKeyword: "선물카드 제작",
+          clicks: 50,
+          directConversionRate: 0.005,
+          cost: 22000,
+        }),
+      ],
+      generatedAt: GENERATED_AT,
+    });
+
+    expect(diagnoses.map((diagnosis) => diagnosis.kind)).toEqual(
+      expect.arrayContaining(["SHOPPING_SEARCH_NO_ORDER", "SHOPPING_SEARCH_LOW_DIRECT_CVR"]),
+    );
+    expect(diagnoses.find((diagnosis) => diagnosis.kind === "SHOPPING_SEARCH_NO_ORDER")).toMatchObject({
+      character: "gro",
+      keyword: "스승의날 카드",
+      recommendedAction: expect.stringContaining("상품 노출"),
+    });
+  });
 });
 
 function buildSnapshot(overrides: Partial<SearchAdPerformanceSnapshot>): SearchAdPerformanceSnapshot {
@@ -137,6 +169,30 @@ function buildSnapshot(overrides: Partial<SearchAdPerformanceSnapshot>): SearchA
     targetCpa: 12000,
     targetRoas: 2.5,
     trackingVerified: true,
+    collectedAt: GENERATED_AT,
+    dataScope: "aggregate_only",
+    ...overrides,
+  };
+}
+
+function buildShoppingSnapshot(
+  overrides: Partial<ShoppingSearchAdPerformanceSnapshot>,
+): ShoppingSearchAdPerformanceSnapshot {
+  return {
+    id: "shopping-perf-sample",
+    provider: "naver_search_ad",
+    brandKey: "STICKERSEE",
+    campaignName: "스티커씨 쇼핑검색광고",
+    adGroupName: "대표 상품형",
+    adGroupId: "grp-shopping-a001",
+    searchKeyword: "스승의날 카드",
+    productGroupName: "스티커씨 선물카드",
+    mallName: "스티커씨",
+    registeredProductType: "GENERAL",
+    windowDays: 30,
+    clicks: 40,
+    directConversionRate: 0,
+    cost: 18000,
     collectedAt: GENERATED_AT,
     dataScope: "aggregate_only",
     ...overrides,

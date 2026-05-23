@@ -48,6 +48,9 @@ function buildSearchAdBrief(report: ProviderSyncReport, generatedAt: string): Ai
   const performanceSnapshots = [...(report.searchAdPerformanceSnapshots ?? [])]
     .sort((left, right) => searchAdPerformanceRiskScore(right) - searchAdPerformanceRiskScore(left))
     .slice(0, 5);
+  const shoppingPerformanceSnapshots = [...(report.shoppingSearchAdPerformanceSnapshots ?? [])]
+    .sort((left, right) => shoppingSearchAdPerformanceRiskScore(right) - shoppingSearchAdPerformanceRiskScore(left))
+    .slice(0, 5);
   const staleSnapshot = topSnapshots.some(
     (snapshot) => snapshot.rateLimitState !== "OK" || snapshot.cachedUntil <= generatedAt,
   );
@@ -70,6 +73,9 @@ function buildSearchAdBrief(report: ProviderSyncReport, generatedAt: string): Ai
           performanceSnapshots.length > 0
             ? `성과 이상 ${performanceSnapshots.length.toLocaleString("ko-KR")}건을 검색광고 규칙 엔진 근거로 사용합니다.`
             : undefined,
+          shoppingPerformanceSnapshots.length > 0
+            ? `쇼핑검색광고 검색어 성과 ${shoppingPerformanceSnapshots.length.toLocaleString("ko-KR")}건을 상품 노출/입찰 판단 근거로 사용합니다.`
+            : undefined,
         ].filter((part): part is string => Boolean(part));
   const summary =
     summaryParts.length > 0 ? summaryParts.join(" ") : "키워드광고 요약 근거가 부족해 결재 전 보강이 필요합니다.";
@@ -86,7 +92,11 @@ function buildSearchAdBrief(report: ProviderSyncReport, generatedAt: string): Ai
       "광고비/입찰가 즉시 변경",
       ...(decision === "JUDGMENT_READY" ? ["원천 검색어 전체 재해석"] : ["결재 상신"]),
     ],
-    evidenceIds: [...topSnapshots.map((snapshot) => snapshot.id), ...performanceSnapshots.map((snapshot) => snapshot.id)],
+    evidenceIds: [
+      ...topSnapshots.map((snapshot) => snapshot.id),
+      ...performanceSnapshots.map((snapshot) => snapshot.id),
+      ...shoppingPerformanceSnapshots.map((snapshot) => snapshot.id),
+    ],
     sourceReportIds: [report.id],
     checkedAt: report.checkedAt,
   });
@@ -206,6 +216,15 @@ function searchAdPerformanceRiskScore(
   const trackingPenalty = snapshot.trackingVerified ? 0 : 100_000;
 
   return noOrderPenalty + cpaPenalty + trackingPenalty;
+}
+
+function shoppingSearchAdPerformanceRiskScore(
+  snapshot: NonNullable<ProviderSyncReport["shoppingSearchAdPerformanceSnapshots"]>[number],
+): number {
+  const noOrderPenalty = snapshot.directConversionRate <= 0 ? snapshot.cost + snapshot.clicks * 100 : 0;
+  const lowRatePenalty = snapshot.directConversionRate > 0 ? Math.max(0, 0.01 - snapshot.directConversionRate) * 1_000_000 : 0;
+
+  return noOrderPenalty + lowRatePenalty;
 }
 
 function decisionLabel(decision: AiEvidenceDecision): string {

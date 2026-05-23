@@ -457,6 +457,41 @@ MARKETCREW_SEARCH_AD_STAT_TARGETS 또는 MARKETCREW_SEARCH_AD_STAT_IDS
 
 수집 실패는 전체 화면을 깨뜨리지 않는다. 키워드 수요는 그대로 저장하고, 성과 조회 대상 ID 없음 또는 `/stats` HTTP 실패는 `ProviderSyncReport.evidenceNotes`에 한국어로 남긴다.
 
+#### 쇼핑검색광고 성과 read-only 수집기
+
+`module-32`는 쇼핑검색광고 전용 성과를 추가한다. 상품형/카탈로그형 쇼핑검색광고는 일반 키워드 ID 중심 성과만으로 검색어 품질을 판단하기 어렵기 때문에, 공식 `statType=NPLA_SCH_KEYWORD` 조회를 별도 스냅샷으로 저장한다.
+
+```ts
+type ShoppingSearchAdPerformanceSnapshot = {
+  id: string;
+  provider: "naver_search_ad";
+  brandKey: string;
+  campaignName: string;
+  adGroupName: string;
+  adGroupId: string;
+  searchKeyword: string;
+  productGroupId?: string;
+  productGroupName?: string;
+  mallName?: string;
+  registeredProductType?: string;
+  windowDays: 30;
+  clicks: number;
+  directConversionRate: number;
+  cost: number;
+  dataScope: "aggregate_only";
+};
+```
+
+```text
+/ncc/campaigns?campaignType=SHOPPING
+  -> /ncc/adgroups?nccCampaignId=...
+  -> /ncc/product-groups
+  -> /stats?id={adgroupId}&statType=NPLA_SCH_KEYWORD
+  -> ShoppingSearchAdPerformanceSnapshot[]
+```
+
+쇼핑검색광고 규칙은 그로가 맡는다. 직접 전환율 0% 또는 기준보다 낮은 직접 전환율은 상품 노출 제외, 입찰 하향, 상품명/썸네일/랜딩 점검 초안으로 상신한다. 실제 변경은 계속 write gate 뒤에 둔다.
+
 ### 3.5 LLM 자유 탐색과 근거 요청 루프
 
 정형 `SignalSummary`는 LLM 입력 비용을 통제하기 위한 기본 입력이다. 다만 캐릭터는 이 요약만 해석하는 수동 보고자가 아니라, 정해진 신호 밖의 조합을 `HypothesisCandidate`로 제안하고 필요한 근거를 `EvidenceRequest`로 요청할 수 있어야 한다.
@@ -989,6 +1024,7 @@ src/
 | 실행 범위 소급 적용 | `module-27` | 기존 저장 결재안과 대표 결정에 실행 범위 제안/선택값을 백필 | Done in iteration 25 |
 | 검색광고 성과 규칙 엔진 | `module-30` | 낮은 전환율, 주문 없는 클릭, 높은 CPA, 기기/시간대 차이, 전환 추적 미확인을 LLM 전 규칙으로 판정하고 그로/데이에 배정 | Done in iteration 28 |
 | 검색광고 성과 수집기 | `module-31` | Search Ad 캠페인/광고그룹/키워드를 read-only로 발견하고 `/stats` 전체/기기/시간대 성과를 `SearchAdPerformanceSnapshot`으로 저장 | Done in iteration 29 |
+| 쇼핑검색광고 성과 수집기 | `module-32` | 쇼핑 캠페인 광고그룹을 read-only로 발견하고 `NPLA_SCH_KEYWORD` 검색어 성과와 상품 그룹 근거를 `ShoppingSearchAdPerformanceSnapshot`으로 저장 | Done in iteration 30 |
 
 #### Recommended Session Plan
 
@@ -1021,3 +1057,4 @@ src/
 | 0.5 | 2026-05-23 | Added owner-editable AI execution scope proposal contract for search ad approvals | Codex |
 | 0.6 | 2026-05-23 | Added execution scope backfill API for saved approvals and decisions | Codex |
 | 0.7 | 2026-05-23 | Added Search Ad performance rule engine contract and character assignment before LLM judgment | Codex |
+| 0.8 | 2026-05-23 | Added Shopping Search Ad performance snapshot contract and read-only collection path | Codex |

@@ -961,6 +961,15 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 - `/stats`는 전체, `pcMblTp`, `hh24` 세 경로로 호출해 전체/PC/모바일/시간대 스냅샷을 만든다.
 - 모든 호출은 GET read-only이며 실제 입찰가, 예산, 키워드 ON/OFF 변경은 별도 write executor 전까지 하지 않는다.
 
+### Slice 6D: 쇼핑검색광고 성과 read-only 수집기
+
+- 완료 목표: 일반 검색광고 `/stats`만으로 빠지는 쇼핑검색광고 상품형/카탈로그형 검색어 성과를 별도 집계 근거로 저장한다.
+- 쇼핑 캠페인 광고그룹을 제한된 개수로 발견하고 `/stats?id={adgroupId}&statType=NPLA_SCH_KEYWORD`를 호출한다.
+- `/ncc/product-groups`를 읽을 수 있으면 상품 그룹, 몰명, 일반형/카탈로그형 구분을 성과 스냅샷에 연결한다.
+- `ShoppingSearchAdPerformanceSnapshot`은 검색어, 클릭, 직접 전환율, 광고비, 상품 그룹, 몰명을 30일 aggregate-only 근거로 저장한다.
+- 규칙 엔진은 직접 전환율 0% 또는 낮은 직접 전환율을 그로의 상품 노출/입찰/랜딩 점검 안건으로 올린다.
+- 실제 쇼핑검색광고 입찰, 상품 노출, 제외 조건 변경은 별도 write executor 전까지 호출하지 않는다.
+
 ### Slice 7: Outcome Tracking and Performance Reports
 
 - 승인 전 baseline 저장.
@@ -1024,3 +1033,4 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 | 0.9 | 2026-05-23 | Added AI-proposed execution scope and owner-editable scope selection for search ad approvals | Codex |
 | 1.0 | 2026-05-23 | Added execution scope backfill for saved approval requests and decisions | Codex |
 | 1.1 | 2026-05-23 | Added Search Ad performance rule engine, owner assignment, AI summary evidence, and data contract fields before LLM judgment | Codex |
+| 1.2 | 2026-05-23 | Added Shopping Search Ad keyword performance collection and rule evidence | Codex |

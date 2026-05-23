@@ -12,7 +12,7 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
         id: "search-ad-incoming",
         title: "불러오는 데이터",
         description:
-          "키워드 도구 응답에서 후보 키워드 수요를 읽고, 성과 판단이 열리면 /stats 집계에서 키워드·기기·시간대 성과를 읽습니다.",
+          "키워드 도구 응답에서 후보 키워드 수요를 읽고, /stats 집계와 쇼핑검색광고 전용 검색어 성과를 함께 읽습니다.",
         safetyNote: "API 키, 서명, 고객 ID, 응답 원문은 저장하지 않습니다.",
         columns: [
           {
@@ -63,6 +63,12 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             description: "PC/모바일, 요일, 시간대 같은 성과 분해 조건입니다. 공식 제공 범위 안에서만 판단합니다.",
             sample: "pcMblTp 또는 hh24",
           },
+          {
+            key: "statType=NPLA_SCH_KEYWORD",
+            label: "쇼핑검색어 성과",
+            description: "쇼핑검색광고 전용으로 최근 30일 검색어별 클릭, 직접 전환율, 광고비를 읽습니다.",
+            sample: "schKeyword, clkCnt, drtCrto, salesAmt",
+          },
         ],
         sampleRows: [
           {
@@ -104,8 +110,12 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
               { key: "GET /ncc/campaigns[].trackingMode", label: "전환 추적 설정", handling: "추적 확인 여부 기본값에 사용" },
               { key: "GET /ncc/adgroups[].nccAdgroupId", label: "광고그룹 ID", handling: "키워드 조회와 광고그룹명 연결에 사용" },
               { key: "GET /ncc/adgroups[].name", label: "광고그룹명", handling: "브랜드 추정과 화면 표시명에 사용" },
+              { key: "GET /ncc/adgroups[].adgroupType", label: "광고그룹 유형", handling: "SHOPPING, CATALOG, SHOPPING_BRAND이면 쇼핑검색광고 성과 후보로 사용" },
+              { key: "GET /ncc/adgroups[].nccProductGroupId", label: "상품 그룹 ID", handling: "쇼핑검색광고 상품 그룹/몰 연결에 사용" },
               { key: "GET /ncc/keywords[].nccKeywordId", label: "광고 키워드 ID", handling: "/stats 조회 대상 ID로 사용" },
               { key: "GET /ncc/keywords[].keyword", label: "광고 키워드명", handling: "성과 스냅샷 키워드명으로 저장" },
+              { key: "GET /ncc/product-groups[].mallName", label: "쇼핑몰명", handling: "쇼핑검색광고 성과의 몰/브랜드 근거로 저장" },
+              { key: "GET /ncc/product-groups[].registeredProductType", label: "상품 등록 유형", handling: "일반형/카탈로그형 구분 근거로 저장" },
             ],
           },
           {
@@ -126,6 +136,9 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
               { key: "summaryStatResponse.data[0].ccnt", label: "전환수", handling: "전환율과 주문 없음 규칙에 사용" },
               { key: "summaryStatResponse.data[0].convAmt", label: "전환매출", handling: "ROAS 후보로 저장" },
               { key: "summaryStatResponse.data[0].breakdowns[]", label: "분해 성과", handling: "PC/모바일 또는 시간대별 스냅샷으로 펼쳐 저장" },
+              { key: "GET /stats?id={adgroupId}&statType=NPLA_SCH_KEYWORD", label: "쇼핑검색어 성과", handling: "쇼핑검색광고 검색어별 클릭/직접전환율/광고비 스냅샷으로 저장" },
+              { key: "NPLA_SCH_KEYWORD[].schKeyword", label: "쇼핑 검색어", handling: "상품 노출 검색어 판단에 사용" },
+              { key: "NPLA_SCH_KEYWORD[].drtCrto", label: "직접 전환율", handling: "직접전환 없음/낮은 전환율 규칙에 사용" },
             ],
           },
         ],
@@ -202,6 +215,24 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             description: "전환 추적/주문 연결이 확인됐는지 표시합니다. false면 데이가 먼저 확인합니다.",
             sample: "true",
           },
+          {
+            key: "ShoppingSearchAdPerformanceSnapshot.searchKeyword",
+            label: "쇼핑 검색어",
+            description: "쇼핑검색광고에서 실제 클릭이 발생한 검색어입니다.",
+            sample: "스승의날 카드",
+          },
+          {
+            key: "ShoppingSearchAdPerformanceSnapshot.productGroupName",
+            label: "상품 그룹",
+            description: "쇼핑검색광고 광고그룹과 연결된 상품 그룹명입니다.",
+            sample: "스티커씨 선물카드 상품그룹",
+          },
+          {
+            key: "ShoppingSearchAdPerformanceSnapshot.clicks/directConversionRate/cost",
+            label: "쇼핑 성과",
+            description: "최근 30일 클릭, 직접 전환율, 광고비 요약입니다. 원문 검색어 전체가 아니라 집계 스냅샷만 저장합니다.",
+            sample: "클릭 42 / 직접전환율 0% / 비용 18,900원",
+          },
         ],
         sampleRows: [
           {
@@ -220,6 +251,15 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
               { key: "device", label: "기기/시간", value: "모바일 18-23" },
               { key: "performance", label: "성과", value: "클릭 64 / 주문 0 / 비용 38,400원" },
               { key: "owner", label: "담당", value: "그로 조정안 또는 데이 추적 확인" },
+            ],
+          },
+          {
+            id: "search-ad-stored-sample-3",
+            values: [
+              { key: "searchKeyword", label: "쇼핑 검색어", value: "스승의날 카드" },
+              { key: "productGroup", label: "상품 그룹", value: "스티커씨 선물카드" },
+              { key: "performance", label: "쇼핑 성과", value: "클릭 42 / 직접전환율 0% / 비용 18,900원" },
+              { key: "owner", label: "담당", value: "그로 상품 노출/입찰 점검" },
             ],
           },
         ],

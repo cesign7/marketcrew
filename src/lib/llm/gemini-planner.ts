@@ -187,6 +187,7 @@ function buildGeminiPlannerResult(input: {
       ...(report.keywordDemandSnapshots ?? []).map((snapshot) => snapshot.id),
       ...(report.searchTrendSnapshots ?? []).map((snapshot) => snapshot.id),
       ...(report.searchAdPerformanceSnapshots ?? []).map((snapshot) => snapshot.id),
+      ...(report.shoppingSearchAdPerformanceSnapshots ?? []).map((snapshot) => snapshot.id),
     ]),
   ].filter((id): id is string => Boolean(id)));
   const selectedEvidenceIds = uniqueStrings(asStringArray(input.parsed.evidenceIds)).filter((id) => allowedEvidenceIds.has(id));
@@ -277,6 +278,7 @@ function summarizeProviderEvidence(context: GeminiPlannerContext) {
       keywordDemandSnapshotCount: report.keywordDemandSnapshots?.length ?? 0,
       searchTrendSnapshotCount: report.searchTrendSnapshots?.length ?? 0,
       searchAdPerformanceSnapshotCount: report.searchAdPerformanceSnapshots?.length ?? 0,
+      shoppingSearchAdPerformanceSnapshotCount: report.shoppingSearchAdPerformanceSnapshots?.length ?? 0,
       searchAdPerformanceSnapshots: (report.searchAdPerformanceSnapshots ?? []).slice(0, 8).map((snapshot) => ({
         id: snapshot.id,
         brandKey: snapshot.brandKey,
@@ -293,6 +295,20 @@ function summarizeProviderEvidence(context: GeminiPlannerContext) {
         targetCpa: snapshot.targetCpa,
         targetRoas: snapshot.targetRoas,
         trackingVerified: snapshot.trackingVerified,
+        dataScope: snapshot.dataScope,
+      })),
+      shoppingSearchAdPerformanceSnapshots: (report.shoppingSearchAdPerformanceSnapshots ?? []).slice(0, 8).map((snapshot) => ({
+        id: snapshot.id,
+        brandKey: snapshot.brandKey,
+        campaignName: snapshot.campaignName,
+        adGroupName: snapshot.adGroupName,
+        searchKeyword: snapshot.searchKeyword,
+        productGroupName: snapshot.productGroupName,
+        mallName: snapshot.mallName,
+        windowDays: snapshot.windowDays,
+        clicks: snapshot.clicks,
+        directConversionRate: snapshot.directConversionRate,
+        cost: snapshot.cost,
         dataScope: snapshot.dataScope,
       })),
       commerceAggregateSnapshot: report.commerceAggregateSnapshot

@@ -340,6 +340,8 @@ QA Verdict:    QA_PASS
 - 검색광고 저성과 판단은 LLM이 먼저 추측하지 않고 `SearchAdPerformanceSnapshot`과 규칙 엔진이 낮은 전환율, 주문 없는 클릭, 높은 CPA, 기기/시간대 차이, 전환 추적 미확인을 먼저 판정하도록 확장했다.
 - 조정 가능한 광고 성과 안건은 그로, 전환 추적/주문 연결 검증은 데이가 맡도록 담당자 배정과 인사과 기본 롤모델을 보강했다.
 - 검색광고 read-only 수집이 `/keywordstool` 수요뿐 아니라 `/ncc/campaigns`, `/ncc/adgroups`, `/ncc/keywords`, `/stats` 전체/기기/시간대 성과까지 정규화해 규칙 엔진 입력으로 넘기도록 확장했다.
+- 쇼핑검색광고 read-only 수집이 쇼핑 캠페인 광고그룹, 상품 그룹, `NPLA_SCH_KEYWORD` 검색어 성과를 `ShoppingSearchAdPerformanceSnapshot`으로 정규화해 상품 노출/입찰 판단 근거로 넘기도록 확장했다.
+- 로컬 실제 계정 재수집에서 쇼핑검색광고 원본 성과 8,181건을 확인했고, 화면/AI 입력 보호 기준으로 상위 500건을 저장한 뒤 Gemini 실제 파일럿이 해당 스냅샷 ID를 판단 근거로 채택했다.
 
 **Fixed:**
 
@@ -358,3 +360,5 @@ QA Verdict:    QA_PASS
 | 1.4 | 2026-05-23 | Added AI-proposed search ad execution scope and owner-editable decision recording | Codex |
 | 1.5 | 2026-05-23 | Added execution scope backfill API and applied it to local saved approval requests | Codex |
 | 1.6 | 2026-05-23 | Added Search Ad performance rule engine, owner assignment, AI evidence summary, and data contract fields before LLM judgment | Codex |
+| 1.7 | 2026-05-23 | Added Shopping Search Ad keyword performance collection and aggregate-only evidence | Codex |
+| 1.8 | 2026-05-23 | Verified real Shopping Search Ad collection and Gemini evidence adoption with capped snapshots | Codex |

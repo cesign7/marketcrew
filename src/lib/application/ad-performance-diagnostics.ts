@@ -1,4 +1,4 @@
-import type { CharacterKey, DataConfidence, SearchAdPerformanceSnapshot } from "../domain";
+import type { CharacterKey, DataConfidence, SearchAdPerformanceSnapshot, ShoppingSearchAdPerformanceSnapshot } from "../domain";
 
 export type AdPerformanceDiagnosisKind =
   | "CLICKS_NO_ORDER"
@@ -6,7 +6,9 @@ export type AdPerformanceDiagnosisKind =
   | "HIGH_CPA"
   | "DEVICE_GAP"
   | "TIME_SLOT_GAP"
-  | "TRACKING_UNVERIFIED";
+  | "TRACKING_UNVERIFIED"
+  | "SHOPPING_SEARCH_NO_ORDER"
+  | "SHOPPING_SEARCH_LOW_DIRECT_CVR";
 
 export type AdPerformanceDiagnosis = {
   id: string;
@@ -42,6 +44,7 @@ const DEFAULT_THRESHOLDS: AdPerformanceThresholds = {
 
 export function buildAdPerformanceDiagnoses(input: {
   snapshots: SearchAdPerformanceSnapshot[];
+  shoppingSnapshots?: ShoppingSearchAdPerformanceSnapshot[];
   generatedAt: string;
   thresholds?: Partial<AdPerformanceThresholds>;
 }): AdPerformanceDiagnosis[] {
@@ -76,6 +79,7 @@ export function buildAdPerformanceDiagnoses(input: {
 
   diagnoses.push(...buildSegmentGapDiagnoses(input.snapshots, input.generatedAt, thresholds, "device"));
   diagnoses.push(...buildSegmentGapDiagnoses(input.snapshots, input.generatedAt, thresholds, "timeSlot"));
+  diagnoses.push(...buildShoppingSearchDiagnoses(input.shoppingSnapshots ?? [], input.generatedAt, thresholds));
 
   return dedupeDiagnoses(diagnoses);
 }
@@ -195,6 +199,59 @@ function buildSegmentGapDiagnoses(
       evidenceIds: [best.id, worst.id],
       createdAt,
     });
+  }
+
+  return diagnoses;
+}
+
+function buildShoppingSearchDiagnoses(
+  snapshots: ShoppingSearchAdPerformanceSnapshot[],
+  createdAt: string,
+  thresholds: AdPerformanceThresholds,
+): AdPerformanceDiagnosis[] {
+  const diagnoses: AdPerformanceDiagnosis[] = [];
+
+  for (const snapshot of snapshots) {
+    if (snapshot.clicks < thresholds.minClicks && snapshot.cost < thresholds.minCost) {
+      continue;
+    }
+
+    if (snapshot.directConversionRate <= 0) {
+      diagnoses.push({
+        id: `ad-diagnosis-shopping-no-order-${snapshot.id}`,
+        kind: "SHOPPING_SEARCH_NO_ORDER",
+        character: "gro",
+        brandKey: snapshot.brandKey,
+        keyword: snapshot.searchKeyword,
+        severity: "HIGH",
+        dataConfidence: "READY_TO_APPROVE",
+        summary: `${snapshot.searchKeyword} 쇼핑검색어는 최근 30일 클릭 ${snapshot.clicks.toLocaleString(
+          "ko-KR",
+        )}회, 비용 ${snapshot.cost.toLocaleString("ko-KR")}원인데 직접 전환율이 0%입니다.`,
+        recommendedAction: "그로가 상품 노출 제외, 입찰 하향, 상품명/썸네일/랜딩 점검안을 올립니다.",
+        evidenceIds: [snapshot.id],
+        createdAt,
+      });
+      continue;
+    }
+
+    if (snapshot.clicks >= thresholds.minClicks && snapshot.directConversionRate < thresholds.lowCvr) {
+      diagnoses.push({
+        id: `ad-diagnosis-shopping-low-cvr-${snapshot.id}`,
+        kind: "SHOPPING_SEARCH_LOW_DIRECT_CVR",
+        character: "gro",
+        brandKey: snapshot.brandKey,
+        keyword: snapshot.searchKeyword,
+        severity: "MEDIUM",
+        dataConfidence: "READY_TO_APPROVE",
+        summary: `${snapshot.searchKeyword} 쇼핑검색어는 직접 전환율 ${formatPercent(
+          snapshot.directConversionRate,
+        )}로 기준보다 낮습니다.`,
+        recommendedAction: "그로가 입찰 하향, 상품 노출 조건 조정, 전환 좋은 검색어 집중안을 올립니다.",
+        evidenceIds: [snapshot.id],
+        createdAt,
+      });
+    }
   }
 
   return diagnoses;

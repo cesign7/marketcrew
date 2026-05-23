@@ -4,6 +4,7 @@ import {
   type KeywordDemandSnapshot,
   type ProviderSyncReport,
   type SearchAdPerformanceSnapshot,
+  type ShoppingSearchAdPerformanceSnapshot,
 } from "@/lib/domain";
 import {
   buildSearchAdReadinessReport,
@@ -21,10 +22,13 @@ export const SEARCH_AD_STATS_PATH = "/stats";
 export const SEARCH_AD_CAMPAIGNS_PATH = "/ncc/campaigns";
 export const SEARCH_AD_ADGROUPS_PATH = "/ncc/adgroups";
 export const SEARCH_AD_KEYWORDS_PATH = "/ncc/keywords";
+export const SEARCH_AD_PRODUCT_GROUPS_PATH = "/ncc/product-groups";
 export const SEARCH_AD_KEYWORD_TOOL_SOURCE_NOTE =
   "네이버 검색광고 API는 X-Timestamp, X-API-KEY, X-Customer, X-Signature 헤더 조합을 사용한다.";
 export const SEARCH_AD_STATS_SOURCE_NOTE =
   "네이버 검색광고 /stats는 fields JSON 문자열과 datePreset 또는 timeRange를 받아 집계 성과를 반환한다.";
+export const SEARCH_AD_SHOPPING_SEARCH_SOURCE_NOTE =
+  "쇼핑검색광고 검색어 성과는 /stats의 statType=NPLA_SCH_KEYWORD 조회로 최근 30일 검색어 클릭과 직접 전환율을 반환한다.";
 
 export type SearchAdKeywordToolRequest = {
   method: "GET";
@@ -34,6 +38,10 @@ export type SearchAdKeywordToolRequest = {
 };
 
 export type SearchAdStatsRequest = SearchAdKeywordToolRequest & {
+  path: typeof SEARCH_AD_STATS_PATH;
+};
+
+export type SearchAdShoppingKeywordStatsRequest = SearchAdKeywordToolRequest & {
   path: typeof SEARCH_AD_STATS_PATH;
 };
 
@@ -81,6 +89,13 @@ type SearchAdStatsResponse = {
   data?: SearchAdStatRow[];
 };
 
+type SearchAdShoppingKeywordStatRow = {
+  schKeyword?: string;
+  clkCnt?: number | string;
+  drtCrto?: number | string;
+  salesAmt?: number | string;
+};
+
 type SearchAdStatTarget = {
   id: string;
   brandKey: string;
@@ -96,11 +111,24 @@ type SearchAdStatTarget = {
 
 type SearchAdStatsSyncResult = {
   snapshots: SearchAdPerformanceSnapshot[];
+  shoppingSnapshots: ShoppingSearchAdPerformanceSnapshot[];
   notes: string[];
   requestedTargetCount: number;
   discoveredTargetCount: number;
   httpStatus?: number;
   failureReason?: string;
+};
+
+type SearchAdShoppingTarget = {
+  id: string;
+  brandKey: string;
+  campaignName: string;
+  adGroupName: string;
+  adGroupId: string;
+  productGroupId?: string;
+  productGroupName?: string;
+  mallName?: string;
+  registeredProductType?: string;
 };
 
 const SEARCH_AD_STATS_FIELDS = [
@@ -136,6 +164,7 @@ export function buildSearchAdReadOnlySyncReport(
         "API 키/시크릿/고객 ID가 없어서 네트워크 호출을 시도하지 않았습니다.",
         SEARCH_AD_KEYWORD_TOOL_SOURCE_NOTE,
         SEARCH_AD_STATS_SOURCE_NOTE,
+        SEARCH_AD_SHOPPING_SEARCH_SOURCE_NOTE,
         "쓰기 작업은 이 수집에서 호출하지 않습니다.",
       ],
       checkedAt,
@@ -163,7 +192,7 @@ export function buildSearchAdReadOnlySyncReport(
     missingEnvKeys: [],
     evidenceNotes: [
       "읽기 전용 요청을 만들 수 있는 인증 재료가 준비됐습니다.",
-      "실제 호출은 대표가 제공한 서버 환경 설정으로만 수행하며, 응답은 키워드 수요와 광고 성과 요약 후보로 정규화합니다.",
+      "실제 호출은 대표가 제공한 서버 환경 설정으로만 수행하며, 응답은 키워드 수요, 광고 성과, 쇼핑검색광고 검색어 성과 요약 후보로 정규화합니다.",
       "외부 반영 잠금과 무관하게 이 단계에서는 키워드/입찰/예산 변경 요청을 만들지 않습니다.",
     ],
     checkedAt,
@@ -232,6 +261,7 @@ export async function syncSearchAdKeywordTool(input: {
       httpStatus: statsResult.httpStatus ?? httpStatus,
       keywordDemandSnapshots,
       ...(statsResult.snapshots.length > 0 ? { searchAdPerformanceSnapshots: statsResult.snapshots } : {}),
+      ...(statsResult.shoppingSnapshots.length > 0 ? { shoppingSearchAdPerformanceSnapshots: statsResult.shoppingSnapshots } : {}),
       ...(statsResult.failureReason ? { failureReason: statsResult.failureReason } : {}),
       evidenceNotes: [
         ...readinessReport.evidenceNotes,
@@ -305,6 +335,25 @@ export function buildSearchAdStatsRequest(input: {
   };
 }
 
+export function buildSearchAdShoppingKeywordStatsRequest(input: {
+  env: EnvMap;
+  id: string;
+  timestamp: string;
+}): SearchAdShoppingKeywordStatsRequest {
+  return {
+    ...buildSearchAdSignedGetRequest({
+      env: input.env,
+      path: SEARCH_AD_STATS_PATH,
+      query: new URLSearchParams({
+        id: input.id,
+        statType: "NPLA_SCH_KEYWORD",
+      }),
+      timestamp: input.timestamp,
+    }),
+    path: SEARCH_AD_STATS_PATH,
+  };
+}
+
 function buildSearchAdSignedGetRequest(input: {
   env: EnvMap;
   path: string;
@@ -366,13 +415,17 @@ async function syncSearchAdPerformanceStats(input: {
     const targetResult = await resolveSearchAdStatTargets(input);
     const targets = targetResult.targets.slice(0, searchAdStatMaxKeywordCount(input.env));
     if (targets.length === 0) {
+      const shoppingResult = await syncShoppingSearchAdPerformanceStats(input);
       return {
         snapshots: [],
+        shoppingSnapshots: shoppingResult.snapshots,
         requestedTargetCount: 0,
         discoveredTargetCount: targetResult.discoveredTargetCount,
+        ...(shoppingResult.httpStatus !== undefined ? { httpStatus: shoppingResult.httpStatus } : {}),
         notes: [
           ...targetResult.notes,
           "검색광고 성과 조회 대상 ID가 없어 /stats 호출은 건너뛰었습니다. 자동 발견을 켜거나 MARKETCREW_SEARCH_AD_STAT_IDS를 설정하면 규칙 엔진 입력이 생성됩니다.",
+          ...shoppingResult.notes,
         ],
       };
     }
@@ -399,6 +452,7 @@ async function syncSearchAdPerformanceStats(input: {
         if (!response.ok) {
           return {
             snapshots,
+            shoppingSnapshots: [],
             requestedTargetCount: targets.length,
             discoveredTargetCount: targetResult.discoveredTargetCount,
             httpStatus,
@@ -423,20 +477,27 @@ async function syncSearchAdPerformanceStats(input: {
         );
       }
     }
+    const shoppingResult = await syncShoppingSearchAdPerformanceStats(input);
+    if (shoppingResult.httpStatus !== undefined) {
+      httpStatus = shoppingResult.httpStatus;
+    }
 
     return {
       snapshots,
+      shoppingSnapshots: shoppingResult.snapshots,
       requestedTargetCount: targets.length,
       discoveredTargetCount: targetResult.discoveredTargetCount,
       ...(httpStatus !== undefined ? { httpStatus } : {}),
       notes: [
         ...targetResult.notes,
         `검색광고 성과 /stats 대상 ${targets.length.toLocaleString("ko-KR")}개에서 성과 스냅샷 ${snapshots.length.toLocaleString("ko-KR")}건을 정규화했습니다.`,
+        ...shoppingResult.notes,
       ],
     };
   } catch (error) {
     return {
       snapshots: [],
+      shoppingSnapshots: [],
       requestedTargetCount: 0,
       discoveredTargetCount: 0,
       failureReason: error instanceof SearchAdReadOnlyHttpError ? error.reason : "SEARCH_AD_STATS_UNKNOWN_ERROR",
@@ -448,6 +509,247 @@ async function syncSearchAdPerformanceStats(input: {
       ],
     };
   }
+}
+
+async function syncShoppingSearchAdPerformanceStats(input: {
+  env: EnvMap;
+  checkedAt: string;
+  fetchImpl: FetchLike;
+  timestampFactory: () => string;
+}): Promise<{ snapshots: ShoppingSearchAdPerformanceSnapshot[]; notes: string[]; httpStatus?: number }> {
+  if (!shoppingSearchAdStatsEnabled(input.env)) {
+    return {
+      snapshots: [],
+      notes: ["쇼핑검색광고 검색어 성과 수집이 설정으로 꺼져 있습니다."],
+    };
+  }
+
+  try {
+    const targetResult = await resolveShoppingSearchAdTargets(input);
+    const targets = targetResult.targets.slice(0, shoppingSearchAdStatMaxAdGroupCount(input.env));
+    if (targets.length === 0) {
+      return {
+        snapshots: [],
+        notes: [
+          ...targetResult.notes,
+          "쇼핑검색광고 성과 조회 대상 광고그룹이 없어 NPLA_SCH_KEYWORD 호출은 건너뛰었습니다.",
+        ],
+      };
+    }
+
+    const snapshots: ShoppingSearchAdPerformanceSnapshot[] = [];
+    let httpStatus: number | undefined;
+
+    for (const target of targets) {
+      const request = buildSearchAdShoppingKeywordStatsRequest({
+        env: input.env,
+        id: target.id,
+        timestamp: input.timestampFactory(),
+      });
+      const response = await input.fetchImpl(request.url, {
+        method: request.method,
+        headers: request.headers,
+      });
+      httpStatus = response.status;
+      if (!response.ok) {
+        return {
+          snapshots,
+          httpStatus,
+          notes: [
+            ...targetResult.notes,
+            `쇼핑검색광고 검색어 성과 조회가 응답 ${httpStatus}로 실패했습니다. 이미 수집한 요약만 유지하고 원문은 저장하지 않았습니다.`,
+          ],
+        };
+      }
+
+      const responseBody = (await response.json()) as unknown;
+      snapshots.push(
+        ...mapShoppingSearchAdStatsResponseToSnapshots({
+          response: responseBody,
+          target,
+          collectedAt: input.checkedAt,
+        }),
+      );
+    }
+
+    const cappedSnapshots = capShoppingSearchAdSnapshots(snapshots, input.env);
+
+    return {
+      snapshots: cappedSnapshots,
+      ...(httpStatus !== undefined ? { httpStatus } : {}),
+      notes: [
+        ...targetResult.notes,
+        `쇼핑검색광고 검색어 성과 대상 ${targets.length.toLocaleString("ko-KR")}개에서 성과 스냅샷 ${snapshots.length.toLocaleString(
+          "ko-KR",
+        )}건을 정규화했습니다.`,
+        ...(cappedSnapshots.length < snapshots.length
+          ? [
+              `화면/AI 입력 비용 보호를 위해 클릭·광고비 기준 상위 ${cappedSnapshots.length.toLocaleString(
+                "ko-KR",
+              )}건만 저장했습니다.`,
+            ]
+          : []),
+      ],
+    };
+  } catch {
+    return {
+      snapshots: [],
+      notes: ["쇼핑검색광고 검색어 성과 조회 중 예외가 발생했습니다. 외부 쓰기는 시도하지 않았습니다."],
+    };
+  }
+}
+
+async function resolveShoppingSearchAdTargets(input: {
+  env: EnvMap;
+  fetchImpl: FetchLike;
+  timestampFactory: () => string;
+}): Promise<{ targets: SearchAdShoppingTarget[]; notes: string[] }> {
+  const maxCampaigns = searchAdStatMaxCampaignCount(input.env);
+  const maxAdGroups = shoppingSearchAdStatMaxAdGroupCount(input.env);
+  const campaigns = sortSearchAdEntitiesByActiveFirst(await fetchSearchAdEntities({
+    env: input.env,
+    path: SEARCH_AD_CAMPAIGNS_PATH,
+    query: new URLSearchParams({ campaignType: "SHOPPING", recordSize: `${maxCampaigns}` }),
+    fetchImpl: input.fetchImpl,
+    timestamp: input.timestampFactory(),
+  }).then((entities) => entities.filter(isActiveSearchAdEntity).filter(isShoppingCampaignEntity)));
+  const productGroups = await fetchShoppingProductGroups(input);
+  const productGroupMap = new Map(
+    productGroups
+      .map((productGroup) => [readString(productGroup["nccProductGroupId"]), productGroup] as const)
+      .filter((entry): entry is [string, Record<string, unknown>] => Boolean(entry[0])),
+  );
+  const targets: SearchAdShoppingTarget[] = [];
+
+  for (const campaign of campaigns.slice(0, maxCampaigns)) {
+    const campaignId = readString(campaign["nccCampaignId"]);
+    if (!campaignId) {
+      continue;
+    }
+
+    const adGroups = sortSearchAdEntitiesByActiveFirst(await fetchSearchAdEntities({
+      env: input.env,
+      path: SEARCH_AD_ADGROUPS_PATH,
+      query: new URLSearchParams({ nccCampaignId: campaignId, recordSize: `${maxAdGroups}` }),
+      fetchImpl: input.fetchImpl,
+      timestamp: input.timestampFactory(),
+    }).then((entities) => entities.filter(isActiveSearchAdEntity).filter(isShoppingAdGroupEntity)));
+
+    for (const adGroup of adGroups.slice(0, maxAdGroups)) {
+      const adGroupId = readString(adGroup["nccAdgroupId"]);
+      if (!adGroupId) {
+        continue;
+      }
+
+      const inlineProductGroup = readRecord(adGroup["productGroup"]);
+      const productGroupId = readString(adGroup["nccProductGroupId"]) ?? readString(inlineProductGroup?.["nccProductGroupId"]);
+      const productGroup = inlineProductGroup ?? (productGroupId ? productGroupMap.get(productGroupId) : undefined);
+      targets.push({
+        id: adGroupId,
+        adGroupId,
+        brandKey: inferSearchAdBrandKey(input.env, [
+          readString(campaign["name"]) ?? "",
+          readString(adGroup["name"]) ?? "",
+          readString(productGroup?.["mallName"]) ?? "",
+          readString(productGroup?.["brandName"]) ?? "",
+        ]),
+        campaignName: readString(campaign["name"]) ?? campaignId,
+        adGroupName: readString(adGroup["name"]) ?? adGroupId,
+        ...(productGroupId ? { productGroupId } : {}),
+        ...(readString(productGroup?.["name"]) ? { productGroupName: readString(productGroup?.["name"]) } : {}),
+        ...(readString(productGroup?.["mallName"]) ? { mallName: readString(productGroup?.["mallName"]) } : {}),
+        ...(readString(productGroup?.["registeredProductType"]) ? { registeredProductType: readString(productGroup?.["registeredProductType"]) } : {}),
+      });
+
+      if (targets.length >= maxAdGroups) {
+        return {
+          targets,
+          notes: [
+            `쇼핑검색광고 캠페인/광고그룹을 읽어 검색어 성과 대상 ${targets.length.toLocaleString("ko-KR")}개를 자동 발견했습니다.`,
+            productGroups.length > 0
+              ? `쇼핑검색광고 상품 그룹 ${productGroups.length.toLocaleString("ko-KR")}개를 읽어 몰/상품 그룹 근거로 연결했습니다.`
+              : "쇼핑검색광고 상품 그룹 목록은 없거나 읽지 못해 광고그룹 기준으로만 연결했습니다.",
+          ],
+        };
+      }
+    }
+  }
+
+  return {
+    targets,
+    notes: [
+      `쇼핑검색광고 캠페인/광고그룹을 읽어 검색어 성과 대상 ${targets.length.toLocaleString("ko-KR")}개를 자동 발견했습니다.`,
+      productGroups.length > 0
+        ? `쇼핑검색광고 상품 그룹 ${productGroups.length.toLocaleString("ko-KR")}개를 읽어 몰/상품 그룹 근거로 연결했습니다.`
+        : "쇼핑검색광고 상품 그룹 목록은 없거나 읽지 못해 광고그룹 기준으로만 연결했습니다.",
+    ],
+  };
+}
+
+async function fetchShoppingProductGroups(input: {
+  env: EnvMap;
+  fetchImpl: FetchLike;
+  timestampFactory: () => string;
+}): Promise<SearchAdEntityResponse> {
+  try {
+    return await fetchSearchAdEntities({
+      env: input.env,
+      path: SEARCH_AD_PRODUCT_GROUPS_PATH,
+      query: new URLSearchParams(),
+      fetchImpl: input.fetchImpl,
+      timestamp: input.timestampFactory(),
+    });
+  } catch {
+    return [];
+  }
+}
+
+function mapShoppingSearchAdStatsResponseToSnapshots(input: {
+  response: unknown;
+  target: SearchAdShoppingTarget;
+  collectedAt: string;
+}): ShoppingSearchAdPerformanceSnapshot[] {
+  return (Array.isArray(input.response) ? input.response : [])
+    .filter((row): row is SearchAdShoppingKeywordStatRow => isRecord(row))
+    .filter((row) => readString(row.schKeyword))
+    .map((row) => {
+      const searchKeyword = readString(row.schKeyword) ?? input.target.id;
+      return {
+        id: `shopping-search-ad-performance-${slugify(input.target.brandKey)}-${slugify(input.target.id)}-${slugify(searchKeyword)}-${input.collectedAt.slice(0, 10)}`,
+        provider: "naver_search_ad",
+        brandKey: input.target.brandKey,
+        campaignName: input.target.campaignName,
+        adGroupName: input.target.adGroupName,
+        adGroupId: input.target.adGroupId,
+        searchKeyword,
+        ...(input.target.productGroupId ? { productGroupId: input.target.productGroupId } : {}),
+        ...(input.target.productGroupName ? { productGroupName: input.target.productGroupName } : {}),
+        ...(input.target.mallName ? { mallName: input.target.mallName } : {}),
+        ...(input.target.registeredProductType ? { registeredProductType: input.target.registeredProductType } : {}),
+        windowDays: 30,
+        clicks: parseStatNumber(row.clkCnt) ?? 0,
+        directConversionRate: normalizeDirectConversionRate(row.drtCrto),
+        cost: parseStatNumber(row.salesAmt) ?? 0,
+        collectedAt: input.collectedAt,
+        dataScope: "aggregate_only",
+      };
+    });
+}
+
+function capShoppingSearchAdSnapshots(
+  snapshots: ShoppingSearchAdPerformanceSnapshot[],
+  env: EnvMap,
+): ShoppingSearchAdPerformanceSnapshot[] {
+  const maxSnapshots = shoppingSearchAdStatMaxSnapshotCount(env);
+  return snapshots
+    .slice()
+    .sort((left, right) => shoppingSearchAdSnapshotPriority(right) - shoppingSearchAdSnapshotPriority(left))
+    .slice(0, maxSnapshots);
+}
+
+function shoppingSearchAdSnapshotPriority(snapshot: ShoppingSearchAdPerformanceSnapshot): number {
+  const noConversionPenalty = snapshot.directConversionRate <= 0 ? 1_000_000 : 0;
+  return noConversionPenalty + snapshot.cost + snapshot.clicks * 100;
 }
 
 function mapSearchAdStatsResponseToSnapshots(input: {
@@ -845,6 +1147,20 @@ function isActiveSearchAdEntity(entity: Record<string, unknown>): boolean {
   return true;
 }
 
+function isShoppingCampaignEntity(entity: Record<string, unknown>): boolean {
+  const campaignType = readString(entity["campaignTp"]) ?? readString(entity["campaignType"]);
+  return campaignType === "SHOPPING" || campaignType === undefined;
+}
+
+function isShoppingAdGroupEntity(entity: Record<string, unknown>): boolean {
+  const adGroupType = readString(entity["adgroupType"]);
+  if (!adGroupType) {
+    return true;
+  }
+
+  return ["SHOPPING", "CATALOG", "SHOPPING_BRAND"].includes(adGroupType);
+}
+
 function sortSearchAdEntitiesByActiveFirst(entities: SearchAdEntityResponse): SearchAdEntityResponse {
   return [...entities].sort((a, b) => searchAdEntityPriority(a) - searchAdEntityPriority(b));
 }
@@ -860,6 +1176,10 @@ function searchAdEntityPriority(entity: Record<string, unknown>): number {
   }
 
   return 2;
+}
+
+function readRecord(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
 }
 
 function readString(value: unknown): string | undefined {
@@ -882,6 +1202,15 @@ function parseStatNumber(value: unknown): number | undefined {
 
   const parsed = Number(normalized);
   return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function normalizeDirectConversionRate(value: unknown): number {
+  const parsed = parseStatNumber(value);
+  if (!parsed || parsed <= 0) {
+    return 0;
+  }
+
+  return parsed > 1 ? parsed / 100 : parsed;
 }
 
 function parseOptionalEnvNumber(value: string | undefined): number | undefined {
@@ -920,12 +1249,30 @@ function searchAdStatDiscoveryEnabled(env: EnvMap): boolean {
   return parseBooleanLike(env.MARKETCREW_SEARCH_AD_STAT_DISCOVERY_ENABLED) ?? true;
 }
 
+function shoppingSearchAdStatsEnabled(env: EnvMap): boolean {
+  return parseBooleanLike(env.MARKETCREW_SEARCH_AD_SHOPPING_STATS_ENABLED) ?? true;
+}
+
 function searchAdStatMaxCampaignCount(env: EnvMap): number {
   return clampCount(parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_STAT_MAX_CAMPAIGNS), 1, 20, 5);
 }
 
 function searchAdStatMaxAdGroupCount(env: EnvMap): number {
   return clampCount(parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_STAT_MAX_ADGROUPS), 1, 50, 10);
+}
+
+function shoppingSearchAdStatMaxAdGroupCount(env: EnvMap): number {
+  return clampCount(
+    parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_SHOPPING_STAT_MAX_ADGROUPS) ??
+      parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_STAT_MAX_ADGROUPS),
+    1,
+    50,
+    10,
+  );
+}
+
+function shoppingSearchAdStatMaxSnapshotCount(env: EnvMap): number {
+  return clampCount(parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_SHOPPING_STAT_MAX_SNAPSHOTS), 20, 2_000, 500);
 }
 
 function searchAdStatMaxKeywordCount(env: EnvMap): number {

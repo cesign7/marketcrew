@@ -12,6 +12,7 @@ import { buildReadOnlyProviderSyncReports } from "../../src/lib/integrations/pro
 import {
   buildSearchAdKeywordToolRequest,
   buildSearchAdReadOnlySyncReport,
+  buildSearchAdShoppingKeywordStatsRequest,
   buildSearchAdStatsRequest,
   createSearchAdSignature,
 } from "../../src/lib/integrations/search-ad/read-only-sync";
@@ -84,6 +85,25 @@ describe("읽기 전용 연동 수집", () => {
     expect(decodedUrl).toContain('"clkCnt"');
     expect(decodedUrl).toContain("datePreset=last7days");
     expect(decodedUrl).toContain("breakdown=pcMblTp");
+    expect(request.headers["X-Signature"]).toBe(signature);
+  });
+
+  it("쇼핑검색광고 검색어 성과 요청은 NPLA_SCH_KEYWORD 공식 조회 계약을 따른다", () => {
+    const signature = createSearchAdSignature("123", "GET", "/stats", "secret");
+    const request = buildSearchAdShoppingKeywordStatsRequest({
+      env: {
+        NAVER_SEARCH_AD_ACCESS_LICENSE: "access-license",
+        NAVER_SEARCH_AD_SECRET_KEY: "secret",
+        NAVER_SEARCH_AD_CUSTOMER_ID: "customer-id",
+      },
+      id: "grp-shopping-a001",
+      timestamp: "123",
+    });
+    const decodedUrl = decodeURIComponent(request.url);
+
+    expect(request.url).toContain("https://api.searchad.naver.com/stats");
+    expect(decodedUrl).toContain("id=grp-shopping-a001");
+    expect(decodedUrl).toContain("statType=NPLA_SCH_KEYWORD");
     expect(request.headers["X-Signature"]).toBe(signature);
   });
 
@@ -265,6 +285,162 @@ describe("읽기 전용 연동 수집", () => {
     expect(report.searchAdPerformanceSnapshots?.some((snapshot) => snapshot.device === "MOBILE")).toBe(true);
     expect(report.searchAdPerformanceSnapshots?.some((snapshot) => snapshot.timeSlot === "18시")).toBe(true);
     expect(report.evidenceNotes.join(" ")).toContain("성과 스냅샷 4건");
+  });
+
+  it("쇼핑검색광고 성공 응답은 검색어 성과 스냅샷으로 정규화한다", async () => {
+    const requestedPaths: string[] = [];
+    const report = await import("../../src/lib/integrations/search-ad/read-only-sync").then(({ syncSearchAdKeywordTool }) =>
+      syncSearchAdKeywordTool({
+        checkedAt: NOW,
+        env: {
+          NAVER_SEARCH_AD_ACCESS_LICENSE: "access-license",
+          NAVER_SEARCH_AD_SECRET_KEY: "secret",
+          NAVER_SEARCH_AD_CUSTOMER_ID: "customer-id",
+        },
+        fetchImpl: async (url) => {
+          const parsed = new URL(String(url));
+          requestedPaths.push(`${parsed.pathname}?${parsed.searchParams.get("statType") ?? parsed.searchParams.get("breakdown") ?? "all"}`);
+
+          if (parsed.pathname === "/keywordstool") {
+            return new Response(
+              JSON.stringify({
+                keywordList: [{ relKeyword: "스승의날 카드", monthlyPcQcCnt: "300", monthlyMobileQcCnt: "1,400" }],
+              }),
+              { status: 200 },
+            );
+          }
+
+          if (parsed.pathname === "/ncc/campaigns") {
+            return new Response(
+              JSON.stringify([
+                {
+                  nccCampaignId: "cmp-shopping-a001",
+                  name: "스티커씨 쇼핑검색광고",
+                  status: "ELIGIBLE",
+                  campaignTp: "SHOPPING",
+                },
+              ]),
+              { status: 200 },
+            );
+          }
+
+          if (parsed.pathname === "/ncc/adgroups") {
+            return new Response(
+              JSON.stringify([
+                {
+                  nccAdgroupId: "grp-shopping-a001",
+                  name: "스티커씨 선물카드 상품형",
+                  status: "ELIGIBLE",
+                  adgroupType: "SHOPPING",
+                  nccProductGroupId: "pdg-a001",
+                },
+              ]),
+              { status: 200 },
+            );
+          }
+
+          if (parsed.pathname === "/ncc/keywords") {
+            return new Response(JSON.stringify([]), { status: 200 });
+          }
+
+          if (parsed.pathname === "/ncc/product-groups") {
+            return new Response(
+              JSON.stringify([
+                {
+                  nccProductGroupId: "pdg-a001",
+                  name: "스티커씨 선물카드 상품그룹",
+                  mallName: "스티커씨",
+                  registeredProductType: "GENERAL",
+                },
+              ]),
+              { status: 200 },
+            );
+          }
+
+          if (parsed.pathname === "/stats" && parsed.searchParams.get("statType") === "NPLA_SCH_KEYWORD") {
+            return new Response(
+              JSON.stringify([
+                { schKeyword: "스승의날 카드", clkCnt: 42, drtCrto: 0, salesAmt: 18900 },
+                { schKeyword: "선물카드 제작", clkCnt: 16, drtCrto: 2.5, salesAmt: 8300 },
+              ]),
+              { status: 200 },
+            );
+          }
+
+          return new Response(JSON.stringify({ summaryStatResponse: { data: [] } }), { status: 200 });
+        },
+      }),
+    );
+
+    expect(requestedPaths).toEqual(expect.arrayContaining(["/ncc/product-groups?all", "/stats?NPLA_SCH_KEYWORD"]));
+    expect(report.status).toBe("SYNCED");
+    expect(report.shoppingSearchAdPerformanceSnapshots).toHaveLength(2);
+    expect(report.shoppingSearchAdPerformanceSnapshots?.[0]).toMatchObject({
+      provider: "naver_search_ad",
+      brandKey: "stickersee",
+      campaignName: "스티커씨 쇼핑검색광고",
+      adGroupName: "스티커씨 선물카드 상품형",
+      searchKeyword: "스승의날 카드",
+      productGroupName: "스티커씨 선물카드 상품그룹",
+      mallName: "스티커씨",
+      clicks: 42,
+      directConversionRate: 0,
+      cost: 18900,
+      dataScope: "aggregate_only",
+    });
+    expect(report.shoppingSearchAdPerformanceSnapshots?.[1]?.directConversionRate).toBe(0.025);
+    expect(report.evidenceNotes.join(" ")).toContain("쇼핑검색광고 검색어 성과 대상 1개");
+  });
+
+  it("쇼핑검색광고 검색어 성과는 화면과 AI 비용 보호를 위해 상위 근거만 저장할 수 있다", async () => {
+    const report = await import("../../src/lib/integrations/search-ad/read-only-sync").then(({ syncSearchAdKeywordTool }) =>
+      syncSearchAdKeywordTool({
+        checkedAt: NOW,
+        env: {
+          NAVER_SEARCH_AD_ACCESS_LICENSE: "access-license",
+          NAVER_SEARCH_AD_SECRET_KEY: "secret",
+          NAVER_SEARCH_AD_CUSTOMER_ID: "customer-id",
+          MARKETCREW_SEARCH_AD_SHOPPING_STAT_MAX_SNAPSHOTS: "20",
+        },
+        fetchImpl: async (url) => {
+          const parsed = new URL(String(url));
+          if (parsed.pathname === "/keywordstool") {
+            return jsonResponse({ keywordList: [{ relKeyword: "스승의날 카드" }] });
+          }
+          if (parsed.pathname === "/ncc/campaigns") {
+            return jsonResponse([{ nccCampaignId: "cmp-shopping-a001", name: "쇼핑", status: "ELIGIBLE", campaignTp: "SHOPPING" }]);
+          }
+          if (parsed.pathname === "/ncc/adgroups") {
+            return jsonResponse([{ nccAdgroupId: "grp-shopping-a001", name: "상품형", status: "ELIGIBLE", adgroupType: "SHOPPING" }]);
+          }
+          if (parsed.pathname === "/ncc/keywords") {
+            return jsonResponse([]);
+          }
+          if (parsed.pathname === "/ncc/product-groups") {
+            return jsonResponse([]);
+          }
+          if (parsed.pathname === "/stats" && parsed.searchParams.get("statType") === "NPLA_SCH_KEYWORD") {
+            return jsonResponse([
+              { schKeyword: "낮은 비용 검색어", clkCnt: 2, drtCrto: 0, salesAmt: 100 },
+              { schKeyword: "높은 비용 검색어", clkCnt: 50, drtCrto: 0, salesAmt: 50000 },
+              ...Array.from({ length: 19 }, (_, index) => ({
+                schKeyword: `중간 비용 검색어 ${index + 1}`,
+                clkCnt: 10 + index,
+                drtCrto: 0,
+                salesAmt: 1000 + index,
+              })),
+            ]);
+          }
+
+          return jsonResponse({ summaryStatResponse: { data: [] } });
+        },
+      }),
+    );
+
+    expect(report.shoppingSearchAdPerformanceSnapshots).toHaveLength(20);
+    expect(report.shoppingSearchAdPerformanceSnapshots?.[0]?.searchKeyword).toBe("높은 비용 검색어");
+    expect(report.shoppingSearchAdPerformanceSnapshots?.some((snapshot) => snapshot.searchKeyword === "낮은 비용 검색어")).toBe(false);
+    expect(report.evidenceNotes.join(" ")).toContain("상위 20건만 저장");
   });
 
   it("Search Ad 성과 대상이 없으면 키워드 수요 수집은 유지하고 원인을 남긴다", async () => {

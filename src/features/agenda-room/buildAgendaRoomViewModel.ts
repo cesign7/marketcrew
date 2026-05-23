@@ -1334,6 +1334,10 @@ function buildProviderSnapshotLabels(report: ProviderSyncReport): string[] {
     labels.push(`검색광고 성과 ${report.searchAdPerformanceSnapshots.length.toLocaleString("ko-KR")}건`);
   }
 
+  if (report.shoppingSearchAdPerformanceSnapshots?.length) {
+    labels.push(`쇼핑검색광고 성과 ${report.shoppingSearchAdPerformanceSnapshots.length.toLocaleString("ko-KR")}건`);
+  }
+
   if (report.searchTrendSnapshots?.length) {
     labels.push(`검색 추이 ${report.searchTrendSnapshots.length.toLocaleString("ko-KR")}건`);
   }

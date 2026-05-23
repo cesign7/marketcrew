@@ -76,6 +76,21 @@ describe("buildProviderSignalAgendaArtifacts", () => {
     expect(artifacts.characterReports.map((report) => report.character)).toEqual(["gro"]);
     expect(artifacts.performanceCheckpoints[0]?.metrics).toEqual(expect.arrayContaining(["CVR", "CPA", "ROAS"]));
   });
+
+  it("쇼핑검색광고 검색어 성과만 있어도 그로의 저성과 조정 안건으로 올린다", () => {
+    const artifacts = buildProviderSignalAgendaArtifacts({
+      providerSyncReports: [buildShoppingSearchAdPerformanceReport()],
+      signals: [],
+      generatedAt: "2026-05-23T08:00:00.000Z",
+      moaSynthesisReportId: "moa-synthesis-sample-001",
+    });
+
+    expect(artifacts.agendaCandidates.map((candidate) => [candidate.character, candidate.title])).toEqual([
+      ["gro", "저성과 검색광고 키워드 조정 안건"],
+    ]);
+    expect(artifacts.agendaCandidates[0]?.summary).toContain("주문 없는 키워드");
+    expect(artifacts.approvalRequests[0]?.evidenceIds).toContain("shopping-search-perf-stickersee-no-order-2026-05-23");
+  });
 });
 
 function buildSyncedProviderReports(): ProviderSyncReport[] {
@@ -240,6 +255,44 @@ function buildSearchAdPerformanceReport(): ProviderSyncReport {
         targetCpa: 12000,
         targetRoas: 2.5,
         trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+    ],
+  };
+}
+
+function buildShoppingSearchAdPerformanceReport(): ProviderSyncReport {
+  return {
+    id: "provider-sync-shopping-search-ad-performance-2026-05-23",
+    provider: "search_ad",
+    label: "네이버 쇼핑검색광고 성과 읽기 전용 수집",
+    status: "SYNCED",
+    readOnly: true,
+    networkAttempted: true,
+    writeAttempted: false,
+    endpoint: "https://api.searchad.naver.com/stats",
+    sourceUrl: "http://naver.github.io/searchad-apidoc/",
+    missingEnvKeys: [],
+    evidenceNotes: ["쇼핑검색광고 검색어 성과 집계만 저장했습니다."],
+    checkedAt: "2026-05-23T08:00:00.000Z",
+    httpStatus: 200,
+    shoppingSearchAdPerformanceSnapshots: [
+      {
+        id: "shopping-search-perf-stickersee-no-order-2026-05-23",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignName: "스티커씨 쇼핑검색광고",
+        adGroupName: "대표 상품형",
+        adGroupId: "grp-shopping-a001",
+        searchKeyword: "스승의날 카드",
+        productGroupName: "스티커씨 선물카드",
+        mallName: "스티커씨",
+        registeredProductType: "GENERAL",
+        windowDays: 30,
+        clicks: 42,
+        directConversionRate: 0,
+        cost: 18900,
         collectedAt: "2026-05-23T08:00:00.000Z",
         dataScope: "aggregate_only",
       },
