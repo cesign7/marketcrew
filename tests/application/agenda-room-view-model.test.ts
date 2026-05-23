@@ -134,6 +134,28 @@ describe("buildAgendaRoomViewModel", () => {
     expect(viewModel.aiPilotInsight.recommendedApprovalLabels).not.toContain("스마트스토어/자체몰 매출 균형 점검 안건");
   });
 
+  it("저장된 LLM 추천 검색광고 안건 ID를 브랜드별 한국어 카드명으로 보여준다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    repository.saveAgentRuns([buildGeminiPlannerAgentRun()]);
+    repository.saveAgentRunWorkflowLinks([
+      {
+        ...buildGeminiPlannerLink(),
+        id: "agent-link-gemini-search-ad-performance-stickersee",
+        objectId: "approval-agenda-provider-search-ad-performance-stickersee-2026-05-23",
+      },
+    ]);
+
+    const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
+
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).toContain(
+      "스티커씨 저성과 검색광고 키워드 조정 안건",
+    );
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).not.toContain("추천 안건 기록");
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).not.toContain(
+      "approval-agenda-provider-search-ad-performance-stickersee-2026-05-23",
+    );
+  });
+
   it("사용 중단된 교차 브랜드 AI 판단은 최신 실행이어도 운영 화면에서 제외한다", () => {
     const repository = createMemoryMarketingWorkflowRepository();
     repository.saveAgentRuns([buildGeminiPlannerAgentRun(), buildDeprecatedCrossBrandGeminiPlannerAgentRun()]);

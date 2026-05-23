@@ -362,6 +362,14 @@ function approvalLabelFromId(approvalId: string, approvalById: Map<string, Appro
     return "영카트 재구매 고객군 CRM 초안 안건";
   }
 
+  if (approvalId.includes("provider-search-ad-performance-stickersee")) {
+    return "스티커씨 저성과 검색광고 키워드 조정 안건";
+  }
+
+  if (approvalId.includes("provider-search-ad-performance-coffeeprint")) {
+    return "커피프린트 저성과 검색광고 키워드 조정 안건";
+  }
+
   if (approvalId.includes("season-plan-buddha-gift-card")) {
     return "부처님오신날 선물카드 키워드 테스트 승인안";
   }

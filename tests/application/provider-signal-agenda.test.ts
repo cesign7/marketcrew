@@ -55,13 +55,14 @@ describe("buildProviderSignalAgendaArtifacts", () => {
     });
 
     expect(artifacts.agendaCandidates.map((candidate) => [candidate.character, candidate.title])).toEqual([
-      ["gro", "저성과 검색광고 키워드 조정 안건"],
+      ["gro", "스티커씨 저성과 검색광고 키워드 조정 안건"],
     ]);
+    expect(artifacts.agendaCandidates[0]?.id).toBe("agenda-provider-search-ad-performance-stickersee-2026-05-23");
     expect(artifacts.agendaCandidates[0]?.summary).toContain("주문 없는 키워드");
     expect(artifacts.agendaCandidates[0]?.summary).toContain("기기/시간대");
     expect(artifacts.approvalRequests).toHaveLength(1);
     expect(artifacts.approvalRequests[0]).toMatchObject({
-      title: "저성과 검색광고 키워드 조정 안건",
+      title: "스티커씨 저성과 검색광고 키워드 조정 안건",
       status: "PENDING",
       dataConfidence: "READY_TO_APPROVE",
       executionPlan: {
@@ -77,6 +78,36 @@ describe("buildProviderSignalAgendaArtifacts", () => {
     expect(artifacts.performanceCheckpoints[0]?.metrics).toEqual(expect.arrayContaining(["CVR", "CPA", "ROAS"]));
   });
 
+  it("검색광고 성과 안건은 여러 브랜드가 섞여도 브랜드별 결재 카드로 분리한다", () => {
+    const artifacts = buildProviderSignalAgendaArtifacts({
+      providerSyncReports: [buildMultiBrandSearchAdPerformanceReport()],
+      signals: [],
+      generatedAt: "2026-05-23T08:00:00.000Z",
+      moaSynthesisReportId: "moa-synthesis-sample-001",
+    });
+
+    expect(artifacts.agendaCandidates.map((candidate) => [candidate.id, candidate.title])).toEqual([
+      [
+        "agenda-provider-search-ad-performance-coffeeprint-2026-05-23",
+        "커피프린트 저성과 검색광고 키워드 조정 안건",
+      ],
+      [
+        "agenda-provider-search-ad-performance-stickersee-2026-05-23",
+        "스티커씨 저성과 검색광고 키워드 조정 안건",
+      ],
+    ]);
+    expect(artifacts.approvalRequests.map((request) => request.id)).toEqual([
+      "approval-agenda-provider-search-ad-performance-coffeeprint-2026-05-23",
+      "approval-agenda-provider-search-ad-performance-stickersee-2026-05-23",
+    ]);
+    expect(artifacts.characterReports).toHaveLength(1);
+    expect(artifacts.characterReports[0]?.agendaCandidateIds).toEqual([
+      "agenda-provider-search-ad-performance-coffeeprint-2026-05-23",
+      "agenda-provider-search-ad-performance-stickersee-2026-05-23",
+    ]);
+    expect(artifacts.performanceCheckpoints).toHaveLength(10);
+  });
+
   it("쇼핑검색광고 검색어 성과만 있어도 그로의 저성과 조정 안건으로 올린다", () => {
     const artifacts = buildProviderSignalAgendaArtifacts({
       providerSyncReports: [buildShoppingSearchAdPerformanceReport()],
@@ -86,7 +117,7 @@ describe("buildProviderSignalAgendaArtifacts", () => {
     });
 
     expect(artifacts.agendaCandidates.map((candidate) => [candidate.character, candidate.title])).toEqual([
-      ["gro", "저성과 검색광고 키워드 조정 안건"],
+      ["gro", "스티커씨 저성과 검색광고 키워드 조정 안건"],
     ]);
     expect(artifacts.agendaCandidates[0]?.summary).toContain("주문 없는 키워드");
     expect(artifacts.approvalRequests[0]?.evidenceIds).toContain("shopping-search-perf-stickersee-no-order-2026-05-23");
@@ -254,6 +285,38 @@ function buildSearchAdPerformanceReport(): ProviderSyncReport {
         revenue: 240000,
         targetCpa: 12000,
         targetRoas: 2.5,
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+    ],
+  };
+}
+
+function buildMultiBrandSearchAdPerformanceReport(): ProviderSyncReport {
+  const report = buildSearchAdPerformanceReport();
+
+  return {
+    ...report,
+    searchAdPerformanceSnapshots: [
+      ...(report.searchAdPerformanceSnapshots ?? []),
+      {
+        id: "ad-perf-coffeeprint-no-order-2026-05-23",
+        provider: "naver_search_ad",
+        brandKey: "COFFEEPRINT",
+        campaignName: "커피프린트 파워링크",
+        adGroupName: "감사장",
+        keyword: "기업 감사장",
+        device: "ALL",
+        timeSlot: "09-23",
+        windowDays: 7,
+        impressions: 900,
+        clicks: 45,
+        cost: 31500,
+        conversions: 0,
+        revenue: 0,
+        targetCpa: 18000,
+        targetRoas: 2,
         trackingVerified: true,
         collectedAt: "2026-05-23T08:00:00.000Z",
         dataScope: "aggregate_only",

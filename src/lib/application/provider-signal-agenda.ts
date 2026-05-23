@@ -48,9 +48,9 @@ export function buildProviderSignalAgendaArtifacts(input: {
   const agendaCandidates = [
     commerceReport ? buildCommerceAgendaCandidate(commerceReport, signalsById, generatedAt) : undefined,
     shopReport ? buildShopAgendaCandidate(shopReport, signalsById, generatedAt) : undefined,
-    searchAdPerformanceReport && searchAdPerformanceDiagnoses.length > 0
-      ? buildSearchAdPerformanceAgendaCandidate(searchAdPerformanceReport, searchAdPerformanceDiagnoses, generatedAt)
-      : undefined,
+    ...(searchAdPerformanceReport && searchAdPerformanceDiagnoses.length > 0
+      ? buildSearchAdPerformanceAgendaCandidates(searchAdPerformanceReport, searchAdPerformanceDiagnoses, generatedAt)
+      : []),
   ].filter((candidate): candidate is AgendaCandidate => Boolean(candidate));
   const characterReports = buildCharacterReports(agendaCandidates, generatedAt);
   const approvalRequests = agendaCandidates.map((candidate) =>
@@ -123,22 +123,44 @@ function buildShopAgendaCandidate(
   };
 }
 
-function buildSearchAdPerformanceAgendaCandidate(
+function buildSearchAdPerformanceAgendaCandidates(
   report: ProviderSyncReport,
   diagnoses: AdPerformanceDiagnosis[],
   generatedAt: string,
-): AgendaCandidate {
+): AgendaCandidate[] {
+  const diagnosesByBrand = groupBy(diagnoses, (diagnosis) => normalizeBrandKey(diagnosis.brandKey));
+
+  return [...diagnosesByBrand.entries()]
+    .sort(([leftBrand], [rightBrand]) => leftBrand.localeCompare(rightBrand))
+    .map(([brandKey, brandDiagnoses]) =>
+      buildSearchAdPerformanceAgendaCandidate({
+        report,
+        diagnoses: brandDiagnoses,
+        generatedAt,
+        brandKey,
+      }),
+    );
+}
+
+function buildSearchAdPerformanceAgendaCandidate(input: {
+  report: ProviderSyncReport;
+  diagnoses: AdPerformanceDiagnosis[];
+  generatedAt: string;
+  brandKey: string;
+}): AgendaCandidate {
+  const { report, diagnoses, generatedAt } = input;
+  const normalizedBrandKey = normalizeBrandKey(input.brandKey);
+  const brandLabel = brandLabelFromKey(normalizedBrandKey);
   const actionableDiagnoses = diagnoses.filter((diagnosis) => diagnosis.character === "gro");
   const owner = actionableDiagnoses.length > 0 ? "gro" : "day";
   const representativeDiagnoses = (actionableDiagnoses.length > 0 ? actionableDiagnoses : diagnoses).slice(0, 3);
   const highSeverityCount = actionableDiagnoses.filter((diagnosis) => diagnosis.severity === "HIGH").length;
   const evidenceIds = Array.from(new Set(representativeDiagnoses.flatMap((diagnosis) => diagnosis.evidenceIds)));
   const title =
-    owner === "gro" ? "저성과 검색광고 키워드 조정 안건" : "검색광고 전환 추적 근거 확인 요청";
-  const brandSlug = brandSlugFromSnapshots([
-    ...(report.searchAdPerformanceSnapshots ?? []),
-    ...(report.shoppingSearchAdPerformanceSnapshots ?? []),
-  ]);
+    owner === "gro"
+      ? `${brandLabel} 저성과 검색광고 키워드 조정 안건`
+      : `${brandLabel} 검색광고 전환 추적 근거 확인 요청`;
+  const brandSlug = slugify(normalizedBrandKey || "unknown");
 
   return {
     id: `agenda-provider-search-ad-performance-${brandSlug}-${report.checkedAt.slice(0, 10)}`,
@@ -146,10 +168,10 @@ function buildSearchAdPerformanceAgendaCandidate(
     title,
     summary:
       owner === "gro"
-        ? `주문 없는 키워드, 높은 CPA, 기기/시간대 성과 차이 등 검색광고 성과 이상신호 ${diagnoses.length.toLocaleString(
+        ? `${brandLabel}의 주문 없는 키워드, 높은 CPA, 기기/시간대 성과 차이 등 검색광고 성과 이상신호 ${diagnoses.length.toLocaleString(
             "ko-KR",
           )}건을 데이터 규칙으로 확인했습니다. 그로가 입찰/예산/일시중지/제외 키워드 조정안을 상신합니다.`
-        : `검색광고 클릭/비용은 확인됐지만 전환 추적 검증이 필요합니다. 데이가 주문 연결과 추적 누락 여부를 먼저 확인해야 합니다.`,
+        : `${brandLabel} 검색광고 클릭/비용은 확인됐지만 전환 추적 검증이 필요합니다. 데이가 주문 연결과 추적 누락 여부를 먼저 확인해야 합니다.`,
     severity: highSeverityCount > 0 ? "HIGH" : "MEDIUM",
     sourceSignalIds: report.generatedSignal ? [report.generatedSignal.id] : [],
     opportunityIds: evidenceIds,
@@ -385,7 +407,31 @@ function slugify(value: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-function brandSlugFromSnapshots(snapshots: Array<{ brandKey: string }>): string {
-  const brandKeys = Array.from(new Set(snapshots.map((snapshot) => snapshot.brandKey).filter(Boolean))).sort();
-  return slugify(brandKeys.join("-") || "unknown");
+function normalizeBrandKey(value: string | undefined): string {
+  return (value ?? "unknown").trim().toLowerCase();
+}
+
+function brandLabelFromKey(value: string): string {
+  const normalized = normalizeBrandKey(value);
+  if (normalized === "stickersee") {
+    return "스티커씨";
+  }
+
+  if (normalized === "coffeeprint") {
+    return "커피프린트";
+  }
+
+  return "브랜드 미분류";
+}
+
+function groupBy<TItem, TKey>(items: TItem[], keyFn: (item: TItem) => TKey): Map<TKey, TItem[]> {
+  const grouped = new Map<TKey, TItem[]>();
+  for (const item of items) {
+    const key = keyFn(item);
+    const group = grouped.get(key) ?? [];
+    group.push(item);
+    grouped.set(key, group);
+  }
+
+  return grouped;
 }
