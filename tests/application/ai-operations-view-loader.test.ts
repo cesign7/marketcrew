@@ -130,7 +130,7 @@ describe("AI operations view loader", () => {
     });
 
     expect(view.modelUsageRows[0]?.model).toBe("AI 실행 큐(모의 실행)");
-    expect(view.modelUsageRows.map((row) => row.model).join(" ")).not.toContain("llm-dry-run-queue");
+    expect(JSON.stringify(view.modelUsageRows)).not.toContain("llm-dry-run-queue");
   });
 
   it("인사과는 정해진 신호 밖의 자유 탐색과 근거 요청 원칙을 함께 보여준다", () => {

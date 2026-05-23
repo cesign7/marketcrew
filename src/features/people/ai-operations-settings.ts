@@ -443,7 +443,7 @@ function buildModelUsageRows(agentRuns: AgentRun[], krwPerUsd: number): AiModelU
   return rows
     .sort((left, right) => right.estimatedCostKrw - left.estimatedCostKrw || right.totalTokens - left.totalTokens)
     .map((row) => ({
-      id: `${row.provider}-${row.model}`,
+      id: `${providerLabel(row.provider)}-${modelDisplayLabel(row.model)}`,
       providerLabel: providerLabel(row.provider),
       model: modelDisplayLabel(row.model),
       runCountLabel: `${formatCount(row.runCount)}건`,
