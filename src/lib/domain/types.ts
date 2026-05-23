@@ -188,6 +188,7 @@ export interface LlmPlannerAuditRun {
 
 export type AgentRunType =
   | "moa_planner"
+  | "llm_dry_run"
   | "provider_sync"
   | "provider_signal_agenda"
   | "evidence_request_review"

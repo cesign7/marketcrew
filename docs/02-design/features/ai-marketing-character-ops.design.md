@@ -461,6 +461,7 @@ Initial implementation may use server actions, but route handlers should keep th
 |--------|------|-------------|------|
 | GET | `/api/operations/agenda-room` | Operations Room aggregate data | Required later, local MVP optional |
 | GET | `/api/operations/readiness` | Provider readiness와 LLM planner preview 조회 | Local MVP optional |
+| GET | `/api/operations/llm-dry-run-queue` | 실제 LLM 호출 전 AI 실행 큐와 planner audit 조회 | Required before live adapter |
 | POST | `/api/operations/generate-sample` | Generate sample signals, reports, approvals, outcomes | Local only |
 | GET | `/api/approvals` | List approval requests | Required later |
 | GET | `/api/approvals/:id` | Approval detail with evidence and execution preview | Required later |
@@ -866,6 +867,7 @@ src/
 7. [x] Add mock executor and outcome checkpoints.
 8. [x] Add LLM planner interface behind deterministic fallback.
 9. [x] Add real provider readiness probes, still read-only.
+10. [x] Add AI 실행 큐 모의 실행과 `llm_dry_run` 감사 기록.
 
 ### 11.3 Session Guide
 
@@ -887,6 +889,7 @@ src/
 | 자유 탐색 정책 UI | `module-19` | 인사과 판단 방식 카드와 캐릭터별 자유 탐색/근거 요청 롤모델 | 8-12 |
 | 근거 요청 큐와 승격 가드 | `module-20` | `HypothesisCandidate`, `EvidenceRequest`, 데이 검증, 모아 승격 제한 | Done in iteration 15 |
 | 근거 요청 처리 API | `module-21` | 데이 상태 변경, AgentRun 감사 이력, 검증 후 `AgendaCandidate` 승격 | Done in iteration 16 |
+| AI 실행 큐 모의 실행 | `module-22` | 비용 가드 안에서 실제 호출 전 입력 범위, 토큰, 근거, 감사 기록을 큐로 고정 | Done in iteration 17 |
 
 #### Recommended Session Plan
 
@@ -904,6 +907,7 @@ src/
 | Session 10 | Act | `--scope module-16` | 25-35 |
 | Session 11 | Act | `--scope module-17` | 25-35 |
 | Session 12 | Act | `--scope module-18` | 30-40 |
+| Session 13 | Act | `--scope module-22` | Done |
 
 ---
 
@@ -914,3 +918,4 @@ src/
 | 0.1 | 2026-05-22 | Initial PDCA design document from v0.5 plan, selected Pragmatic Balance architecture, defined domain/API/UI/test/session contracts | Codex |
 | 0.2 | 2026-05-23 | Added provider evidence expansion order and module map for ad settings, performance breakdown, commerce quality, DataLab segments, and commerce analytics | Codex |
 | 0.3 | 2026-05-23 | Added LLM free exploration, evidence request, verified promotion guard, and people-office role model UI module | Codex |
+| 0.4 | 2026-05-23 | Added AI execution queue dry-run contract, API, and AgentRun audit boundary before live LLM adapter | Codex |

@@ -23,6 +23,10 @@ test("대표 업무실은 왼쪽 업무 메뉴와 상단 기준 필터로 나뉜
   await expect(topControls.getByRole("button", { name: "30일" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "전년" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "명절" })).toBeVisible();
+
+  await expect(page.getByRole("heading", { level: 2, name: "AI 실행 큐" })).toBeVisible();
+  await expect(page.getByText("모의 실행만 기록")).toBeVisible();
+  await expect(page.getByText("원천 행 제외").first()).toBeVisible();
 });
 
 test("인사과 메뉴에서 캐릭터 롤모델과 월별 AI 사용 명세를 확인한다", async ({ page }) => {

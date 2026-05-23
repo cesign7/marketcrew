@@ -910,6 +910,16 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 - `/people` 인사과 화면은 캐릭터별 롤모델에 자유 탐색과 검증 책임을 보여주고 수정 가능해야 한다.
 - `/operations`는 검증 전 가설을 결재 목록과 분리해 `근거 요청 큐`로 보여주며, 데이가 요청 상태를 바꾸면 검증 완료 가설만 `AgendaCandidate`로 승격한다.
 
+### Slice 5B: AI 실행 큐 모의 실행
+
+- Status: `module-22`에서 실제 LLM adapter 호출 전 `AI 실행 큐`와 `llm_dry_run` 감사 기록을 구현했다.
+- 완료 목표: 실제 LLM adapter를 열기 전에 `/operations`에서 모아의 AI 실행 후보를 확인한다.
+- 큐는 비용 가드, 토큰 상한, 원천 행 제외, 선택된 결재 안건, 근거 ID를 한 번에 보여준다.
+- 비용 가드가 닫히면 상태는 `비용 가드 차단`이며 실제 모델 호출을 하지 않는다.
+- 비용 조건이 열려도 이 slice는 `모의 실행만 기록`으로 남기고, 실제 LLM 호출은 다음 별도 slice에서 붙인다.
+- `AgentRun.runType=llm_dry_run`으로 감사 기록을 남기며 provider는 `local`, mode는 `deterministic_fallback`을 사용한다.
+- `/api/operations/llm-dry-run-queue`는 같은 큐와 planner audit 요약을 반환한다.
+
 ### Slice 6: Real Provider Executors
 
 - 네이버 키워드광고, 스마트스토어, 자체 쇼핑몰, CRM executor를 provider별 gate 뒤에 구현한다.
@@ -984,3 +994,4 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 | 0.5 | 2026-05-22 | Added seasonal keyword ad lifecycle, keyword demand snapshots, ad budget/bid guardrails, API cache/backoff policy, and MVP cutline | Codex |
 | 0.6 | 2026-05-23 | Added provider evidence expansion order for ad settings, device/time performance, Smartstore net sales and claims, DataLab segments, and sales analytics expansion | Codex |
 | 0.7 | 2026-05-23 | Added LLM free exploration, evidence request, and verified-agenda promotion policy with updated character role models | Codex |
+| 0.8 | 2026-05-23 | Added AI execution queue dry-run slice before real LLM adapter calls | Codex |

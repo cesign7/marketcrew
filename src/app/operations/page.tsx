@@ -4,6 +4,7 @@ import { AgendaCard } from "@/components/agenda-room/AgendaCard";
 import { CharacterRail } from "@/components/agenda-room/CharacterRail";
 import { EvidenceRequestQueuePanel } from "@/components/agenda-room/EvidenceRequestQueuePanel";
 import { InboxBucketBar } from "@/components/agenda-room/InboxBucketBar";
+import { LlmDryRunQueuePanel } from "@/components/agenda-room/LlmDryRunQueuePanel";
 import { AppShell } from "@/components/layout/AppShell";
 import { loadAgendaRoomViewModel } from "@/features/agenda-room/loadAgendaRoomViewModel";
 
@@ -54,6 +55,8 @@ export default async function OperationsPage() {
       <InboxBucketBar buckets={viewModel.inboxBuckets} />
 
       <EvidenceRequestQueuePanel queue={viewModel.evidenceRequestQueue} />
+
+      <LlmDryRunQueuePanel queue={viewModel.llmDryRunQueue} />
 
       <div className="daily-brief-grid">
         <section className="moa-brief-panel" aria-labelledby="moa-brief-title">

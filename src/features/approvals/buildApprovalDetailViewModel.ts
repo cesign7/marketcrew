@@ -217,6 +217,7 @@ function workflowRefKey(objectType: WorkflowObjectType, objectId: string): strin
 function agentRunTypeLabel(runType: AgentRunType): string {
   const labels: Record<AgentRunType, string> = {
     moa_planner: "모아 계획",
+    llm_dry_run: "AI 실행 점검",
     provider_sync: "연동 수집",
     provider_signal_agenda: "연동 안건 생성",
     evidence_request_review: "근거 검증",
@@ -246,6 +247,7 @@ function agentRunModelLabel(model: string): string {
   const labels: Record<string, string> = {
     "deterministic-fallback": "규칙 기반 대체",
     "read-only-adapter": "읽기 전용 어댑터",
+    "llm-dry-run-queue": "AI 실행 큐",
     "evidence-request-review-workflow": "근거 검증 기록기",
     "owner-decision-workflow": "대표 결정 기록기",
   };

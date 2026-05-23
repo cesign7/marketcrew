@@ -50,27 +50,35 @@ export async function loadAgendaRoomViewModel() {
 }
 
 export function normalizeAgendaRoomViewModelCompatibility(viewModel: AgendaRoomViewModel): AgendaRoomViewModel {
-  if ((viewModel as Partial<AgendaRoomViewModel>).evidenceRequestQueue) {
+  const partialViewModel = viewModel as Partial<AgendaRoomViewModel>;
+  if (partialViewModel.evidenceRequestQueue && partialViewModel.llmDryRunQueue) {
     return viewModel;
   }
 
-  const fallbackQueue = buildAgendaRoomViewModel().evidenceRequestQueue;
+  const fallbackViewModel = buildAgendaRoomViewModel();
+  const fallbackQueue = fallbackViewModel.evidenceRequestQueue;
+  const withEvidenceQueue = partialViewModel.evidenceRequestQueue
+    ? viewModel
+    : {
+        ...viewModel,
+        summary: {
+          ...viewModel.summary,
+          waitingEvidence: viewModel.summary.waitingEvidence + fallbackQueue.openRequestCount,
+        },
+        inboxBuckets: viewModel.inboxBuckets.map((bucket) =>
+          bucket.id === "WAITING_EVIDENCE"
+            ? {
+                ...bucket,
+                count: bucket.count + fallbackQueue.openRequestCount,
+              }
+            : bucket,
+        ),
+        evidenceRequestQueue: fallbackQueue,
+      };
 
   return {
-    ...viewModel,
-    summary: {
-      ...viewModel.summary,
-      waitingEvidence: viewModel.summary.waitingEvidence + fallbackQueue.openRequestCount,
-    },
-    inboxBuckets: viewModel.inboxBuckets.map((bucket) =>
-      bucket.id === "WAITING_EVIDENCE"
-        ? {
-            ...bucket,
-            count: bucket.count + fallbackQueue.openRequestCount,
-          }
-        : bucket,
-    ),
-    evidenceRequestQueue: fallbackQueue,
+    ...withEvidenceQueue,
+    llmDryRunQueue: partialViewModel.llmDryRunQueue ?? fallbackViewModel.llmDryRunQueue,
   };
 }
 

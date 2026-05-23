@@ -1,4 +1,5 @@
 import type { EvidenceRequestStatus } from "@/lib/domain";
+import type { LlmDryRunQueue } from "@/lib/application/llm-dry-run-queue";
 
 export type CharacterTone = "coordinator" | "growth" | "product" | "copy" | "crm" | "finance" | "data";
 
@@ -290,6 +291,8 @@ export type LlmCostGovernanceView = {
   }>;
 };
 
+export type LlmDryRunQueueView = LlmDryRunQueue;
+
 export type ProductGrowthOpportunityView = {
   id: string;
   owner: string;
@@ -386,6 +389,7 @@ export type AgendaRoomViewModel = {
   providerSyncEvidence: ProviderSyncEvidenceView[];
   plannerPreview: PlannerPreviewView;
   llmCostGovernance: LlmCostGovernanceView;
+  llmDryRunQueue: LlmDryRunQueueView;
   agentRunSummary: AgentRunSummaryView;
   productGrowthOpportunities: ProductGrowthOpportunityView[];
   aiEvidenceBriefs: AiEvidenceBriefView[];

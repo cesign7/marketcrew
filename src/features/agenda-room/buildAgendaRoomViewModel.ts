@@ -11,6 +11,7 @@ import {
   type ProductGrowthOpportunity,
 } from "@/lib/application/product-growth-opportunities";
 import { buildProviderSignalAgendaArtifacts } from "@/lib/application/provider-signal-agenda";
+import { buildLlmDryRunQueue } from "@/lib/application/llm-dry-run-queue";
 import {
   getProviderHistoryPolicy,
   type AgendaCandidate,
@@ -28,7 +29,7 @@ import {
   type ProviderSyncReport,
   type SeasonalKeywordAdPlan,
 } from "@/lib/domain";
-import { recordPlannerAgentRun } from "@/lib/application/agent-run-recorder";
+import { recordLlmDryRunAgentRun, recordPlannerAgentRun } from "@/lib/application/agent-run-recorder";
 import { buildProviderReadinessReports } from "@/lib/integrations/providers/readiness";
 import { buildDeterministicPlannerResult, buildPlannerAuditRun, buildPlannerInputFromApprovals } from "@/lib/llm/planner";
 import type { MarketingWorkflowRepository } from "@/lib/application/workflow-repository";
@@ -103,7 +104,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
   if (input.repository) {
     recordPlannerAgentRun(input.repository, plannerInput, plannerResult, plannerAudit);
   }
-  const agentRuns = input.repository?.listAgentRuns() ?? [];
+  let agentRuns = input.repository?.listAgentRuns() ?? [];
   const storedAiOperationsSettings = input.repository?.listAiOperationsSettings()[0];
   const aiOperationsSettings = storedAiOperationsSettings
     ? resolveAiOperationsSettings({
@@ -111,6 +112,29 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
         env: input.env ?? process.env,
       })
     : undefined;
+  const llmCostGovernance = buildLlmCostGovernanceView({
+    env: input.env ?? process.env,
+    generatedAt: agendaCycle.generatedAt,
+    plannerAudit,
+    agentRuns,
+    providerReadiness,
+    aiOperationsSettings,
+  });
+  const llmDryRunQueue = buildLlmDryRunQueue({
+    generatedAt: agendaCycle.generatedAt,
+    plannerAudit,
+    plannerResult,
+    costGovernance: llmCostGovernance,
+  });
+  if (input.repository) {
+    recordLlmDryRunAgentRun(input.repository, {
+      queue: llmDryRunQueue,
+      plannerAudit,
+      plannerResult,
+      generatedAt: agendaCycle.generatedAt,
+    });
+    agentRuns = input.repository.listAgentRuns();
+  }
   const pendingApprovals = allApprovalRequests.filter((request) => request.status === "PENDING");
   const waitingEvidence = allApprovalRequests.filter((request) => request.status === "NEEDS_EVIDENCE");
   const ownerDecisionFlows = pendingApprovals
@@ -166,14 +190,8 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
     providerReadiness: providerReadiness.map(buildProviderReadinessView),
     providerSyncEvidence: buildProviderSyncEvidenceViews(providerSyncReports),
     plannerPreview: buildPlannerPreviewView(plannerResult, plannerAudit),
-    llmCostGovernance: buildLlmCostGovernanceView({
-      env: input.env ?? process.env,
-      generatedAt: agendaCycle.generatedAt,
-      plannerAudit,
-      agentRuns,
-      providerReadiness,
-      aiOperationsSettings,
-    }),
+    llmCostGovernance,
+    llmDryRunQueue,
     agentRunSummary: buildAgentRunSummaryView(agentRuns),
     productGrowthOpportunities: productGrowthOpportunities.map(buildProductGrowthOpportunityView),
     aiEvidenceBriefs: aiEvidenceBriefs.map((brief) => ({
@@ -379,6 +397,7 @@ function buildEvidenceRequestEvidenceLabels(requests: EvidenceRequest[]): string
 function agentRunTypeLabel(runType: AgentRun["runType"]): string {
   const labels: Record<AgentRun["runType"], string> = {
     moa_planner: "모아 계획",
+    llm_dry_run: "AI 실행 점검",
     provider_sync: "연동 수집",
     provider_signal_agenda: "연동 안건 생성",
     evidence_request_review: "근거 검증",
@@ -408,6 +427,7 @@ function agentRunModelLabel(model: string): string {
   const labels: Record<string, string> = {
     "deterministic-fallback": "규칙 기반 대체",
     "read-only-adapter": "읽기 전용 어댑터",
+    "llm-dry-run-queue": "AI 실행 큐",
     "evidence-request-review-workflow": "근거 검증 기록기",
     "owner-decision-workflow": "대표 결정 기록기",
   };

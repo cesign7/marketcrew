@@ -13,6 +13,7 @@ import type {
   ProviderSyncReport,
   WorkflowObjectRef,
 } from "../domain";
+import type { LlmDryRunQueue } from "./llm-dry-run-queue";
 import type { MarketingWorkflowRepository } from "./workflow-repository";
 import type { OwnerDecisionWorkflowResult } from "./approval-workflow";
 
@@ -47,6 +48,57 @@ export function recordPlannerAgentRun(
   };
   const links = result.recommendedApprovalIds.map((approvalId) =>
     buildWorkflowLink(run.id, { objectType: "approval_request", objectId: approvalId }, "generated", result.createdAt),
+  );
+
+  const existingRun = repository.listAgentRuns().find((candidate) => candidate.id === run.id);
+  if (existingRun && isSameAgentRun(existingRun, run) && hasExpectedWorkflowLinks(repository, run.id, links)) {
+    return existingRun;
+  }
+
+  repository.saveAgentRuns([run]);
+  repository.saveAgentRunWorkflowLinks(links);
+
+  return run;
+}
+
+export function recordLlmDryRunAgentRun(
+  repository: MarketingWorkflowRepository,
+  input: {
+    queue: LlmDryRunQueue;
+    plannerAudit: LlmPlannerAuditRun;
+    plannerResult: LlmPlannerResult;
+    generatedAt: string;
+  },
+): AgentRun {
+  const queueItem = input.queue.items[0];
+  const callGateOpen = queueItem?.callGateOpen ?? false;
+  const run: AgentRun = {
+    id: `agent-run-llm-dry-run-${compactTimestamp(input.plannerAudit.id)}`,
+    runnerKey: "moa_llm_dry_run_queue",
+    runType: "llm_dry_run",
+    mode: "deterministic_fallback",
+    provider: "local",
+    model: "llm-dry-run-queue",
+    status: callGateOpen ? "SUCCEEDED" : "SKIPPED",
+    inputSummary: `근거 ${input.plannerAudit.evidenceIds.length.toLocaleString("ko-KR")}개와 결재 후보 ${input.plannerAudit.sourceCounts.candidateSummaries.toLocaleString("ko-KR")}건을 원천 행 없이 모의 실행 입력으로 점검했습니다.`,
+    outputSummary: callGateOpen
+      ? "비용 가드가 열려 실제 AI 호출 후보로 둘 수 있지만, 현재 단계에서는 모의 실행만 기록했습니다."
+      : "비용 가드 차단으로 실제 AI 호출을 건너뛰고 모의 실행 큐에 기록했습니다.",
+    rawRowsIncluded: false,
+    tokenUsage: {
+      inputTokens: input.plannerAudit.tokenUsage.inputEstimate,
+      outputTokens: input.plannerAudit.tokenUsage.outputEstimate,
+      totalTokens: input.plannerAudit.tokenUsage.totalEstimate,
+      estimated: true,
+      estimatedCostKrw: 0,
+      basis: "실제 호출 전 모의 실행이라 실제 AI 모델 과금 없음",
+    },
+    evidenceIds: input.plannerAudit.evidenceIds,
+    startedAt: input.generatedAt,
+    finishedAt: input.generatedAt,
+  };
+  const links = input.plannerResult.recommendedApprovalIds.map((approvalId) =>
+    buildWorkflowLink(run.id, { objectType: "approval_request", objectId: approvalId }, "used_as_evidence", input.generatedAt),
   );
 
   const existingRun = repository.listAgentRuns().find((candidate) => candidate.id === run.id);

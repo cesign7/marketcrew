@@ -1030,6 +1030,7 @@ button:disabled {
 .data-contract-section,
 .ai-evidence-section,
 .evidence-request-section,
+.ai-exec-section,
 .evidence-expansion-section,
 .provider-readiness-section,
 .provider-sync-section,
@@ -1075,6 +1076,7 @@ button:disabled {
 .provider-sync-grid,
 .ai-evidence-grid,
 .evidence-request-grid,
+.ai-exec-grid,
 .collection-policy-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1085,6 +1087,7 @@ button:disabled {
 .provider-sync-card,
 .ai-evidence-card,
 .evidence-request-card,
+.ai-exec-card,
 .collection-policy-card,
 .product-opportunity-card,
 .agent-run-card,
@@ -1103,6 +1106,7 @@ button:disabled {
 .provider-sync-card header,
 .ai-evidence-card header,
 .evidence-request-card header,
+.ai-exec-card header,
 .collection-policy-card header,
 .product-opportunity-card header,
 .planner-preview-card header,
@@ -1111,6 +1115,7 @@ button:disabled {
 .provider-state-row,
 .sync-status-row,
 .evidence-request-meta,
+.ai-exec-metrics,
 .planner-metrics,
 .planner-evidence-row,
 .planner-constraints,
@@ -1147,9 +1152,14 @@ button:disabled {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.ai-exec-grid {
+  grid-template-columns: 1fr;
+}
+
 .provider-icon,
 .ai-evidence-icon,
 .evidence-request-icon,
+.ai-exec-icon,
 .planner-icon {
   display: grid;
   place-items: center;
@@ -1197,6 +1207,11 @@ button:disabled {
   background: #f8e9e7;
 }
 
+.ai-exec-stop .ai-exec-icon {
+  color: var(--red);
+  background: #f8e9e7;
+}
+
 .provider-card strong {
   display: block;
   font-size: 14px;
@@ -1205,6 +1220,7 @@ button:disabled {
 .provider-card header span:not(.provider-icon),
 .provider-sync-card header span:not(.provider-icon),
 .evidence-request-card header span:not(.evidence-request-icon),
+.ai-exec-card header span:not(.ai-exec-icon),
 .planner-mode {
   display: inline-flex;
   width: fit-content;
@@ -1230,7 +1246,15 @@ button:disabled {
   justify-content: space-between;
 }
 
+.ai-exec-card header {
+  justify-content: space-between;
+}
+
 .evidence-request-card header > div {
+  min-width: 0;
+}
+
+.ai-exec-card header > div {
   min-width: 0;
 }
 
@@ -1240,7 +1264,14 @@ button:disabled {
   line-height: 1.35;
 }
 
+.ai-exec-card h3 {
+  margin: 6px 0 0;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
 .evidence-request-card p,
+.ai-exec-card p,
 .evidence-request-card footer {
   margin: 12px 0 0;
   color: var(--ink-muted);
@@ -1249,6 +1280,7 @@ button:disabled {
 }
 
 .evidence-request-card header > strong,
+.ai-exec-card header > strong,
 .queue-summary-label {
   display: inline-flex;
   flex: 0 0 auto;
@@ -1270,9 +1302,15 @@ button:disabled {
   background: #f8e9e7;
 }
 
+.ai-exec-stop header > strong {
+  color: var(--red);
+  background: #f8e9e7;
+}
+
 .provider-state-row,
 .sync-status-row,
 .evidence-request-meta,
+.ai-exec-metrics,
 .planner-metrics,
 .planner-constraints,
 .planner-audit-grid,
@@ -1291,6 +1329,7 @@ button:disabled {
 .provider-state-row span,
 .sync-status-row span,
 .evidence-request-meta span,
+.ai-exec-metrics span,
 .planner-metrics span,
 .planner-constraints span,
 .planner-audit-grid span,
@@ -1315,7 +1354,18 @@ button:disabled {
   margin-top: 12px;
 }
 
+.ai-exec-fields {
+  margin-top: 12px;
+}
+
 .evidence-request-fields strong {
+  display: block;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ai-exec-fields strong {
   display: block;
   color: var(--ink);
   font-size: 12px;
@@ -1329,7 +1379,23 @@ button:disabled {
   margin-top: 8px;
 }
 
+.ai-exec-fields div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 .evidence-request-fields span {
+  border-radius: 8px;
+  background: #fbfcfa;
+  padding: 6px 8px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.ai-exec-fields span {
   border-radius: 8px;
   background: #fbfcfa;
   padding: 6px 8px;
@@ -3945,6 +4011,7 @@ button:disabled {
   .daily-brief-grid,
   .workspace-grid,
   .evidence-request-grid,
+  .ai-exec-grid,
   .evidence-expansion-list,
   .collection-schedule-board,
   .collection-policy-grid {
@@ -4046,6 +4113,7 @@ button:disabled {
   .provider-readiness-grid,
   .provider-sync-grid,
   .ai-evidence-grid,
+  .ai-exec-grid,
   .collection-schedule-board,
   .collection-schedule-rule-grid,
   .collection-policy-grid,
@@ -4236,6 +4304,7 @@ button:disabled {
   .summary-strip,
   .keyword-list,
   .evidence-request-grid,
+  .ai-exec-grid,
   .agenda-details,
   .diff-grid,
   .data-source-field-grid,
@@ -4257,6 +4326,7 @@ button:disabled {
   .llm-pricing-reference header,
   .llm-pricing-row header,
   .llm-governance-check header,
+  .ai-exec-card header,
   .provider-sync-card header,
   .product-opportunity-card header,
   .owner-submit-card header,
