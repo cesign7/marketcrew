@@ -291,8 +291,8 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
       incoming: {
         id: "smartstore-incoming",
         title: "불러오는 데이터",
-        description: "토큰 발급 후 최근 변경 주문 ID를 가져오고, 주문 상세에서 상품명과 결제 금액만 집계합니다.",
-        safetyNote: "토큰, 시크릿, 주문번호 목록, 주문 원문 행은 저장하지 않습니다.",
+        description: "토큰 발급 후 최근 변경 주문 ID를 가져오고, 주문 상세의 상품명/결제 금액과 원상품 조회의 대표 이미지만 집계합니다.",
+        safetyNote: "토큰, 시크릿, 주문번호 목록, 원상품 번호, 주문/상품 원문 행은 저장하지 않습니다.",
         columns: [
           {
             key: "lastChangedFrom/lastChangedTo",
@@ -313,6 +313,18 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             sample: "선물카드",
           },
           {
+            key: "productOrder.originalProductId",
+            label: "원상품 번호",
+            description: "상위 상품 대표 이미지를 한 번 더 읽을 때만 쓰는 상품 식별자입니다.",
+            sample: "조회 후 저장 안 함",
+          },
+          {
+            key: "originProduct.images.representativeImage.url",
+            label: "대표 이미지 URL",
+            description: "상품 카드에 보여줄 상위 상품 대표 이미지입니다. 없거나 실패하면 화면 썸네일로 대체합니다.",
+            sample: "https://example.test/products/gift-card.jpg",
+          },
+          {
             key: "productOrder.totalPaymentAmount",
             label: "결제 금액",
             description: "스티커씨 매출 집계에 합산하는 금액 후보입니다.",
@@ -331,6 +343,8 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             values: [
               { key: "productOrderId", label: "주문", value: "po-1" },
               { key: "productName", label: "상품", value: "선물카드" },
+              { key: "originalProductId", label: "원상품", value: "조회 후 저장 안 함" },
+              { key: "representativeImage", label: "이미지", value: "대표 이미지 URL" },
               { key: "totalPaymentAmount", label: "금액", value: "7,000원" },
               { key: "token", label: "토큰", value: "저장 안 함" },
             ],
@@ -404,6 +418,20 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
               { key: "productOrders[0].order.generalPaymentAmount", label: "주문 객체 금액", handling: "결제 금액 후보, 원문 저장 안 함" },
               { key: "productOrders[0].order.orderId", label: "주문 ID", handling: "식별자 저장 안 함" },
               { key: "productOrders[0].shippingAddress", label: "배송지", handling: "개인정보로 저장 안 함" },
+            ],
+          },
+          {
+            id: "smartstore-source-origin-product",
+            title: "원상품 조회 응답",
+            description: "주문 상세의 원상품 번호로 대표 이미지를 확인하는 읽기 전용 상품 응답입니다. 원상품 번호와 상품 원문은 저장하지 않고 대표 이미지 URL만 집계 스냅샷에 반영합니다.",
+            fields: [
+              { key: "originProduct.statusType", label: "판매 상태", handling: "상품 상태 점검 후보, 기본 저장 안 함" },
+              { key: "originProduct.name", label: "원상품명", handling: "상품명 교차 검증 후보, 기본 저장 안 함" },
+              { key: "originProduct.images", label: "상품 이미지 묶음", handling: "대표 이미지 확인용, 원문 저장 안 함" },
+              { key: "originProduct.images.representativeImage.url", label: "대표 이미지 URL", handling: "상위 상품 카드 대표 이미지로 저장" },
+              { key: "originProduct.images.optionalImages[0].url", label: "추가 이미지 URL", handling: "현재 MVP 저장 안 함" },
+              { key: "originProduct.salePrice", label: "판매가", handling: "가격 점검 후보, 기본 저장 안 함" },
+              { key: "originProduct.stockQuantity", label: "재고 수량", handling: "재고/품절 가설 후보, 기본 저장 안 함" },
             ],
           },
           {
@@ -541,7 +569,7 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
         id: "smartstore-stored",
         title: "저장하는 데이터",
         description: "스티커씨 운영 판단에 필요한 주문 수, 매출, 상위 상품, 대표 이미지만 집계 스냅샷으로 저장합니다.",
-        safetyNote: "고객 정보와 주문 원문은 DB에 남기지 않는 집계 전용 계약입니다.",
+        safetyNote: "고객 정보, 주문 원문, 원상품 번호, 상품 원문은 DB에 남기지 않는 집계 전용 계약입니다.",
         columns: [
           {
             key: "CommerceAggregateSnapshot.brandKey",
@@ -576,7 +604,7 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
           {
             key: "topProductImageUrl",
             label: "대표 이미지",
-            description: "상위 상품 카드에 보여줄 상품 이미지 URL입니다. 값이 없으면 화면에서 상품명 기반 썸네일을 대신 만듭니다.",
+            description: "원상품 조회에서 확인한 대표 이미지 URL입니다. 값이 없으면 화면에서 상품명 기반 썸네일을 대신 만듭니다.",
             sample: "https://example.test/products/gift-card.jpg",
           },
           {

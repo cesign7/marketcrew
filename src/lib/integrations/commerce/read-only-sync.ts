@@ -15,6 +15,7 @@ export const NAVER_COMMERCE_BASE_URL = "https://api.commerce.naver.com";
 export const NAVER_COMMERCE_TOKEN_PATH = "/external/v1/oauth2/token";
 export const NAVER_COMMERCE_LAST_CHANGED_PATH = "/external/v1/pay-order/seller/product-orders/last-changed-statuses";
 export const NAVER_COMMERCE_PRODUCT_ORDER_QUERY_PATH = "/external/v1/pay-order/seller/product-orders/query";
+export const NAVER_COMMERCE_ORIGIN_PRODUCT_PATH = "/external/v2/products/origin-products";
 
 export type CommerceTokenRequest = {
   method: "POST";
@@ -128,12 +129,20 @@ export async function syncCommerceOrderAggregate(input: {
             productOrderIds,
           })
         : { productOrders: [], httpStatus: token.httpStatus };
+    const productImageLookup = await fetchTopProductImageUrl({
+      accessToken: token.accessToken,
+      baseUrl: resolveCommerceBaseUrl(env),
+      env,
+      fetchImpl,
+      productOrders: productOrders.productOrders,
+    });
     const snapshot = buildCommerceAggregateSnapshot({
       brandKey: resolveFirstEnv(env, ["NAVER_COMMERCE_TARGET_BRANDS"])?.split(",")[0]?.trim() || "STICKERSEE",
       checkedAt,
       dataSolutionAvailable: env.NAVER_COMMERCE_DATA_SOLUTION_AVAILABLE === "true",
       productOrderIds,
       productOrders: productOrders.productOrders,
+      topProductImageUrl: productImageLookup.imageUrl,
       windowDays,
     });
 
@@ -147,6 +156,7 @@ export async function syncCommerceOrderAggregate(input: {
       evidenceNotes: [
         ...readinessReport.evidenceNotes,
         `최근 ${windowDays.toLocaleString("ko-KR")}일 변경 주문 ${snapshot.paidOrderCount.toLocaleString("ko-KR")}건을 집계 전용으로 정규화했습니다.`,
+        ...(productImageLookup.evidenceNote ? [productImageLookup.evidenceNote] : []),
         "토큰, 서명, 주문번호 목록, 주문 원문 행은 저장하지 않았습니다.",
       ],
     };
@@ -318,6 +328,7 @@ function buildCommerceAggregateSnapshot(input: {
   dataSolutionAvailable: boolean;
   productOrderIds: readonly string[];
   productOrders: readonly JsonRecord[];
+  topProductImageUrl?: string;
   windowDays: number;
 }): CommerceAggregateSnapshot {
   return {
@@ -328,11 +339,85 @@ function buildCommerceAggregateSnapshot(input: {
     paidOrderCount: input.productOrderIds.length,
     grossSales: sumProductOrderAmounts(input.productOrders),
     topProductName: getTopProductName(input.productOrders) ?? undefined,
-    topProductImageUrl: getTopProductImageUrl(input.productOrders) ?? undefined,
+    topProductImageUrl: input.topProductImageUrl ?? getTopProductImageUrl(input.productOrders) ?? undefined,
     dataSolutionAvailable: input.dataSolutionAvailable,
     collectedAt: input.checkedAt,
     dataScope: "aggregate_only",
   };
+}
+
+async function fetchTopProductImageUrl(input: {
+  accessToken: string;
+  baseUrl: string;
+  env: EnvMap;
+  fetchImpl: FetchLike;
+  productOrders: readonly JsonRecord[];
+}): Promise<{ imageUrl?: string; evidenceNote?: string }> {
+  if (input.productOrders.length === 0) {
+    return {};
+  }
+
+  const inlineImageUrl = getTopProductImageUrl(input.productOrders);
+  if (inlineImageUrl) {
+    return {
+      imageUrl: inlineImageUrl,
+      evidenceNote: "주문 상세에 포함된 상위 상품 대표 이미지를 집계 스냅샷에 반영했습니다.",
+    };
+  }
+
+  const topProductOrder = input.productOrders.find((item) => Boolean(getProductOrderName(item))) ?? input.productOrders[0];
+  const originProductNo = getProductOrderOriginalProductId(topProductOrder);
+  if (!originProductNo) {
+    return {
+      evidenceNote: "상위 상품 원상품 번호가 없어 대표 이미지는 화면 자동 썸네일로 대체됩니다.",
+    };
+  }
+
+  try {
+    const imageUrl = await fetchOriginProductImageUrl({
+      accessToken: input.accessToken,
+      baseUrl: input.baseUrl,
+      fetchImpl: input.fetchImpl,
+      originProductNo,
+    });
+
+    return imageUrl
+      ? {
+          imageUrl,
+          evidenceNote: "원상품 조회로 상위 상품 대표 이미지를 확인해 집계 스냅샷에 반영했습니다.",
+        }
+      : {
+          evidenceNote: "원상품 조회 응답에 대표 이미지가 없어 화면 자동 썸네일로 대체됩니다.",
+        };
+  } catch (error) {
+    return {
+      evidenceNote: `상위 상품 대표 이미지 조회는 실패했지만 주문 집계는 유지했습니다. (${sanitizeErrorMessage(errorMessage(error), input.env)})`,
+    };
+  }
+}
+
+async function fetchOriginProductImageUrl(input: {
+  accessToken: string;
+  baseUrl: string;
+  fetchImpl: FetchLike;
+  originProductNo: string;
+}): Promise<string | null> {
+  const response = await input.fetchImpl(
+    `${input.baseUrl}${NAVER_COMMERCE_ORIGIN_PRODUCT_PATH}/${encodeURIComponent(input.originProductNo)}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${input.accessToken}`,
+      },
+    },
+  );
+  const responseJson = await parseResponseJson(response);
+  if (!response.ok) {
+    throw new Error(`${stringOrFallback(responseJson.code, "COMMERCE_ORIGIN_PRODUCT_HTTP_ERROR")}: ${stringOrFallback(responseJson.message, response.statusText)}`);
+  }
+
+  return extractOriginProductImageUrl(responseJson);
 }
 
 function buildCommerceAggregateSignal(snapshot: CommerceAggregateSnapshot, checkedAt: string): ProviderSyncReport["generatedSignal"] {
@@ -434,6 +519,30 @@ function getProductOrderName(item: JsonRecord): string | null {
   return stringOrNull(productOrder.productName ?? item.productName);
 }
 
+function getProductOrderOriginalProductId(item: JsonRecord): string | null {
+  const productOrder = isRecord(item.productOrder) ? item.productOrder : item;
+  const product = isRecord(item.product) ? item.product : null;
+  const candidates = [
+    productOrder.originalProductId,
+    productOrder.originProductNo,
+    productOrder.originProductId,
+    productOrder.originalProductNo,
+    product?.originalProductId,
+    product?.originProductNo,
+    item.originalProductId,
+    item.originProductNo,
+  ];
+
+  for (const candidate of candidates) {
+    const value = stringOrNull(candidate);
+    if (value) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
 function getTopProductImageUrl(productOrders: readonly JsonRecord[]): string | null {
   const imageUrls = productOrders.map(getProductOrderImageUrl).filter((url): url is string => Boolean(url));
 
@@ -455,6 +564,37 @@ function getProductOrderImageUrl(item: JsonRecord): string | null {
     item.productImgUrl,
     item.imageUrl,
     item.thumbnailUrl,
+  ];
+
+  for (const candidate of candidates) {
+    const url = stringOrNull(candidate);
+    if (url) {
+      return url;
+    }
+  }
+
+  return null;
+}
+
+function extractOriginProductImageUrl(responseJson: JsonRecord): string | null {
+  const originProduct = isRecord(responseJson.originProduct) ? responseJson.originProduct : responseJson;
+  const images = isRecord(originProduct.images) ? originProduct.images : isRecord(responseJson.images) ? responseJson.images : null;
+  const representativeImage = isRecord(images?.representativeImage)
+    ? images.representativeImage
+    : isRecord(originProduct.representativeImage)
+      ? originProduct.representativeImage
+      : isRecord(responseJson.representativeImage)
+        ? responseJson.representativeImage
+        : null;
+  const candidates = [
+    representativeImage?.url,
+    images?.representativeImageUrl,
+    originProduct.representativeImageUrl,
+    originProduct.productImageUrl,
+    originProduct.imageUrl,
+    responseJson.representativeImageUrl,
+    responseJson.productImageUrl,
+    responseJson.imageUrl,
   ];
 
   for (const candidate of candidates) {

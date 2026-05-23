@@ -290,12 +290,27 @@ describe("읽기 전용 연동 수집", () => {
                   {
                     productOrder: {
                       productName: "선물카드",
-                      productImageUrl: "https://cdn.example.test/products/gift-card.jpg",
+                      originalProductId: "origin-1",
                       totalPaymentAmount: 7000,
                     },
                   },
                   { productOrder: { productName: "감사카드", totalPaymentAmount: 5000 } },
                 ],
+              },
+            });
+          }
+
+          if (requestUrl.endsWith("/external/v2/products/origin-products/origin-1")) {
+            expect(init?.method).toBe("GET");
+            expect(init?.headers).toEqual(expect.objectContaining({ Authorization: "Bearer commerce-access-token" }));
+
+            return jsonResponse({
+              originProduct: {
+                images: {
+                  representativeImage: {
+                    url: "https://cdn.example.test/products/gift-card.jpg",
+                  },
+                },
               },
             });
           }
@@ -319,6 +334,66 @@ describe("읽기 전용 연동 수집", () => {
     expect(report.generatedSignal?.source).toBe("smartstore");
     expect(report.historyPolicy?.apiLimitLabel).toContain("24시간");
     expect(report.historyPolicy?.manualRefreshLabel).toContain("결재 직전");
+    expect(report.evidenceNotes.join(" ")).toContain("원상품 조회로 상위 상품 대표 이미지");
+    expect(JSON.stringify(report)).not.toContain("commerce-access-token");
+  });
+
+  it("커머스 대표 이미지 조회가 실패해도 주문 집계는 유지하고 화면 썸네일 대체 근거를 남긴다", async () => {
+    const report = await import("../../src/lib/integrations/commerce/read-only-sync").then(({ syncCommerceOrderAggregate }) =>
+      syncCommerceOrderAggregate({
+        checkedAt: NOW,
+        env: {
+          NAVER_COMMERCE_CLIENT_ID: "client-id",
+          NAVER_COMMERCE_CLIENT_SECRET: "$2a$10$abcdefghijklmnopqrstuu",
+          MARKETCREW_COMMERCE_READ_ONLY_CONFIRMED: "true",
+          MARKETCREW_COMMERCE_SIGNATURE_DRIVER_READY: "true",
+          MARKETCREW_COMMERCE_TOKEN_PROBE_APPROVED: "true",
+          NAVER_COMMERCE_AGGREGATE_WINDOW_DAYS: "1",
+        },
+        now: new Date("2026-05-22T03:00:00.000Z"),
+        fetchImpl: async (url) => {
+          const requestUrl = String(url);
+          if (requestUrl.endsWith("/external/v1/oauth2/token")) {
+            return jsonResponse({ access_token: "commerce-access-token" });
+          }
+
+          if (requestUrl.includes("/last-changed-statuses")) {
+            return jsonResponse({ data: { lastChangeStatuses: [{ productOrderId: "po-1" }] } });
+          }
+
+          if (requestUrl.endsWith("/external/v1/pay-order/seller/product-orders/query")) {
+            return jsonResponse({
+              data: {
+                productOrders: [
+                  {
+                    productOrder: {
+                      productName: "선물카드",
+                      originalProductId: "origin-missing",
+                      totalPaymentAmount: 7000,
+                    },
+                  },
+                ],
+              },
+            });
+          }
+
+          if (requestUrl.endsWith("/external/v2/products/origin-products/origin-missing")) {
+            return jsonResponse({ code: "NOT_FOUND", message: "데이터 없음" }, 404);
+          }
+
+          throw new Error(`Unexpected request: ${requestUrl}`);
+        },
+      }),
+    );
+
+    expect(report.status).toBe("SYNCED");
+    expect(report.commerceAggregateSnapshot).toMatchObject({
+      paidOrderCount: 1,
+      grossSales: 7000,
+      topProductName: "선물카드",
+    });
+    expect(report.commerceAggregateSnapshot?.topProductImageUrl).toBeUndefined();
+    expect(report.evidenceNotes.join(" ")).toContain("대표 이미지 조회는 실패했지만 주문 집계는 유지");
     expect(JSON.stringify(report)).not.toContain("commerce-access-token");
   });
 
