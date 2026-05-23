@@ -13,6 +13,7 @@ import type {
   ShopAggregateSnapshot,
   Signal,
 } from "../domain";
+import { buildExecutionScopeProposalForApproval } from "./execution-scope-proposal";
 
 export type ProviderSignalAgendaArtifacts = {
   agendaCandidates: AgendaCandidate[];
@@ -157,8 +158,7 @@ function buildApprovalRequest(input: {
   report?: ProviderSyncReport;
 }): ApprovalRequest {
   const executionPlan = buildExecutionPlan(input);
-
-  return {
+  const request: ApprovalRequest = {
     id: `approval-${input.candidate.id}`,
     title: input.candidate.title,
     moaSynthesisReportId: input.moaSynthesisReportId,
@@ -169,6 +169,14 @@ function buildApprovalRequest(input: {
     executionPlan,
     status: input.candidate.dataConfidence === "READY_TO_APPROVE" ? "PENDING" : "NEEDS_EVIDENCE",
     createdAt: input.generatedAt,
+  };
+
+  return {
+    ...request,
+    executionPlan: {
+      ...request.executionPlan,
+      executionScopeProposal: buildExecutionScopeProposalForApproval(request),
+    },
   };
 }
 

@@ -92,6 +92,14 @@ QA Verdict:    QA_PASS
 
 검증은 `npm run typecheck`, 표적 테스트 3 files / 11 tests, 전체 단위 테스트 49 files / 128 tests, `npm run build`, `npm audit --omit=dev`, 결재 상세 Playwright smoke를 통과했다. 1차 MVP 대비 진행율은 100% 유지다.
 
+## 1.7 2026-05-23 Backfill Follow-up
+
+기존 DB에 이미 저장된 결재안도 실행 범위 계약을 갖도록 `backfillExecutionScopes`와 `/api/operations/execution-scope-backfill`을 추가했다. GET은 미리보기, POST는 실제 적용 결과를 반환한다.
+
+로컬 `marketcrew` Postgres DB에서 기존 저장 결재안 3건을 소급 적용했고, 재조회 결과 3건 모두 `executionScopeProposal.fields` 6개를 가진 것을 확인했다. 저장된 대표 결정은 0건이라 결정 기록 소급 적용은 없었다.
+
+검증은 `npm run typecheck`, 표적 테스트 3 files / 11 tests, 전체 단위 테스트 50 files / 130 tests, `npm run build`, `npm audit --omit=dev`를 통과했다. 1차 MVP 대비 진행율은 100% 유지다.
+
 ---
 
 ## 2. Related Documents
@@ -310,6 +318,7 @@ QA Verdict:    QA_PASS
 - Product keyword/marketing/product discovery candidates.
 - Approval detail with provider evidence, owner decision submit, execution result, checkpoints, and outcome history.
 - Owner-editable AI execution scope proposal for search ad approvals.
+- Execution scope backfill API and local DB backfill for existing saved approval requests.
 - Local file repository, workflow-state API, outcomes API.
 - Vitest and Playwright verification.
 
@@ -319,6 +328,7 @@ QA Verdict:    QA_PASS
 - Real provider write moved out of first MVP and kept behind gates.
 - 실제 LLM 호출은 dry-run 전용에서 집계 근거 입력과 AgentRun 감사를 남기는 읽기 전용 Gemini 파일럿으로 확장했다.
 - 검색광고 결재안은 키워드/예산뿐 아니라 광고 유형, 적용 위치, 기기/매체, 시간대, 제외 키워드 범위까지 결재 전에 고르게 바꿨다.
+- 기존 저장 결재안도 내부 초안/채널/외부 반영 경계/성과 확인 실행 범위를 갖도록 소급 적용했다.
 
 **Fixed:**
 
@@ -335,3 +345,4 @@ QA Verdict:    QA_PASS
 | 1.2 | 2026-05-23 | Added `/data` provider evidence expansion roadmap for post-MVP judgment hardening | Codex |
 | 1.3 | 2026-05-23 | Added real provider collection reset and read-only Gemini LLM pilot evidence | Codex |
 | 1.4 | 2026-05-23 | Added AI-proposed search ad execution scope and owner-editable decision recording | Codex |
+| 1.5 | 2026-05-23 | Added execution scope backfill API and applied it to local saved approval requests | Codex |

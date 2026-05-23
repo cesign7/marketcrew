@@ -48,8 +48,9 @@
 - 현재 진행 작업 9: 2026-05-23 자유 탐색 후속으로 `/operations` 근거 요청 큐에 `수집 시작`, `근거 충분`, `근거 부족` 액션을 추가했고, `PATCH /api/evidence-requests/[id]`가 데이 검증 상태, 검증 메모, 근거 ID를 저장한다. 검증 완료 시 연결 가설은 `AgendaCandidate`로 승격되고, `evidence_request_review` AgentRun이 `evidence_request`, `hypothesis_candidate`, `agenda_candidate`를 연결한다. 실제 provider write는 계속 차단한다.
 - 현재 진행 작업 10: 2026-05-23 AI 실행 큐 후속으로 `/operations`에 `AI 실행 큐`를 추가했고, `GET /api/operations/llm-dry-run-queue`와 `llm_dry_run` AgentRun 감사 이력이 비용 가드, 토큰, 근거 ID, 원천 행 제외 상태를 실제 LLM 호출 전 모의 실행으로 기록한다. 비용 조건이 열려도 이 단계는 `모의 실행만 기록`이며 실제 provider write와 실제 LLM call은 계속 차단한다.
 - 현재 진행 작업 11: 2026-05-23 검색광고 결재 실행 범위 후속으로 `ExecutionPlan.executionScopeProposal`과 `OwnerDecision.executionScopeSelection`을 추가했다. 결재 상세에서 AI가 광고 유형, 적용 위치, 기기/매체, 시간대, 예산/입찰, 제외 키워드를 먼저 제안하고 대표가 그대로 확정하거나 수정값을 저장한다. 검증은 공식 Search AD 문서 확인, 표적 테스트 3 files/11 tests, 전체 단위 테스트 49 files/128 tests, 타입 검사, 빌드, audit 0 vulnerabilities, 결재 상세 Playwright e2e를 통과했다. 실제 provider write는 계속 차단한다.
+- 현재 진행 작업 12: 2026-05-23 실행 범위 소급 적용 후속으로 `backfillExecutionScopes`와 `/api/operations/execution-scope-backfill`을 추가했다. 내부 초안/상품/CRM 안건에도 적용 채널, 실행 방식, 담당 범위, 외부 반영 경계, 성과 확인 범위를 제안한다. 로컬 `marketcrew` Postgres DB의 기존 저장 결재안 3건을 소급 적용했고 재조회 결과 각 6개 필드가 확인됐다. 저장된 대표 결정은 0건이라 결정 기록 소급 적용은 없었다. 검증은 표적 테스트 3 files/11 tests, 전체 단위 테스트 50 files/130 tests, 타입 검사, 빌드, audit 0 vulnerabilities를 통과했다.
 - 클라우드 연결 상태: GitHub `https://github.com/cesign7/marketcrew`의 기본 브랜치는 `main`이며 현재 MVP 커밋이 올라가 있다. Vercel production은 `https://marketcrew.vercel.app`이고 Git 연결의 production branch도 `main`이다. Railway project는 `marketcrew`, Postgres service는 `Online`, API service는 `marketcrew-api`, 공개 URL은 `https://api.marketcrew.app`이다. Vercel production env에는 `MARKETCREW_AUTH_SECRET`, `MARKETCREW_OWNER_PASSWORD_HASH`, `MARKETCREW_BACKEND_API_URL`, `MARKETCREW_BACKEND_API_TOKEN`, `MARKETCREW_BACKEND_API_TIMEOUT_MS`만 남아 있다. Railway 쪽 API 토큰 키는 `MARKETCREW_API_TOKEN`이고, backend health는 `/api/backend/health`, 화면 read model은 `/api/operations/view-model`, workflow summary는 `/api/operations/workflow-state`다. Custom domain `marketcrew.app`과 `www.marketcrew.app`은 Vercel project에 추가됐고 Cloudflare DNS는 `A @ 76.76.21.21`, `A www 76.76.21.21`, DNS only로 설정됐다. API custom domain `api.marketcrew.app`은 Railway `marketcrew-api`에 연결되어 있다. 공개 앱은 대표 로그인으로 보호한다. 기존 GitHub branch `feat-ai-marketing-operations-mvp`는 아직 남아 있으며 삭제는 명시 지시 전까지 하지 않는다.
-- 다음 권장 작업: 1차 MVP는 완료로 닫고, 이후 작업은 실제 LLM adapter가 `ExecutionScopeProposal`까지 제안하도록 연결하는 것, normalized analytics schema, 실제 provider write executor 설계처럼 후속 확장으로 진행한다. 실제 LLM call은 비용 가드와 원천 행 제외 계약을 통과해야 하며, provider write executor는 별도 PDCA와 명시 승인 전까지 시작하지 않는다.
+- 다음 권장 작업: 1차 MVP는 완료로 닫고, 이후 작업은 운영 배포 후 production DB에 `/api/operations/execution-scope-backfill`을 실행해 적용 내역을 확인하는 것, 실제 LLM adapter가 `ExecutionScopeProposal`까지 제안하도록 연결하는 것, normalized analytics schema, 실제 provider write executor 설계처럼 후속 확장으로 진행한다. 실제 LLM call은 비용 가드와 원천 행 제외 계약을 통과해야 하며, provider write executor는 별도 PDCA와 명시 승인 전까지 시작하지 않는다.
 
 제품 방향이 바뀌면 위 문서들을 함께 갱신한다. PDCA 단계, 요약, 다음 작업이 바뀌면 `.bkit-memory.json`도 같이 수정한다.
 
@@ -225,6 +226,7 @@ src/
 6. `module-6`: LLM 인터페이스, readiness 카드, Search Ad/DataLab read-only probe. 완료: planner 입력 계약, deterministic fallback, provider readiness API/화면, Search Ad/DataLab 공식 문서 기준 설정 점검.
 7. `module-22`: AI 실행 큐 모의 실행. 완료: 비용 가드 안에서 실제 호출 전 입력 범위, 토큰, 근거, 원천 행 제외, `llm_dry_run` 감사 기록을 고정.
 8. `module-26`: 결재 실행 범위 선택. 완료: AI가 검색광고 실행 범위를 제안하고 대표가 광고 유형, 적용 위치, PC/모바일, 시간대, 예산/입찰, 제외 키워드를 수정해 결정 기록에 남긴다.
+9. `module-27`: 실행 범위 소급 적용. 완료: 기존 저장 결재안에 실행 범위 제안을 채우고 백필 적용 내역을 API로 확인한다.
 
 ## UI 방향
 

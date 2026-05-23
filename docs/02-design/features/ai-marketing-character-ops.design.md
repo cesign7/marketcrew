@@ -486,6 +486,7 @@ Initial implementation may use server actions, but route handlers should keep th
 | GET | `/api/approvals` | List approval requests | Required later |
 | GET | `/api/approvals/:id` | Approval detail with evidence and execution preview | Required later |
 | POST | `/api/approvals/:id/decision` | Apply owner decision | Required later |
+| GET/POST | `/api/operations/execution-scope-backfill` | Preview/apply execution scope backfill for saved approvals | Internal ops |
 | GET | `/api/outcomes` | List active checkpoints and outcome reports | Required later |
 | POST | `/api/internal/keyword-demand/refresh` | Refresh keyword demand snapshot behind gate | Server only |
 
@@ -919,6 +920,7 @@ src/
 | 근거 요청 처리 API | `module-21` | 데이 상태 변경, AgentRun 감사 이력, 검증 후 `AgendaCandidate` 승격 | Done in iteration 16 |
 | AI 실행 큐 모의 실행 | `module-22` | 비용 가드 안에서 실제 호출 전 입력 범위, 토큰, 근거, 감사 기록을 큐로 고정 | Done in iteration 17 |
 | 결재 실행 범위 선택 | `module-26` | AI가 검색광고 실행 범위를 제안하고 대표가 그대로 확정하거나 수정값을 저장 | Done in iteration 24 |
+| 실행 범위 소급 적용 | `module-27` | 기존 저장 결재안과 대표 결정에 실행 범위 제안/선택값을 백필 | Done in iteration 25 |
 
 #### Recommended Session Plan
 
@@ -949,3 +951,4 @@ src/
 | 0.3 | 2026-05-23 | Added LLM free exploration, evidence request, verified promotion guard, and people-office role model UI module | Codex |
 | 0.4 | 2026-05-23 | Added AI execution queue dry-run contract, API, and AgentRun audit boundary before live LLM adapter | Codex |
 | 0.5 | 2026-05-23 | Added owner-editable AI execution scope proposal contract for search ad approvals | Codex |
+| 0.6 | 2026-05-23 | Added execution scope backfill API for saved approvals and decisions | Codex |

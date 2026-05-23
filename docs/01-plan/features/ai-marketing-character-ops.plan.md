@@ -152,6 +152,7 @@ Rule of thumb:
 | FR-23 | 데이터 연동 화면은 PC/모바일 광고 설정, 시간대 성과, 스마트스토어 순매출/클레임, 데이터랩 세그먼트, 판매 분석 확장을 어떤 순서로 반영할지 보여줘야 한다. | Medium | Pending |
 | FR-24 | LLM 캐릭터는 정해진 이상신호 밖의 상품/키워드/기기/시간대/고객군 가설을 자유 탐색할 수 있어야 하며, 확인 전에는 결재가 아니라 근거 요청으로 남겨야 한다. | High | Implemented in module-20 |
 | FR-25 | 키워드 광고 결재안은 AI가 광고 유형, 적용 위치, PC/모바일, 시간대, 예산/입찰, 제외 키워드 같은 실행 범위를 먼저 제안하고 대표가 그대로 확정하거나 수정값을 기록할 수 있어야 한다. | High | Implemented in module-26 |
+| FR-26 | 기존 저장 결재안도 실행 범위 제안이 누락됐으면 소급 적용하고, 적용 전후 내역을 확인할 수 있어야 한다. | Medium | Implemented in module-27 |
 
 ### 3.2 Non-Functional Requirements
 
@@ -999,3 +1000,4 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 | 0.7 | 2026-05-23 | Added LLM free exploration, evidence request, and verified-agenda promotion policy with updated character role models | Codex |
 | 0.8 | 2026-05-23 | Added AI execution queue dry-run slice before real LLM adapter calls | Codex |
 | 0.9 | 2026-05-23 | Added AI-proposed execution scope and owner-editable scope selection for search ad approvals | Codex |
+| 1.0 | 2026-05-23 | Added execution scope backfill for saved approval requests and decisions | Codex |

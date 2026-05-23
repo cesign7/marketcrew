@@ -11,7 +11,6 @@ import type {
   CharacterKey,
   CharacterReport,
   DataConfidence,
-  ExecutionScopeProposal,
   ExecutionPlan,
   ExecutionResult,
   MarketingCalendarEvent,
@@ -24,6 +23,7 @@ import type {
 } from "../domain";
 import { MockProviderExecutor } from "../integrations/executors/mock-provider-executor";
 import { SampleProviderAdapter, type SampleMarketingInput } from "../integrations/sample/provider";
+import { buildSearchAdKeywordExecutionScopeProposal } from "./execution-scope-proposal";
 import { createMemoryMarketingWorkflowRepository } from "./memory-workflow-repository";
 import type { MarketingWorkflowRepository } from "./workflow-repository";
 
@@ -292,86 +292,6 @@ function buildExecutionPlan(input: {
     executorKey: "mock-search-ad-keyword-executor",
     requiresWriteGate: true,
     executionScopeProposal: buildSearchAdKeywordExecutionScopeProposal(input.event.name, input.plan),
-  };
-}
-
-function buildSearchAdKeywordExecutionScopeProposal(
-  eventName: string,
-  plan: SeasonalKeywordAdPlan,
-): ExecutionScopeProposal {
-  const budgetLabel = plan.dailyBudgetCap
-    ? `일예산 ${plan.dailyBudgetCap.toLocaleString("ko-KR")}원`
-    : "일예산은 대표가 직접 입력";
-  const bidLabel = plan.bidCap ? `입찰 상한 ${plan.bidCap.toLocaleString("ko-KR")}원` : "입찰 상한은 대표가 직접 입력";
-  const negativeKeywordLabel =
-    plan.keywordSet.negativeCandidates.length > 0
-      ? plan.keywordSet.negativeCandidates.map((candidate) => candidate.keyword).join(", ")
-      : "제외 키워드 후보 없음";
-
-  return {
-    title: `${eventName} 키워드 테스트 실행 범위`,
-    summary:
-      "AI가 네이버 키워드광고 초안 기준으로 광고 유형, 적용 위치, 기기, 시간대, 예산, 제외 키워드를 먼저 제안합니다. 대표는 그대로 확정하거나 결재 전 수정값을 남길 수 있습니다.",
-    fields: [
-      {
-        id: "ad-product",
-        label: "광고 유형",
-        recommendedValue: "네이버 키워드광고",
-        options: ["네이버 키워드광고", "쇼핑검색광고 검토", "상품/CRM 내부 초안만"],
-        reason: "선물카드 시즌 수요는 검색 의도가 직접적이므로 우선 키워드광고 소액 테스트로 검증합니다.",
-        required: true,
-      },
-      {
-        id: "apply-target",
-        label: "적용 위치",
-        recommendedValue: "신규 테스트 광고그룹",
-        options: ["신규 테스트 광고그룹", "기존 시즌 광고그룹에 키워드 추가", "외부 반영 없이 내부 초안만 확정"],
-        reason: "기존 운영 광고와 섞지 않고 이벤트 성과를 별도 측정하기 위한 범위입니다.",
-        required: true,
-      },
-      {
-        id: "device",
-        label: "기기/매체",
-        recommendedValue: "모바일 우선 + PC 소액 병행",
-        options: ["모바일 우선 + PC 소액 병행", "모바일만", "PC만", "PC/모바일 동일 테스트"],
-        reason: "검색광고 광고그룹에는 PC/모바일 가중치와 비즈채널 구분이 있어 실제 반영 전 선택이 필요합니다.",
-        required: true,
-      },
-      {
-        id: "time-window",
-        label: "시간대",
-        recommendedValue: "전체 시간 소액 테스트",
-        options: ["전체 시간 소액 테스트", "오전/오후 분리 확인", "저녁 시간대 우선", "영업시간만 집행"],
-        reason: "현재 시간대별 전환 근거가 충분하지 않아 첫 집행은 넓게 보되 성과 확인 때 분리합니다.",
-        required: true,
-      },
-      {
-        id: "budget-bid",
-        label: "예산/입찰",
-        recommendedValue: `${budgetLabel} · ${bidLabel}`,
-        options: [
-          `${budgetLabel} · ${bidLabel}`,
-          "일예산 10,000원 · 입찰 상한 500원",
-          "일예산 50,000원 · 입찰 상한 1,200원",
-          "예산 보류 후 재상신",
-        ],
-        reason: "소액 테스트 범위 안에서 예산 상한과 입찰 상한을 동시에 잠가 과지출을 막습니다.",
-        required: true,
-      },
-      {
-        id: "negative-keywords",
-        label: "제외 키워드",
-        recommendedValue: negativeKeywordLabel,
-        options: [negativeKeywordLabel, "제외 키워드 없이 테스트", "제외 키워드 추가 검토 후 반영"],
-        reason: "무료 이미지, 단순 정보성 검색처럼 구매 의도가 약한 유입을 먼저 줄이기 위한 후보입니다.",
-        required: false,
-      },
-    ],
-    guardrails: [
-      "외부 쓰기 게이트가 열려야 실제 광고 계정에 반영",
-      "대표가 수정한 실행 범위는 결정 기록에 남김",
-      "성과 체크포인트에서 기기/시간대별 후속 판단",
-    ],
   };
 }
 
