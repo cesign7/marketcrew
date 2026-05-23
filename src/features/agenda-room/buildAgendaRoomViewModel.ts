@@ -838,6 +838,14 @@ function buildEvidenceCategoryLabels(evidenceIds: string[]): string[] {
 }
 
 function evidenceCategoryLabel(evidenceId: string): string {
+  if (evidenceId.includes("shopping-search-ad-performance")) {
+    return "쇼핑검색광고 성과";
+  }
+
+  if (evidenceId.includes("search-ad-performance") || evidenceId.includes("ad-perf")) {
+    return "검색광고 성과";
+  }
+
   if (evidenceId.includes("kw-demand") || evidenceId.includes("keyword")) {
     return "키워드 수요";
   }

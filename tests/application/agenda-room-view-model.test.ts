@@ -100,9 +100,14 @@ describe("buildAgendaRoomViewModel", () => {
     expect(viewModel.aiPilotInsight.modelLabel).toBe("연동 Gemini · 모델 gemini-3.5-flash");
     expect(viewModel.aiPilotInsight.tokenCostLabel).toContain("총 900토큰");
     expect(viewModel.aiPilotInsight.tokenCostLabel).toContain("약 18원");
-    expect(viewModel.aiPilotInsight.evidenceLabel).toBe("근거 2개 · 추천 안건 1건");
+    expect(viewModel.aiPilotInsight.evidenceLabel).toBe("근거 4개 · 추천 안건 1건");
     expect(viewModel.aiPilotInsight.recommendedApprovalLabels).toContain("부처님오신날 선물카드 키워드 테스트 승인안");
-    expect(viewModel.aiPilotInsight.evidenceCategoryLabels).toEqual(["키워드 수요 1개", "스마트스토어 집계 1개"]);
+    expect(viewModel.aiPilotInsight.evidenceCategoryLabels).toEqual([
+      "쇼핑검색광고 성과 1개",
+      "검색광고 성과 1개",
+      "키워드 수요 1개",
+      "스마트스토어 집계 1개",
+    ]);
     expect(viewModel.aiPilotInsight.inputPolicyLabels).toEqual(
       expect.arrayContaining(["집계 요약과 근거 ID만 사용", "고객 식별정보 제외", "외부 반영 없음"]),
     );
@@ -465,7 +470,12 @@ function buildGeminiPlannerAgentRun(): AgentRun {
       estimatedCostKrw: 18,
       basis: "Gemini usageMetadata와 저장된 환율 기준 실제 호출 비용 추정",
     },
-    evidenceIds: ["kw-demand-buddha-gift-card", "commerce-aggregate-STICKERSEE-2026-05-22"],
+    evidenceIds: [
+      "shopping-search-ad-performance-stickersee-grp-a001-어린이날-2026-05-23",
+      "search-ad-performance-stickersee-nkw-a001-mobile-2026-05-23",
+      "kw-demand-buddha-gift-card",
+      "commerce-aggregate-STICKERSEE-2026-05-22",
+    ],
     startedAt: "2026-05-23T03:07:43.902Z",
     finishedAt: "2026-05-23T03:07:44.100Z",
   };
