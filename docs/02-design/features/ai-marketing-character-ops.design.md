@@ -829,7 +829,6 @@ src/
   app/
     operations/
       page.tsx
-      loading.tsx
     approvals/
       [id]/
         page.tsx
