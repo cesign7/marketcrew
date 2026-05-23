@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { clearAgendaRoomViewModelCache } from "@/features/agenda-room/loadAgendaRoomViewModel";
 import { processOwnerDecision } from "@/lib/application/approval-workflow";
-import type { OwnerDecisionType } from "@/lib/domain";
+import type { ExecutionScopeSelection, OwnerDecisionType } from "@/lib/domain";
 import { createBackendWorkflowRepository } from "./repository";
 
 type DecisionRequestBody = {
   decision?: unknown;
   memo?: unknown;
+  executionScopeSelection?: unknown;
   secondConfirmation?: unknown;
 };
 
@@ -52,6 +53,7 @@ export async function handleApprovalDecision(request: Request, context: { params
     approvalRequest,
     decision: body.decision,
     memo: typeof body.memo === "string" ? body.memo : "",
+    executionScopeSelection: parseExecutionScopeSelection(body.executionScopeSelection),
     secondConfirmation: body.secondConfirmation === true,
     externalWriteEnabled: process.env.EXTERNAL_WRITE_ENABLED === "true",
     providerSyncReports: repository.listProviderSyncReports(),
@@ -78,6 +80,40 @@ async function parseBody(request: Request): Promise<DecisionRequestBody> {
 
 function isOwnerDecisionType(value: unknown): value is OwnerDecisionType {
   return typeof value === "string" && ownerDecisionTypes.includes(value as OwnerDecisionType);
+}
+
+function parseExecutionScopeSelection(value: unknown): ExecutionScopeSelection | undefined {
+  if (!isRecord(value) || typeof value.proposalTitle !== "string" || !Array.isArray(value.selections)) {
+    return undefined;
+  }
+
+  const selections = value.selections.filter(isScopeSelectionRow).map((selection) => ({
+    fieldId: selection.fieldId,
+    label: selection.label,
+    value: selection.value,
+  }));
+
+  if (selections.length === 0) {
+    return undefined;
+  }
+
+  return {
+    proposalTitle: value.proposalTitle,
+    selections,
+  };
+}
+
+function isScopeSelectionRow(value: unknown): value is ExecutionScopeSelection["selections"][number] {
+  return (
+    isRecord(value) &&
+    typeof value.fieldId === "string" &&
+    typeof value.label === "string" &&
+    typeof value.value === "string"
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }
 
 function statusFromDecisionResult(result: ReturnType<typeof processOwnerDecision>): number {

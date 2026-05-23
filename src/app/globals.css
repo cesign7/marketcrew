@@ -3526,6 +3526,102 @@ button:disabled {
   line-height: 1.45;
 }
 
+.owner-scope-editor {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 14px;
+  background: #fbfcfa;
+  padding: 14px;
+}
+
+.owner-scope-editor header,
+.owner-scope-editor header > div,
+.execution-scope-preview header,
+.execution-scope-preview header > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.owner-scope-editor header,
+.execution-scope-preview header {
+  justify-content: space-between;
+}
+
+.owner-scope-editor header > span,
+.execution-scope-preview header > span {
+  border-radius: 999px;
+  background: #eef4f1;
+  padding: 6px 10px;
+  color: var(--teal-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.owner-scope-editor > p,
+.execution-scope-preview > p {
+  margin: 10px 0 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.owner-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.scope-select-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.scope-select-field span {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.scope-select-field select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 9px 10px;
+  color: var(--ink);
+  font: inherit;
+}
+
+.scope-select-field small {
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.owner-scope-guardrails,
+.execution-scope-guardrails {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.owner-scope-guardrails span,
+.execution-scope-guardrails span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 5px 8px;
+  color: var(--teal-strong);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
 .owner-action-grid {
   display: flex;
   flex-wrap: wrap;
@@ -3974,6 +4070,54 @@ button:disabled {
   font-size: 12px;
   font-weight: 800;
   line-height: 1.35;
+}
+
+.execution-scope-preview {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-top: 14px;
+  background: #fbfcfa;
+  padding: 14px;
+}
+
+.execution-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.execution-scope-grid > div {
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.execution-scope-grid span {
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.execution-scope-grid strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 5px;
+  color: var(--ink);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.execution-scope-grid p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  margin: 6px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .diff-grid,
@@ -4630,6 +4774,8 @@ button:disabled {
   .evidence-request-grid,
   .ai-exec-grid,
   .agenda-details,
+  .execution-scope-grid,
+  .owner-scope-grid,
   .diff-grid,
   .data-source-field-grid,
   .outcome-history-grid,
@@ -4644,6 +4790,7 @@ button:disabled {
   .data-contract-provider > header,
   .approval-preview-header,
   .approval-provenance header,
+  .execution-scope-preview header,
   .decision-flow-header,
   .planner-preview-card header,
   .llm-governance-card header,
@@ -4654,6 +4801,7 @@ button:disabled {
   .provider-sync-card header,
   .product-opportunity-card header,
   .owner-submit-card header,
+  .owner-scope-editor header,
   .owner-learning-card header,
   .followup-column header,
   .followup-task-header,

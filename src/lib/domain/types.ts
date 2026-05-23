@@ -457,6 +457,29 @@ export interface MeasurementPlan {
   metrics: Array<"CTR" | "CVR" | "CPA" | "ROAS" | "SPEND" | "SALES" | "MARGIN" | "STOCK">;
 }
 
+export interface ExecutionScopeProposal {
+  title: string;
+  summary: string;
+  fields: Array<{
+    id: string;
+    label: string;
+    recommendedValue: string;
+    options: string[];
+    reason: string;
+    required: boolean;
+  }>;
+  guardrails: string[];
+}
+
+export interface ExecutionScopeSelection {
+  proposalTitle: string;
+  selections: Array<{
+    fieldId: string;
+    label: string;
+    value: string;
+  }>;
+}
+
 export interface ExecutionPlan {
   id: string;
   workType: "INTERNAL_TASK" | "SEARCH_AD_KEYWORD" | "SEARCH_AD_BID_BUDGET" | "CREATIVE_DRAFT" | "PRODUCT_DRAFT" | "CRM_DRAFT";
@@ -467,6 +490,7 @@ export interface ExecutionPlan {
   measurementPlan: MeasurementPlan;
   executorKey: string;
   requiresWriteGate: boolean;
+  executionScopeProposal?: ExecutionScopeProposal;
 }
 
 export interface ApprovalRequest {
@@ -487,6 +511,7 @@ export interface OwnerDecision {
   approvalRequestId: string;
   decision: OwnerDecisionType;
   memo: string;
+  executionScopeSelection?: ExecutionScopeSelection;
   actor: "owner";
   decidedAt: string;
 }

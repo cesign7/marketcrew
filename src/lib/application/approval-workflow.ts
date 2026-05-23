@@ -1,6 +1,7 @@
 import type {
   ApprovalRequest,
   ExecutionResult,
+  ExecutionScopeSelection,
   FollowUpInternalTask,
   OwnerDecision,
   OwnerDecisionType,
@@ -18,6 +19,7 @@ export type ProcessOwnerDecisionInput = {
   approvalRequest: ApprovalRequest;
   decision: OwnerDecisionType;
   memo: string;
+  executionScopeSelection?: ExecutionScopeSelection;
   now: string;
   externalWriteEnabled?: boolean;
   secondConfirmation?: boolean;
@@ -178,6 +180,7 @@ function buildOwnerDecision(input: ProcessOwnerDecisionInput): OwnerDecision {
     approvalRequestId: input.approvalRequest.id,
     decision: input.decision,
     memo: input.memo,
+    executionScopeSelection: input.executionScopeSelection,
     actor: "owner",
     decidedAt: input.now,
   };

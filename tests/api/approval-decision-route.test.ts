@@ -38,7 +38,17 @@ describe("approval decision route", () => {
         method: "POST",
         body: JSON.stringify({
           decision: "APPROVE_DRAFT_ONLY",
-          memo: "초안 확정",
+          memo: "초안 확정\n\n실행 범위: 부처님오신날 키워드 테스트 실행 범위\n- 기기/매체: 모바일만",
+          executionScopeSelection: {
+            proposalTitle: "부처님오신날 키워드 테스트 실행 범위",
+            selections: [
+              {
+                fieldId: "device",
+                label: "기기/매체",
+                value: "모바일만",
+              },
+            ],
+          },
         }),
       }),
       { params: Promise.resolve({ id: "approval-agenda-season-plan-buddha-gift-card" }) },
@@ -52,6 +62,12 @@ describe("approval decision route", () => {
 
     const repository = createFileMarketingWorkflowRepository(storePath);
     expect(repository.listOwnerDecisions()).toHaveLength(1);
+    expect(repository.listOwnerDecisions()[0]?.executionScopeSelection?.selections[0]).toEqual({
+      fieldId: "device",
+      label: "기기/매체",
+      value: "모바일만",
+    });
+    expect(repository.listOwnerDecisions()[0]?.memo).toContain("실행 범위");
     expect(repository.listExecutionResults()).toHaveLength(1);
     expect(repository.listOutcomeReports()).toHaveLength(1);
     expect(repository.listFollowUpInternalTasks()).toHaveLength(1);

@@ -55,18 +55,19 @@ QA Verdict:    QA_PASS
 | SC-5 | 캐릭터 보고서와 모아 종합 보고서가 구분된다. | Met | agenda room view model |
 | SC-6 | 대표 결재 요청에 diff, 실행 작업, 위험, rollback이 포함된다. | Met | `ApprovalPreviewPanel` |
 | SC-7 | 대표가 6개 결정을 선택할 수 있다. | Met | `OwnerDecisionSubmitPanel` |
+| SC-7a | 검색광고 안건은 AI 제안 실행 범위와 대표 수정값을 결재 기록에 남긴다. | Met | `ExecutionScopeProposal`, `OwnerDecision.executionScopeSelection` |
 | SC-8 | 승인 후 바로 반영은 preflight/executor/ExecutionResult를 만든다. | Met | e2e write gate block, route tests |
 | SC-9 | 승인 작업은 checkpoint와 outcome으로 이어진다. | Met | `PerformanceCheckpoint`, `OutcomeReport` |
 | SC-10 | 대표 결정/실행/성과가 후속 업무로 내려간다. | Met | `FollowUpInternalTask`, outcome history |
 | SC-11 | 시즌 키워드 광고 안건은 생애주기/예산/입찰/중지/제외 키워드를 포함한다. | Met | seasonal keyword tests |
 | SC-12 | `KeywordDemandSnapshot`에 캐시/조회 시각이 있다. | Met | keyword demand snapshot tests |
 | SC-13 | 승인 없는 외부 쓰기는 차단된다. | Met | 423 `WRITE_GATE_CLOSED`, no provider write |
-| SC-14 | 최소 단위 테스트와 브라우저 smoke가 통과한다. | Met | Vitest 79 tests, Playwright 8 e2e |
+| SC-14 | 최소 단위 테스트와 브라우저 smoke가 통과한다. | Met | Vitest 128 tests, Playwright 결재 상세 smoke |
 | SC-15 | 저장된 성과 보고를 다시 조회할 수 있다. | Met | `/api/approvals/[id]/outcomes`, `OutcomeReportHistoryPanel` |
 | SC-16 | 외부 API 조회 한계와 백필/일별 저장 정책이 데이터 연동 화면에 보인다. | Met | `ProviderSyncReport.historyPolicy`, `/data` policy panel |
 | SC-17 | 자동 스케줄, 수동 수집, 결재 전 최신성, 중복 방지 기준이 데이터 연동 화면에 보인다. | Met | `/data` collection schedule board, provider별 schedule labels |
 
-**Success Rate**: 16 Met / 1 Partial within the first-MVP boundary.
+**Success Rate**: 17 Met / 1 Partial within the first-MVP boundary.
 **Operator MVP Rate**: 100%.
 
 ## 1.5 Decision Record Summary
@@ -83,6 +84,13 @@ QA Verdict:    QA_PASS
 | Act | 생성된 outcome report는 상세 화면/API에서 다시 읽힌다. | Yes | outcome history panel과 outcomes API 구현 |
 | Act | API 과거 조회 한계는 화면에서 운영 정책으로 드러나야 한다. | Yes | provider별 조회 한계/백필/음력 시즌 비교/AI 입력 제한 표시 |
 | Act | 자동 스케줄과 수동 수집은 역할을 나누고 중복 저장은 최신 스냅샷 갱신으로 처리한다. | Yes | `/data` 추천 수집 주기, 결재 전 최신성, provider별 dedupe key 표시 |
+| Act | 검색광고 결재 전 실행 범위는 AI가 먼저 제안하고 대표가 수정할 수 있어야 한다. | Yes | `ExecutionScopeProposal` 표시와 `executionScopeSelection` 저장 구현 |
+
+## 1.6 2026-05-23 Follow-up
+
+대표가 키워드광고 안건을 결재하기 전에 광고 유형, 적용 위치, PC/모바일, 시간대, 예산/입찰, 제외 키워드 범위를 볼 수 있도록 `ExecutionScopeProposal`을 추가했다. 결재 상세의 대표 입력 영역에서는 추천값을 그대로 쓰거나 수정할 수 있고, 선택값은 `OwnerDecision.executionScopeSelection`과 결정 메모에 저장된다.
+
+검증은 `npm run typecheck`, 표적 테스트 3 files / 11 tests, 전체 단위 테스트 49 files / 128 tests, `npm run build`, `npm audit --omit=dev`, 결재 상세 Playwright smoke를 통과했다. 1차 MVP 대비 진행율은 100% 유지다.
 
 ---
 
@@ -301,6 +309,7 @@ QA Verdict:    QA_PASS
 - Provider data contract panel for incoming data, collapsible raw field checklists, stored data, column descriptions, and sample values.
 - Product keyword/marketing/product discovery candidates.
 - Approval detail with provider evidence, owner decision submit, execution result, checkpoints, and outcome history.
+- Owner-editable AI execution scope proposal for search ad approvals.
 - Local file repository, workflow-state API, outcomes API.
 - Vitest and Playwright verification.
 
@@ -309,6 +318,7 @@ QA Verdict:    QA_PASS
 - MVP boundary refined from broad AI marketing automation to evidence-first, approval-first operations room.
 - Real provider write moved out of first MVP and kept behind gates.
 - 실제 LLM 호출은 dry-run 전용에서 집계 근거 입력과 AgentRun 감사를 남기는 읽기 전용 Gemini 파일럿으로 확장했다.
+- 검색광고 결재안은 키워드/예산뿐 아니라 광고 유형, 적용 위치, 기기/매체, 시간대, 제외 키워드 범위까지 결재 전에 고르게 바꿨다.
 
 **Fixed:**
 
@@ -324,3 +334,4 @@ QA Verdict:    QA_PASS
 | 1.1 | 2026-05-22 | Added `/data` provider data contract transparency slice | Codex |
 | 1.2 | 2026-05-23 | Added `/data` provider evidence expansion roadmap for post-MVP judgment hardening | Codex |
 | 1.3 | 2026-05-23 | Added real provider collection reset and read-only Gemini LLM pilot evidence | Codex |
+| 1.4 | 2026-05-23 | Added AI-proposed search ad execution scope and owner-editable decision recording | Codex |

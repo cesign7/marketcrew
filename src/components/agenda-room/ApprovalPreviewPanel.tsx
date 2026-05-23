@@ -1,4 +1,4 @@
-import { Activity, Ban, CheckCircle2, Database, FileSearch, RotateCcw, ShieldCheck } from "lucide-react";
+import { Activity, Ban, CheckCircle2, Database, FileSearch, RotateCcw, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import type { ApprovalPreviewView } from "@/features/agenda-room/types";
 
 type ApprovalPreviewPanelProps = {
@@ -33,6 +33,33 @@ export function ApprovalPreviewPanel({ previews }: ApprovalPreviewPanelProps) {
 
             <p className="approval-summary">{preview.evidenceSummary}</p>
             <p className="approval-diff">{preview.diffSummary}</p>
+
+            {preview.executionScopeProposal ? (
+              <section className="execution-scope-preview" aria-label={`${preview.title} 실행 범위`}>
+                <header>
+                  <div>
+                    <SlidersHorizontal size={16} aria-hidden="true" />
+                    <strong>AI 제안 실행 범위</strong>
+                  </div>
+                  <span>대표 수정 가능</span>
+                </header>
+                <p>{preview.executionScopeProposal.summary}</p>
+                <div className="execution-scope-grid">
+                  {preview.executionScopeProposal.fields.map((field) => (
+                    <div key={`${preview.id}-scope-${field.id}`}>
+                      <span>{field.label}</span>
+                      <strong>{field.recommendedValue}</strong>
+                      <p>{field.reason}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="execution-scope-guardrails">
+                  {preview.executionScopeProposal.guardrailLabels.map((guardrail, index) => (
+                    <span key={`${preview.id}-scope-guard-${index}-${guardrail}`}>{guardrail}</span>
+                  ))}
+                </div>
+              </section>
+            ) : null}
 
             <section className="approval-provenance" aria-label={`${preview.title} 근거 추적`}>
               <header>

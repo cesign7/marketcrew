@@ -49,7 +49,11 @@ export default async function ApprovalDetailPage({ params }: ApprovalDetailPageP
         emptyMessage="이 결재와 연결된 연동 수집 기록이 아직 없습니다. 읽기 전용 수집 후 다시 확인합니다."
       />
       <ApprovalAgentRunTimelinePanel runs={viewModel.agentRunTimeline} />
-      <OwnerDecisionSubmitPanel approvalId={viewModel.id} disabledReason={viewModel.approvalPreview.disabledReason} />
+      <OwnerDecisionSubmitPanel
+        approvalId={viewModel.id}
+        disabledReason={viewModel.approvalPreview.disabledReason}
+        executionScopeProposal={viewModel.approvalPreview.executionScopeProposal}
+      />
       <OutcomeReportHistoryPanel reports={viewModel.outcomeHistory} />
       <OwnerDecisionFlowPanel flows={viewModel.ownerDecisionFlows} />
       <ExecutionPanel results={viewModel.executionResults} checkpoints={viewModel.outcomeCheckpoints} />

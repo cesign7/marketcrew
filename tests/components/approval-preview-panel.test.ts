@@ -36,6 +36,24 @@ describe("ApprovalPreviewPanel", () => {
       .filter((message) => message.includes("same key") || message.includes("unique key"));
     expect(keyWarnings).toEqual([]);
   });
+
+  it("AI가 제안한 실행 범위를 카드 안에 표시한다", () => {
+    const html = renderToString(
+      createElement(ApprovalPreviewPanel, {
+        previews: [
+          buildPreview({
+            id: "approval-scope",
+            title: "실행 범위 안건",
+            providerEvidenceLabels: ["연동 근거"],
+          }),
+        ],
+      }),
+    );
+
+    expect(html).toContain("AI 제안 실행 범위");
+    expect(html).toContain("네이버 키워드광고");
+    expect(html).toContain("모바일 우선 + PC 소액 병행");
+  });
 });
 
 function buildPreview({
@@ -63,6 +81,29 @@ function buildPreview({
     writeGateLabel: "외부 반영 잠금",
     primaryActionLabel: "확인 후 내부 반영",
     secondaryActions: ["보류", "보류"],
+    executionScopeProposal: {
+      title: "부처님오신날 키워드 테스트 실행 범위",
+      summary: "대표가 그대로 확정하거나 수정할 수 있습니다.",
+      fields: [
+        {
+          id: "ad-product",
+          label: "광고 유형",
+          recommendedValue: "네이버 키워드광고",
+          options: ["네이버 키워드광고"],
+          reason: "검색 의도가 직접적입니다.",
+          required: true,
+        },
+        {
+          id: "device",
+          label: "기기/매체",
+          recommendedValue: "모바일 우선 + PC 소액 병행",
+          options: ["모바일 우선 + PC 소액 병행", "모바일만"],
+          reason: "기기별 성과를 나눠 봅니다.",
+          required: true,
+        },
+      ],
+      guardrailLabels: ["외부 반영 잠금 확인"],
+    },
     provenance: {
       summaryLabel: "근거 2개 · 실행 이력 1개 · 연동 수집 2개",
       evidenceLabels: ["매출 근거", "매출 근거"],

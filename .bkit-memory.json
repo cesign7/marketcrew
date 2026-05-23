@@ -2,7 +2,7 @@
   "project": "marketcrew2",
   "currentFeature": "ai-marketing-character-ops",
   "phase": "completed",
-  "updatedAt": "2026-05-23T13:24:03+09:00",
+  "updatedAt": "2026-05-23T13:42:19+09:00",
   "features": {
     "ai-marketing-character-ops": {
       "phase": "completed",
@@ -13,9 +13,9 @@
       "analysisPath": "docs/03-analysis/ai-marketing-character-ops.analysis.md",
       "qaPath": "docs/05-qa/ai-marketing-character-ops.qa-report.md",
       "reportPath": "docs/04-report/ai-marketing-character-ops.report.md",
-      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-23.md",
+      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-24.md",
       "matchRate": 100,
-      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속 module-25에서 draft-only 결재 상태 용어를 정리했다. 화면의 초안만 승인을 초안 확정으로 바꾸고, draft-only 결과를 초안 확정됨/내부 초안/외부 반영 전 재상신 필요 흐름으로 표시한다. 내부 enum APPROVE_DRAFT_ONLY와 저장 계약은 유지하며 실제 provider write는 계속 차단한다. 검증은 표적 테스트 6 files/20 tests, 전체 단위 테스트 49 files/127 tests, 타입 검사, 빌드, audit 0 vulnerabilities, production build browser smoke, follow-ups Playwright e2e를 통과했다. 다음 후보는 실제 운영 모드에서 샘플/규칙/실제 AI 판단 출처를 카드별로 더 명확히 구분하는 것이다."
+      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속 module-26에서 검색광고 결재 전 AI 제안 실행 범위와 대표 수정 기록을 추가했다. ExecutionPlan.executionScopeProposal이 광고 유형, 적용 위치, 기기/매체, 시간대, 예산/입찰, 제외 키워드를 제안하고, OwnerDecision.executionScopeSelection이 대표 선택값을 저장한다. 실제 provider write는 계속 차단한다. 검증은 공식 Search AD 문서 확인, 표적 테스트 3 files/11 tests, 전체 단위 테스트 49 files/128 tests, 타입 검사, 빌드, audit 0 vulnerabilities, 결재 상세 Playwright e2e를 통과했다. 다음 후보는 실제 LLM adapter가 ExecutionScopeProposal까지 제안하도록 연결하는 것이다."
     },
     "ops-persistence-provenance-foundation": {
       "phase": "completed",

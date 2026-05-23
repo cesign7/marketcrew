@@ -1,13 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
-import type { OwnerDecisionType } from "@/lib/domain";
+import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck, SlidersHorizontal } from "lucide-react";
+import type { ExecutionScopeSelection, OwnerDecisionType } from "@/lib/domain";
+import type { ExecutionScopeProposalView } from "@/features/agenda-room/types";
 
 type OwnerDecisionSubmitPanelProps = {
   approvalId: string;
   disabledReason?: string;
+  executionScopeProposal?: ExecutionScopeProposalView;
 };
+
+type ScopeSelections = Record<string, string>;
 
 type SubmitState =
   | { status: "idle"; message: string; detail?: string }
@@ -42,8 +46,9 @@ const decisionActions: Array<{
   { type: "REJECT", label: "반려" },
 ];
 
-export function OwnerDecisionSubmitPanel({ approvalId, disabledReason }: OwnerDecisionSubmitPanelProps) {
+export function OwnerDecisionSubmitPanel({ approvalId, disabledReason, executionScopeProposal }: OwnerDecisionSubmitPanelProps) {
   const [memo, setMemo] = useState("");
+  const [scopeSelections, setScopeSelections] = useState<ScopeSelections>(() => buildInitialScopeSelections(executionScopeProposal));
   const [submitState, setSubmitState] = useState<SubmitState>({
     status: "idle",
     message: "대표 결정을 선택하면 실행 전 점검과 외부 반영 잠금 결과가 바로 표시됩니다.",
@@ -61,13 +66,16 @@ export function OwnerDecisionSubmitPanel({ approvalId, disabledReason }: OwnerDe
 
     setSubmitState({ status: "submitting", message: "대표 결정을 기록하고 실행 전 점검을 확인하는 중입니다." });
 
+    const executionScopeSelection = buildExecutionScopeSelection(executionScopeProposal, scopeSelections);
+
     try {
       const response = await fetch(`/api/approvals/${approvalId}/decision`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           decision,
-          memo: memo.trim(),
+          memo: buildDecisionMemo(memo, executionScopeSelection),
+          executionScopeSelection,
           secondConfirmation: false,
         }),
       });
@@ -96,6 +104,50 @@ export function OwnerDecisionSubmitPanel({ approvalId, disabledReason }: OwnerDe
             API 연결됨
           </span>
         </header>
+        {executionScopeProposal ? (
+          <div className="owner-scope-editor" aria-label="대표 실행 범위 수정">
+            <header>
+              <div>
+                <SlidersHorizontal size={16} aria-hidden="true" />
+                <strong>실행 범위 선택</strong>
+              </div>
+              <span>그대로 확정 또는 수정</span>
+            </header>
+            <p>{executionScopeProposal.summary}</p>
+            <div className="owner-scope-grid">
+              {executionScopeProposal.fields.map((field) => (
+                <label className="scope-select-field" key={`scope-select-${field.id}`}>
+                  <span>
+                    {field.label}
+                    {field.required ? " · 필수" : ""}
+                  </span>
+                  <select
+                    aria-label={field.label}
+                    value={scopeSelections[field.id] ?? field.recommendedValue}
+                    onChange={(event) => {
+                      setScopeSelections((current) => ({
+                        ...current,
+                        [field.id]: event.target.value,
+                      }));
+                    }}
+                  >
+                    {field.options.map((option) => (
+                      <option key={`${field.id}-${option}`} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                  <small>{field.reason}</small>
+                </label>
+              ))}
+            </div>
+            <div className="owner-scope-guardrails">
+              {executionScopeProposal.guardrailLabels.map((guardrail, index) => (
+                <span key={`owner-scope-guard-${index}-${guardrail}`}>{guardrail}</span>
+              ))}
+            </div>
+          </div>
+        ) : null}
         <label className="memo-field">
           <span>결정 메모</span>
           <textarea
@@ -124,6 +176,46 @@ export function OwnerDecisionSubmitPanel({ approvalId, disabledReason }: OwnerDe
       </div>
     </section>
   );
+}
+
+function buildInitialScopeSelections(proposal?: ExecutionScopeProposalView): ScopeSelections {
+  if (!proposal) {
+    return {};
+  }
+
+  return Object.fromEntries(proposal.fields.map((field) => [field.id, field.recommendedValue]));
+}
+
+function buildExecutionScopeSelection(
+  proposal: ExecutionScopeProposalView | undefined,
+  selections: ScopeSelections,
+): ExecutionScopeSelection | undefined {
+  if (!proposal) {
+    return undefined;
+  }
+
+  return {
+    proposalTitle: proposal.title,
+    selections: proposal.fields.map((field) => ({
+      fieldId: field.id,
+      label: field.label,
+      value: selections[field.id] ?? field.recommendedValue,
+    })),
+  };
+}
+
+function buildDecisionMemo(memo: string, executionScopeSelection?: ExecutionScopeSelection): string {
+  const trimmedMemo = memo.trim();
+  if (!executionScopeSelection) {
+    return trimmedMemo;
+  }
+
+  const scopeMemo = [
+    `실행 범위: ${executionScopeSelection.proposalTitle}`,
+    ...executionScopeSelection.selections.map((selection) => `- ${selection.label}: ${selection.value}`),
+  ].join("\n");
+
+  return trimmedMemo ? `${trimmedMemo}\n\n${scopeMemo}` : scopeMemo;
 }
 
 function SubmitNotice({ state }: { state: SubmitState }) {

@@ -70,6 +70,20 @@ export type OutcomeCheckpointView = {
   status: "준비" | "관찰 중" | "판단 예정";
 };
 
+export type ExecutionScopeProposalView = {
+  title: string;
+  summary: string;
+  fields: Array<{
+    id: string;
+    label: string;
+    recommendedValue: string;
+    options: string[];
+    reason: string;
+    required: boolean;
+  }>;
+  guardrailLabels: string[];
+};
+
 export type ApprovalPreviewView = {
   id: string;
   title: string;
@@ -87,6 +101,7 @@ export type ApprovalPreviewView = {
   primaryActionLabel: string;
   secondaryActions: string[];
   disabledReason?: string;
+  executionScopeProposal?: ExecutionScopeProposalView;
   provenance: {
     summaryLabel: string;
     evidenceLabels: string[];

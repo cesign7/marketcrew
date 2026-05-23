@@ -151,6 +151,7 @@ Rule of thumb:
 | FR-22 | 키워드 수요 조회 결과는 `KeywordDemandSnapshot`으로 캐시하고, LLM에는 상위 후보 요약과 근거 ID만 전달해야 한다. | High | Pending |
 | FR-23 | 데이터 연동 화면은 PC/모바일 광고 설정, 시간대 성과, 스마트스토어 순매출/클레임, 데이터랩 세그먼트, 판매 분석 확장을 어떤 순서로 반영할지 보여줘야 한다. | Medium | Pending |
 | FR-24 | LLM 캐릭터는 정해진 이상신호 밖의 상품/키워드/기기/시간대/고객군 가설을 자유 탐색할 수 있어야 하며, 확인 전에는 결재가 아니라 근거 요청으로 남겨야 한다. | High | Implemented in module-20 |
+| FR-25 | 키워드 광고 결재안은 AI가 광고 유형, 적용 위치, PC/모바일, 시간대, 예산/입찰, 제외 키워드 같은 실행 범위를 먼저 제안하고 대표가 그대로 확정하거나 수정값을 기록할 수 있어야 한다. | High | Implemented in module-26 |
 
 ### 3.2 Non-Functional Requirements
 
@@ -265,6 +266,7 @@ Rules:
 - LLM은 전체 상품 목록을 보지 않고, deterministic scorer가 뽑은 상위 상품/이벤트 후보만 본다.
 - 상품 기회는 최소 하나 이상의 근거를 가져야 한다: 판매 데이터, 광고 데이터, 이벤트 캘린더, 재고/마진 정보, 전년도 성과.
 - 새 키워드나 상품 제안은 바로 외부 반영하지 않고 `ExecutionPlan`에 keyword add, campaign draft, product draft 같은 작업 단위로 들어간다.
+- 검색광고 안건의 `ExecutionPlan`에는 `ExecutionScopeProposal`을 포함한다. 광고 유형, 적용 위치, 기기/매체, 시간대, 예산/입찰, 제외 키워드를 AI가 먼저 추천하고, 대표가 결재 전 수정한 선택값은 `OwnerDecision.executionScopeSelection`과 결정 메모에 남긴다.
 - `day`는 기회 제안의 근거 부족, 전년도 데이터 부족, 이벤트 날짜 불확실성을 표시한다.
 
 ### 3.5 Seasonal Keyword Ad Policy
@@ -495,7 +497,7 @@ API로 더 가져올 수 있는 모든 항목을 한 번에 LLM 판단에 넣지
 - [ ] 안건 후보가 triage를 통과하거나 탈락한 이유가 기록된다.
 - [ ] 통과한 안건은 캐릭터 보고서와 모아 종합 보고서로 UI에서 구분되어 보인다.
 - [ ] 대표 결재 요청에는 변경 전/후 diff, 실행 작업 목록, 위험 등급, 되돌리기 가능 여부가 포함된다.
-- [ ] 대표는 `승인 후 바로 반영`, `초안만 승인`, `반려`, `수정 요청`, `보류`, `추가 근거 요청`을 선택할 수 있다.
+- [ ] 대표는 `승인 후 바로 반영`, `초안 확정`, `반려`, `수정 요청`, `보류`, `추가 근거 요청`을 선택할 수 있다.
 - [ ] 승인 후 바로 반영을 선택하면 preflight를 통과한 작업이 executor를 통해 실행되고 `ExecutionResult`가 기록된다.
 - [ ] 승인된 작업은 성과 체크포인트와 결과 보고서로 이어진다.
 - [ ] 대표 결정, 실행 결과, 성과 분석이 하위 캐릭터 후속 업무로 기록된다.
@@ -562,7 +564,7 @@ API로 더 가져올 수 있는 모든 항목을 한 번에 LLM 판단에 넣지
 | `CharacterReport` | Domain Model | 담당 캐릭터가 상위 보고자에게 제출한 근거 기반 보고. |
 | `MoaSynthesisReport` | Domain Model | 모아가 하위 보고를 종합한 대표 결재 전 보고. |
 | `ApprovalRequest` | Domain Model | 모아가 대표에게 올리는 결재 요청. |
-| `ExecutionPlan` | Domain Model | 대표가 승인하면 실행될 변경 diff, 위험 등급, preflight, rollback 계획. |
+| `ExecutionPlan` | Domain Model | 대표가 승인하면 실행될 변경 diff, 실행 범위 제안, 위험 등급, preflight, rollback 계획. |
 | `OwnerDecision` | Domain Model | 대표의 승인/반려/수정/보류/추가근거 요청 결정. |
 | `ExecutionResult` | Domain Model | 승인 후 즉시 반영 시도 결과와 실패/부분성공/재시도 정보. |
 | `RollbackSnapshot` | Domain Model | 변경 전 상태와 되돌리기 가능 정보. |
@@ -593,7 +595,8 @@ API로 더 가져올 수 있는 모든 항목을 한 번에 LLM 판단에 넣지
 | `MoaSynthesisReport` | CREATE/READ | Moa review engine, operations UI | 신규 구현 |
 | `ApprovalRequest` | CREATE/READ/UPDATE | approvals UI, owner decision action | 신규 구현 |
 | `ExecutionPlan` | CREATE/READ | Moa review engine, approval preview UI, preflight | 신규 구현 |
-| `OwnerDecision` | CREATE/READ | approval actions, follow-up planner | 신규 구현 |
+| `ExecutionScopeProposal` | CREATE/READ | gro seasonal keyword planner, approval detail UI, owner decision submit | 신규 구현 |
+| `OwnerDecision` | CREATE/READ | approval actions, follow-up planner, owner execution scope selection | 신규 구현 |
 | `ExecutionResult` | CREATE/READ | provider executors, execution status UI | 신규 구현 |
 | `RollbackSnapshot` | CREATE/READ | preflight, executor, rollback UI | 신규 구현 |
 | `PerformanceCheckpoint` | CREATE/READ/UPDATE | outcome tracker, character reports | 신규 구현 |
@@ -995,3 +998,4 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 | 0.6 | 2026-05-23 | Added provider evidence expansion order for ad settings, device/time performance, Smartstore net sales and claims, DataLab segments, and sales analytics expansion | Codex |
 | 0.7 | 2026-05-23 | Added LLM free exploration, evidence request, and verified-agenda promotion policy with updated character role models | Codex |
 | 0.8 | 2026-05-23 | Added AI execution queue dry-run slice before real LLM adapter calls | Codex |
+| 0.9 | 2026-05-23 | Added AI-proposed execution scope and owner-editable scope selection for search ad approvals | Codex |

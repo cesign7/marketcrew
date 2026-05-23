@@ -306,6 +306,26 @@ export interface ExecutionPlan {
   measurementPlan: MeasurementPlan;
   executorKey: string;
   requiresWriteGate: boolean;
+  executionScopeProposal?: ExecutionScopeProposal;
+}
+
+export interface ExecutionScopeProposal {
+  title: string;
+  summary: string;
+  fields: Array<{
+    id: string;
+    label: string;
+    recommendedValue: string;
+    options: string[];
+    reason: string;
+    required: boolean;
+  }>;
+  guardrails: string[];
+}
+
+export interface ExecutionScopeSelection {
+  proposalTitle: string;
+  selections: Array<{ fieldId: string; label: string; value: string }>;
 }
 
 export interface ExecutionResult {
@@ -499,6 +519,13 @@ Initial implementation may use server actions, but route handlers should keep th
 {
   "decision": "APPROVE_AND_APPLY",
   "memo": "테스트 예산 상한 내에서 진행",
+  "executionScopeSelection": {
+    "proposalTitle": "부처님오신날 키워드 테스트 실행 범위",
+    "selections": [
+      { "fieldId": "device", "label": "기기/매체", "value": "모바일 우선 + PC 소액 병행" },
+      { "fieldId": "time-window", "label": "시간대", "value": "전체 시간 소액 테스트" }
+    ]
+  },
   "secondConfirmation": false
 }
 ```
@@ -507,6 +534,7 @@ Initial implementation may use server actions, but route handlers should keep th
 
 - `APPROVE_AND_APPLY` calls `PreflightService`.
 - `CRITICAL` risk requires `secondConfirmation=true`.
+- If present, `executionScopeSelection` is stored with the owner decision and appended to the decision memo for auditability.
 - External writes remain blocked unless `EXTERNAL_WRITE_ENABLED=true` and provider gate is true.
 - MVP uses `MockProviderExecutor` and records an `ExecutionResult`.
 
@@ -557,8 +585,8 @@ Operations Room
 | `InboxBucketTabs` | `src/components/agenda/` | 우선순위 bucket 전환 |
 | `AgendaCard` | `src/components/agenda/` | 안건 요약, 근거 수, confidence, risk |
 | `SeasonalKeywordPlanCard` | `src/components/opportunity/` | 시즌 키워드 생애주기와 광고 안전장치 표시 |
-| `ApprovalPreviewPanel` | `src/components/approval/` | before/after diff, rollback, measurement |
-| `OwnerDecisionBar` | `src/components/approval/` | 승인/초안승인/반려/수정/근거요청/보류 |
+| `ApprovalPreviewPanel` | `src/components/agenda-room/` | before/after diff, AI 제안 실행 범위, rollback, measurement |
+| `OwnerDecisionSubmitPanel` | `src/components/agenda-room/` | 승인/초안확정/반려/수정/근거요청/보류, 대표 실행 범위 수정 |
 | `ExecutionResultTimeline` | `src/components/execution/` | 실행 결과, 부분 실패, 재시도 필요 표시 |
 | `OutcomeCheckpointList` | `src/components/outcome/` | 성과 체크포인트와 결과 상태 |
 
@@ -585,7 +613,7 @@ Operations Room
 - [ ] Section: risk level and write gate state.
 - [ ] Section: rollback plan.
 - [ ] Section: measurement checkpoints.
-- [x] Buttons: `승인 후 바로 반영`, `초안만 승인`, `수정 요청`, `추가 근거 요청`, `보류`, `반려`.
+- [x] Buttons: `승인 후 바로 반영`, `초안 확정`, `수정 요청`, `추가 근거 요청`, `보류`, `반려`.
 - [ ] Guard: disabled `승인 후 바로 반영` when confidence is not `READY_TO_APPROVE`.
 
 #### Outcome View
@@ -890,6 +918,7 @@ src/
 | 근거 요청 큐와 승격 가드 | `module-20` | `HypothesisCandidate`, `EvidenceRequest`, 데이 검증, 모아 승격 제한 | Done in iteration 15 |
 | 근거 요청 처리 API | `module-21` | 데이 상태 변경, AgentRun 감사 이력, 검증 후 `AgendaCandidate` 승격 | Done in iteration 16 |
 | AI 실행 큐 모의 실행 | `module-22` | 비용 가드 안에서 실제 호출 전 입력 범위, 토큰, 근거, 감사 기록을 큐로 고정 | Done in iteration 17 |
+| 결재 실행 범위 선택 | `module-26` | AI가 검색광고 실행 범위를 제안하고 대표가 그대로 확정하거나 수정값을 저장 | Done in iteration 24 |
 
 #### Recommended Session Plan
 
@@ -919,3 +948,4 @@ src/
 | 0.2 | 2026-05-23 | Added provider evidence expansion order and module map for ad settings, performance breakdown, commerce quality, DataLab segments, and commerce analytics | Codex |
 | 0.3 | 2026-05-23 | Added LLM free exploration, evidence request, verified promotion guard, and people-office role model UI module | Codex |
 | 0.4 | 2026-05-23 | Added AI execution queue dry-run contract, API, and AgentRun audit boundary before live LLM adapter | Codex |
+| 0.5 | 2026-05-23 | Added owner-editable AI execution scope proposal contract for search ad approvals | Codex |

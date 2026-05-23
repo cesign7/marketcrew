@@ -739,7 +739,30 @@ function buildApprovalPreviewView(
     primaryActionLabel: "승인 후 바로 반영",
     secondaryActions: ["초안 확정", "수정 요청", "추가 근거 요청", "보류", "반려"],
     disabledReason: canApply ? undefined : disabledReason(request),
+    executionScopeProposal: buildExecutionScopeProposalView(request.executionPlan.executionScopeProposal),
     provenance: buildApprovalProvenanceView(request, plan, repository, providerSyncReports),
+  };
+}
+
+function buildExecutionScopeProposalView(
+  proposal: ApprovalRequest["executionPlan"]["executionScopeProposal"],
+): ApprovalPreviewView["executionScopeProposal"] {
+  if (!proposal) {
+    return undefined;
+  }
+
+  return {
+    title: proposal.title,
+    summary: proposal.summary,
+    fields: proposal.fields.map((field) => ({
+      id: field.id,
+      label: field.label,
+      recommendedValue: field.recommendedValue,
+      options: Array.from(new Set([field.recommendedValue, ...field.options])),
+      reason: field.reason,
+      required: field.required,
+    })),
+    guardrailLabels: proposal.guardrails,
   };
 }
 

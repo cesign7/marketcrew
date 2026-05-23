@@ -12,6 +12,13 @@ describe("buildApprovalDetailViewModel", () => {
 
     expect(viewModel?.title).toBe("부처님오신날 선물카드 키워드 테스트 승인안");
     expect(viewModel?.approvalPreview.diffSummary).toContain("키워드 2개");
+    expect(viewModel?.approvalPreview.executionScopeProposal?.fields.map((field) => [field.label, field.recommendedValue])).toEqual(
+      expect.arrayContaining([
+        ["광고 유형", "네이버 키워드광고"],
+        ["기기/매체", "모바일 우선 + PC 소액 병행"],
+        ["시간대", "전체 시간 소액 테스트"],
+      ]),
+    );
     expect(viewModel?.ownerDecisionFlows[0]?.executionStateLabel).toBe("수동 처리 필요");
     expect(viewModel?.outcomeCheckpoints).toHaveLength(3);
   });
