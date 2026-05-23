@@ -109,9 +109,9 @@ export const agendaRoomSample: AgendaRoomViewModel = {
     {
       id: "maru",
       name: "마루",
-      role: "손익 담당",
+      role: "커머스 운영",
       tone: "finance",
-      status: "승인 시 예산 한도와 마진 영향 점검",
+      status: "브랜드별 주문과 판매채널 상태 점검",
       workload: 58,
       queueCount: 4,
     },
@@ -125,6 +125,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
       queueCount: 3,
     },
   ],
+  workDeskCards: [],
   agendaCards: [
     {
       id: "agenda-001",

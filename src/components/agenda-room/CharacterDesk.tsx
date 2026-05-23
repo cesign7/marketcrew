@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ArrowRight, ClipboardList, Clock3, Gauge, ShieldCheck } from "lucide-react";
-import type { AgendaCardView, CharacterStatus, OwnerDecisionFlowView } from "@/features/agenda-room/types";
+import type { AgendaCardView, CharacterStatus, OwnerDecisionFlowView, WorkDeskCardView } from "@/features/agenda-room/types";
+import { WorkDeskCardList } from "./WorkDeskCardList";
 
 type CharacterDeskProps = {
   characters: CharacterStatus[];
   agendaCards: AgendaCardView[];
+  workDeskCards: WorkDeskCardView[];
   ownerDecisionFlows: OwnerDecisionFlowView[];
   selectedCharacterId?: string;
 };
@@ -31,8 +33,8 @@ const characterFocus: Record<string, { focus: string; nextReport: string }> = {
     nextReport: "구매자 반응과 반복 구매 신호를 후속 업무로 올립니다.",
   },
   maru: {
-    focus: "광고비, 마진, 예산 상한, 손익 위험을 확인합니다.",
-    nextReport: "승인 전 비용 안전장치와 성과 판단 기준을 점검합니다.",
+    focus: "브랜드별 주문, 매출, 상품 흐름, 판매채널 준비 상태를 확인합니다.",
+    nextReport: "스티커씨와 커피프린트를 섞지 않고 각 브랜드 안의 운영 상태를 보고합니다.",
   },
   day: {
     focus: "수집 근거, 누락 데이터, 전년동기/명절 기준 비교를 확인합니다.",
@@ -40,10 +42,20 @@ const characterFocus: Record<string, { focus: string; nextReport: string }> = {
   },
 };
 
-export function CharacterDesk({ characters, agendaCards, ownerDecisionFlows, selectedCharacterId }: CharacterDeskProps) {
+export function CharacterDesk({
+  characters,
+  agendaCards,
+  workDeskCards,
+  ownerDecisionFlows,
+  selectedCharacterId,
+}: CharacterDeskProps) {
   const visibleCharacters = selectedCharacterId
     ? characters.filter((character) => character.id === selectedCharacterId)
     : characters;
+  const selectedCharacter = characters.find((character) => character.id === selectedCharacterId);
+  const selectedWorkDeskCards = selectedCharacterId
+    ? workDeskCardsForCharacter(workDeskCards, selectedCharacterId)
+    : workDeskCards.slice(0, 6);
 
   return (
     <section className="character-desk-section" aria-label="캐릭터별 업무 현황">
@@ -72,8 +84,32 @@ export function CharacterDesk({ characters, agendaCards, ownerDecisionFlows, sel
           />
         ))}
       </div>
+
+      <WorkDeskCardList
+        cards={selectedWorkDeskCards}
+        description={
+          selectedCharacter
+            ? `${selectedCharacter.name}가 확인하거나 모아에게 보고할 업무카드입니다.`
+            : "키워드, 근거 확인, 위임 후보 업무를 카드 단위로 압축해서 봅니다."
+        }
+        emptyMessage={
+          selectedCharacter
+            ? `${selectedCharacter.name}가 담당하는 업무카드는 아직 없습니다.`
+            : "현재 캐릭터별 업무카드가 없습니다."
+        }
+        eyebrow={selectedCharacter ? `${selectedCharacter.name} 데스크` : "전체 데스크"}
+        title={selectedCharacter ? `${selectedCharacter.name} 업무카드` : "최근 업무카드"}
+      />
     </section>
   );
+}
+
+function workDeskCardsForCharacter(cards: WorkDeskCardView[], characterId: string): WorkDeskCardView[] {
+  if (characterId === "moa") {
+    return cards.filter((card) => card.delegation.state === "OWNER_FIRST_APPROVAL_REQUIRED").slice(0, 12);
+  }
+
+  return cards.filter((card) => card.ownerId === characterId);
 }
 
 function CharacterDeskCard({

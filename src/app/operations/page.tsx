@@ -6,6 +6,7 @@ import { CharacterRail } from "@/components/agenda-room/CharacterRail";
 import { EvidenceRequestQueuePanel } from "@/components/agenda-room/EvidenceRequestQueuePanel";
 import { InboxBucketBar } from "@/components/agenda-room/InboxBucketBar";
 import { LlmDryRunQueuePanel } from "@/components/agenda-room/LlmDryRunQueuePanel";
+import { WorkDeskCardList } from "@/components/agenda-room/WorkDeskCardList";
 import { AppShell } from "@/components/layout/AppShell";
 import { loadAgendaRoomViewModel } from "@/features/agenda-room/loadAgendaRoomViewModel";
 
@@ -60,6 +61,14 @@ export default async function OperationsPage() {
       <LlmDryRunQueuePanel queue={viewModel.llmDryRunQueue} />
 
       <AiPilotInsightPanel insight={viewModel.aiPilotInsight} />
+
+      <WorkDeskCardList
+        cards={viewModel.workDeskCards}
+        description="검색광고와 쇼핑검색광고에서 실제 조정 판단이 필요한 키워드만 카드로 봅니다."
+        emptyMessage="오늘 대표가 확인할 키워드 업무카드는 없습니다."
+        limit={6}
+        title="키워드별 업무카드"
+      />
 
       <div className="daily-brief-grid">
         <section className="moa-brief-panel" aria-labelledby="moa-brief-title">

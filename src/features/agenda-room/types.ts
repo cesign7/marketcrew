@@ -1,4 +1,4 @@
-import type { EvidenceRequestStatus } from "@/lib/domain";
+import type { CharacterKey, EvidenceRequestStatus } from "@/lib/domain";
 import type { LlmDryRunQueue } from "@/lib/application/llm-dry-run-queue";
 
 export type CharacterTone = "coordinator" | "growth" | "product" | "copy" | "crm" | "finance" | "data";
@@ -109,6 +109,34 @@ export type ApprovalPreviewView = {
     providerEvidenceLabels: string[];
     checkpointLabels: string[];
     safetyLabels: string[];
+  };
+};
+
+export type WorkDeskCardView = {
+  id: string;
+  ownerId: CharacterKey;
+  ownerName: string;
+  parentTitle: string;
+  title: string;
+  brandLabel: string;
+  domainLabel: string;
+  statusLabel: string;
+  priorityLabel: string;
+  routeLabel: string;
+  keywordLabel: string;
+  contextLabels: string[];
+  metricLabels: string[];
+  diagnosisLabel: string;
+  recommendedActionLabel: string;
+  reasonLabel: string;
+  evidenceLabels: string[];
+  detailHref?: string;
+  delegation: {
+    state: "OWNER_FIRST_APPROVAL_REQUIRED" | "MOA_DELEGATION_CANDIDATE" | "MOA_REPORT_ONLY" | "NEEDS_DATA_REVIEW";
+    label: string;
+    summary: string;
+    ruleHint: string;
+    reportLabel: string;
   };
 };
 
@@ -410,6 +438,7 @@ export type AgendaRoomViewModel = {
   };
   inboxBuckets: InboxBucketView[];
   characters: CharacterStatus[];
+  workDeskCards: WorkDeskCardView[];
   agendaCards: AgendaCardView[];
   seasonalKeywordPlans: SeasonalKeywordPlanView[];
   approvalPreviews: ApprovalPreviewView[];

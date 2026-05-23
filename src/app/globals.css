@@ -199,6 +199,83 @@ button:disabled {
   color: rgb(255 255 255 / 72%);
 }
 
+.app-nav-section-label {
+  margin: 10px 4px 2px;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.app-character-nav {
+  display: grid;
+  gap: 5px;
+}
+
+.app-character-link {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-areas:
+    "initial name"
+    "initial desc";
+  column-gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 7px 8px;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.app-character-link:hover {
+  border-color: var(--line);
+  background: var(--surface-muted);
+}
+
+.app-character-link.is-active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.app-character-link.is-pending:not(.is-active) {
+  border-color: var(--ink-muted);
+  background: #fafafa;
+}
+
+.app-character-link > span {
+  display: grid;
+  grid-area: initial;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.app-character-link strong {
+  grid-area: name;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.app-character-link small {
+  grid-area: desc;
+  min-width: 0;
+  color: var(--ink-muted);
+  font-size: 11px;
+}
+
+.app-character-link.is-active small {
+  color: rgb(255 255 255 / 72%);
+}
+
 .app-frame.is-sidebar-collapsed .app-sidebar {
   padding: 14px 9px;
 }
@@ -236,6 +313,33 @@ button:disabled {
 }
 
 .app-frame.is-sidebar-collapsed .app-nav-link span {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app-frame.is-sidebar-collapsed .app-nav-section-label {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app-frame.is-sidebar-collapsed .app-character-link {
+  grid-template-columns: 1fr;
+  grid-template-areas: "initial";
+  justify-items: center;
+  min-height: 42px;
+  padding: 7px 0;
+}
+
+.app-frame.is-sidebar-collapsed .app-character-link strong,
+.app-frame.is-sidebar-collapsed .app-character-link small {
   position: absolute;
   overflow: hidden;
   width: 1px;
@@ -949,6 +1053,160 @@ button:disabled {
 .character-work-list a {
   color: var(--ink);
   background: var(--surface);
+}
+
+.work-desk-card-section {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.work-desk-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 0 10px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.work-desk-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.work-desk-card {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+
+.work-desk-card header,
+.work-desk-card footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.work-desk-badges,
+.work-desk-metrics,
+.work-desk-context,
+.work-desk-card footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.work-desk-badges span,
+.work-desk-priority,
+.work-desk-metrics span,
+.work-desk-context span,
+.work-desk-card footer span,
+.work-desk-card footer a,
+.work-desk-delegation span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  padding: 5px 8px;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.work-desk-priority.priority-높음 {
+  border-color: #f2c7bf;
+  background: #fff0ed;
+  color: var(--red);
+}
+
+.work-desk-priority.priority-중간 {
+  border-color: #e7d4a5;
+  background: #fff7e2;
+  color: #7a5600;
+}
+
+.work-desk-keyword {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.work-desk-main h3 {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 4px 0 0;
+  font-size: 16px;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.work-desk-main p,
+.work-desk-action p,
+.work-desk-delegation p,
+.work-desk-delegation small {
+  margin: 5px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.work-desk-action,
+.work-desk-delegation {
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+}
+
+.work-desk-action strong {
+  display: block;
+  font-size: 13px;
+}
+
+.work-desk-delegation small {
+  display: block;
+}
+
+.work-desk-card footer {
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+}
+
+.work-desk-card footer a {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.work-desk-empty {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  margin: 0;
+  padding: 18px;
+  color: var(--ink-muted);
+  font-weight: 800;
+  text-align: center;
 }
 
 .agenda-card h3 {
@@ -4576,6 +4834,7 @@ button:disabled {
   .workspace-grid,
   .daily-brief-grid,
   .execution-grid,
+  .work-desk-card-grid,
   .bucket-bar,
   .provider-readiness-grid,
   .provider-sync-grid,
@@ -4664,6 +4923,38 @@ button:disabled {
 
   .app-nav-link small {
     display: none;
+  }
+
+  .app-nav-section-label {
+    display: none;
+  }
+
+  .app-character-nav {
+    display: contents;
+  }
+
+  .app-character-link,
+  .app-frame.is-sidebar-collapsed .app-character-link {
+    grid-template-columns: 26px max-content;
+    grid-template-areas: "initial name";
+    min-height: 40px;
+    gap: 7px;
+    padding: 7px 10px;
+    white-space: nowrap;
+  }
+
+  .app-character-link small,
+  .app-frame.is-sidebar-collapsed .app-character-link small {
+    display: none;
+  }
+
+  .app-frame.is-sidebar-collapsed .app-character-link strong {
+    position: static;
+    overflow: visible;
+    width: auto;
+    height: auto;
+    clip-path: none;
+    white-space: nowrap;
   }
 
   .workspace-topbar {

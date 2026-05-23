@@ -13,7 +13,7 @@ import {
   TrendingUp,
   UsersRound,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ViewFilterControls, type ViewFilterOption } from "./ViewFilterControls";
@@ -88,6 +88,21 @@ const navItems = [
   icon: typeof LayoutDashboard;
 }>;
 
+const characterDeskItems = [
+  { label: "모아", description: "대표 결재 분류", href: "/characters/moa", initial: "모" },
+  { label: "그로", description: "광고 키워드", href: "/characters/gro", initial: "그" },
+  { label: "마루", description: "브랜드 운영", href: "/characters/maru", initial: "마" },
+  { label: "프로", description: "상품 전략", href: "/characters/pro", initial: "프" },
+  { label: "리피", description: "재구매", href: "/characters/ripi", initial: "리" },
+  { label: "카피", description: "문안", href: "/characters/copy", initial: "카" },
+  { label: "데이", description: "근거 확인", href: "/characters/day", initial: "데" },
+] satisfies Array<{
+  label: string;
+  description: string;
+  href: string;
+  initial: string;
+}>;
+
 const businessFilters: ViewFilterOption[] = [
   { label: "전체", value: "all" },
   { label: "스티커씨", value: "stickersee" },
@@ -114,6 +129,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const router = useRouter();
+  const pathname = usePathname();
 
   const warmRoute = useCallback(
     (href: string) => {
@@ -147,14 +163,16 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
 
   useEffect(() => {
     setPendingHref(null);
-  }, [active]);
+  }, [active, pathname]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
       return;
     }
 
-    const warmableRoutes = navItems.map((item) => item.href).filter((href) => href !== activeItem.href);
+    const warmableRoutes = [...navItems.map((item) => item.href), ...characterDeskItems.map((item) => item.href)].filter(
+      (href) => href !== activeItem.href,
+    );
     const timeoutIds: number[] = [];
     warmableRoutes.forEach((href, index) => {
       timeoutIds.push(window.setTimeout(() => warmRoute(href), index * navWarmupStepMs));
@@ -217,6 +235,36 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
               </Link>
             );
           })}
+          <span className="app-nav-section-label">직원 데스크</span>
+          <div className="app-character-nav">
+            {characterDeskItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  aria-current={isActive ? "page" : undefined}
+                  aria-label={`${item.label} 데스크`}
+                  className={`app-character-link${isActive ? " is-active" : ""}${
+                    pendingHref === item.href && !isActive ? " is-pending" : ""
+                  }`}
+                  href={item.href}
+                  key={item.href}
+                  onClick={() => {
+                    setPendingHref(item.href);
+                    warmRoute(item.href);
+                  }}
+                  onFocus={() => warmRoute(item.href)}
+                  onMouseEnter={() => warmRoute(item.href)}
+                  onTouchStart={() => warmRoute(item.href)}
+                  prefetch
+                  title={`${item.label} 데스크 - ${item.description}`}
+                >
+                  <span aria-hidden="true">{item.initial}</span>
+                  <strong>{item.label}</strong>
+                  <small>{item.description}</small>
+                </Link>
+              );
+            })}
+          </div>
         </nav>
       </aside>
 

@@ -225,6 +225,46 @@ describe("buildAgendaRoomViewModel", () => {
     expect(viewModel.ownerDecisionFlows[1]?.outcomeEvidenceLabels).toContain("스마트스토어 매출 600,120원");
   });
 
+  it("검색광고 성과 진단을 키워드별 업무카드로 쪼개고 첫 승인 위임 기준을 보여준다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    repository.saveProviderSyncReports([buildSearchAdPerformanceReportForWorkDesk()]);
+
+    const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
+
+    expect(viewModel.workDeskCards.map((card) => card.keywordLabel)).toEqual(
+      expect.arrayContaining(["생일 답례품", "생일축하스티커", "스승의날 카드"]),
+    );
+    const noOrderCard = viewModel.workDeskCards.find((card) => card.keywordLabel === "생일 답례품");
+    expect(noOrderCard).toMatchObject({
+      ownerId: "gro",
+      brandLabel: "스티커씨",
+      domainLabel: "검색광고",
+      statusLabel: "대표 첫 승인 필요",
+      recommendedActionLabel: "입찰 하향 또는 일시중지 검토",
+      delegation: {
+        state: "OWNER_FIRST_APPROVAL_REQUIRED",
+        label: "대표 첫 승인 필요",
+      },
+    });
+    expect(noOrderCard?.metricLabels).toEqual(
+      expect.arrayContaining(["최근 7일 클릭 64회", "비용 38,400원", "주문 0건"]),
+    );
+    expect(noOrderCard?.reasonLabel).toContain("즉시 중지 전 유지 예외");
+
+    const deviceGapCard = viewModel.workDeskCards.find(
+      (card) => card.keywordLabel === "생일축하스티커" && card.reasonLabel.includes("키워드 전체 중지"),
+    );
+    expect(deviceGapCard?.recommendedActionLabel).toContain("성과 낮은 기기만 하향");
+    expect(deviceGapCard?.reasonLabel).toContain("키워드 전체 중지");
+
+    const shoppingCard = viewModel.workDeskCards.find((card) => card.keywordLabel === "스승의날 카드");
+    expect(shoppingCard).toMatchObject({
+      domainLabel: "쇼핑검색광고",
+      recommendedActionLabel: "입찰 하향 또는 상품 노출 점검",
+    });
+    expect(shoppingCard?.metricLabels).toContain("직접 전환율 0%");
+  });
+
   it("같은 근거의 연동 수집 이력은 결재 미리보기에서 최신 1건과 누적 횟수로 접는다", () => {
     const repository = createMemoryMarketingWorkflowRepository();
     const reports = buildProviderAggregateReports();
@@ -448,6 +488,109 @@ function buildProviderAggregateReports(): ProviderSyncReport[] {
       },
     },
   ];
+}
+
+function buildSearchAdPerformanceReportForWorkDesk(): ProviderSyncReport {
+  return {
+    id: "provider-sync-search-ad-performance-workdesk-2026-05-23",
+    provider: "search_ad",
+    label: "네이버 키워드광고 성과 읽기 전용 수집",
+    status: "SYNCED",
+    readOnly: true,
+    networkAttempted: true,
+    writeAttempted: false,
+    endpoint: "https://api.searchad.naver.com/stats",
+    sourceUrl: "http://naver.github.io/searchad-apidoc/",
+    missingEnvKeys: [],
+    evidenceNotes: ["키워드/기기/시간대 성과 집계만 저장했습니다."],
+    checkedAt: "2026-05-23T08:00:00.000Z",
+    httpStatus: 200,
+    searchAdPerformanceSnapshots: [
+      {
+        id: "ad-perf-workdesk-no-order",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignName: "스티커씨 검색광고",
+        adGroupName: "대표 상품",
+        keyword: "생일 답례품",
+        device: "ALL",
+        timeSlot: "09-23",
+        windowDays: 7,
+        impressions: 2400,
+        clicks: 64,
+        cost: 38400,
+        conversions: 0,
+        revenue: 0,
+        targetCpa: 12000,
+        targetRoas: 2.5,
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+      {
+        id: "ad-perf-workdesk-mobile",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignName: "스티커씨 검색광고",
+        adGroupName: "대표 상품",
+        keyword: "생일축하스티커",
+        device: "MOBILE",
+        timeSlot: "18-23",
+        windowDays: 7,
+        impressions: 1800,
+        clicks: 120,
+        cost: 72000,
+        conversions: 2,
+        revenue: 60000,
+        targetCpa: 12000,
+        targetRoas: 2.5,
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+      {
+        id: "ad-perf-workdesk-pc",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignName: "스티커씨 검색광고",
+        adGroupName: "대표 상품",
+        keyword: "생일축하스티커",
+        device: "PC",
+        timeSlot: "09-17",
+        windowDays: 7,
+        impressions: 1200,
+        clicks: 80,
+        cost: 40000,
+        conversions: 8,
+        revenue: 240000,
+        targetCpa: 12000,
+        targetRoas: 2.5,
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+    ],
+    shoppingSearchAdPerformanceSnapshots: [
+      {
+        id: "shopping-search-perf-workdesk-no-order",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignName: "스티커씨 쇼핑검색광고",
+        adGroupName: "대표 상품형",
+        adGroupId: "grp-shopping-a001",
+        searchKeyword: "스승의날 카드",
+        productGroupName: "스티커씨 선물카드",
+        mallName: "스티커씨",
+        registeredProductType: "GENERAL",
+        windowDays: 30,
+        clicks: 42,
+        directConversionRate: 0,
+        cost: 18900,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+    ],
+  };
 }
 
 function buildGeminiPlannerAgentRun(): AgentRun {

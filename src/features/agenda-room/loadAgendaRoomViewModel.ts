@@ -55,7 +55,12 @@ export async function loadAgendaRoomViewModel() {
 
 export function normalizeAgendaRoomViewModelCompatibility(viewModel: AgendaRoomViewModel): AgendaRoomViewModel {
   const partialViewModel = viewModel as Partial<AgendaRoomViewModel>;
-  if (partialViewModel.evidenceRequestQueue && partialViewModel.llmDryRunQueue && partialViewModel.aiPilotInsight) {
+  if (
+    partialViewModel.evidenceRequestQueue &&
+    partialViewModel.llmDryRunQueue &&
+    partialViewModel.aiPilotInsight &&
+    partialViewModel.workDeskCards
+  ) {
     return normalizeProductGrowthOpportunityImages(viewModel);
   }
 
@@ -82,6 +87,7 @@ export function normalizeAgendaRoomViewModelCompatibility(viewModel: AgendaRoomV
 
   return normalizeProductGrowthOpportunityImages({
     ...withEvidenceQueue,
+    workDeskCards: partialViewModel.workDeskCards ?? fallbackViewModel.workDeskCards,
     llmDryRunQueue: partialViewModel.llmDryRunQueue ?? fallbackViewModel.llmDryRunQueue,
     aiPilotInsight: partialViewModel.aiPilotInsight ?? fallbackViewModel.aiPilotInsight,
   });

@@ -10,6 +10,10 @@ import {
   buildProductGrowthOpportunities,
   type ProductGrowthOpportunity,
 } from "@/lib/application/product-growth-opportunities";
+import {
+  buildAdPerformanceDiagnoses,
+  type AdPerformanceDiagnosis,
+} from "@/lib/application/ad-performance-diagnostics";
 import { buildProviderSignalAgendaArtifacts } from "@/lib/application/provider-signal-agenda";
 import { buildLlmDryRunQueue } from "@/lib/application/llm-dry-run-queue";
 import {
@@ -33,7 +37,9 @@ import {
   type OwnerDecisionType,
   type ProviderReadinessReport,
   type ProviderSyncReport,
+  type SearchAdPerformanceSnapshot,
   type SeasonalKeywordAdPlan,
+  type ShoppingSearchAdPerformanceSnapshot,
 } from "@/lib/domain";
 import { recordLlmDryRunAgentRun, recordPlannerAgentRun } from "@/lib/application/agent-run-recorder";
 import { buildProviderReadinessReports } from "@/lib/integrations/providers/readiness";
@@ -49,6 +55,7 @@ import type {
   InboxBucketView,
   OwnerDecisionFlowView,
   SeasonalKeywordPlanView,
+  WorkDeskCardView,
 } from "./types";
 
 export type BuildAgendaRoomViewModelInput = {
@@ -173,6 +180,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
       failedExecutionCount,
     }),
     characters: buildCharacterStatuses(allCharacterReports),
+    workDeskCards: buildWorkDeskCards(providerSyncReports, agendaCycle.generatedAt),
     agendaCards: allApprovalRequests.map((request) =>
       buildAgendaCardView(
         request,
@@ -660,6 +668,279 @@ function buildAgendaCardView(
     evidenceCount: plan?.evidenceIds.length ?? request.evidenceIds.length,
     createdAt: formatKoreanDateTime(request.createdAt),
   };
+}
+
+function buildWorkDeskCards(providerSyncReports: ProviderSyncReport[], generatedAt: string): WorkDeskCardView[] {
+  const reports = latestSearchAdPerformanceReports(providerSyncReports);
+  const cards = reports.flatMap((report) => buildKeywordWorkDeskCards(report, generatedAt));
+  return dedupeWorkDeskCards(cards).sort(compareWorkDeskCards).slice(0, 24);
+}
+
+function latestSearchAdPerformanceReports(providerSyncReports: ProviderSyncReport[]): ProviderSyncReport[] {
+  const latestSearchKeywordReport = latestSyncedReportWithSnapshots(providerSyncReports, "searchAdPerformanceSnapshots");
+  const latestShoppingReport = latestSyncedReportWithSnapshots(providerSyncReports, "shoppingSearchAdPerformanceSnapshots");
+  return Array.from(new Map([latestSearchKeywordReport, latestShoppingReport].filter(Boolean).map((report) => [report!.id, report!])).values());
+}
+
+function latestSyncedReportWithSnapshots(
+  providerSyncReports: ProviderSyncReport[],
+  snapshotKey: "searchAdPerformanceSnapshots" | "shoppingSearchAdPerformanceSnapshots",
+): ProviderSyncReport | undefined {
+  return providerSyncReports
+    .filter((report) => report.provider === "search_ad" && report.status === "SYNCED" && (report[snapshotKey]?.length ?? 0) > 0)
+    .sort((left, right) => right.checkedAt.localeCompare(left.checkedAt))[0];
+}
+
+function buildKeywordWorkDeskCards(report: ProviderSyncReport, generatedAt: string): WorkDeskCardView[] {
+  const diagnoses = buildAdPerformanceDiagnoses({
+    snapshots: report.searchAdPerformanceSnapshots ?? [],
+    shoppingSnapshots: report.shoppingSearchAdPerformanceSnapshots ?? [],
+    generatedAt,
+  });
+  const searchSnapshotsById = new Map((report.searchAdPerformanceSnapshots ?? []).map((snapshot) => [snapshot.id, snapshot]));
+  const shoppingSnapshotsById = new Map(
+    (report.shoppingSearchAdPerformanceSnapshots ?? []).map((snapshot) => [snapshot.id, snapshot]),
+  );
+
+  return diagnoses.map((diagnosis) =>
+    buildKeywordWorkDeskCard({
+      diagnosis,
+      searchSnapshotsById,
+      shoppingSnapshotsById,
+    }),
+  );
+}
+
+function buildKeywordWorkDeskCard(input: {
+  diagnosis: AdPerformanceDiagnosis;
+  searchSnapshotsById: Map<string, SearchAdPerformanceSnapshot>;
+  shoppingSnapshotsById: Map<string, ShoppingSearchAdPerformanceSnapshot>;
+}): WorkDeskCardView {
+  const { diagnosis } = input;
+  const searchSnapshots = diagnosis.evidenceIds
+    .map((id) => input.searchSnapshotsById.get(id))
+    .filter((snapshot): snapshot is SearchAdPerformanceSnapshot => Boolean(snapshot));
+  const shoppingSnapshots = diagnosis.evidenceIds
+    .map((id) => input.shoppingSnapshotsById.get(id))
+    .filter((snapshot): snapshot is ShoppingSearchAdPerformanceSnapshot => Boolean(snapshot));
+  const primarySearchSnapshot = searchSnapshots[0];
+  const primaryShoppingSnapshot = shoppingSnapshots[0];
+  const action = keywordActionCopy(diagnosis);
+  const delegation = keywordDelegationCopy(diagnosis);
+
+  return {
+    id: `work-desk-card-${diagnosis.id}`,
+    ownerId: diagnosis.character,
+    ownerName: characterName(diagnosis.character),
+    parentTitle:
+      diagnosis.character === "day" ? "검색광고 전환 추적 근거 확인 요청" : "저성과 검색광고 키워드 조정 안건",
+    title: `${diagnosis.keyword} ${action.shortLabel}`,
+    brandLabel: brandLabelFromKey(diagnosis.brandKey),
+    domainLabel: primaryShoppingSnapshot ? "쇼핑검색광고" : "검색광고",
+    statusLabel: diagnosis.character === "day" ? "근거 확인" : "대표 첫 승인 필요",
+    priorityLabel: severityLabel(diagnosis.severity),
+    routeLabel: diagnosis.character === "day" ? "데이 확인 후 모아 재보고" : "모아 검토 후 대표 승인",
+    keywordLabel: diagnosis.keyword,
+    contextLabels: keywordContextLabels(primarySearchSnapshot, primaryShoppingSnapshot),
+    metricLabels: keywordMetricLabels(searchSnapshots, shoppingSnapshots),
+    diagnosisLabel: diagnosisKindLabel(diagnosis.kind),
+    recommendedActionLabel: action.label,
+    reasonLabel: action.reason,
+    evidenceLabels: diagnosis.evidenceIds.map((id) => `근거 ${id}`),
+    detailHref: "/approvals",
+    delegation,
+  };
+}
+
+function keywordContextLabels(
+  searchSnapshot?: SearchAdPerformanceSnapshot,
+  shoppingSnapshot?: ShoppingSearchAdPerformanceSnapshot,
+): string[] {
+  if (shoppingSnapshot) {
+    return [
+      shoppingSnapshot.campaignName,
+      shoppingSnapshot.adGroupName,
+      shoppingSnapshot.productGroupName ? `상품 ${shoppingSnapshot.productGroupName}` : "상품 그룹 미확인",
+    ];
+  }
+
+  if (!searchSnapshot) {
+    return ["광고 설정 근거 확인 필요"];
+  }
+
+  return [
+    searchSnapshot.campaignName,
+    searchSnapshot.adGroupName,
+    `기기 ${deviceLabel(searchSnapshot.device)}`,
+    searchSnapshot.timeSlot ? `시간 ${searchSnapshot.timeSlot}` : "전체 시간",
+  ];
+}
+
+function keywordMetricLabels(
+  searchSnapshots: SearchAdPerformanceSnapshot[],
+  shoppingSnapshots: ShoppingSearchAdPerformanceSnapshot[],
+): string[] {
+  if (shoppingSnapshots.length > 0) {
+    const snapshot = shoppingSnapshots[0];
+    return [
+      `최근 ${snapshot.windowDays}일 클릭 ${snapshot.clicks.toLocaleString("ko-KR")}회`,
+      `비용 ${snapshot.cost.toLocaleString("ko-KR")}원`,
+      `직접 전환율 ${formatPercent(snapshot.directConversionRate)}`,
+    ];
+  }
+
+  if (searchSnapshots.length === 0) {
+    return ["성과 집계 확인 필요"];
+  }
+
+  const primary = searchSnapshots[0];
+  const totalClicks = sum(searchSnapshots.map((snapshot) => snapshot.clicks));
+  const totalCost = sum(searchSnapshots.map((snapshot) => snapshot.cost));
+  const totalConversions = sum(searchSnapshots.map((snapshot) => snapshot.conversions));
+  const labels = [
+    `최근 ${primary.windowDays}일 클릭 ${totalClicks.toLocaleString("ko-KR")}회`,
+    `비용 ${totalCost.toLocaleString("ko-KR")}원`,
+    `주문 ${totalConversions.toLocaleString("ko-KR")}건`,
+  ];
+  const cpa = totalConversions > 0 ? Math.round(totalCost / totalConversions) : undefined;
+  if (cpa) {
+    labels.push(`CPA ${cpa.toLocaleString("ko-KR")}원`);
+  }
+
+  return labels;
+}
+
+function keywordActionCopy(diagnosis: AdPerformanceDiagnosis): { shortLabel: string; label: string; reason: string } {
+  const copies: Record<AdPerformanceDiagnosis["kind"], { shortLabel: string; label: string; reason: string }> = {
+    CLICKS_NO_ORDER: {
+      shortLabel: "조정 검토",
+      label: "입찰 하향 또는 일시중지 검토",
+      reason: "주문은 없지만 시즌/브랜드 핵심 키워드일 수 있으므로 즉시 중지 전 유지 예외를 먼저 확인합니다.",
+    },
+    LOW_CVR: {
+      shortLabel: "관찰 조정",
+      label: "관찰 연장 또는 입찰 하향",
+      reason: "전환율이 낮아도 학습 기간, 시즌 초입, 랜딩 개선 예정이면 유지 후 다시 볼 수 있습니다.",
+    },
+    HIGH_CPA: {
+      shortLabel: "비용 조정",
+      label: "목표 CPA 안으로 입찰 하향",
+      reason: "전환은 있으므로 전체 중지보다 비용 상한 안에서 효율을 맞추는 조정이 우선입니다.",
+    },
+    DEVICE_GAP: {
+      shortLabel: "기기 조정",
+      label: "성과 낮은 기기만 하향",
+      reason: "키워드 전체 중지가 아니라 성과가 좋은 PC 또는 모바일은 유지하고 낮은 쪽만 조정합니다.",
+    },
+    TIME_SLOT_GAP: {
+      shortLabel: "시간 조정",
+      label: "저성과 시간대 제외 또는 하향",
+      reason: "전환이 나는 시간대는 유지하고 비용만 쓰는 시간대부터 조정합니다.",
+    },
+    TRACKING_UNVERIFIED: {
+      shortLabel: "추적 확인",
+      label: "전환 추적 확인",
+      reason: "주문 연결이 불확실하면 조정이 아니라 데이가 원천 집계와 추적 상태를 먼저 확인해야 합니다.",
+    },
+    SHOPPING_SEARCH_NO_ORDER: {
+      shortLabel: "상품 노출 점검",
+      label: "입찰 하향 또는 상품 노출 점검",
+      reason: "쇼핑검색어는 상품명, 썸네일, 랜딩 적합도가 영향을 주므로 중지 전 상품 노출 적합성을 확인합니다.",
+    },
+    SHOPPING_SEARCH_LOW_DIRECT_CVR: {
+      shortLabel: "전환율 점검",
+      label: "입찰 하향 또는 상품 노출 조건 조정",
+      reason: "직접 전환율이 낮아도 시즌 검색어이거나 대표 상품 노출이면 관찰 기간을 둔 뒤 조정할 수 있습니다.",
+    },
+  };
+
+  return copies[diagnosis.kind];
+}
+
+function keywordDelegationCopy(diagnosis: AdPerformanceDiagnosis): WorkDeskCardView["delegation"] {
+  if (diagnosis.character === "day") {
+    return {
+      state: "NEEDS_DATA_REVIEW",
+      label: "위임 전 데이터 확인",
+      summary: "전환 추적과 주문 연결이 확인되기 전에는 모아가 자동 조정하지 않습니다.",
+      ruleHint: "추적 확인 완료 후 동일 조건의 조정 위임 여부를 대표가 다시 정합니다.",
+      reportLabel: "데이가 확인 결과를 모아에게 재보고",
+    };
+  }
+
+  return {
+    state: "OWNER_FIRST_APPROVAL_REQUIRED",
+    label: "대표 첫 승인 필요",
+    summary: "처음 실행하는 키워드 조정 유형은 대표가 먼저 승인합니다.",
+    ruleHint: "승인 시 같은 브랜드, 같은 진단, 같은 조정 한도는 다음부터 모아에게 위임할 수 있습니다.",
+    reportLabel: "모아 자동 처리 후에도 대표에게 결과 보고",
+  };
+}
+
+function diagnosisKindLabel(kind: AdPerformanceDiagnosis["kind"]): string {
+  const labels: Record<AdPerformanceDiagnosis["kind"], string> = {
+    CLICKS_NO_ORDER: "클릭은 있으나 주문 없음",
+    LOW_CVR: "전환율 낮음",
+    HIGH_CPA: "CPA 높음",
+    DEVICE_GAP: "기기별 성과 차이",
+    TIME_SLOT_GAP: "시간대별 성과 차이",
+    TRACKING_UNVERIFIED: "전환 추적 확인 필요",
+    SHOPPING_SEARCH_NO_ORDER: "쇼핑검색어 직접 전환 없음",
+    SHOPPING_SEARCH_LOW_DIRECT_CVR: "쇼핑검색어 직접 전환율 낮음",
+  };
+
+  return labels[kind];
+}
+
+function dedupeWorkDeskCards(cards: WorkDeskCardView[]): WorkDeskCardView[] {
+  return Array.from(new Map(cards.map((card) => [card.id, card])).values());
+}
+
+function compareWorkDeskCards(left: WorkDeskCardView, right: WorkDeskCardView): number {
+  return workDeskCardPriority(right) - workDeskCardPriority(left);
+}
+
+function workDeskCardPriority(card: WorkDeskCardView): number {
+  const priorityScore = card.priorityLabel === "높음" ? 30 : card.priorityLabel === "중간" ? 20 : 10;
+  const ownerScore = card.ownerId === "gro" ? 4 : card.ownerId === "day" ? 3 : 1;
+  return priorityScore + ownerScore;
+}
+
+function severityLabel(severity: AdPerformanceDiagnosis["severity"]): string {
+  const labels: Record<AdPerformanceDiagnosis["severity"], string> = {
+    LOW: "낮음",
+    MEDIUM: "중간",
+    HIGH: "높음",
+  };
+
+  return labels[severity];
+}
+
+function brandLabelFromKey(brandKey: string): string {
+  const labels: Record<string, string> = {
+    STICKERSEE: "스티커씨",
+    COFFEEPRINT: "커피프린트",
+  };
+
+  return labels[brandKey.toUpperCase()] ?? brandKey;
+}
+
+function deviceLabel(device: SearchAdPerformanceSnapshot["device"]): string {
+  const labels: Record<SearchAdPerformanceSnapshot["device"], string> = {
+    ALL: "전체",
+    PC: "PC",
+    MOBILE: "모바일",
+  };
+
+  return labels[device];
+}
+
+function sum(values: number[]): number {
+  return values.reduce((total, value) => total + value, 0);
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toLocaleString("ko-KR", { maximumFractionDigits: 1 })}%`;
 }
 
 function buildMoaSummary(approvalRequests: ApprovalRequest[], providerAgendaCount: number): string {
@@ -1196,9 +1477,9 @@ function buildCharacterStatuses(characterReports: CharacterReport[]): AgendaRoom
     {
       id: "maru",
       name: "마루",
-      role: "손익 담당",
+      role: "커머스 운영",
       tone: "finance",
-      status: activeSet.has("maru") ? "채널 매출 균형 점검안 상신" : "예산 상한과 마진 조건 확인",
+      status: activeSet.has("maru") ? "브랜드별 주문/판매채널 상태 점검안 상신" : "브랜드별 주문, 상품 흐름, 판매채널 상태 확인",
       workload: 58,
       queueCount: queueCounts.get("maru") ?? 0,
     },
