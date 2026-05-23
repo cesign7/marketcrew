@@ -60,9 +60,6 @@ export function CharacterDesk({
   return (
     <section className="character-desk-section" aria-label="캐릭터별 업무 현황">
       <div className="character-switcher" aria-label="캐릭터 선택">
-        <Link className={!selectedCharacterId ? "is-active" : ""} href="/characters">
-          전체
-        </Link>
         {characters.map((character) => (
           <Link
             className={selectedCharacterId === character.id ? "is-active" : ""}

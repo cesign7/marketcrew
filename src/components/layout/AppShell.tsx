@@ -11,10 +11,9 @@ import {
   RefreshCcw,
   Settings2,
   TrendingUp,
-  UsersRound,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useState, type ReactNode } from "react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { ViewFilterControls, type ViewFilterOption } from "./ViewFilterControls";
 
@@ -37,13 +36,6 @@ const navItems = [
     description: "결재와 긴급 신호",
     href: "/operations",
     icon: LayoutDashboard,
-  },
-  {
-    key: "characters",
-    label: "캐릭터 업무데스크",
-    description: "직원별 업무 현황",
-    href: "/characters",
-    icon: UsersRound,
   },
   {
     key: "approvals",
@@ -126,15 +118,15 @@ type MarketCrewWindow = Window &
   };
 
 export function AppShell({ active, eyebrow, title, description, generatedAt, actions, children }: AppShellProps) {
-  const activeItem = navItems.find((item) => item.key === active) ?? navItems[0];
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const activeHref = navItems.find((item) => item.key === active)?.href ?? pathname ?? "/operations";
 
   const warmRoute = useCallback(
     (href: string) => {
-      if (href === activeItem.href || typeof window === "undefined") {
+      if (href === activeHref || typeof window === "undefined") {
         return;
       }
 
@@ -151,7 +143,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
         marketCrewWindow.__marketcrewWarmedRoutes.delete(href);
       }
     },
-    [activeItem.href, router],
+    [activeHref, router],
   );
 
   useEffect(() => {
@@ -172,7 +164,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
     }
 
     const warmableRoutes = [...navItems.map((item) => item.href), ...characterDeskItems.map((item) => item.href)].filter(
-      (href) => href !== activeItem.href,
+      (href) => href !== activeHref,
     );
     const timeoutIds: number[] = [];
     warmableRoutes.forEach((href, index) => {
@@ -182,7 +174,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
     return () => {
       timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
     };
-  }, [activeItem.href, warmRoute]);
+  }, [activeHref, warmRoute]);
 
   const SidebarToggleIcon = isSidebarCollapsed ? PanelLeftOpen : PanelLeftClose;
 
@@ -211,44 +203,13 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
             const isActive = item.key === active;
 
             return (
-              <Link
-                aria-current={isActive ? "page" : undefined}
-                aria-label={item.label}
-                className={`app-nav-link${isActive ? " is-active" : ""}${pendingHref === item.href && !isActive ? " is-pending" : ""}`}
-                data-prefetch-mode="intent"
-                href={item.href}
-                key={item.key}
-                onClick={() => {
-                  setPendingHref(item.href);
-                  warmRoute(item.href);
-                }}
-                onFocus={() => warmRoute(item.href)}
-                onMouseEnter={() => warmRoute(item.href)}
-                onTouchStart={() => warmRoute(item.href)}
-                prefetch
-                title={`${item.label} - ${item.description}`}
-              >
-                <Icon size={18} aria-hidden="true" />
-                <span>
-                  <strong>{item.label}</strong>
-                  <small>{item.description}</small>
-                </span>
-              </Link>
-            );
-          })}
-          <span className="app-nav-section-label">캐릭터별 데스크</span>
-          <div className="app-character-menu" aria-label="캐릭터별 데스크">
-            {characterDeskItems.map((item) => {
-              const isActive = pathname === item.href;
-              return (
+              <Fragment key={item.key}>
                 <Link
                   aria-current={isActive ? "page" : undefined}
-                  aria-label={item.menuLabel}
-                  className={`app-character-menu-link${isActive ? " is-active" : ""}${
-                    pendingHref === item.href && !isActive ? " is-pending" : ""
-                  }`}
+                  aria-label={item.label}
+                  className={`app-nav-link${isActive ? " is-active" : ""}${pendingHref === item.href && !isActive ? " is-pending" : ""}`}
+                  data-prefetch-mode="intent"
                   href={item.href}
-                  key={item.href}
                   onClick={() => {
                     setPendingHref(item.href);
                     warmRoute(item.href);
@@ -257,15 +218,51 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
                   onMouseEnter={() => warmRoute(item.href)}
                   onTouchStart={() => warmRoute(item.href)}
                   prefetch
-                  title={`${item.menuLabel} - ${item.description}`}
+                  title={`${item.label} - ${item.description}`}
                 >
-                  <span aria-hidden="true">{item.initial}</span>
-                  <strong>{item.menuLabel}</strong>
-                  <small>{item.description}</small>
+                  <Icon size={18} aria-hidden="true" />
+                  <span>
+                    <strong>{item.label}</strong>
+                    <small>{item.description}</small>
+                  </span>
                 </Link>
-              );
-            })}
-          </div>
+                {item.key === "approvals" ? (
+                  <>
+                    <span className="app-nav-section-label">캐릭터별 데스크</span>
+                    <div className="app-character-menu" aria-label="캐릭터별 데스크">
+                      {characterDeskItems.map((characterItem) => {
+                        const isCharacterActive = pathname === characterItem.href;
+                        return (
+                          <Link
+                            aria-current={isCharacterActive ? "page" : undefined}
+                            aria-label={characterItem.menuLabel}
+                            className={`app-character-menu-link${isCharacterActive ? " is-active" : ""}${
+                              pendingHref === characterItem.href && !isCharacterActive ? " is-pending" : ""
+                            }`}
+                            href={characterItem.href}
+                            key={characterItem.href}
+                            onClick={() => {
+                              setPendingHref(characterItem.href);
+                              warmRoute(characterItem.href);
+                            }}
+                            onFocus={() => warmRoute(characterItem.href)}
+                            onMouseEnter={() => warmRoute(characterItem.href)}
+                            onTouchStart={() => warmRoute(characterItem.href)}
+                            prefetch
+                            title={`${characterItem.menuLabel} - ${characterItem.description}`}
+                          >
+                            <span aria-hidden="true">{characterItem.initial}</span>
+                            <strong>{characterItem.menuLabel}</strong>
+                            <small>{characterItem.description}</small>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </>
+                ) : null}
+              </Fragment>
+            );
+          })}
         </nav>
       </aside>
 
@@ -280,7 +277,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
             </div>
 
             <section className="workspace-actions" aria-label="화면 실행 버튼">
-              <Link className="secondary-button" href={activeItem.href} prefetch={false}>
+              <Link className="secondary-button" href={activeHref} prefetch={false}>
                 <RefreshCcw size={16} aria-hidden="true" />
                 새로고침
               </Link>
