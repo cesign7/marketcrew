@@ -287,6 +287,98 @@ describe("읽기 전용 연동 수집", () => {
     expect(report.evidenceNotes.join(" ")).toContain("성과 스냅샷 4건");
   });
 
+  it("Search Ad 자동 발견은 뒤쪽 커피프린트 파워링크 캠페인도 기본 범위에 포함한다", async () => {
+    const report = await import("../../src/lib/integrations/search-ad/read-only-sync").then(({ syncSearchAdKeywordTool }) =>
+      syncSearchAdKeywordTool({
+        checkedAt: NOW,
+        env: {
+          NAVER_SEARCH_AD_ACCESS_LICENSE: "access-license",
+          NAVER_SEARCH_AD_SECRET_KEY: "secret",
+          NAVER_SEARCH_AD_CUSTOMER_ID: "customer-id",
+        },
+        fetchImpl: async (url) => {
+          const parsed = new URL(String(url));
+
+          if (parsed.pathname === "/keywordstool") {
+            return jsonResponse({
+              keywordList: [{ relKeyword: "기업 연하장", monthlyPcQcCnt: "200", monthlyMobileQcCnt: "800" }],
+            });
+          }
+
+          if (parsed.pathname === "/ncc/campaigns") {
+            const recordSize = Number(parsed.searchParams.get("recordSize") ?? "5");
+            return jsonResponse(
+              [
+                { nccCampaignId: "cmp-sticker", name: "스티커씨_파워링크", status: "ELIGIBLE", campaignTp: "WEB_SITE" },
+                { nccCampaignId: "cmp-paused-1", name: "모카프린트_파워링크", status: "PAUSED", campaignTp: "WEB_SITE" },
+                { nccCampaignId: "cmp-sticker-shopping", name: "스티커씨_쇼핑검색", status: "ELIGIBLE", campaignTp: "SHOPPING" },
+                { nccCampaignId: "cmp-coffee-shopping", name: "커피프린트_쇼핑검색", status: "PAUSED", campaignTp: "SHOPPING" },
+                { nccCampaignId: "cmp-paused-2", name: "모카프린트_쇼핑검색", status: "PAUSED", campaignTp: "SHOPPING" },
+                { nccCampaignId: "cmp-coffee", name: "커피프린트_파워링크", status: "ELIGIBLE", campaignTp: "WEB_SITE" },
+              ].slice(0, recordSize),
+            );
+          }
+
+          if (parsed.pathname === "/ncc/adgroups") {
+            const campaignId = parsed.searchParams.get("nccCampaignId");
+            if (campaignId === "cmp-sticker") {
+              return jsonResponse([{ nccAdgroupId: "grp-sticker", name: "스티커씨_생일스티커", status: "ELIGIBLE", adgroupType: "WEB_SITE" }]);
+            }
+            if (campaignId === "cmp-coffee") {
+              return jsonResponse([{ nccAdgroupId: "grp-coffee", name: "40_기타 감사장", status: "ELIGIBLE", adgroupType: "WEB_SITE" }]);
+            }
+            return jsonResponse([]);
+          }
+
+          if (parsed.pathname === "/ncc/keywords") {
+            const adGroupId = parsed.searchParams.get("nccAdgroupId");
+            if (adGroupId === "grp-sticker") {
+              return jsonResponse(
+                Array.from({ length: 50 }, (_, index) => ({
+                  nccKeywordId: `nkw-sticker-${index + 1}`,
+                  keyword: `스티커 키워드 ${index + 1}`,
+                  status: "ELIGIBLE",
+                })),
+              );
+            }
+            if (adGroupId === "grp-coffee") {
+              return jsonResponse([{ nccKeywordId: "nkw-coffee-1", keyword: "기업 감사장", status: "ELIGIBLE" }]);
+            }
+            return jsonResponse([]);
+          }
+
+          if (parsed.pathname === "/ncc/product-groups") {
+            return jsonResponse([]);
+          }
+
+          if (parsed.pathname === "/stats" && parsed.searchParams.get("statType") === "NPLA_SCH_KEYWORD") {
+            return jsonResponse([]);
+          }
+
+          if (parsed.pathname === "/stats" && parsed.searchParams.has("breakdown")) {
+            return jsonResponse({ summaryStatResponse: { data: [] } });
+          }
+
+          if (parsed.pathname === "/stats") {
+            const ids = (parsed.searchParams.get("ids") ?? "").split(",").filter(Boolean);
+            return jsonResponse({
+              summaryStatResponse: {
+                data: ids.map((id) => ({ id, impCnt: 100, clkCnt: 1, salesAmt: 500, ccnt: 0, convAmt: 0 })),
+              },
+            });
+          }
+
+          return jsonResponse({});
+        },
+      }),
+    );
+
+    expect(report.searchAdPerformanceSnapshots?.some((snapshot) => snapshot.brandKey === "coffeeprint" && snapshot.keyword === "기업 감사장")).toBe(
+      true,
+    );
+    expect(report.evidenceNotes.join(" ")).toContain("성과 대상 51개");
+  });
+
   it("쇼핑검색광고 성공 응답은 검색어 성과 스냅샷으로 정규화한다", async () => {
     const requestedPaths: string[] = [];
     const report = await import("../../src/lib/integrations/search-ad/read-only-sync").then(({ syncSearchAdKeywordTool }) =>

@@ -1305,7 +1305,7 @@ function shoppingSearchAdStatsEnabled(env: EnvMap): boolean {
 }
 
 function searchAdStatMaxCampaignCount(env: EnvMap): number {
-  return clampCount(parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_STAT_MAX_CAMPAIGNS), 1, 20, 5);
+  return clampCount(parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_STAT_MAX_CAMPAIGNS), 1, 20, 20);
 }
 
 function searchAdStatMaxAdGroupCount(env: EnvMap): number {
@@ -1327,7 +1327,7 @@ function shoppingSearchAdStatMaxSnapshotCount(env: EnvMap): number {
 }
 
 function searchAdStatMaxKeywordCount(env: EnvMap): number {
-  return clampCount(parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_STAT_MAX_KEYWORDS), 1, 200, 50);
+  return clampCount(parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_STAT_MAX_KEYWORDS), 1, 200, 200);
 }
 
 function searchAdStatRequestChunkSize(env: EnvMap): number {
