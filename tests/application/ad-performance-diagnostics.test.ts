@@ -43,6 +43,33 @@ describe("buildAdPerformanceDiagnoses", () => {
     expect(diagnoses.find((diagnosis) => diagnosis.kind === "HIGH_CPA")?.summary).toContain("목표 CPA");
   });
 
+  it("클릭 수가 적어도 비용 기준을 넘은 무전환 키워드는 그로 업무카드 후보로 판정한다", () => {
+    const diagnoses = buildAdPerformanceDiagnoses({
+      snapshots: [
+        buildSnapshot({
+          id: "ad-perf-low-click-expensive-no-order",
+          keyword: "초청장제작",
+          brandKey: "COFFEEPRINT",
+          clicks: 4,
+          cost: 13942,
+          conversions: 0,
+          revenue: 0,
+          targetCpa: 12000,
+        }),
+      ],
+      generatedAt: GENERATED_AT,
+    });
+
+    expect(diagnoses).toHaveLength(1);
+    expect(diagnoses[0]).toMatchObject({
+      kind: "CLICKS_NO_ORDER",
+      character: "gro",
+      brandKey: "COFFEEPRINT",
+      keyword: "초청장제작",
+      dataConfidence: "READY_TO_APPROVE",
+    });
+  });
+
   it("기기와 시간대별 전환율 차이를 데이터 규칙으로 판정한다", () => {
     const diagnoses = buildAdPerformanceDiagnoses({
       snapshots: [

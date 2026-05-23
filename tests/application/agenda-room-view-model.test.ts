@@ -332,6 +332,22 @@ describe("buildAgendaRoomViewModel", () => {
     expect(keywordDashboard.recommendationKeywords.map((candidate) => candidate.keyword)).toContain("부처님오신날 선물카드");
   });
 
+  it("키워드 대시보드는 전체 성과와 기기/시간대 성과를 중복 합산하지 않는다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    repository.saveProviderSyncReports([buildSegmentedSearchAdPerformanceReport()]);
+
+    const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
+
+    const wasteKeyword = viewModel.keywordPerformanceDashboard.wasteKeywords.find(
+      (row) => row.keyword === "초청장제작",
+    );
+    expect(wasteKeyword).toMatchObject({
+      clicksLabel: "클릭 2회",
+      costLabel: "비용 6,971원",
+    });
+    expect(viewModel.workDeskCards.map((card) => card.keywordLabel)).not.toContain("초청장제작");
+  });
+
   it("저장된 이전 검색광고 결재안이 있어도 브랜드별 최신 카드명을 우선한다", () => {
     const repository = createMemoryMarketingWorkflowRepository();
     repository.saveProviderSyncReports([buildSearchAdPerformanceReportForWorkDesk()]);
@@ -792,6 +808,100 @@ function buildSearchAdPerformanceReportForWorkDesk(): ProviderSyncReport {
         clicks: 42,
         directConversionRate: 0,
         cost: 18900,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+    ],
+  };
+}
+
+function buildSegmentedSearchAdPerformanceReport(): ProviderSyncReport {
+  return {
+    id: "provider-sync-search-ad-segmented-2026-05-23",
+    provider: "search_ad",
+    label: "네이버 키워드광고 성과 읽기 전용 수집",
+    status: "SYNCED",
+    readOnly: true,
+    networkAttempted: true,
+    writeAttempted: false,
+    endpoint: "https://api.searchad.naver.com/stats",
+    sourceUrl: "http://naver.github.io/searchad-apidoc/",
+    missingEnvKeys: [],
+    evidenceNotes: ["전체/기기/시간대 성과 집계만 저장했습니다."],
+    checkedAt: "2026-05-23T08:00:00.000Z",
+    httpStatus: 200,
+    searchAdPerformanceSnapshots: [
+      {
+        id: "ad-perf-coffeeprint-invite-all",
+        provider: "naver_search_ad",
+        brandKey: "COFFEEPRINT",
+        campaignName: "커피프린트_파워링크",
+        adGroupName: "30_초대장",
+        keyword: "초청장제작",
+        device: "ALL",
+        windowDays: 7,
+        impressions: 18,
+        clicks: 2,
+        cost: 6971,
+        conversions: 0,
+        revenue: 0,
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+      {
+        id: "ad-perf-coffeeprint-invite-pc",
+        provider: "naver_search_ad",
+        brandKey: "COFFEEPRINT",
+        campaignName: "커피프린트_파워링크",
+        adGroupName: "30_초대장",
+        keyword: "초청장제작",
+        device: "PC",
+        windowDays: 7,
+        impressions: 18,
+        clicks: 2,
+        cost: 6971,
+        conversions: 0,
+        revenue: 0,
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+      {
+        id: "ad-perf-coffeeprint-invite-11",
+        provider: "naver_search_ad",
+        brandKey: "COFFEEPRINT",
+        campaignName: "커피프린트_파워링크",
+        adGroupName: "30_초대장",
+        keyword: "초청장제작",
+        device: "ALL",
+        timeSlot: "11시",
+        windowDays: 7,
+        impressions: 8,
+        clicks: 1,
+        cost: 3833,
+        conversions: 0,
+        revenue: 0,
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+      {
+        id: "ad-perf-coffeeprint-invite-16",
+        provider: "naver_search_ad",
+        brandKey: "COFFEEPRINT",
+        campaignName: "커피프린트_파워링크",
+        adGroupName: "30_초대장",
+        keyword: "초청장제작",
+        device: "ALL",
+        timeSlot: "16시",
+        windowDays: 7,
+        impressions: 10,
+        clicks: 1,
+        cost: 3138,
+        conversions: 0,
+        revenue: 0,
+        trackingVerified: true,
         collectedAt: "2026-05-23T08:00:00.000Z",
         dataScope: "aggregate_only",
       },

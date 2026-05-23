@@ -1059,9 +1059,14 @@ function aggregateKeywordPerformance(snapshots: SearchAdPerformanceSnapshot[]): 
 }
 
 function snapshotsForKeywordRanking(group: SearchAdPerformanceSnapshot[]): SearchAdPerformanceSnapshot[] {
-  const allDeviceSnapshots = group.filter((snapshot) => snapshot.device === "ALL");
-  if (allDeviceSnapshots.length > 0) {
-    return allDeviceSnapshots;
+  const overallSnapshots = group.filter((snapshot) => snapshot.device === "ALL" && !snapshot.timeSlot);
+  if (overallSnapshots.length > 0) {
+    return overallSnapshots;
+  }
+
+  const deviceSnapshots = group.filter((snapshot) => snapshot.device !== "ALL" && !snapshot.timeSlot);
+  if (deviceSnapshots.length > 0) {
+    return deviceSnapshots;
   }
 
   return group;

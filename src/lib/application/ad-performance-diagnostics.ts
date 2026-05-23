@@ -61,7 +61,7 @@ export function buildAdPerformanceDiagnoses(input: {
       continue;
     }
 
-    if (snapshot.clicks >= thresholds.minClicks && snapshot.conversions === 0) {
+    if ((snapshot.clicks >= thresholds.minClicks || snapshot.cost >= thresholds.minCost) && snapshot.conversions === 0) {
       diagnoses.push(buildClicksNoOrderDiagnosis(snapshot, input.generatedAt));
       continue;
     }
