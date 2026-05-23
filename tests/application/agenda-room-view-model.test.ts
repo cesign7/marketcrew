@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildAgendaRoomViewModel } from "../../src/features/agenda-room/buildAgendaRoomViewModel";
 import { normalizeAgendaRoomViewModelCompatibility } from "../../src/features/agenda-room/loadAgendaRoomViewModel";
-import type { AgentRun, AgentRunWorkflowLink, ProviderSyncReport } from "../../src/lib/domain";
+import type { AgentRun, AgentRunWorkflowLink, ApprovalRequest, ProviderSyncReport } from "../../src/lib/domain";
 import { createMemoryMarketingWorkflowRepository } from "../../src/lib/persistence/memory-repository";
 
 describe("buildAgendaRoomViewModel", () => {
@@ -330,6 +330,21 @@ describe("buildAgendaRoomViewModel", () => {
       landingFitLabel: "랜딩 적합도 점검",
     });
     expect(keywordDashboard.recommendationKeywords.map((candidate) => candidate.keyword)).toContain("부처님오신날 선물카드");
+  });
+
+  it("저장된 이전 검색광고 결재안이 있어도 브랜드별 최신 카드명을 우선한다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    repository.saveProviderSyncReports([buildSearchAdPerformanceReportForWorkDesk()]);
+    repository.saveApprovalRequests([buildStaleSearchAdApprovalRequest()]);
+
+    const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
+    const searchPreview = viewModel.approvalPreviews.find(
+      (preview) => preview.id === "approval-agenda-provider-search-ad-performance-stickersee-2026-05-23",
+    );
+
+    expect(searchPreview?.title).toBe("스티커씨 저성과 검색광고 키워드 조정 안건");
+    expect(searchPreview?.evidenceSummary).toContain("스티커씨의 주문 없는 키워드");
+    expect(searchPreview?.statusLabel).toBe("대표 승인 대기");
   });
 
   it("추천 키워드 근거는 누적 수집 이력이 반복되어도 키워드와 추이 단위로 접는다", () => {
@@ -781,6 +796,39 @@ function buildSearchAdPerformanceReportForWorkDesk(): ProviderSyncReport {
         dataScope: "aggregate_only",
       },
     ],
+  };
+}
+
+function buildStaleSearchAdApprovalRequest(): ApprovalRequest {
+  return {
+    id: "approval-agenda-provider-search-ad-performance-stickersee-2026-05-23",
+    title: "저성과 검색광고 키워드 조정 안건",
+    moaSynthesisReportId: "moa-synthesis-sample-001",
+    evidenceSummary: "저장된 이전 검색광고 성과 안건입니다.",
+    evidenceIds: ["ad-perf-workdesk-no-order"],
+    dataConfidence: "READY_TO_APPROVE",
+    riskLevel: "LOW",
+    executionPlan: {
+      id: "execution-agenda-provider-search-ad-performance-stickersee-2026-05-23",
+      workType: "SEARCH_AD_BID_BUDGET",
+      beforeState: {},
+      afterState: {},
+      diffSummary: "저장된 이전 diff입니다.",
+      rollbackPlan: "내부 초안만 취소합니다.",
+      measurementPlan: {
+        baselineWindow: {
+          startDate: "2026-04-23",
+          endDate: "2026-05-23",
+          anchorDate: "2026-05-23",
+        },
+        checkpoints: [],
+        metrics: ["CTR", "CVR", "CPA"],
+      },
+      executorKey: "internal-search-ad-performance-planner",
+      requiresWriteGate: false,
+    },
+    status: "PENDING",
+    createdAt: "2026-05-23T07:00:00.000Z",
   };
 }
 

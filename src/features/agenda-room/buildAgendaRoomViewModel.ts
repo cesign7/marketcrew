@@ -106,8 +106,8 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
       .filter(isProviderApprovalRequest)
       .map((approval) => [approval.id, approval]),
   );
-  const providerApprovalRequests = providerArtifacts.approvalRequests.map(
-    (request) => persistedProviderApprovalById.get(request.id) ?? request,
+  const providerApprovalRequests = providerArtifacts.approvalRequests.map((request) =>
+    mergePersistedProviderApprovalRequest(request, persistedProviderApprovalById.get(request.id)),
   );
   const allApprovalRequests = [...agendaCycle.approvalRequests, ...providerApprovalRequests];
   const allAgendaCandidates = [...agendaCycle.agendaCandidates, ...providerArtifacts.agendaCandidates];
@@ -1975,6 +1975,25 @@ function buildMoaSummary(approvalRequests: ApprovalRequest[], providerAgendaCoun
 
 function isProviderApprovalRequest(request: ApprovalRequest): boolean {
   return request.id.startsWith("approval-agenda-provider-");
+}
+
+function mergePersistedProviderApprovalRequest(
+  generated: ApprovalRequest,
+  persisted: ApprovalRequest | undefined,
+): ApprovalRequest {
+  if (!persisted) {
+    return generated;
+  }
+
+  if (!generated.id.includes("provider-search-ad-performance")) {
+    return persisted;
+  }
+
+  return {
+    ...generated,
+    status: persisted.status,
+    createdAt: persisted.createdAt,
+  };
 }
 
 function ownerNameFromRequest(request: ApprovalRequest, ownerCharacter?: CharacterKey): string {
