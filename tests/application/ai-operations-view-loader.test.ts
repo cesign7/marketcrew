@@ -4,6 +4,7 @@ import {
   buildDefaultAiOperationsSettings,
   resolveAiOperationsSettings,
 } from "../../src/features/people/ai-operations-settings";
+import type { AgentRun } from "../../src/lib/domain";
 
 describe("AI operations view loader", () => {
   afterEach(() => {
@@ -94,6 +95,42 @@ describe("AI operations view loader", () => {
     expect(visibleText).toContain("고객 관리 담당자");
     expect(visibleText).toContain("제미나이 3.5 빠른 모델");
     expect(visibleText).not.toMatch(/Chief of Staff|Performance Marketer|Merchandiser|Creative Strategist|Lifecycle Marketer|FP&A Controller|BI Analyst|AgentRun|CRM 담당자/);
+  });
+
+  it("인사과 사용 명세에서 내부 모의 실행 모델명을 업무명으로 보여준다", () => {
+    const settings = buildDefaultAiOperationsSettings({ now: "2026-05-23T00:00:00.000Z" });
+    const dryRunAgentRun: AgentRun = {
+      id: "agent-run-llm-dry-run-test",
+      runnerKey: "moa_llm_dry_run_queue",
+      runType: "llm_dry_run",
+      mode: "deterministic_fallback",
+      provider: "local",
+      model: "llm-dry-run-queue",
+      status: "SUCCEEDED",
+      inputSummary: "원천 행 없이 모의 실행 입력을 점검했습니다.",
+      outputSummary: "모의 실행만 기록했습니다.",
+      rawRowsIncluded: false,
+      tokenUsage: {
+        inputTokens: 1200,
+        outputTokens: 300,
+        totalTokens: 1500,
+        estimated: true,
+        estimatedCostKrw: 0,
+        basis: "실제 호출 전 모의 실행이라 실제 AI 모델 과금 없음",
+      },
+      evidenceIds: ["evidence-1"],
+      startedAt: "2026-05-23T00:00:00.000Z",
+      finishedAt: "2026-05-23T00:01:00.000Z",
+    };
+
+    const view = buildAiPeopleOfficeView({
+      settings,
+      agentRuns: [dryRunAgentRun],
+      generatedAt: "2026-05-23T00:02:00.000Z",
+    });
+
+    expect(view.modelUsageRows[0]?.model).toBe("AI 실행 큐(모의 실행)");
+    expect(view.modelUsageRows.map((row) => row.model).join(" ")).not.toContain("llm-dry-run-queue");
   });
 
   it("인사과는 정해진 신호 밖의 자유 탐색과 근거 요청 원칙을 함께 보여준다", () => {

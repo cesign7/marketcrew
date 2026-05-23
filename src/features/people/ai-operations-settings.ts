@@ -566,6 +566,7 @@ function modelDisplayLabel(model: string): string {
     "gemini-3.5-flash": "제미나이 3.5 빠른 모델",
     "gemini-3.1-flash-lite": "제미나이 3.1 경량 모델",
     "deterministic-fallback": "규칙 기반 대체",
+    "llm-dry-run-queue": "AI 실행 큐(모의 실행)",
   };
 
   return labels[model] ?? model;
