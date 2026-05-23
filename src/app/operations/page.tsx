@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, ShieldCheck, UsersRound } from "lucide-react";
+import { ClipboardList, ShieldCheck } from "lucide-react";
 import { AgendaCard } from "@/components/agenda-room/AgendaCard";
 import { AiPilotInsightPanel } from "@/components/agenda-room/AiPilotInsightPanel";
 import { CharacterRail } from "@/components/agenda-room/CharacterRail";
@@ -20,10 +20,6 @@ export default async function OperationsPage() {
       active="operations"
       actions={
         <>
-          <Link className="secondary-button" href="/characters">
-            <UsersRound size={16} aria-hidden="true" />
-            캐릭터 보기
-          </Link>
           <Link className="primary-button" href="/approvals">
             <ShieldCheck size={16} aria-hidden="true" />
             결재 검토
@@ -76,10 +72,6 @@ export default async function OperationsPage() {
           <h2 id="moa-brief-title">{viewModel.moaReport.title}</h2>
           <p>{viewModel.moaReport.summary}</p>
           <div className="brief-action-row">
-            <Link className="secondary-button" href="/characters">
-              <UsersRound size={16} aria-hidden="true" />
-              직원별 보기
-            </Link>
             <Link className="secondary-button" href="/follow-ups">
               <ClipboardList size={16} aria-hidden="true" />
               후속 업무

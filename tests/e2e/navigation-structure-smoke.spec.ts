@@ -12,17 +12,10 @@ test("대표 업무실은 왼쪽 업무 메뉴와 상단 기준 필터로 나뉜
   await expect(navigation.getByRole("link", { name: "인사과" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "설정" })).toBeVisible();
   await expect(navigation.getByRole("link", { name: "데이터 연동" })).toHaveAttribute("data-prefetch-mode", "intent");
-  await expect(navigation.getByText("캐릭터별 데스크")).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "모아 데스크" })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "그로 데스크" })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "데이 데스크" })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "마루 데스크" }).filter({ hasText: "준비중" })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "프로 데스크" }).filter({ hasText: "준비중" })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "리피 데스크" }).filter({ hasText: "준비중" })).toBeVisible();
-  await expect(navigation.getByRole("link", { name: "카피 데스크" }).filter({ hasText: "준비중" })).toBeVisible();
+  await expect(navigation.getByText("캐릭터별 데스크")).toHaveCount(0);
+  await expect(navigation.getByRole("link", { name: /데스크/ })).toHaveCount(0);
   const navigationText = await navigation.innerText();
-  expect(navigationText.indexOf("결재/실행관리")).toBeLessThan(navigationText.indexOf("캐릭터별 데스크"));
-  expect(navigationText.indexOf("캐릭터별 데스크")).toBeLessThan(navigationText.indexOf("데이터 연동"));
+  expect(navigationText).not.toContain("캐릭터별 데스크");
 
   const topControls = page.getByRole("region", { name: "화면 보기 기준" });
   await expect(topControls.getByRole("button", { name: "전체" })).toBeVisible();
@@ -135,6 +128,7 @@ test("모바일 상단 메뉴는 첫 화면을 과하게 차지하지 않는다"
 
   expect(topbarHeight).toBeLessThanOrEqual(300);
   await expect(page.getByRole("region", { name: "화면 실행 버튼" }).getByRole("link", { name: "결재 검토" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "화면 실행 버튼" }).getByRole("link", { name: "캐릭터 보기" })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "화면 보기 기준" }).getByRole("button", { name: "스티커씨" })).toBeVisible();
 });
 
@@ -161,36 +155,15 @@ test("앱 브라우저 폭에서도 왼쪽 메뉴와 본문 카드가 읽히게 
   expect(overflowingPolicyCards).toBe(0);
 });
 
-test("왼쪽 캐릭터별 데스크에서 캐릭터별 업무 화면으로 이동한다", async ({ page }) => {
+test("캐릭터 업무데스크 메뉴와 라우트는 제공하지 않는다", async ({ page }) => {
   await page.goto("/operations");
 
-  await page.getByRole("navigation", { name: "주요 업무 메뉴" }).getByRole("link", { name: "그로 데스크" }).click();
+  const navigation = page.getByRole("navigation", { name: "주요 업무 메뉴" });
+  await expect(navigation.getByText("캐릭터별 데스크")).toHaveCount(0);
+  await expect(navigation.getByRole("link", { name: "그로 데스크" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "캐릭터 보기" })).toHaveCount(0);
+  await expect(page.locator("a[href^='/characters']")).toHaveCount(0);
 
-  await expect(page).toHaveURL(/\/characters\/gro$/);
-  await expect(page.getByRole("heading", { level: 1, name: "그로 업무데스크" })).toBeVisible();
-  await expect(page.getByText("키워드 성과/추천 안건 상신")).toBeVisible();
-  await expect(page.getByText(/계산식: 기본/).first()).toBeVisible();
-  await expect(page.getByRole("heading", { level: 2, name: "키워드 성과 대시보드" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "충분한 클릭 기준" })).toContainText("클릭 10회");
-  await expect(page.getByRole("region", { name: "상위 전환 키워드 10개" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "하위 전환 키워드 10개" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "PC/모바일 성과" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "시간대별 성과" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "쇼핑검색광고 점검 검색어" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "추천 키워드 후보" })).toBeVisible();
-  await expect(page.getByRole("region", { name: "추천 판단 근거" })).toBeVisible();
-  await expect(page.getByLabel("캐릭터 선택").getByRole("link", { name: "전체" })).toHaveCount(0);
-});
-
-test("모바일 캐릭터 업무데스크는 첫 화면 안에서 업무 카드를 보여준다", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/characters");
-
-  const firstCharacterCard = page.locator(".character-desk-card").first();
-  await expect(firstCharacterCard).toBeVisible();
-
-  await expect(page.getByRole("link", { name: "캐릭터 업무데스크" })).toHaveCount(0);
-  await expect(page.getByRole("navigation", { name: "주요 업무 메뉴" }).getByRole("link", { name: "모아 데스크" })).toBeVisible();
-  await expect(page.getByLabel("캐릭터 선택").getByRole("link", { name: "전체" })).toHaveCount(0);
-  await expect(firstCharacterCard).toBeInViewport();
+  const response = await page.goto("/characters");
+  expect(response?.status()).toBe(404);
 });

@@ -8,7 +8,6 @@ const FRONTEND_BACKEND_READ_PATHS = [
   "/operations",
   "/approvals",
   "/follow-ups",
-  "/characters",
   "/data",
   "/growth",
   "/people",

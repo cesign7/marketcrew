@@ -23,7 +23,7 @@ export function KeywordPerformanceDashboard({ dashboard, selectedBrand = "all" }
     <section className="keyword-performance-dashboard" aria-labelledby="keyword-performance-dashboard-title">
       <div className="section-heading compact">
         <div>
-          <span className="eyebrow">그로 데스크</span>
+          <span className="eyebrow">키워드 성과</span>
           <h2 id="keyword-performance-dashboard-title">{dashboard.title}</h2>
           <p>{activeView.summaryLabel}</p>
         </div>

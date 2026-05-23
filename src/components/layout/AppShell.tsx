@@ -15,11 +15,9 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useState, type ReactNode } from "react";
 import { LogoutButton } from "@/components/auth/LogoutButton";
-import { keywordPilotAvailability } from "@/features/characters/keyword-pilot";
-import type { CharacterKey } from "@/lib/domain";
 import { ViewFilterControls, type ViewFilterOption } from "./ViewFilterControls";
 
-export type AppNavKey = "operations" | "characters" | "approvals" | "data" | "growth" | "people" | "settings";
+export type AppNavKey = "operations" | "approvals" | "data" | "growth" | "people" | "settings";
 
 type AppShellProps = {
   active: AppNavKey;
@@ -81,29 +79,6 @@ const navItems = [
   href: string;
   icon: typeof LayoutDashboard;
 }>;
-
-const characterDeskItems = ([
-  { id: "moa", label: "모아", menuLabel: "모아 데스크", href: "/characters/moa", initial: "모" },
-  { id: "gro", label: "그로", menuLabel: "그로 데스크", href: "/characters/gro", initial: "그" },
-  { id: "maru", label: "마루", menuLabel: "마루 데스크", href: "/characters/maru", initial: "마" },
-  { id: "pro", label: "프로", menuLabel: "프로 데스크", href: "/characters/pro", initial: "프" },
-  { id: "ripi", label: "리피", menuLabel: "리피 데스크", href: "/characters/ripi", initial: "리" },
-  { id: "copy", label: "카피", menuLabel: "카피 데스크", href: "/characters/copy", initial: "카" },
-  { id: "day", label: "데이", menuLabel: "데이 데스크", href: "/characters/day", initial: "데" },
-] satisfies Array<{
-  id: CharacterKey;
-  label: string;
-  menuLabel: string;
-  href: string;
-  initial: string;
-}>).map((item) => {
-  const availability = keywordPilotAvailability(item.id);
-  return {
-    ...item,
-    ...availability,
-    description: availability.menuDescription,
-  };
-});
 
 const businessFilters: ViewFilterOption[] = [
   { label: "전체", value: "all" },
@@ -172,9 +147,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
       return;
     }
 
-    const warmableRoutes = [...navItems.map((item) => item.href), ...characterDeskItems.map((item) => item.href)].filter(
-      (href) => href !== activeHref,
-    );
+    const warmableRoutes = navItems.map((item) => item.href).filter((href) => href !== activeHref);
     const timeoutIds: number[] = [];
     warmableRoutes.forEach((href, index) => {
       timeoutIds.push(window.setTimeout(() => warmRoute(href), index * navWarmupStepMs));
@@ -235,40 +208,6 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
                     <small>{item.description}</small>
                   </span>
                 </Link>
-                {item.key === "approvals" ? (
-                  <>
-                    <span className="app-nav-section-label">캐릭터별 데스크</span>
-                    <div className="app-character-menu" aria-label="캐릭터별 데스크">
-                      {characterDeskItems.map((characterItem) => {
-                        const isCharacterActive = pathname === characterItem.href;
-                        return (
-                          <Link
-                            aria-current={isCharacterActive ? "page" : undefined}
-                            aria-label={characterItem.menuLabel}
-                            className={`app-character-menu-link${isCharacterActive ? " is-active" : ""}${
-                              pendingHref === characterItem.href && !isCharacterActive ? " is-pending" : ""
-                            }${characterItem.availability === "PREPARING" ? " is-preparing" : ""}`}
-                            href={characterItem.href}
-                            key={characterItem.href}
-                            onClick={() => {
-                              setPendingHref(characterItem.href);
-                              warmRoute(characterItem.href);
-                            }}
-                            onFocus={() => warmRoute(characterItem.href)}
-                            onMouseEnter={() => warmRoute(characterItem.href)}
-                            onTouchStart={() => warmRoute(characterItem.href)}
-                            prefetch
-                            title={`${characterItem.menuLabel} - ${characterItem.description}`}
-                          >
-                            <span aria-hidden="true">{characterItem.initial}</span>
-                            <strong>{characterItem.menuLabel}</strong>
-                            <small>{characterItem.description}</small>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </>
-                ) : null}
               </Fragment>
             );
           })}

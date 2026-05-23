@@ -803,9 +803,9 @@ function buildKeywordPerformanceDashboard(input: {
       "실제 외부 광고 변경은 대표 승인과 쓰기 게이트 통과 전까지 차단합니다.",
     ],
     brandTabs: [
-      { id: "all", label: "전체", href: "/characters/gro", summaryLabel: dashboardTabSummary(allSlice) },
-      { id: "coffeeprint", label: "커피프린트", href: "/characters/gro?brand=coffeeprint", summaryLabel: dashboardTabSummary(coffeeprintSlice) },
-      { id: "stickersee", label: "스티커씨", href: "/characters/gro?brand=stickersee", summaryLabel: dashboardTabSummary(stickerseeSlice) },
+      { id: "all", label: "전체", href: "/operations", summaryLabel: dashboardTabSummary(allSlice) },
+      { id: "coffeeprint", label: "커피프린트", href: "/operations?channel=coffeeprint", summaryLabel: dashboardTabSummary(coffeeprintSlice) },
+      { id: "stickersee", label: "스티커씨", href: "/operations?channel=stickersee", summaryLabel: dashboardTabSummary(stickerseeSlice) },
     ],
     brandViews: {
       all: allSlice,
