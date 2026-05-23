@@ -1131,7 +1131,11 @@ function keywordAggregateRow(
 
 function wasteKeywordNote(aggregate: KeywordAggregate): string {
   if (aggregate.conversions === 0) {
-    return "클릭은 충분하지만 주문이 없어 제외/하향 후보입니다.";
+    if (aggregate.clicks >= KEYWORD_DASHBOARD_MIN_CLICKS) {
+      return "클릭은 충분하지만 주문이 없어 제외/하향 후보입니다.";
+    }
+
+    return "클릭은 적지만 비용이 발생해 관찰/하향 후보입니다.";
   }
 
   const cpa = costPerOrder(aggregate);

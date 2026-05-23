@@ -344,6 +344,7 @@ describe("buildAgendaRoomViewModel", () => {
     expect(wasteKeyword).toMatchObject({
       clicksLabel: "클릭 2회",
       costLabel: "비용 6,971원",
+      noteLabel: "클릭은 적지만 비용이 발생해 관찰/하향 후보입니다.",
     });
     expect(viewModel.workDeskCards.map((card) => card.keywordLabel)).not.toContain("초청장제작");
   });
