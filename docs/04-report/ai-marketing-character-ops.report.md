@@ -119,6 +119,7 @@ QA Verdict:    QA_PASS
 | Provider history policy | Complete for MVP | API 조회 한계, 백필 분할, 일별 스냅샷, AI 요약 입력 기준 |
 | 판단 근거 확장 로드맵 | MVP 보강 완료 | 광고 설정, 기기/시간대 성과, 순매출/클레임, 데이터랩 세그먼트, 판매 분석 확장 순서 |
 | Product growth candidates | Complete for MVP | keyword, marketing, product discovery candidates |
+| 실제 LLM 파일럿 | 읽기 전용 파일럿 완료 | Gemini `gemini-3.5-flash`, 집계 입력만 사용, AgentRun 감사 기록 저장 |
 
 ### 3.2 Non-Functional Requirements
 
@@ -148,7 +149,13 @@ QA Verdict:    QA_PASS
 
 ### 4.0 2026-05-22 MVP Closeout
 
-후속 PDCA cycle에서 운영 DB/AgentRun provenance, 후속 업무 큐, LLM 비용 가드, `/operations` 카드별 근거 추적까지 완료했다. 1차 MVP 대비 진행율은 최신 상태 기준 100%로 닫는다. 실제 외부 provider write와 실제 LLM adapter call은 1차 MVP 밖의 후속 확장으로 유지한다.
+후속 PDCA cycle에서 운영 DB/AgentRun provenance, 후속 업무 큐, LLM 비용 가드, `/operations` 카드별 근거 추적까지 완료했다. 1차 MVP 대비 진행율은 최신 상태 기준 100%로 닫는다. 실제 외부 provider write는 1차 MVP 밖의 후속 확장으로 유지한다.
+
+### 4.0.1 2026-05-23 실제 데이터/LLM 파일럿
+
+대표 요청에 따라 기존 운영 생성 레코드를 백업 후 초기화하고, Search Ad, DataLab, 스마트스토어(스티커씨), 쇼핑몰(커피프린트) 네 채널을 읽기 전용으로 다시 수집했다. 이후 `POST /api/operations/llm-real-pilot`로 실제 provider 집계, 후보 안건, 근거 ID만 Gemini `gemini-3.5-flash`에 전달하는 파일럿을 수행했다.
+
+파일럿 결과는 `AgentRun(mode=llm, provider=gemini)`으로 저장하며, 원천 행/고객 식별정보/시크릿/provider write는 계속 제외한다. 비용 가드는 실제 프롬프트 기준 입력 토큰을 사전 추정한 뒤 1회/일/월 예산과 토큰 상한을 확인한다.
 
 ### 4.1 Carried Over to Next Cycle
 
@@ -225,11 +232,11 @@ QA Verdict:    QA_PASS
 
 - Generated Next cache files such as `.next/types/* 2.ts` can cause noisy typecheck failures after local app runs.
 - Follow-up tasks are visible as outcome context but not yet a full queue.
-- LLM planner provenance is still deterministic/fallback oriented; real model cost and run audit need a proper data model.
+- LLM 계획 provenance는 읽기 전용 Gemini 파일럿까지 연결됐다. 운영 반영 전에는 대표가 보는 결과 패널과 더 엄격한 정규화 분석 입력이 필요하다.
 
 ### 6.3 What to Try Next
 
-- Start the next cycle with DB schema and audit/provenance first, before adding new UI surfaces.
+- 다음 cycle은 대표가 보는 AI 파일럿 결과 패널과 정규화 분석 스키마부터 시작한다.
 - Add a small pre-release QA script so bkit QA pre-scan can run without manual fallback.
 - Add a dedicated follow-up queue after DB tables exist, not before.
 
@@ -262,6 +269,8 @@ QA Verdict:    QA_PASS
 | AgentRun/model/token/cost provenance | High | Next |
 | Follow-up internal task queue | Medium | After DB schema |
 | Actual provider write executor policy | High but gated | After DB/provenance and explicit approval |
+| AI 파일럿 결과 패널 | High | Next |
+| 정규화 분석 스키마 | High | Next |
 
 ---
 
@@ -285,6 +294,7 @@ QA Verdict:    QA_PASS
 
 - MVP boundary refined from broad AI marketing automation to evidence-first, approval-first operations room.
 - Real provider write moved out of first MVP and kept behind gates.
+- 실제 LLM 호출은 dry-run 전용에서 집계 근거 입력과 AgentRun 감사를 남기는 읽기 전용 Gemini 파일럿으로 확장했다.
 
 **Fixed:**
 
@@ -299,3 +309,4 @@ QA Verdict:    QA_PASS
 | 1.0 | 2026-05-22 | Completion report created | Codex |
 | 1.1 | 2026-05-22 | Added `/data` provider data contract transparency slice | Codex |
 | 1.2 | 2026-05-23 | Added `/data` provider evidence expansion roadmap for post-MVP judgment hardening | Codex |
+| 1.3 | 2026-05-23 | Added real provider collection reset and read-only Gemini LLM pilot evidence | Codex |

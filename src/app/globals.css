@@ -3584,6 +3584,116 @@ button:disabled {
   white-space: nowrap;
 }
 
+.product-opportunity-detail {
+  border-top: 1px dashed var(--line);
+  margin-top: 14px;
+  padding-top: 10px;
+}
+
+.product-opportunity-detail summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 950;
+  list-style: none;
+}
+
+.product-opportunity-detail summary::-webkit-details-marker {
+  display: none;
+}
+
+.product-opportunity-detail summary svg {
+  flex: 0 0 auto;
+  transition: transform 0.14s ease;
+}
+
+.product-opportunity-detail[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.product-opportunity-detail-body {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.product-opportunity-detail-product {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.product-opportunity-detail-product img {
+  width: 70px;
+  height: 70px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f6f8fb;
+  object-fit: cover;
+}
+
+.product-opportunity-detail dl,
+.product-opportunity-detail dd {
+  margin: 0;
+}
+
+.product-opportunity-detail dl {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.product-opportunity-detail dt,
+.product-opportunity-detail-grid span {
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.product-opportunity-detail dd,
+.product-opportunity-detail li,
+.product-opportunity-detail p {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.product-opportunity-detail-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.product-opportunity-detail-grid > div {
+  display: grid;
+  gap: 6px;
+}
+
+.product-opportunity-detail ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 16px;
+}
+
+.product-opportunity-detail p {
+  margin: 0;
+}
+
+.product-opportunity-detail em {
+  color: var(--red);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
 .product-opportunity-card footer {
   display: grid;
   gap: 6px;

@@ -21,6 +21,16 @@ describe("ProductGrowthOpportunityPanel", () => {
     expect(html).toContain('title="대표 상품 생일축하스티커 감사 문구 맞춤 제작형 스마트스토어 상품"');
     expect(html).toContain(">대표 상품 생일축하스티커 감사 문구 맞춤 제...<");
     expect(html).toContain("product-opportunity-title-popover");
+    expect(html).toContain('data-testid="product-opportunity-detail"');
+    expect(html).toContain("<summary><span>근거 자세히 보기</span>");
+    expect(html).toContain("<dt>대상 상품</dt>");
+    expect(html).toContain("<dd>생일축하스티커 감사 문구 맞춤 제작형 스마트스토어 상품</dd>");
+    expect(html).toContain("<dt>제안 제목</dt>");
+    expect(html).toContain("<span>키워드 후보</span>");
+    expect(html).toContain("<span>판단 근거</span>");
+    expect(html).toContain("<span>수집 기록</span>");
+    expect(html).toContain("<li>연동 수집 기록 1</li>");
+    expect(html).toContain("<span>다음 액션</span>");
   });
 });
 

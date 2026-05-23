@@ -1,4 +1,4 @@
-import { Megaphone, Package, Search, ShieldCheck } from "lucide-react";
+import { ChevronDown, Megaphone, Package, Search, ShieldCheck } from "lucide-react";
 import type { ProductGrowthOpportunityView } from "@/features/agenda-room/types";
 
 type ProductGrowthOpportunityPanelProps = {
@@ -20,6 +20,7 @@ export function ProductGrowthOpportunityPanel({ opportunities }: ProductGrowthOp
           {opportunities.map((opportunity) => {
             const displayTitle = truncateProductText(opportunity.title, 28);
             const displayTargetLabel = truncateProductText(opportunity.targetLabel, 16);
+            const sourceReportLabels = opportunity.sourceReportIds.length > 0 ? opportunity.sourceReportIds : ["연동 수집 기록 없음"];
 
             return (
               <article className="product-opportunity-card" key={opportunity.id}>
@@ -56,6 +57,56 @@ export function ProductGrowthOpportunityPanel({ opportunities }: ProductGrowthOp
                     <span key={label} title={label}>{truncateProductText(label, 24)}</span>
                   ))}
                 </div>
+                <details className="product-opportunity-detail" data-testid="product-opportunity-detail">
+                  <summary>
+                    <span>근거 자세히 보기</span>
+                    <ChevronDown size={16} aria-hidden="true" />
+                  </summary>
+                  <div className="product-opportunity-detail-body">
+                    <div className="product-opportunity-detail-product">
+                      <img src={opportunity.productImageUrl} alt={opportunity.productImageAlt} loading="lazy" />
+                      <dl>
+                        <div>
+                          <dt>대상 상품</dt>
+                          <dd>{opportunity.targetLabel}</dd>
+                        </div>
+                        <div>
+                          <dt>제안 제목</dt>
+                          <dd>{opportunity.title}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                    <div className="product-opportunity-detail-grid">
+                      <div>
+                        <span>키워드 후보</span>
+                        <ul>
+                          {opportunity.keywords.length > 0 ? (
+                            opportunity.keywords.map((keyword) => <li key={keyword}>{keyword}</li>)
+                          ) : (
+                            <li>키워드 추가 수집 필요</li>
+                          )}
+                        </ul>
+                      </div>
+                      <div>
+                        <span>판단 근거</span>
+                        <ul>
+                          {opportunity.evidenceLabels.map((label) => <li key={label}>{label}</li>)}
+                        </ul>
+                      </div>
+                      <div>
+                        <span>수집 기록</span>
+                        <ul>
+                          {sourceReportLabels.map((label) => <li key={label}>{label}</li>)}
+                        </ul>
+                      </div>
+                      <div>
+                        <span>다음 액션</span>
+                        <p>{opportunity.nextAction}</p>
+                        <em>{opportunity.guardrail}</em>
+                      </div>
+                    </div>
+                  </div>
+                </details>
                 <footer>
                   <strong>{opportunity.nextAction}</strong>
                   <span>{opportunity.guardrail}</span>
