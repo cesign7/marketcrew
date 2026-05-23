@@ -115,6 +115,7 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
               { key: "GET /ncc/keywords[].nccKeywordId", label: "광고 키워드 ID", handling: "/stats 조회 대상 ID로 사용" },
               { key: "GET /ncc/keywords[].keyword", label: "광고 키워드명", handling: "성과 스냅샷 키워드명으로 저장" },
               { key: "GET /ncc/product-groups[].mallName", label: "쇼핑몰명", handling: "쇼핑검색광고 성과의 몰/브랜드 근거로 저장" },
+              { key: "GET /ncc/product-groups[].attrJson", label: "상품 그룹 속성", handling: "이미지 URL 후보가 있으면 대표 이미지로 저장, 없으면 대체 썸네일 사용" },
               { key: "GET /ncc/product-groups[].registeredProductType", label: "상품 등록 유형", handling: "일반형/카탈로그형 구분 근거로 저장" },
             ],
           },
@@ -226,6 +227,12 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             label: "상품 그룹",
             description: "쇼핑검색광고 광고그룹과 연결된 상품 그룹명입니다.",
             sample: "스티커씨 선물카드 상품그룹",
+          },
+          {
+            key: "ShoppingSearchAdPerformanceSnapshot.productImageUrl",
+            label: "상품 이미지",
+            description: "상품 그룹 또는 주문 이미지에서 확인된 대표 이미지 URL입니다. 없으면 화면에서 자동 대체 이미지를 씁니다.",
+            sample: "https://cdn.example.test/products/gift-card-shopping.jpg",
           },
           {
             key: "ShoppingSearchAdPerformanceSnapshot.clicks/directConversionRate/cost",

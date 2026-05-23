@@ -127,6 +127,7 @@ type SearchAdShoppingTarget = {
   adGroupId: string;
   productGroupId?: string;
   productGroupName?: string;
+  productImageUrl?: string;
   mallName?: string;
   registeredProductType?: string;
 };
@@ -644,6 +645,7 @@ async function resolveShoppingSearchAdTargets(input: {
       const inlineProductGroup = readRecord(adGroup["productGroup"]);
       const productGroupId = readString(adGroup["nccProductGroupId"]) ?? readString(inlineProductGroup?.["nccProductGroupId"]);
       const productGroup = inlineProductGroup ?? (productGroupId ? productGroupMap.get(productGroupId) : undefined);
+      const productImageUrl = readProductGroupImageUrl(productGroup);
       targets.push({
         id: adGroupId,
         adGroupId,
@@ -657,6 +659,7 @@ async function resolveShoppingSearchAdTargets(input: {
         adGroupName: readString(adGroup["name"]) ?? adGroupId,
         ...(productGroupId ? { productGroupId } : {}),
         ...(readString(productGroup?.["name"]) ? { productGroupName: readString(productGroup?.["name"]) } : {}),
+        ...(productImageUrl ? { productImageUrl } : {}),
         ...(readString(productGroup?.["mallName"]) ? { mallName: readString(productGroup?.["mallName"]) } : {}),
         ...(readString(productGroup?.["registeredProductType"]) ? { registeredProductType: readString(productGroup?.["registeredProductType"]) } : {}),
       });
@@ -724,6 +727,7 @@ function mapShoppingSearchAdStatsResponseToSnapshots(input: {
         searchKeyword,
         ...(input.target.productGroupId ? { productGroupId: input.target.productGroupId } : {}),
         ...(input.target.productGroupName ? { productGroupName: input.target.productGroupName } : {}),
+        ...(input.target.productImageUrl ? { productImageUrl: input.target.productImageUrl } : {}),
         ...(input.target.mallName ? { mallName: input.target.mallName } : {}),
         ...(input.target.registeredProductType ? { registeredProductType: input.target.registeredProductType } : {}),
         windowDays: 30,
@@ -1180,6 +1184,53 @@ function searchAdEntityPriority(entity: Record<string, unknown>): number {
 
 function readRecord(value: unknown): Record<string, unknown> | undefined {
   return isRecord(value) ? value : undefined;
+}
+
+function readProductGroupImageUrl(productGroup?: Record<string, unknown>): string | undefined {
+  if (!productGroup) {
+    return undefined;
+  }
+
+  const attrJson = readRecord(productGroup["attrJson"]) ?? parseJsonRecord(productGroup["attrJson"]);
+  const images = readRecord(productGroup["images"]) ?? readRecord(attrJson?.["images"]);
+  const representativeImage =
+    readRecord(images?.["representativeImage"]) ??
+    readRecord(productGroup["representativeImage"]) ??
+    readRecord(attrJson?.["representativeImage"]);
+  const candidates = [
+    productGroup["productImageUrl"],
+    productGroup["imageUrl"],
+    productGroup["representativeImageUrl"],
+    productGroup["thumbnailImageUrl"],
+    representativeImage?.["url"],
+    images?.["representativeImageUrl"],
+    attrJson?.["productImageUrl"],
+    attrJson?.["imageUrl"],
+    attrJson?.["representativeImageUrl"],
+    attrJson?.["thumbnailImageUrl"],
+  ];
+
+  for (const candidate of candidates) {
+    const url = readString(candidate);
+    if (url && /^https?:\/\//i.test(url)) {
+      return url;
+    }
+  }
+
+  return undefined;
+}
+
+function parseJsonRecord(value: unknown): Record<string, unknown> | undefined {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return undefined;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return readRecord(parsed);
+  } catch {
+    return undefined;
+  }
 }
 
 function readString(value: unknown): string | undefined {

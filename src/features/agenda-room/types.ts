@@ -183,6 +183,7 @@ export type ShoppingSearchTermView = {
   productName: string;
   productImageUrl: string;
   productImageAlt: string;
+  productImageSourceLabel: string;
   campaignLabel: string;
   directConversionRateLabel: string;
   clicksLabel: string;

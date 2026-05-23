@@ -794,7 +794,7 @@ function buildKeywordPerformanceDashboard(input: {
       .map((aggregate, index) => keywordAggregateRow(aggregate, index, "danger", wasteKeywordNote(aggregate))),
     deviceSegments: buildDeviceSegmentRows(searchSnapshots).slice(0, 10),
     timeSegments: buildTimeSegmentRows(searchSnapshots).slice(0, 10),
-    shoppingSearchTerms: buildShoppingSearchTermRows(shoppingSnapshots).slice(0, 10),
+    shoppingSearchTerms: buildShoppingSearchTermRows(shoppingSnapshots, input.providerSyncReports).slice(0, 10),
     recommendationKeywords: recommendationContext.candidates.slice(0, 10),
     recommendationEvidence: recommendationContext.evidence.slice(0, 10),
   };
@@ -959,21 +959,26 @@ function segmentRow(
 
 function buildShoppingSearchTermRows(
   snapshots: ShoppingSearchAdPerformanceSnapshot[],
+  providerSyncReports: ProviderSyncReport[],
 ): KeywordPerformanceDashboardView["shoppingSearchTerms"] {
+  const commerceImages = buildCommerceProductImageCandidates(providerSyncReports);
+
   return [...snapshots]
     .sort((left, right) => left.directConversionRate - right.directConversionRate || right.cost - left.cost || right.clicks - left.clicks)
     .map((snapshot, index) => {
       const productName = snapshot.productGroupName ?? snapshot.mallName ?? "연결 상품 확인 필요";
       const tone: KeywordPerformanceRowTone = snapshot.directConversionRate === 0 ? "danger" : snapshot.directConversionRate < 0.02 ? "warning" : "neutral";
       const needsProductMapping = !snapshot.productGroupName && !snapshot.mallName;
+      const productImage = resolveShoppingSearchTermImage(snapshot, productName, commerceImages);
 
       return {
         id: `${snapshot.id}-${index}`,
         searchKeyword: snapshot.searchKeyword,
         brandLabel: brandLabelFromKey(snapshot.brandKey),
         productName,
-        productImageUrl: buildKeywordThumbnailDataUri(productName),
+        productImageUrl: productImage.url,
         productImageAlt: `${productName} 상품 이미지`,
+        productImageSourceLabel: productImage.sourceLabel,
         campaignLabel: `${snapshot.campaignName} · ${snapshot.adGroupName}`,
         directConversionRateLabel: `직접 전환율 ${formatPercent(snapshot.directConversionRate)}`,
         clicksLabel: `클릭 ${snapshot.clicks.toLocaleString("ko-KR")}회`,
@@ -983,6 +988,96 @@ function buildShoppingSearchTermRows(
         tone,
       };
     });
+}
+
+type CommerceProductImageCandidate = {
+  brandKey: string;
+  productName: string;
+  imageUrl: string;
+};
+
+function buildCommerceProductImageCandidates(providerSyncReports: ProviderSyncReport[]): CommerceProductImageCandidate[] {
+  return providerSyncReports
+    .map((report) => report.commerceAggregateSnapshot)
+    .filter((snapshot): snapshot is NonNullable<ProviderSyncReport["commerceAggregateSnapshot"]> =>
+      Boolean(snapshot?.topProductName && snapshot.topProductImageUrl),
+    )
+    .map((snapshot) => ({
+      brandKey: normalizeBrandKey(snapshot.brandKey),
+      productName: snapshot.topProductName ?? "",
+      imageUrl: snapshot.topProductImageUrl ?? "",
+    }));
+}
+
+function resolveShoppingSearchTermImage(
+  snapshot: ShoppingSearchAdPerformanceSnapshot,
+  productName: string,
+  commerceImages: CommerceProductImageCandidate[],
+): { url: string; sourceLabel: string } {
+  if (isSafeImageUrl(snapshot.productImageUrl)) {
+    return { url: snapshot.productImageUrl, sourceLabel: "상품그룹 이미지" };
+  }
+
+  const commerceImage = commerceImages.find((candidate) => isCommerceProductImageMatch(snapshot, productName, candidate));
+  if (commerceImage) {
+    return { url: commerceImage.imageUrl, sourceLabel: "주문 이미지" };
+  }
+
+  return { url: buildKeywordThumbnailDataUri(productName), sourceLabel: "대체 이미지" };
+}
+
+function isCommerceProductImageMatch(
+  snapshot: ShoppingSearchAdPerformanceSnapshot,
+  productName: string,
+  candidate: CommerceProductImageCandidate,
+): boolean {
+  if (candidate.brandKey !== normalizeBrandKey(snapshot.brandKey) || !isSafeImageUrl(candidate.imageUrl)) {
+    return false;
+  }
+
+  const sourceText = `${snapshot.searchKeyword} ${productName} ${snapshot.adGroupName}`;
+  const sourceTokens = meaningfulShoppingImageTokens(sourceText);
+  const productTokens = meaningfulShoppingImageTokens(candidate.productName);
+  const overlap = sourceTokens.filter((token) => productTokens.includes(token));
+
+  return overlap.length >= 2;
+}
+
+function meaningfulShoppingImageTokens(text: string): string[] {
+  const normalized = text.replace(/[_/()[\]{}·,.-]+/g, " ");
+  const dictionary = [
+    "생일",
+    "축하",
+    "답례",
+    "답례품",
+    "감사",
+    "소량",
+    "주문",
+    "제작",
+    "스티커",
+    "스티커제작",
+    "원형",
+    "구디백",
+    "어린이집",
+    "유치원",
+    "학원",
+    "선물",
+    "선물카드",
+    "카드",
+    "봉투",
+    "결혼",
+  ];
+  const dictionaryTokens = dictionary.filter((token) => normalized.includes(token));
+  const splitTokens = normalized
+    .split(/\s+/)
+    .map((token) => token.replace(/[^\p{Script=Hangul}A-Za-z0-9]/gu, "").trim())
+    .filter((token) => token.length >= 2 && !/^\d+$/.test(token));
+
+  return uniqueKeywordLabels([...dictionaryTokens, ...splitTokens]);
+}
+
+function isSafeImageUrl(url?: string): url is string {
+  return typeof url === "string" && /^https?:\/\//i.test(url);
 }
 
 function shoppingLandingFitLabel(directConversionRate: number): string {
@@ -1617,6 +1712,10 @@ function brandLabelFromKey(brandKey: string): string {
   };
 
   return labels[brandKey.toUpperCase()] ?? brandKey;
+}
+
+function normalizeBrandKey(brandKey: string): string {
+  return brandKey.trim().toUpperCase();
 }
 
 function deviceLabel(device: SearchAdPerformanceSnapshot["device"]): string {

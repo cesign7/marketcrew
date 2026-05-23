@@ -201,7 +201,10 @@ function ShoppingSearchTermPanel({ rows }: { rows: ShoppingSearchTermView[] }) {
         <div className="shopping-term-list">
           {rows.map((row) => (
             <article className={`shopping-term-row tone-${row.tone}`} key={row.id}>
-              <img src={row.productImageUrl} alt={row.productImageAlt} loading="lazy" />
+              <div className="shopping-term-thumb">
+                <img src={row.productImageUrl} alt={row.productImageAlt} loading="lazy" />
+                <span>{row.productImageSourceLabel}</span>
+              </div>
               <div>
                 <strong title={row.searchKeyword}>{row.searchKeyword}</strong>
                 <span title={row.productName}>{row.productName}</span>

@@ -399,6 +399,7 @@ export interface ShoppingSearchAdPerformanceSnapshot {
   searchKeyword: string;
   productGroupId?: string;
   productGroupName?: string;
+  productImageUrl?: string;
   mallName?: string;
   registeredProductType?: string;
   windowDays: 30;

@@ -298,6 +298,8 @@ describe("buildAgendaRoomViewModel", () => {
     expect(keywordDashboard.shoppingSearchTerms[0]).toMatchObject({
       searchKeyword: "스승의날 카드",
       productName: "스티커씨 선물카드",
+      productImageUrl: "https://cdn.example.test/products/gift-card-shopping.jpg",
+      productImageSourceLabel: "상품그룹 이미지",
       landingFitLabel: "랜딩 적합도 점검",
     });
     expect(keywordDashboard.recommendationKeywords.map((candidate) => candidate.keyword)).toContain("부처님오신날 선물카드");
@@ -679,6 +681,7 @@ function buildSearchAdPerformanceReportForWorkDesk(): ProviderSyncReport {
         adGroupId: "grp-shopping-a001",
         searchKeyword: "스승의날 카드",
         productGroupName: "스티커씨 선물카드",
+        productImageUrl: "https://cdn.example.test/products/gift-card-shopping.jpg",
         mallName: "스티커씨",
         registeredProductType: "GENERAL",
         windowDays: 30,

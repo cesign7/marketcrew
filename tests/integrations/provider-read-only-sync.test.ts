@@ -351,6 +351,9 @@ describe("읽기 전용 연동 수집", () => {
                   name: "스티커씨 선물카드 상품그룹",
                   mallName: "스티커씨",
                   registeredProductType: "GENERAL",
+                  attrJson: {
+                    representativeImageUrl: "https://cdn.example.test/products/gift-card-shopping.jpg",
+                  },
                 },
               ]),
               { status: 200 },
@@ -382,6 +385,7 @@ describe("읽기 전용 연동 수집", () => {
       adGroupName: "스티커씨 선물카드 상품형",
       searchKeyword: "스승의날 카드",
       productGroupName: "스티커씨 선물카드 상품그룹",
+      productImageUrl: "https://cdn.example.test/products/gift-card-shopping.jpg",
       mallName: "스티커씨",
       clicks: 42,
       directConversionRate: 0,
