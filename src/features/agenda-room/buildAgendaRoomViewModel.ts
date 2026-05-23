@@ -997,18 +997,22 @@ function buildKeywordRecommendationEvidence(input: {
   seasonalKeywordPlans: SeasonalKeywordAdPlan[];
   eventsById: Map<string, MarketingCalendarEvent>;
 }): KeywordPerformanceDashboardView["recommendationEvidence"] {
-  const demandEvidence = input.providerSyncReports
-    .flatMap((report) => report.keywordDemandSnapshots ?? [])
+  const reportsByLatest = [...input.providerSyncReports].sort((left, right) => right.checkedAt.localeCompare(left.checkedAt));
+  const demandEvidence = latestUniqueKeywordDemandSnapshots(
+    reportsByLatest.flatMap((report) => report.keywordDemandSnapshots ?? []),
+  )
     .sort(compareKeywordDemandSnapshots)
     .slice(0, 4)
     .map(keywordDemandEvidence);
-  const trendEvidence = input.providerSyncReports
-    .flatMap((report) => report.searchTrendSnapshots ?? [])
+  const trendEvidence = latestUniqueSearchTrendSnapshots(
+    reportsByLatest.flatMap((report) => report.searchTrendSnapshots ?? []),
+  )
+    .filter((snapshot) => maxTrendRatio(snapshot) > 0)
     .sort(compareSearchTrendSnapshots)
     .slice(0, 3)
     .map(searchTrendEvidence);
   const seasonEvidence = input.seasonalKeywordPlans.slice(0, 3).map((plan) => seasonalKeywordEvidence(plan, input.eventsById.get(plan.eventId)));
-  const commerceEvidence = input.providerSyncReports.flatMap((report) => {
+  const commerceEvidence = reportsByLatest.flatMap((report) => {
     const evidence: KeywordPerformanceDashboardView["recommendationEvidence"] = [];
 
     if (report.commerceAggregateSnapshot) {
@@ -1038,7 +1042,64 @@ function buildKeywordRecommendationEvidence(input: {
     return evidence;
   });
 
-  return [...demandEvidence, ...trendEvidence, ...seasonEvidence, ...commerceEvidence];
+  return dedupeKeywordRecommendationEvidence([...demandEvidence, ...trendEvidence, ...seasonEvidence, ...commerceEvidence]);
+}
+
+function latestUniqueKeywordDemandSnapshots(snapshots: KeywordDemandSnapshot[]): KeywordDemandSnapshot[] {
+  return latestUniqueBy(
+    snapshots,
+    (snapshot) => `keyword-demand:${snapshot.provider}:${normalizeRecommendationKey(snapshot.keyword)}`,
+    (snapshot) => snapshot.collectedAt,
+  );
+}
+
+function latestUniqueSearchTrendSnapshots(snapshots: SearchTrendSnapshot[]): SearchTrendSnapshot[] {
+  return latestUniqueBy(
+    snapshots,
+    (snapshot) => `search-trend:${snapshot.provider}:${normalizeRecommendationKey(snapshot.keywordGroupName)}:${snapshot.timeUnit}`,
+    (snapshot) => snapshot.collectedAt,
+  );
+}
+
+function latestUniqueBy<TItem>(
+  items: TItem[],
+  keyFn: (item: TItem) => string,
+  collectedAtFn: (item: TItem) => string,
+): TItem[] {
+  const latestByKey = new Map<string, TItem>();
+
+  for (const item of items) {
+    const key = keyFn(item);
+    const existing = latestByKey.get(key);
+    if (!existing || collectedAtFn(item) > collectedAtFn(existing)) {
+      latestByKey.set(key, item);
+    }
+  }
+
+  return [...latestByKey.values()];
+}
+
+function dedupeKeywordRecommendationEvidence(
+  evidenceItems: KeywordPerformanceDashboardView["recommendationEvidence"],
+): KeywordPerformanceDashboardView["recommendationEvidence"] {
+  const uniqueEvidence = new Map<string, KeywordPerformanceDashboardView["recommendationEvidence"][number]>();
+
+  for (const evidence of evidenceItems) {
+    const key = [
+      normalizeRecommendationKey(evidence.sourceLabel),
+      normalizeRecommendationKey(evidence.title),
+      normalizeRecommendationKey(evidence.summary),
+    ].join("::");
+    if (!uniqueEvidence.has(key)) {
+      uniqueEvidence.set(key, evidence);
+    }
+  }
+
+  return [...uniqueEvidence.values()];
+}
+
+function normalizeRecommendationKey(value: string): string {
+  return value.replace(/\s+/g, "").toLowerCase();
 }
 
 function compareKeywordDemandSnapshots(left: KeywordDemandSnapshot, right: KeywordDemandSnapshot): number {
@@ -1078,7 +1139,7 @@ function seasonalKeywordEvidence(
   event?: MarketingCalendarEvent,
 ): KeywordPerformanceDashboardView["recommendationEvidence"][number] {
   const calendarBasis = event?.eventType === "solar" ? "양력" : "음력";
-  const keywords = [...plan.keywordSet.add, ...plan.keywordSet.expand].slice(0, 3);
+  const keywords = uniqueKeywordLabels([...plan.keywordSet.add, ...plan.keywordSet.expand]).slice(0, 3);
 
   return {
     id: `keyword-recommendation-season-${plan.id}`,
@@ -1087,6 +1148,19 @@ function seasonalKeywordEvidence(
     summary: `${keywords.join(", ") || "키워드 후보"}를 전년도 같은 ${calendarBasis} 이벤트 윈도우와 함께 봅니다.`,
     evidenceLabels: [`단계 ${seasonStageLabel(plan.seasonStage)}`, "전년도/명절 윈도우 비교", `근거 ${plan.id}`],
   };
+}
+
+function uniqueKeywordLabels(keywords: string[]): string[] {
+  const uniqueKeywords = new Map<string, string>();
+
+  for (const keyword of keywords) {
+    const key = normalizeRecommendationKey(keyword);
+    if (!uniqueKeywords.has(key)) {
+      uniqueKeywords.set(key, keyword);
+    }
+  }
+
+  return [...uniqueKeywords.values()];
 }
 
 function keywordDemandVolume(snapshot: KeywordDemandSnapshot): number {

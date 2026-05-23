@@ -302,6 +302,59 @@ describe("buildAgendaRoomViewModel", () => {
     });
   });
 
+  it("추천 키워드 근거는 누적 수집 이력이 반복되어도 키워드와 추이 단위로 접는다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    const reports = buildProviderAggregateReports();
+    const searchAdReport = reports.find((report) => report.provider === "search_ad")!;
+    const repeatedSearchAdReport: ProviderSyncReport = {
+      ...searchAdReport,
+      id: "provider-sync-search-ad-2026-05-22-repeat",
+      checkedAt: "2026-05-22T04:00:00.000Z",
+      keywordDemandSnapshots: searchAdReport.keywordDemandSnapshots?.map((snapshot) => ({
+        ...snapshot,
+        id: `repeat-${snapshot.id}`,
+        collectedAt: "2026-05-22T04:00:00.000Z",
+      })),
+      searchTrendSnapshots: [
+        {
+          id: "trend-datalab-buddha-gift-card-repeat",
+          keywordGroupName: "부처님오신날 선물카드",
+          provider: "naver_datalab",
+          timeUnit: "date",
+          startDate: "2026-04-22",
+          endDate: "2026-05-22",
+          ratios: [
+            { period: "2026-05-20", ratio: 20 },
+            { period: "2026-05-21", ratio: 35 },
+          ],
+          collectedAt: "2026-05-22T04:00:00.000Z",
+          note: "relative_ratio_not_absolute_volume",
+        },
+      ],
+    };
+    const zeroTrendReport: ProviderSyncReport = {
+      ...repeatedSearchAdReport,
+      id: "provider-sync-search-ad-2026-05-22-zero-trend",
+      checkedAt: "2026-05-22T05:00:00.000Z",
+      searchTrendSnapshots: repeatedSearchAdReport.searchTrendSnapshots?.map((snapshot) => ({
+        ...snapshot,
+        id: "trend-datalab-buddha-gift-card-zero",
+        ratios: [{ period: "2026-05-22", ratio: 0 }],
+        collectedAt: "2026-05-22T05:00:00.000Z",
+      })),
+    };
+    repository.saveProviderSyncReports([...reports, repeatedSearchAdReport, zeroTrendReport]);
+
+    const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
+    const evidence = viewModel.keywordPerformanceDashboard.recommendationEvidence;
+
+    expect(evidence.filter((item) => item.sourceLabel === "네이버 키워드 수요" && item.title === "추석 선물카드")).toHaveLength(1);
+    expect(evidence.filter((item) => item.sourceLabel === "네이버 키워드 수요" && item.title === "부처님오신날 선물카드")).toHaveLength(1);
+    expect(evidence.filter((item) => item.sourceLabel === "데이터랩 추이" && item.title === "부처님오신날 선물카드")).toHaveLength(0);
+    const buddhaSeasonEvidence = evidence.find((item) => item.sourceLabel === "음력 시즌 윈도우" && item.title === "부처님오신날");
+    expect(buddhaSeasonEvidence?.summary.match(/부처님오신날 선물카드/g)).toHaveLength(1);
+  });
+
   it("같은 근거의 연동 수집 이력은 결재 미리보기에서 최신 1건과 누적 횟수로 접는다", () => {
     const repository = createMemoryMarketingWorkflowRepository();
     const reports = buildProviderAggregateReports();
