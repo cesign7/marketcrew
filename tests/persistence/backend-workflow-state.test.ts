@@ -84,7 +84,7 @@ describe("readBackendWorkflowRepositoryState", () => {
 });
 
 describe("readBackendAgendaRoomViewModel", () => {
-  it("Railway API view model을 직접 읽어 화면 빌드 비용을 Vercel에서 줄인다", async () => {
+  it("Railway API view model을 Vercel 캐시 없이 직접 읽는다", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -106,13 +106,9 @@ describe("readBackendAgendaRoomViewModel", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       new URL("https://api.marketcrew.app/api/operations/view-model"),
       expect.objectContaining({
-        cache: "force-cache",
+        cache: "no-store",
         headers: {
           authorization: "Bearer secret-token",
-        },
-        next: {
-          revalidate: 60,
-          tags: ["marketcrew-backend-read"],
         },
         signal: expect.any(AbortSignal),
       }),

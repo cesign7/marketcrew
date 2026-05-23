@@ -12,7 +12,7 @@ import type { MarketingWorkflowRepository } from "@/lib/application/workflow-rep
 import { buildAgendaRoomViewModel } from "./buildAgendaRoomViewModel";
 import type { AgendaRoomViewModel } from "./types";
 
-const DEFAULT_VIEW_MODEL_CACHE_TTL_MS = 60_000;
+const DEFAULT_VIEW_MODEL_CACHE_TTL_MS = 0;
 
 type CachedAgendaRoomViewModel = {
   expiresAt: number;
@@ -113,7 +113,7 @@ function readAgendaRoomViewModelCache() {
 
   const cached = globalThis.__marketcrewAgendaRoomViewModelCache;
   if (!cached || cached.expiresAt <= Date.now()) {
-    void clearAgendaRoomViewModelCache();
+    clearLocalAgendaRoomViewModelCache();
     return undefined;
   }
 
@@ -123,7 +123,7 @@ function readAgendaRoomViewModelCache() {
 function writeAgendaRoomViewModelCache(viewModel: AgendaRoomViewModel) {
   const ttlMs = getViewModelCacheTtlMs();
   if (ttlMs <= 0) {
-    void clearAgendaRoomViewModelCache();
+    clearLocalAgendaRoomViewModelCache();
     return;
   }
 

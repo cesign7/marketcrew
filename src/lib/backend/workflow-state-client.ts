@@ -4,8 +4,6 @@ import { normalizeWorkflowRepositoryState, type WorkflowRepositoryState } from "
 import type { AiOperationsSettings } from "@/lib/domain";
 
 const DEFAULT_BACKEND_API_TIMEOUT_MS = 5_000;
-const DEFAULT_BACKEND_API_CACHE_TTL_SECONDS = 60;
-const BACKEND_READ_CACHE_TAG = "marketcrew-backend-read";
 const FRONTEND_BACKEND_READ_PATHS = [
   "/operations",
   "/approvals",
@@ -83,8 +81,7 @@ export async function clearBackendWorkflowStateCache(env: NodeJS.ProcessEnv = pr
 
 export async function clearBackendReadThroughCache(): Promise<void> {
   try {
-    const { revalidatePath, revalidateTag } = await import("next/cache");
-    revalidateTag(BACKEND_READ_CACHE_TAG, { expire: 0 });
+    const { revalidatePath } = await import("next/cache");
     for (const path of FRONTEND_BACKEND_READ_PATHS) {
       revalidatePath(path);
     }
@@ -94,7 +91,7 @@ export async function clearBackendReadThroughCache(): Promise<void> {
 }
 
 type FetchBackendJsonOptions = {
-  cacheMode?: "read-through-cache" | "no-store";
+  cacheMode?: "no-store";
 };
 
 async function fetchBackendJson<TPayload>(
@@ -112,18 +109,10 @@ async function fetchBackendJson<TPayload>(
 
   try {
     const response = await fetch(new URL(path, baseUrl), {
-      cache: options.cacheMode === "no-store" ? "no-store" : "force-cache",
+      cache: "no-store",
       headers: buildBackendApiHeaders(env),
-      ...(options.cacheMode === "no-store"
-        ? {}
-        : {
-            next: {
-              revalidate: getBackendApiCacheTtlSeconds(env),
-              tags: [BACKEND_READ_CACHE_TAG],
-            },
-          }),
       signal: abortController.signal,
-    } as RequestInit & { next: { revalidate: number; tags: string[] } });
+    } as RequestInit);
     if (!response.ok) {
       return undefined;
     }
@@ -157,9 +146,4 @@ function buildBackendApiHeaders(env: NodeJS.ProcessEnv): HeadersInit {
 function getBackendApiTimeoutMs(env: NodeJS.ProcessEnv): number {
   const parsed = Number.parseInt(env.MARKETCREW_BACKEND_API_TIMEOUT_MS ?? "", 10);
   return Number.isFinite(parsed) ? Math.max(250, parsed) : DEFAULT_BACKEND_API_TIMEOUT_MS;
-}
-
-function getBackendApiCacheTtlSeconds(env: NodeJS.ProcessEnv): number {
-  const parsed = Number.parseInt(env.MARKETCREW_BACKEND_API_CACHE_TTL_SECONDS ?? "", 10);
-  return Number.isFinite(parsed) ? Math.max(1, parsed) : DEFAULT_BACKEND_API_CACHE_TTL_SECONDS;
 }
