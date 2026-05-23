@@ -287,7 +287,7 @@ describe("읽기 전용 연동 수집", () => {
     expect(report.evidenceNotes.join(" ")).toContain("성과 스냅샷 4건");
   });
 
-  it("Search Ad 자동 발견은 뒤쪽 커피프린트 파워링크 캠페인도 기본 범위에 포함한다", async () => {
+  it("Search Ad 자동 발견은 한도가 차도 뒤쪽 커피프린트 파워링크 캠페인을 브랜드별로 포함한다", async () => {
     const report = await import("../../src/lib/integrations/search-ad/read-only-sync").then(({ syncSearchAdKeywordTool }) =>
       syncSearchAdKeywordTool({
         checkedAt: NOW,
@@ -295,6 +295,7 @@ describe("읽기 전용 연동 수집", () => {
           NAVER_SEARCH_AD_ACCESS_LICENSE: "access-license",
           NAVER_SEARCH_AD_SECRET_KEY: "secret",
           NAVER_SEARCH_AD_CUSTOMER_ID: "customer-id",
+          MARKETCREW_SEARCH_AD_STAT_MAX_KEYWORDS: "4",
         },
         fetchImpl: async (url) => {
           const parsed = new URL(String(url));
@@ -376,7 +377,9 @@ describe("읽기 전용 연동 수집", () => {
     expect(report.searchAdPerformanceSnapshots?.some((snapshot) => snapshot.brandKey === "coffeeprint" && snapshot.keyword === "기업 감사장")).toBe(
       true,
     );
-    expect(report.evidenceNotes.join(" ")).toContain("성과 대상 51개");
+    expect(report.searchAdPerformanceSnapshots).toHaveLength(4);
+    expect(report.evidenceNotes.join(" ")).toContain("브랜드별 성과 후보: 스티커씨 50개, 커피프린트 1개");
+    expect(report.evidenceNotes.join(" ")).toContain("이번 수집 대상: 스티커씨 3개, 커피프린트 1개");
   });
 
   it("쇼핑검색광고 성공 응답은 검색어 성과 스냅샷으로 정규화한다", async () => {

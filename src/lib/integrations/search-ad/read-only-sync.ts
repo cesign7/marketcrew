@@ -602,6 +602,7 @@ async function syncShoppingSearchAdPerformanceStats(input: {
 
 async function resolveShoppingSearchAdTargets(input: {
   env: EnvMap;
+  checkedAt: string;
   fetchImpl: FetchLike;
   timestampFactory: () => string;
 }): Promise<{ targets: SearchAdShoppingTarget[]; notes: string[] }> {
@@ -620,7 +621,7 @@ async function resolveShoppingSearchAdTargets(input: {
       .map((productGroup) => [readString(productGroup["nccProductGroupId"]), productGroup] as const)
       .filter((entry): entry is [string, Record<string, unknown>] => Boolean(entry[0])),
   );
-  const targets: SearchAdShoppingTarget[] = [];
+  const discoveredTargets: SearchAdShoppingTarget[] = [];
 
   for (const campaign of campaigns.slice(0, maxCampaigns)) {
     const campaignId = readString(campaign["nccCampaignId"]);
@@ -646,7 +647,7 @@ async function resolveShoppingSearchAdTargets(input: {
       const productGroupId = readString(adGroup["nccProductGroupId"]) ?? readString(inlineProductGroup?.["nccProductGroupId"]);
       const productGroup = inlineProductGroup ?? (productGroupId ? productGroupMap.get(productGroupId) : undefined);
       const productImageUrl = readProductGroupImageUrl(productGroup);
-      targets.push({
+      discoveredTargets.push({
         id: adGroupId,
         adGroupId,
         brandKey: inferSearchAdBrandKey(input.env, [
@@ -663,30 +664,79 @@ async function resolveShoppingSearchAdTargets(input: {
         ...(readString(productGroup?.["mallName"]) ? { mallName: readString(productGroup?.["mallName"]) } : {}),
         ...(readString(productGroup?.["registeredProductType"]) ? { registeredProductType: readString(productGroup?.["registeredProductType"]) } : {}),
       });
-
-      if (targets.length >= maxAdGroups) {
-        return {
-          targets,
-          notes: [
-            `쇼핑검색광고 캠페인/광고그룹을 읽어 검색어 성과 대상 ${targets.length.toLocaleString("ko-KR")}개를 자동 발견했습니다.`,
-            productGroups.length > 0
-              ? `쇼핑검색광고 상품 그룹 ${productGroups.length.toLocaleString("ko-KR")}개를 읽어 몰/상품 그룹 근거로 연결했습니다.`
-              : "쇼핑검색광고 상품 그룹 목록은 없거나 읽지 못해 광고그룹 기준으로만 연결했습니다.",
-          ],
-        };
-      }
     }
   }
+  const targets = selectRotatingShoppingSearchAdTargets(discoveredTargets, maxAdGroups, input.checkedAt);
 
   return {
     targets,
     notes: [
-      `쇼핑검색광고 캠페인/광고그룹을 읽어 검색어 성과 대상 ${targets.length.toLocaleString("ko-KR")}개를 자동 발견했습니다.`,
+      `쇼핑검색광고 캠페인/광고그룹을 읽어 검색어 성과 후보 ${discoveredTargets.length.toLocaleString("ko-KR")}개를 자동 발견했습니다.`,
+      `쇼핑검색광고 브랜드별 후보: ${formatBrandCounts(discoveredTargets)}.`,
+      `쇼핑검색광고 이번 수집 대상: ${formatBrandCounts(targets)}.`,
+      ...(targets.length < discoveredTargets.length
+        ? [
+            `쇼핑검색광고도 브랜드별로 먼저 분리한 뒤 광고그룹별 회전 점검으로 이번 수집 대상 ${targets.length.toLocaleString(
+              "ko-KR",
+            )}개를 선택했습니다.`,
+          ]
+        : [`이번 수집에서는 발견한 쇼핑검색광고 후보 ${targets.length.toLocaleString("ko-KR")}개를 모두 점검합니다.`]),
       productGroups.length > 0
         ? `쇼핑검색광고 상품 그룹 ${productGroups.length.toLocaleString("ko-KR")}개를 읽어 몰/상품 그룹 근거로 연결했습니다.`
         : "쇼핑검색광고 상품 그룹 목록은 없거나 읽지 못해 광고그룹 기준으로만 연결했습니다.",
     ],
   };
+}
+
+function selectRotatingShoppingSearchAdTargets(
+  targets: SearchAdShoppingTarget[],
+  maxTargetCount: number,
+  checkedAt: string,
+): SearchAdShoppingTarget[] {
+  if (targets.length <= maxTargetCount) {
+    return targets;
+  }
+
+  const groupsByBrand = new Map<string, SearchAdShoppingTarget[]>();
+  for (const target of targets) {
+    groupsByBrand.set(target.brandKey, [...(groupsByBrand.get(target.brandKey) ?? []), target]);
+  }
+
+  const dateKey = checkedAt.slice(0, 10);
+  const rotatedBrandGroups = rotateByOffset(
+    [...groupsByBrand.entries()]
+      .sort(([left], [right]) => compareBrandKey(left, right))
+      .map(([brandKey, brandTargets]) => ({
+        brandKey,
+        targets: rotateByOffset(brandTargets, stableRotationOffset(`${dateKey}|shopping|${brandKey}`, brandTargets.length)),
+      })),
+    stableRotationOffset(`${dateKey}|shopping`, groupsByBrand.size),
+  );
+  const selected: SearchAdShoppingTarget[] = [];
+  let depth = 0;
+
+  while (selected.length < maxTargetCount) {
+    let addedAtThisDepth = false;
+    for (const group of rotatedBrandGroups) {
+      const target = group.targets[depth];
+      if (!target) {
+        continue;
+      }
+
+      selected.push(target);
+      addedAtThisDepth = true;
+      if (selected.length >= maxTargetCount) {
+        break;
+      }
+    }
+
+    if (!addedAtThisDepth) {
+      break;
+    }
+    depth += 1;
+  }
+
+  return selected;
 }
 
 async function fetchShoppingProductGroups(input: {
@@ -862,7 +912,7 @@ async function resolveSearchAdStatTargets(input: {
     fetchImpl: input.fetchImpl,
     timestamp: input.timestampFactory(),
   }).then((entities) => entities.filter(isActiveSearchAdEntity)));
-  const targets: SearchAdStatTarget[] = [];
+  const discoveredTargets: SearchAdStatTarget[] = [];
 
   for (const campaign of campaigns.slice(0, maxCampaigns)) {
     const campaignId = readString(campaign["nccCampaignId"]);
@@ -898,7 +948,7 @@ async function resolveSearchAdStatTargets(input: {
           continue;
         }
 
-        targets.push(
+        discoveredTargets.push(
           buildSearchAdStatTarget({
             env: input.env,
             id: keywordId,
@@ -910,23 +960,183 @@ async function resolveSearchAdStatTargets(input: {
             trackingMode: readString(campaign["trackingMode"]),
           }),
         );
-
-        if (targets.length >= maxKeywords) {
-          return {
-            targets,
-            discoveredTargetCount: targets.length,
-            notes: [`검색광고 캠페인/광고그룹/키워드를 읽어 성과 대상 ${targets.length.toLocaleString("ko-KR")}개를 자동 발견했습니다.`],
-          };
-        }
       }
     }
   }
 
+  const targets = selectRotatingSearchAdTargets(discoveredTargets, maxKeywords, input.checkedAt);
+
   return {
     targets,
-    discoveredTargetCount: targets.length,
-    notes: [`검색광고 캠페인/광고그룹/키워드를 읽어 성과 대상 ${targets.length.toLocaleString("ko-KR")}개를 자동 발견했습니다.`],
+    discoveredTargetCount: discoveredTargets.length,
+    notes: [
+      `검색광고 캠페인/광고그룹/키워드를 읽어 성과 후보 ${discoveredTargets.length.toLocaleString("ko-KR")}개를 자동 발견했습니다.`,
+      `브랜드별 성과 후보: ${formatBrandCounts(discoveredTargets)}.`,
+      `이번 수집 대상: ${formatBrandCounts(targets)}.`,
+      ...(targets.length < discoveredTargets.length
+        ? [
+            `API 호출량과 화면 비용을 보호하기 위해 브랜드별로 먼저 분리한 뒤 캠페인/광고그룹별 회전 점검으로 이번 수집 대상 ${targets.length.toLocaleString(
+              "ko-KR",
+            )}개를 선택했습니다. 한도 밖 키워드는 다음 기준일 수집 때 앞순번으로 이동합니다.`,
+          ]
+        : [`이번 수집에서는 발견한 성과 후보 ${targets.length.toLocaleString("ko-KR")}개를 모두 점검합니다.`]),
+    ],
   };
+}
+
+function selectRotatingSearchAdTargets(
+  targets: SearchAdStatTarget[],
+  maxTargetCount: number,
+  checkedAt: string,
+): SearchAdStatTarget[] {
+  if (targets.length <= maxTargetCount) {
+    return targets;
+  }
+
+  const groupsByBrand = new Map<string, SearchAdStatTarget[]>();
+  for (const target of targets) {
+    groupsByBrand.set(target.brandKey, [...(groupsByBrand.get(target.brandKey) ?? []), target]);
+  }
+
+  const dateKey = checkedAt.slice(0, 10);
+  const rotatedBrandGroups = rotateByOffset(
+    [...groupsByBrand.entries()]
+      .sort(([left], [right]) => compareBrandKey(left, right))
+      .map(([brandKey, brandTargets]) => ({
+        brandKey,
+        targets: orderSearchAdTargetsWithinBrand(brandTargets, `${dateKey}|${brandKey}`),
+      })),
+    stableRotationOffset(dateKey, groupsByBrand.size),
+  );
+  const selected: SearchAdStatTarget[] = [];
+  let depth = 0;
+
+  while (selected.length < maxTargetCount) {
+    let addedAtThisDepth = false;
+    for (const group of rotatedBrandGroups) {
+      const target = group.targets[depth];
+      if (!target) {
+        continue;
+      }
+
+      selected.push(target);
+      addedAtThisDepth = true;
+      if (selected.length >= maxTargetCount) {
+        break;
+      }
+    }
+
+    if (!addedAtThisDepth) {
+      break;
+    }
+    depth += 1;
+  }
+
+  return selected;
+}
+
+function orderSearchAdTargetsWithinBrand(targets: SearchAdStatTarget[], rotationKey: string): SearchAdStatTarget[] {
+  const groupsByScope = new Map<string, SearchAdStatTarget[]>();
+  for (const target of targets) {
+    const scopeKey = [
+      target.campaignId ?? target.campaignName,
+      target.adGroupId ?? target.adGroupName,
+    ].join("|");
+    groupsByScope.set(scopeKey, [...(groupsByScope.get(scopeKey) ?? []), target]);
+  }
+
+  const rotatedGroups = rotateByOffset(
+    [...groupsByScope.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, group]) => ({
+        key,
+        targets: rotateByOffset(group, stableRotationOffset(`${rotationKey}|${key}`, group.length)),
+      })),
+    stableRotationOffset(rotationKey, groupsByScope.size),
+  );
+  const ordered: SearchAdStatTarget[] = [];
+  let depth = 0;
+
+  while (ordered.length < targets.length) {
+    let addedAtThisDepth = false;
+    for (const group of rotatedGroups) {
+      const target = group.targets[depth];
+      if (!target) {
+        continue;
+      }
+
+      ordered.push(target);
+      addedAtThisDepth = true;
+      if (ordered.length >= targets.length) {
+        break;
+      }
+    }
+
+    if (!addedAtThisDepth) {
+      break;
+    }
+    depth += 1;
+  }
+
+  return ordered;
+}
+
+function formatBrandCounts(targets: Array<{ brandKey: string }>): string {
+  if (targets.length === 0) {
+    return "없음";
+  }
+
+  const countsByBrand = new Map<string, number>();
+  for (const target of targets) {
+    countsByBrand.set(target.brandKey, (countsByBrand.get(target.brandKey) ?? 0) + 1);
+  }
+
+  return [...countsByBrand.entries()]
+    .sort(([left], [right]) => compareBrandKey(left, right))
+    .map(([brandKey, count]) => `${searchAdBrandLabel(brandKey)} ${count.toLocaleString("ko-KR")}개`)
+    .join(", ");
+}
+
+function compareBrandKey(left: string, right: string): number {
+  const order = ["stickersee", "coffeeprint"];
+  const leftIndex = order.indexOf(left);
+  const rightIndex = order.indexOf(right);
+  if (leftIndex >= 0 || rightIndex >= 0) {
+    return (leftIndex >= 0 ? leftIndex : Number.MAX_SAFE_INTEGER) - (rightIndex >= 0 ? rightIndex : Number.MAX_SAFE_INTEGER);
+  }
+
+  return left.localeCompare(right);
+}
+
+function searchAdBrandLabel(brandKey: string): string {
+  const labels: Record<string, string> = {
+    stickersee: "스티커씨",
+    coffeeprint: "커피프린트",
+  };
+
+  return labels[brandKey] ?? brandKey;
+}
+
+function rotateByOffset<TItem>(items: TItem[], offset: number): TItem[] {
+  if (items.length === 0) {
+    return items;
+  }
+
+  const normalizedOffset = offset % items.length;
+  return [...items.slice(normalizedOffset), ...items.slice(0, normalizedOffset)];
+}
+
+function stableRotationOffset(value: string, modulo: number): number {
+  if (modulo <= 1) {
+    return 0;
+  }
+
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+
+  return hash % modulo;
 }
 
 async function fetchSearchAdEntities(input: {
