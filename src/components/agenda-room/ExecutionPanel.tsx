@@ -4,6 +4,7 @@ import type { ExecutionResultView, OutcomeCheckpointView } from "@/features/agen
 const executionIcon = {
   대기: Clock3,
   실행됨: CheckCircle2,
+  "내부 초안": CheckCircle2,
   차단됨: Ban,
 } satisfies Record<ExecutionResultView["state"], typeof Clock3>;
 

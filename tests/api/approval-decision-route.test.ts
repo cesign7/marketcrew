@@ -38,7 +38,7 @@ describe("approval decision route", () => {
         method: "POST",
         body: JSON.stringify({
           decision: "APPROVE_DRAFT_ONLY",
-          memo: "초안만 승인",
+          memo: "초안 확정",
         }),
       }),
       { params: Promise.resolve({ id: "approval-agenda-season-plan-buddha-gift-card" }) },
@@ -48,12 +48,14 @@ describe("approval decision route", () => {
     expect(response.status).toBe(200);
     expect(payload.result.updatedApprovalRequest.status).toBe("APPROVED");
     expect(payload.result.executionResult.appliedOperations).toEqual(["draft-only:mock-search-ad-keyword-executor"]);
+    expect(payload.result.outcomeReport.summary).toContain("초안 확정");
 
     const repository = createFileMarketingWorkflowRepository(storePath);
     expect(repository.listOwnerDecisions()).toHaveLength(1);
     expect(repository.listExecutionResults()).toHaveLength(1);
     expect(repository.listOutcomeReports()).toHaveLength(1);
     expect(repository.listFollowUpInternalTasks()).toHaveLength(1);
+    expect(repository.listFollowUpInternalTasks()[0]?.title).toContain("초안 확정 범위");
   });
 
   it("대표 즉시 반영은 write gate가 닫혀 있으면 423으로 안전하게 멈춘다", async () => {

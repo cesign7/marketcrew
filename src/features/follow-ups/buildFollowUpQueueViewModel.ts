@@ -110,7 +110,9 @@ function buildTaskView(input: {
     createdAt: formatKoreanDateTime(input.task.createdAt),
     sourceApprovalId: input.task.sourceApprovalRequestId,
     sourceApprovalTitle: input.sourceApproval?.title ?? input.task.sourceApprovalRequestId,
-    sourceApprovalStatusLabel: input.sourceApproval ? approvalStatusLabel(input.sourceApproval.status) : "결재안 미조회",
+    sourceApprovalStatusLabel: input.sourceApproval
+      ? approvalStatusLabel(input.sourceApproval.status, input.latestDecision)
+      : "결재안 미조회",
     sourceApprovalHref: `/approvals/${input.task.sourceApprovalRequestId}`,
     latestDecisionLabel,
     latestDecisionMemo: input.latestDecision?.memo.trim() ? toOperatorKorean(input.latestDecision.memo.trim()) : undefined,
@@ -184,8 +186,8 @@ function buildOwnerLearningSignals(input: {
       value: `${draftOnlyCount.toLocaleString("ko-KR")}건`,
       detail:
         draftOnlyCount > 0
-          ? "유사 안건은 바로 외부 반영보다 초안 승인과 재상신을 먼저 추천합니다."
-          : "초안 승인 패턴은 아직 쌓이지 않았습니다.",
+          ? "유사 안건은 바로 외부 반영보다 초안 확정과 재상신을 먼저 추천합니다."
+          : "초안 확정 패턴은 아직 쌓이지 않았습니다.",
       tone: draftOnlyCount > 0 ? "ready" : "warning",
     },
     {
@@ -250,7 +252,7 @@ function buildLearningNote(input: {
   }
 
   if (input.latestDecision?.decision === "APPROVE_DRAFT_ONLY") {
-    return "대표는 초안까지만 승인했습니다. 외부 반영 전 재상신 기준을 남겨야 합니다.";
+    return "대표는 초안을 확정했습니다. 외부 반영 전 재상신 기준을 남겨야 합니다.";
   }
 
   if (input.latestOutcome?.state === "INCONCLUSIVE") {
@@ -371,7 +373,11 @@ function taskSort(left: FollowUpTaskQueueItemView, right: FollowUpTaskQueueItemV
   return right.createdAt.localeCompare(left.createdAt);
 }
 
-function approvalStatusLabel(status: ApprovalRequest["status"]): string {
+function approvalStatusLabel(status: ApprovalRequest["status"], latestDecision?: OwnerDecision): string {
+  if (status === "APPROVED" && latestDecision?.decision === "APPROVE_DRAFT_ONLY") {
+    return "초안 확정됨";
+  }
+
   const labels: Record<ApprovalRequest["status"], string> = {
     PENDING: "승인 대기",
     APPROVED: "승인됨",
@@ -387,7 +393,7 @@ function approvalStatusLabel(status: ApprovalRequest["status"]): string {
 function decisionLabel(decision: OwnerDecision["decision"]): string {
   const labels: Record<OwnerDecision["decision"], string> = {
     APPROVE_AND_APPLY: "승인 후 바로 반영",
-    APPROVE_DRAFT_ONLY: "초안만 승인",
+    APPROVE_DRAFT_ONLY: "초안 확정",
     REQUEST_REVISION: "수정 요청",
     REQUEST_MORE_EVIDENCE: "추가 근거 요청",
     HOLD: "보류",

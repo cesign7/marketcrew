@@ -59,7 +59,7 @@ export type SeasonalKeywordPlanView = {
 export type ExecutionResultView = {
   id: string;
   title: string;
-  state: "대기" | "실행됨" | "차단됨";
+  state: "대기" | "실행됨" | "내부 초안" | "차단됨";
   note: string;
 };
 
@@ -108,7 +108,7 @@ export type OwnerDecisionFlowView = {
     status: "통과" | "주의" | "차단";
     message: string;
   }>;
-  executionStateLabel: "실행됨" | "수동 처리 필요" | "차단됨" | "대기";
+  executionStateLabel: "실행됨" | "내부 초안 기록됨" | "수동 처리 필요" | "차단됨" | "대기";
   executionNote: string;
   outcomeStateLabel: string;
   outcomeSummary: string;

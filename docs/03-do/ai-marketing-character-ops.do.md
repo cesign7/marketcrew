@@ -57,8 +57,8 @@
 - `/api/approvals/[id]/decision` route가 샘플 결재 요청에 대표 결정을 적용하고, write gate 닫힘은 423으로 반환한다.
 - `/approvals/[id]` 결재 상세 화면에서 결재 미리보기, 대표 결정 후 흐름, 실행 결과, 성과 체크포인트를 함께 보여준다.
 - `/operations` 카드에서 결재 상세 화면으로 이동할 수 있게 했다.
-- `OwnerDecisionSubmitPanel`이 결재 상세 화면에서 `승인 후 바로 반영`, `초안만 승인`, `수정 요청`, `추가 근거 요청`, `보류`, `반려`를 `/api/approvals/[id]/decision`으로 전송한다.
-- 즉시 반영은 UI에서도 차단 사유가 있으면 비활성화하고, API 응답의 `WRITE_GATE_CLOSED`, preflight 차단, 초안 승인 결과를 화면 상태로 표시한다.
+- `OwnerDecisionSubmitPanel`이 결재 상세 화면에서 `승인 후 바로 반영`, `초안 확정`, `수정 요청`, `추가 근거 요청`, `보류`, `반려`를 `/api/approvals/[id]/decision`으로 전송한다.
+- 즉시 반영은 UI에서도 차단 사유가 있으면 비활성화하고, API 응답의 `WRITE_GATE_CLOSED`, preflight 차단, 초안 확정 결과를 화면 상태로 표시한다.
 
 ### module-6
 

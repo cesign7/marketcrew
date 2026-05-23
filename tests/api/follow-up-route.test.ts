@@ -37,7 +37,7 @@ describe("follow-up route", () => {
         method: "POST",
         body: JSON.stringify({
           decision: "APPROVE_DRAFT_ONLY",
-          memo: "초안만 승인",
+          memo: "초안 확정",
         }),
       }),
       { params: Promise.resolve({ id: "approval-agenda-season-plan-buddha-gift-card" }) },

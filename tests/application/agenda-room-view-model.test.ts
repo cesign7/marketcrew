@@ -37,6 +37,8 @@ describe("buildAgendaRoomViewModel", () => {
     expect(readyPreview?.beforeItems).toContain("키워드 없음");
     expect(readyPreview?.afterItems).toContain("일예산 30,000원");
     expect(readyPreview?.rollbackPlan).toContain("되돌립니다");
+    expect(readyPreview?.secondaryActions).toContain("초안 확정");
+    expect(readyPreview?.secondaryActions).not.toContain("초안만 승인");
     expect(readyPreview?.disabledReason).toBeUndefined();
     expect(readyPreview?.provenance.summaryLabel).toContain("근거 4개");
     expect(readyPreview?.provenance.evidenceLabels).toEqual(expect.arrayContaining([expect.stringContaining("키워드 수요")]));

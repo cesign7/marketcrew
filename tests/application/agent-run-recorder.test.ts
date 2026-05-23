@@ -51,7 +51,7 @@ describe("AgentRunRecorder", () => {
     const result = processOwnerDecision({
       approvalRequest: approvalRequest!,
       decision: "APPROVE_DRAFT_ONLY",
-      memo: "초안만 승인",
+      memo: "초안 확정",
       now: cycle.generatedAt,
       repository,
     });

@@ -74,7 +74,7 @@ describe("buildFollowUpQueueViewModel", () => {
     const result = processOwnerDecision({
       approvalRequest: readyApproval,
       decision: "APPROVE_DRAFT_ONLY",
-      memo: "초안만 승인",
+      memo: "초안 확정",
       now: "2026-05-22T04:00:00.000Z",
       externalWriteEnabled: false,
       repository,
@@ -88,7 +88,10 @@ describe("buildFollowUpQueueViewModel", () => {
 
     expect(viewModel.summary.openTasks).toBe(0);
     expect(viewModel.summary.doneTasks).toBe(1);
-    expect(viewModel.characterQueues.find((queue) => queue.character === "moa")?.tasks[0]?.learningNote).toContain("완료된");
+    const moaTask = viewModel.characterQueues.find((queue) => queue.character === "moa")?.tasks[0];
+    expect(moaTask?.latestDecisionLabel).toBe("초안 확정");
+    expect(moaTask?.sourceApprovalStatusLabel).toBe("초안 확정됨");
+    expect(moaTask?.learningNote).toContain("완료된");
     expect(viewModel.ownerLearningSignals.find((signal) => signal.id === "draft-first-pattern")?.value).toBe("1건");
   });
 
@@ -103,7 +106,7 @@ describe("buildFollowUpQueueViewModel", () => {
     const result = processOwnerDecision({
       approvalRequest: readyApproval,
       decision: "APPROVE_DRAFT_ONLY",
-      memo: "초안만 승인",
+      memo: "초안 확정",
       now: "2026-05-22T04:00:00.000Z",
       externalWriteEnabled: false,
       repository,

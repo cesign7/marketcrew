@@ -18,7 +18,7 @@ type SubmitState =
 
 type DecisionResponse = {
   result?: {
-    executionResult?: { state?: string; failedOperations?: Array<{ reason?: string }> };
+    executionResult?: { state?: string; appliedOperations?: string[]; failedOperations?: Array<{ reason?: string }> };
     preflightCheck?: { status?: string; blockingReasons?: string[]; warnings?: string[] };
     outcomeReport?: { state?: string; summary?: string };
     updatedApprovalRequest?: { status?: string };
@@ -35,7 +35,7 @@ const decisionActions: Array<{
   primary?: boolean;
 }> = [
   { type: "APPROVE_AND_APPLY", label: "승인 후 바로 반영", primary: true },
-  { type: "APPROVE_DRAFT_ONLY", label: "초안만 승인" },
+  { type: "APPROVE_DRAFT_ONLY", label: "초안 확정" },
   { type: "REQUEST_REVISION", label: "수정 요청" },
   { type: "REQUEST_MORE_EVIDENCE", label: "추가 근거 요청" },
   { type: "HOLD", label: "보류" },
@@ -168,7 +168,9 @@ function buildSubmitState(status: number, payload: DecisionResponse): SubmitStat
 
   return {
     status: "success",
-    message: "대표 결정이 기록됐습니다.",
+    message: result?.executionResult?.appliedOperations?.some((operation) => operation.startsWith("draft-only:"))
+      ? "초안 확정이 기록됐습니다."
+      : "대표 결정이 기록됐습니다.",
     detail: result?.outcomeReport?.summary ?? result?.updatedApprovalRequest?.status,
   };
 }

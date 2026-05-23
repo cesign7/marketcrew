@@ -4296,6 +4296,10 @@ button:disabled {
   color: var(--red);
 }
 
+.state-내부.초안 > span {
+  color: var(--ink);
+}
+
 .checkpoint-item {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

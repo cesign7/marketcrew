@@ -207,7 +207,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
       executorLabel: "네이버 키워드광고 모의 실행기",
       writeGateLabel: "외부 반영 잠금 확인 필요",
       primaryActionLabel: "승인 후 바로 반영",
-      secondaryActions: ["초안만 승인", "수정 요청", "추가 근거 요청", "보류", "반려"],
+      secondaryActions: ["초안 확정", "수정 요청", "추가 근거 요청", "보류", "반려"],
       provenance: {
         summaryLabel: "근거 3개 · 실행 이력 1개 · 연동 수집 1개",
         evidenceLabels: ["키워드 수요 2개", "데이터 시그널 1개"],
@@ -529,7 +529,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
     {
       id: "exec-003",
       title: "스마트스토어 주문 요약 동기화",
-      state: "실행됨",
+      state: "내부 초안",
       note: "읽기 전용 요약만 업무실에 반영했습니다.",
     },
   ],

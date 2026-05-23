@@ -25,6 +25,7 @@ import {
   type LlmPlannerAuditRun,
   type LlmPlannerResult,
   type MarketingCalendarEvent,
+  type OwnerDecision,
   type OwnerDecisionType,
   type ProviderReadinessReport,
   type ProviderSyncReport,
@@ -138,12 +139,13 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
   }
   const pendingApprovals = allApprovalRequests.filter((request) => request.status === "PENDING");
   const waitingEvidence = allApprovalRequests.filter((request) => request.status === "NEEDS_EVIDENCE");
+  const latestDecisionByApprovalId = buildLatestOwnerDecisionByApprovalId(input.repository?.listOwnerDecisions() ?? []);
   const ownerDecisionFlows = pendingApprovals
     .slice(0, providerSyncReports.length > 0 ? 2 : 1)
     .map((request) => buildOwnerDecisionFlowView(request, agendaCycle.generatedAt, providerSyncReports));
   const failedExecutionCount =
     agendaCycle.executionResults.filter((result) => result.state !== "APPLIED").length +
-    ownerDecisionFlows.filter((flow) => flow.executionStateLabel !== "실행됨").length;
+    ownerDecisionFlows.filter((flow) => !["실행됨", "내부 초안 기록됨"].includes(flow.executionStateLabel)).length;
 
   return {
     generatedAt: formatKoreanDateTime(agendaCycle.generatedAt),
@@ -183,6 +185,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
         plansById.get(planIdFromExecutionId(request.executionPlan.id)),
         input.repository,
         providerSyncReports,
+        latestDecisionByApprovalId.get(request.id),
       ),
     ),
     ownerDecisionFlows,
@@ -205,17 +208,24 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
       ...ownerDecisionFlows.map((flow) => ({
         id: `decision-flow-${flow.id}`,
         title: flow.title,
-        state: flow.executionStateLabel === "실행됨" ? ("실행됨" as const) : ("차단됨" as const),
+        state: executionResultStateFromFlow(flow.executionStateLabel),
         note: flow.executionNote,
       })),
       ...allApprovalRequests
         .filter((request) => request.status !== "PENDING")
-        .map((request) => ({
-          id: `preview-${request.executionPlan.id}`,
-          title: toOperatorKorean(request.executionPlan.diffSummary),
-          state: "차단됨" as const,
-          note: "데이터 신뢰도와 예산 안전장치가 보강되어야 합니다.",
-        })),
+        .map((request) => {
+          const latestDecision = latestDecisionByApprovalId.get(request.id);
+          const isDraftOnly = latestDecision?.decision === "APPROVE_DRAFT_ONLY";
+
+          return {
+            id: `preview-${request.executionPlan.id}`,
+            title: toOperatorKorean(request.executionPlan.diffSummary),
+            state: isDraftOnly ? ("내부 초안" as const) : ("차단됨" as const),
+            note: isDraftOnly
+              ? "초안 확정 상태입니다. 외부 반영 전 다시 대표 결재가 필요합니다."
+              : "데이터 신뢰도와 예산 안전장치가 보강되어야 합니다.",
+          };
+        }),
     ],
     outcomeCheckpoints: allPerformanceCheckpoints.map((checkpoint) => ({
       id: checkpoint.id,
@@ -278,6 +288,17 @@ function buildAiPilotInsightView(
     recommendedApprovalLabels,
     evidenceCategoryLabels: buildEvidenceCategoryLabels(latestLlmRun.evidenceIds),
   };
+}
+
+function buildLatestOwnerDecisionByApprovalId(ownerDecisions: OwnerDecision[]): Map<string, OwnerDecision> {
+  const latestDecisionByApprovalId = new Map<string, OwnerDecision>();
+  for (const decision of [...ownerDecisions].sort((left, right) => right.decidedAt.localeCompare(left.decidedAt))) {
+    if (!latestDecisionByApprovalId.has(decision.approvalRequestId)) {
+      latestDecisionByApprovalId.set(decision.approvalRequestId, decision);
+    }
+  }
+
+  return latestDecisionByApprovalId;
 }
 
 function approvalLabelFromId(approvalId: string, approvalById: Map<string, ApprovalRequest>): string {
@@ -694,6 +715,7 @@ function buildApprovalPreviewView(
   plan?: SeasonalKeywordAdPlan,
   repository?: MarketingWorkflowRepository,
   providerSyncReports: ProviderSyncReport[] = [],
+  latestDecision?: OwnerDecision,
 ): ApprovalPreviewView {
   const canApply = request.status === "PENDING" && request.dataConfidence === "READY_TO_APPROVE";
   const measurementLabels = request.executionPlan.measurementPlan.checkpoints.map(
@@ -703,7 +725,7 @@ function buildApprovalPreviewView(
   return {
     id: request.id,
     title: request.title,
-    statusLabel: request.status === "PENDING" ? "대표 승인 대기" : "추가 근거 요청",
+    statusLabel: approvalRequestStatusLabel(request, latestDecision),
     confidenceLabel: confidenceLabel(request.dataConfidence),
     riskLabel: riskLabel(request.riskLevel),
     evidenceSummary: `${toOperatorKorean(request.evidenceSummary)} 근거 ${plan?.evidenceIds.length ?? request.evidenceIds.length}개.`,
@@ -715,7 +737,7 @@ function buildApprovalPreviewView(
     executorLabel: executorLabel(request.executionPlan.executorKey),
     writeGateLabel: request.executionPlan.requiresWriteGate ? "외부 반영 잠금 확인 필요" : "내부 작업만 실행",
     primaryActionLabel: "승인 후 바로 반영",
-    secondaryActions: ["초안만 승인", "수정 요청", "추가 근거 요청", "보류", "반려"],
+    secondaryActions: ["초안 확정", "수정 요청", "추가 근거 요청", "보류", "반려"],
     disabledReason: canApply ? undefined : disabledReason(request),
     provenance: buildApprovalProvenanceView(request, plan, repository, providerSyncReports),
   };
@@ -894,7 +916,7 @@ function buildOwnerDecisionFlowView(
         status: preflightStatusLabel(check.status),
         message: check.message,
       })) ?? [],
-    executionStateLabel: executionStateLabel(executionState),
+    executionStateLabel: executionStateLabel(executionState, result.executionResult?.appliedOperations ?? []),
     executionNote:
       executionState === "NEEDS_MANUAL_ACTION"
         ? "대표 승인은 기록됐지만 실제 외부 반영 잠금이 닫혀 외부 계정에는 쓰지 않았습니다."
@@ -1536,10 +1558,36 @@ function disabledReason(request: ApprovalRequest): string {
   return `${confidenceLabel(request.dataConfidence)} 상태라 즉시 반영할 수 없습니다.`;
 }
 
+function approvalRequestStatusLabel(request: ApprovalRequest, latestDecision?: OwnerDecision): string {
+  if (request.status === "PENDING") {
+    return "대표 승인 대기";
+  }
+
+  if (request.status === "APPROVED" && latestDecision?.decision === "APPROVE_DRAFT_ONLY") {
+    return "초안 확정됨";
+  }
+
+  if (request.status === "APPROVED") {
+    return "승인됨";
+  }
+
+  if (request.status === "NEEDS_EVIDENCE") {
+    return "추가 근거 요청";
+  }
+
+  const labels: Record<Exclude<ApprovalRequest["status"], "PENDING" | "APPROVED" | "NEEDS_EVIDENCE">, string> = {
+    REJECTED: "반려됨",
+    HELD: "보류됨",
+    NEEDS_REVISION: "수정 필요",
+  };
+
+  return labels[request.status];
+}
+
 function decisionLabel(decision: OwnerDecisionType): string {
   const labels: Record<OwnerDecisionType, string> = {
     APPROVE_AND_APPLY: "승인 후 바로 반영",
-    APPROVE_DRAFT_ONLY: "초안만 승인",
+    APPROVE_DRAFT_ONLY: "초안 확정",
     REQUEST_REVISION: "수정 요청",
     REQUEST_MORE_EVIDENCE: "추가 근거 요청",
     HOLD: "보류",
@@ -1561,8 +1609,12 @@ function preflightStatusLabel(status: "PASS" | "WARN" | "BLOCK"): OwnerDecisionF
   return "차단";
 }
 
-function executionStateLabel(state: string): OwnerDecisionFlowView["executionStateLabel"] {
+function executionStateLabel(state: string, appliedOperations: string[] = []): OwnerDecisionFlowView["executionStateLabel"] {
   if (state === "APPLIED") {
+    if (appliedOperations.some((operation) => operation.startsWith("draft-only:"))) {
+      return "내부 초안 기록됨";
+    }
+
     return "실행됨";
   }
 
@@ -1575,6 +1627,24 @@ function executionStateLabel(state: string): OwnerDecisionFlowView["executionSta
   }
 
   return "대기";
+}
+
+function executionResultStateFromFlow(
+  state: OwnerDecisionFlowView["executionStateLabel"],
+): AgendaRoomViewModel["executionResults"][number]["state"] {
+  if (state === "실행됨") {
+    return "실행됨";
+  }
+
+  if (state === "내부 초안 기록됨") {
+    return "내부 초안";
+  }
+
+  if (state === "대기") {
+    return "대기";
+  }
+
+  return "차단됨";
 }
 
 function outcomeStateLabel(state: string): string {

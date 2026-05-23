@@ -114,7 +114,7 @@ function buildOutcomeSummary(executionResult: ExecutionResult, draftOnly: boolea
   const reportCountLabel = reportCount.toLocaleString("ko-KR");
 
   if (draftOnly) {
-    return `초안 승인만 기록했습니다. 최신 읽기 전용 연동 수집 기록 ${reportCountLabel}개를 다음 재상신 기준선으로 보관했습니다.`;
+    return `초안 확정만 기록했습니다. 최신 읽기 전용 연동 수집 기록 ${reportCountLabel}개를 다음 재상신 기준선으로 보관했습니다.`;
   }
 
   if (executionResult.state === "NEEDS_MANUAL_ACTION") {

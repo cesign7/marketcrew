@@ -163,6 +163,12 @@ QA Verdict:    QA_PASS
 
 화면에는 원천 행, 고객 식별정보, provider secret, raw approval ID를 노출하지 않는다. 저장된 추천 안건 ID가 현재 후보와 달라도 대표가 읽을 수 있는 한글 안건명으로 풀어 보여주며, 이 패널은 외부 광고나 상품을 직접 바꾸지 않는다.
 
+### 4.0.3 2026-05-23 결재 상태 용어 정리
+
+`APPROVE_DRAFT_ONLY`의 화면 표현을 `초안 확정`으로 정리했다. 이 결정은 외부 광고, 상품, CRM에 바로 적용된 상태가 아니라 내부 작업 방향이 확정되고 외부 반영 전 재상신이 필요한 상태다.
+
+운영실과 후속 업무 큐에서는 draft-only 결과를 `초안 확정됨`, `내부 초안`, `초안 확정 범위로 내부 작업을 정리하고 외부 반영 전 재상신`으로 표시한다. 내부 enum과 저장 계약은 그대로 유지하며 실제 provider write는 계속 차단한다.
+
 ### 4.1 Carried Over to Next Cycle
 
 아래 표는 최초 MVP 종료 시점의 이월 항목이다. 이후 운영 DB, AgentRun/model/token/cost provenance, 후속 업무 큐, 비용 가드, 실제 AI 파일럿 표시까지는 후속 iteration에서 완료했다.

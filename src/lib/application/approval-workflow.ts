@@ -132,7 +132,7 @@ function processApproveDraftOnly(
         id: `followup-draft-${input.approvalRequest.id}`,
         sourceApprovalRequestId: input.approvalRequest.id,
         assignedCharacter: "moa" as const,
-        title: "초안 승인 범위로 내부 작업을 정리하고 외부 반영 전 재상신",
+        title: "초안 확정 범위로 내부 작업을 정리하고 외부 반영 전 재상신",
         status: "OPEN" as const,
         createdAt: input.now,
       },
@@ -298,7 +298,7 @@ function buildOutcomeReport(input: {
     executionResultId: input.executionResult.id,
     state,
     summary: providerAnalysis?.summary ?? (input.draftOnly
-      ? "초안 승인만 기록했습니다. 외부 반영 전 다시 대표 결재가 필요합니다."
+      ? "초안 확정만 기록했습니다. 외부 반영 전 다시 대표 결재가 필요합니다."
       : summaryFromExecution(input.executionResult)),
     baselineSummary: providerAnalysis?.baselineSummary ?? `${baseline.startDate} ~ ${baseline.endDate} 기준선으로 비교합니다.`,
     checkpointSummary: providerAnalysis?.checkpointSummary ?? checkpointLabels,
