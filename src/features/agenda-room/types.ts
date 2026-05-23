@@ -211,6 +211,29 @@ export type KeywordRecommendationCandidateView = {
   evidenceLabels: string[];
 };
 
+export type KeywordDashboardBrandKey = "all" | "coffeeprint" | "stickersee";
+
+export type KeywordInventorySummaryCardView = {
+  id: string;
+  label: string;
+  valueLabel: string;
+  description: string;
+  tone: "neutral" | "good" | "warning";
+};
+
+export type KeywordPerformanceDashboardSliceView = {
+  summaryLabel: string;
+  inventorySummaryCards: KeywordInventorySummaryCardView[];
+  topConversionKeywords: KeywordPerformanceRowView[];
+  lowConversionKeywords: KeywordPerformanceRowView[];
+  wasteKeywords: KeywordPerformanceRowView[];
+  deviceSegments: KeywordPerformanceSegmentView[];
+  timeSegments: KeywordPerformanceSegmentView[];
+  shoppingSearchTerms: ShoppingSearchTermView[];
+  recommendationKeywords: KeywordRecommendationCandidateView[];
+  recommendationEvidence: KeywordRecommendationEvidenceView[];
+};
+
 export type KeywordPerformanceDashboardView = {
   title: string;
   summaryLabel: string;
@@ -218,6 +241,14 @@ export type KeywordPerformanceDashboardView = {
   updatedAtLabel: string;
   qualityGuardLabel: string;
   minimumCriteriaLabels: string[];
+  brandTabs?: Array<{
+    id: KeywordDashboardBrandKey;
+    label: string;
+    href: string;
+    summaryLabel: string;
+  }>;
+  brandViews?: Record<KeywordDashboardBrandKey, KeywordPerformanceDashboardSliceView>;
+  inventorySummaryCards?: KeywordInventorySummaryCardView[];
   topConversionKeywords: KeywordPerformanceRowView[];
   lowConversionKeywords: KeywordPerformanceRowView[];
   wasteKeywords: KeywordPerformanceRowView[];

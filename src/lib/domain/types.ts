@@ -74,6 +74,7 @@ export interface ProviderSyncReport {
   failureReason?: string;
   keywordDemandSnapshots?: KeywordDemandSnapshot[];
   searchTrendSnapshots?: SearchTrendSnapshot[];
+  searchAdKeywordInventorySnapshots?: SearchAdKeywordInventorySnapshot[];
   searchAdPerformanceSnapshots?: SearchAdPerformanceSnapshot[];
   shoppingSearchAdPerformanceSnapshots?: ShoppingSearchAdPerformanceSnapshot[];
   commerceAggregateSnapshot?: CommerceAggregateSnapshot;
@@ -365,6 +366,27 @@ export interface SearchTrendSnapshot {
   ratios: Array<{ period: string; ratio: number }>;
   collectedAt: string;
   note: "relative_ratio_not_absolute_volume";
+}
+
+export interface SearchAdKeywordInventorySnapshot {
+  id: string;
+  provider: "naver_search_ad";
+  brandKey: string;
+  campaignId: string;
+  campaignName: string;
+  campaignStatus: string;
+  campaignType?: string;
+  adGroupId: string;
+  adGroupName: string;
+  adGroupStatus: string;
+  adGroupType?: string;
+  keywordId: string;
+  keyword: string;
+  keywordStatus: string;
+  effectiveStatus: "ON" | "OFF";
+  trackingVerified: boolean;
+  collectedAt: string;
+  dataScope: "inventory_only";
 }
 
 export interface SearchAdPerformanceSnapshot {

@@ -107,13 +107,20 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             fields: [
               { key: "GET /ncc/campaigns[].nccCampaignId", label: "캠페인 ID", handling: "광고그룹 조회와 캠페인명 연결에 사용" },
               { key: "GET /ncc/campaigns[].name", label: "캠페인명", handling: "브랜드 추정과 화면 표시명에 사용" },
+              { key: "GET /ncc/campaigns[].status", label: "캠페인 상태", handling: "켜진 키워드 여부 계산에 사용" },
+              { key: "GET /ncc/campaigns[].userLock", label: "캠페인 잠금", handling: "잠긴 캠페인은 꺼진 키워드로 계산" },
+              { key: "GET /ncc/campaigns[].campaignTp", label: "캠페인 유형", handling: "파워링크/쇼핑검색광고 분리 기준으로 사용" },
               { key: "GET /ncc/campaigns[].trackingMode", label: "전환 추적 설정", handling: "추적 확인 여부 기본값에 사용" },
               { key: "GET /ncc/adgroups[].nccAdgroupId", label: "광고그룹 ID", handling: "키워드 조회와 광고그룹명 연결에 사용" },
               { key: "GET /ncc/adgroups[].name", label: "광고그룹명", handling: "브랜드 추정과 화면 표시명에 사용" },
+              { key: "GET /ncc/adgroups[].status", label: "광고그룹 상태", handling: "켜진 키워드 여부 계산에 사용" },
+              { key: "GET /ncc/adgroups[].userLock", label: "광고그룹 잠금", handling: "잠긴 광고그룹은 꺼진 키워드로 계산" },
               { key: "GET /ncc/adgroups[].adgroupType", label: "광고그룹 유형", handling: "SHOPPING, CATALOG, SHOPPING_BRAND이면 쇼핑검색광고 성과 후보로 사용" },
               { key: "GET /ncc/adgroups[].nccProductGroupId", label: "상품 그룹 ID", handling: "쇼핑검색광고 상품 그룹/몰 연결에 사용" },
               { key: "GET /ncc/keywords[].nccKeywordId", label: "광고 키워드 ID", handling: "/stats 조회 대상 ID로 사용" },
               { key: "GET /ncc/keywords[].keyword", label: "광고 키워드명", handling: "성과 스냅샷 키워드명으로 저장" },
+              { key: "GET /ncc/keywords[].status", label: "키워드 상태", handling: "전체 키워드 목록과 켜진 키워드 요약에 저장" },
+              { key: "GET /ncc/keywords[].userLock", label: "키워드 잠금", handling: "잠긴 키워드는 꺼진 키워드로 계산" },
               { key: "GET /ncc/product-groups[].mallName", label: "쇼핑몰명", handling: "쇼핑검색광고 성과의 몰/브랜드 근거로 저장" },
               { key: "GET /ncc/product-groups[].attrJson", label: "상품 그룹 속성", handling: "이미지 URL 후보가 있으면 대표 이미지로 저장, 없으면 대체 썸네일 사용" },
               { key: "GET /ncc/product-groups[].registeredProductType", label: "상품 등록 유형", handling: "일반형/카탈로그형 구분 근거로 저장" },
@@ -187,6 +194,24 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             sample: "provider-sync-search-ad-2026-05-22",
           },
           {
+            key: "SearchAdKeywordInventorySnapshot.keyword",
+            label: "광고 키워드 목록",
+            description: "성과가 없어도 광고 API에서 읽은 키워드 목록을 브랜드별로 저장합니다.",
+            sample: "기업 감사장",
+          },
+          {
+            key: "SearchAdKeywordInventorySnapshot.campaignName/adGroupName",
+            label: "캠페인/광고그룹",
+            description: "키워드가 어느 광고 구조에 속하는지 저장해 브랜드와 실행 범위를 나눕니다.",
+            sample: "커피프린트 파워링크 / 40_기타 감사장",
+          },
+          {
+            key: "SearchAdKeywordInventorySnapshot.effectiveStatus",
+            label: "실제 노출 상태",
+            description: "캠페인, 광고그룹, 키워드 상태와 잠금을 합쳐 ON/OFF로 저장합니다.",
+            sample: "ON",
+          },
+          {
             key: "SearchAdPerformanceSnapshot.keyword",
             label: "성과 키워드",
             description: "규칙 엔진이 저성과 여부를 판단한 광고 키워드입니다.",
@@ -254,6 +279,15 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
           {
             id: "search-ad-stored-sample-2",
             values: [
+              { key: "keyword", label: "목록 키워드", value: "기업 감사장" },
+              { key: "brand", label: "브랜드", value: "커피프린트" },
+              { key: "scope", label: "광고 구조", value: "커피프린트 파워링크 / 40_기타 감사장" },
+              { key: "status", label: "노출 상태", value: "ON" },
+            ],
+          },
+          {
+            id: "search-ad-stored-sample-3",
+            values: [
               { key: "keyword", label: "성과 키워드", value: "생일 답례품" },
               { key: "device", label: "기기/시간", value: "모바일 18-23" },
               { key: "performance", label: "성과", value: "클릭 64 / 주문 0 / 비용 38,400원" },
@@ -261,7 +295,7 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             ],
           },
           {
-            id: "search-ad-stored-sample-3",
+            id: "search-ad-stored-sample-4",
             values: [
               { key: "searchKeyword", label: "쇼핑 검색어", value: "스승의날 카드" },
               { key: "productGroup", label: "상품 그룹", value: "스티커씨 선물카드" },

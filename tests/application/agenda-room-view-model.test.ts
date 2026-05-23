@@ -288,6 +288,11 @@ describe("buildAgendaRoomViewModel", () => {
     const keywordDashboard = viewModel.keywordPerformanceDashboard;
     expect(keywordDashboard.title).toBe("키워드 성과 대시보드");
     expect(keywordDashboard.minimumCriteriaLabels[0]).toContain("클릭 10회");
+    expect(keywordDashboard.brandTabs?.map((tab) => tab.label)).toEqual(["전체", "커피프린트", "스티커씨"]);
+    expect(keywordDashboard.brandViews?.coffeeprint.summaryLabel).toContain("커피프린트 검색광고 키워드 목록 1개");
+    expect(keywordDashboard.brandViews?.stickersee.summaryLabel).toContain("스티커씨 검색광고 키워드 목록 2개");
+    expect(keywordDashboard.brandViews?.coffeeprint.topConversionKeywords).toHaveLength(0);
+    expect(keywordDashboard.inventorySummaryCards?.map((card) => card.label)).toEqual(["전체 키워드", "켜진 키워드", "성과 확인", "성과 대기"]);
     expect(keywordDashboard.topConversionKeywords[0]?.keyword).toBe("생일축하스티커");
     expect(keywordDashboard.lowConversionKeywords.map((row) => row.keyword)).toContain("생일 답례품");
     expect(keywordDashboard.wasteKeywords[0]?.keyword).toBe("생일 답례품");
@@ -606,6 +611,68 @@ function buildSearchAdPerformanceReportForWorkDesk(): ProviderSyncReport {
     evidenceNotes: ["키워드/기기/시간대 성과 집계만 저장했습니다."],
     checkedAt: "2026-05-23T08:00:00.000Z",
     httpStatus: 200,
+    searchAdKeywordInventorySnapshots: [
+      {
+        id: "inventory-stickersee-birthday",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignId: "cmp-stickersee",
+        campaignName: "스티커씨 검색광고",
+        campaignStatus: "ELIGIBLE",
+        campaignType: "WEB_SITE",
+        adGroupId: "grp-stickersee-main",
+        adGroupName: "대표 상품",
+        adGroupStatus: "ELIGIBLE",
+        adGroupType: "WEB_SITE",
+        keywordId: "nkw-stickersee-birthday",
+        keyword: "생일축하스티커",
+        keywordStatus: "ELIGIBLE",
+        effectiveStatus: "ON",
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "inventory_only",
+      },
+      {
+        id: "inventory-stickersee-off",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignId: "cmp-stickersee",
+        campaignName: "스티커씨 검색광고",
+        campaignStatus: "ELIGIBLE",
+        campaignType: "WEB_SITE",
+        adGroupId: "grp-stickersee-main",
+        adGroupName: "대표 상품",
+        adGroupStatus: "ELIGIBLE",
+        adGroupType: "WEB_SITE",
+        keywordId: "nkw-stickersee-off",
+        keyword: "답례 스티커",
+        keywordStatus: "PAUSED",
+        effectiveStatus: "OFF",
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "inventory_only",
+      },
+      {
+        id: "inventory-coffeeprint-thanks",
+        provider: "naver_search_ad",
+        brandKey: "COFFEEPRINT",
+        campaignId: "cmp-coffeeprint",
+        campaignName: "커피프린트 파워링크",
+        campaignStatus: "ELIGIBLE",
+        campaignType: "WEB_SITE",
+        adGroupId: "grp-coffeeprint-thanks",
+        adGroupName: "감사장",
+        adGroupStatus: "ELIGIBLE",
+        adGroupType: "WEB_SITE",
+        keywordId: "nkw-coffeeprint-thanks",
+        keyword: "기업 감사장",
+        keywordStatus: "ELIGIBLE",
+        effectiveStatus: "ON",
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "inventory_only",
+      },
+    ],
     searchAdPerformanceSnapshots: [
       {
         id: "ad-perf-workdesk-no-order",

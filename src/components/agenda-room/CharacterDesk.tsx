@@ -3,6 +3,7 @@ import { ArrowRight, ClipboardList, Clock3, Gauge, ShieldCheck } from "lucide-re
 import type {
   AgendaCardView,
   CharacterStatus,
+  KeywordDashboardBrandKey,
   KeywordPerformanceDashboardView,
   OwnerDecisionFlowView,
   WorkDeskCardView,
@@ -17,6 +18,7 @@ type CharacterDeskProps = {
   keywordPerformanceDashboard?: KeywordPerformanceDashboardView;
   ownerDecisionFlows: OwnerDecisionFlowView[];
   selectedCharacterId?: string;
+  selectedKeywordBrand?: KeywordDashboardBrandKey;
 };
 
 const characterFocus: Record<string, { focus: string; nextReport: string }> = {
@@ -57,6 +59,7 @@ export function CharacterDesk({
   keywordPerformanceDashboard,
   ownerDecisionFlows,
   selectedCharacterId,
+  selectedKeywordBrand = "all",
 }: CharacterDeskProps) {
   const visibleCharacters = selectedCharacterId
     ? characters.filter((character) => character.id === selectedCharacterId)
@@ -95,7 +98,7 @@ export function CharacterDesk({
       </div>
 
       {selectedCharacterId === "gro" && keywordPerformanceDashboard ? (
-        <KeywordPerformanceDashboard dashboard={keywordPerformanceDashboard} />
+        <KeywordPerformanceDashboard dashboard={keywordPerformanceDashboard} selectedBrand={selectedKeywordBrand} />
       ) : null}
 
       <WorkDeskCardList

@@ -3,6 +3,7 @@ import {
   getProviderHistoryPolicy,
   type KeywordDemandSnapshot,
   type ProviderSyncReport,
+  type SearchAdKeywordInventorySnapshot,
   type SearchAdPerformanceSnapshot,
   type ShoppingSearchAdPerformanceSnapshot,
 } from "@/lib/domain";
@@ -110,6 +111,7 @@ type SearchAdStatTarget = {
 };
 
 type SearchAdStatsSyncResult = {
+  keywordInventorySnapshots: SearchAdKeywordInventorySnapshot[];
   snapshots: SearchAdPerformanceSnapshot[];
   shoppingSnapshots: ShoppingSearchAdPerformanceSnapshot[];
   notes: string[];
@@ -261,6 +263,7 @@ export async function syncSearchAdKeywordTool(input: {
       networkAttempted: true,
       httpStatus: statsResult.httpStatus ?? httpStatus,
       keywordDemandSnapshots,
+      ...(statsResult.keywordInventorySnapshots.length > 0 ? { searchAdKeywordInventorySnapshots: statsResult.keywordInventorySnapshots } : {}),
       ...(statsResult.snapshots.length > 0 ? { searchAdPerformanceSnapshots: statsResult.snapshots } : {}),
       ...(statsResult.shoppingSnapshots.length > 0 ? { shoppingSearchAdPerformanceSnapshots: statsResult.shoppingSnapshots } : {}),
       ...(statsResult.failureReason ? { failureReason: statsResult.failureReason } : {}),
@@ -418,6 +421,7 @@ async function syncSearchAdPerformanceStats(input: {
     if (targets.length === 0) {
       const shoppingResult = await syncShoppingSearchAdPerformanceStats(input);
       return {
+        keywordInventorySnapshots: targetResult.keywordInventorySnapshots,
         snapshots: [],
         shoppingSnapshots: shoppingResult.snapshots,
         requestedTargetCount: 0,
@@ -454,6 +458,7 @@ async function syncSearchAdPerformanceStats(input: {
           return {
             snapshots,
             shoppingSnapshots: [],
+            keywordInventorySnapshots: targetResult.keywordInventorySnapshots,
             requestedTargetCount: targets.length,
             discoveredTargetCount: targetResult.discoveredTargetCount,
             httpStatus,
@@ -484,6 +489,7 @@ async function syncSearchAdPerformanceStats(input: {
     }
 
     return {
+      keywordInventorySnapshots: targetResult.keywordInventorySnapshots,
       snapshots,
       shoppingSnapshots: shoppingResult.snapshots,
       requestedTargetCount: targets.length,
@@ -497,6 +503,7 @@ async function syncSearchAdPerformanceStats(input: {
     };
   } catch (error) {
     return {
+      keywordInventorySnapshots: [],
       snapshots: [],
       shoppingSnapshots: [],
       requestedTargetCount: 0,
@@ -884,11 +891,17 @@ async function resolveSearchAdStatTargets(input: {
   checkedAt: string;
   fetchImpl: FetchLike;
   timestampFactory: () => string;
-}): Promise<{ targets: SearchAdStatTarget[]; discoveredTargetCount: number; notes: string[] }> {
+}): Promise<{
+  targets: SearchAdStatTarget[];
+  keywordInventorySnapshots: SearchAdKeywordInventorySnapshot[];
+  discoveredTargetCount: number;
+  notes: string[];
+}> {
   const configuredTargets = configuredSearchAdStatTargets(input.env);
   if (configuredTargets.length > 0) {
     return {
       targets: configuredTargets,
+      keywordInventorySnapshots: [],
       discoveredTargetCount: 0,
       notes: [`설정된 검색광고 성과 대상 ${configuredTargets.length.toLocaleString("ko-KR")}개를 사용합니다.`],
     };
@@ -897,14 +910,61 @@ async function resolveSearchAdStatTargets(input: {
   if (!searchAdStatDiscoveryEnabled(input.env)) {
     return {
       targets: [],
+      keywordInventorySnapshots: [],
       discoveredTargetCount: 0,
       notes: ["검색광고 성과 대상 자동 발견이 꺼져 있습니다."],
     };
   }
 
-  const maxCampaigns = searchAdStatMaxCampaignCount(input.env);
-  const maxAdGroups = searchAdStatMaxAdGroupCount(input.env);
+  const inventory = await discoverSearchAdKeywordInventory(input);
   const maxKeywords = searchAdStatMaxKeywordCount(input.env);
+  const discoveredTargets = inventory.snapshots
+    .filter((snapshot) => snapshot.effectiveStatus === "ON")
+    .map((snapshot) =>
+      buildSearchAdStatTarget({
+        env: input.env,
+        id: snapshot.keywordId,
+        keyword: snapshot.keyword,
+        campaignId: snapshot.campaignId,
+        campaignName: snapshot.campaignName,
+        adGroupId: snapshot.adGroupId,
+        adGroupName: snapshot.adGroupName,
+        brandKey: snapshot.brandKey,
+        trackingVerified: snapshot.trackingVerified,
+        trackingMode: undefined,
+      }),
+    );
+  const targets = selectRotatingSearchAdTargets(discoveredTargets, maxKeywords, input.checkedAt);
+
+  return {
+    targets,
+    keywordInventorySnapshots: inventory.snapshots,
+    discoveredTargetCount: discoveredTargets.length,
+    notes: [
+      ...inventory.notes,
+      `검색광고 성과 후보 ${discoveredTargets.length.toLocaleString("ko-KR")}개를 키워드 목록에서 자동 발견했습니다.`,
+      `브랜드별 성과 후보: ${formatBrandCounts(discoveredTargets)}.`,
+      `이번 수집 대상: ${formatBrandCounts(targets)}.`,
+      ...(targets.length < discoveredTargets.length
+        ? [
+            `API 호출량과 화면 비용을 보호하기 위해 브랜드별로 먼저 분리한 뒤 캠페인/광고그룹별 회전 점검으로 이번 수집 대상 ${targets.length.toLocaleString(
+              "ko-KR",
+            )}개를 선택했습니다. 한도 밖 키워드는 다음 기준일 수집 때 앞순번으로 이동합니다.`,
+          ]
+        : [`이번 수집에서는 발견한 성과 후보 ${targets.length.toLocaleString("ko-KR")}개를 모두 점검합니다.`]),
+    ],
+  };
+}
+
+async function discoverSearchAdKeywordInventory(input: {
+  env: EnvMap;
+  checkedAt: string;
+  fetchImpl: FetchLike;
+  timestampFactory: () => string;
+}): Promise<{ snapshots: SearchAdKeywordInventorySnapshot[]; notes: string[] }> {
+  const maxCampaigns = searchAdInventoryMaxCampaignCount(input.env);
+  const maxAdGroups = searchAdInventoryMaxAdGroupCount(input.env);
+  const maxKeywordsPerAdGroup = searchAdInventoryMaxKeywordCountPerAdGroup(input.env);
   const campaigns = sortSearchAdEntitiesByActiveFirst(await fetchSearchAdEntities({
     env: input.env,
     path: SEARCH_AD_CAMPAIGNS_PATH,
@@ -912,7 +972,7 @@ async function resolveSearchAdStatTargets(input: {
     fetchImpl: input.fetchImpl,
     timestamp: input.timestampFactory(),
   }).then((entities) => entities.filter(isActiveSearchAdEntity)));
-  const discoveredTargets: SearchAdStatTarget[] = [];
+  const snapshots: SearchAdKeywordInventorySnapshot[] = [];
 
   for (const campaign of campaigns.slice(0, maxCampaigns)) {
     const campaignId = readString(campaign["nccCampaignId"]);
@@ -937,7 +997,7 @@ async function resolveSearchAdStatTargets(input: {
       const keywords = sortSearchAdEntitiesByActiveFirst(await fetchSearchAdEntities({
         env: input.env,
         path: SEARCH_AD_KEYWORDS_PATH,
-        query: new URLSearchParams({ nccAdgroupId: adGroupId, recordSize: `${Math.min(maxKeywords, 1000)}` }),
+        query: new URLSearchParams({ nccAdgroupId: adGroupId, recordSize: `${maxKeywordsPerAdGroup}` }),
         fetchImpl: input.fetchImpl,
         timestamp: input.timestampFactory(),
       }).then((entities) => entities.filter(isActiveSearchAdEntity)));
@@ -948,39 +1008,80 @@ async function resolveSearchAdStatTargets(input: {
           continue;
         }
 
-        discoveredTargets.push(
-          buildSearchAdStatTarget({
+        snapshots.push(
+          buildSearchAdKeywordInventorySnapshot({
             env: input.env,
-            id: keywordId,
-            keyword: readString(keyword["keyword"]) ?? keywordId,
+            campaign,
             campaignId,
-            campaignName: readString(campaign["name"]) ?? campaignId,
+            adGroup,
             adGroupId,
-            adGroupName: readString(adGroup["name"]) ?? adGroupId,
-            trackingMode: readString(campaign["trackingMode"]),
+            keyword,
+            keywordId,
+            collectedAt: input.checkedAt,
           }),
         );
       }
     }
   }
 
-  const targets = selectRotatingSearchAdTargets(discoveredTargets, maxKeywords, input.checkedAt);
+  const enabledSnapshots = snapshots.filter((snapshot) => snapshot.effectiveStatus === "ON");
 
   return {
-    targets,
-    discoveredTargetCount: discoveredTargets.length,
+    snapshots,
     notes: [
-      `검색광고 캠페인/광고그룹/키워드를 읽어 성과 후보 ${discoveredTargets.length.toLocaleString("ko-KR")}개를 자동 발견했습니다.`,
-      `브랜드별 성과 후보: ${formatBrandCounts(discoveredTargets)}.`,
-      `이번 수집 대상: ${formatBrandCounts(targets)}.`,
-      ...(targets.length < discoveredTargets.length
-        ? [
-            `API 호출량과 화면 비용을 보호하기 위해 브랜드별로 먼저 분리한 뒤 캠페인/광고그룹별 회전 점검으로 이번 수집 대상 ${targets.length.toLocaleString(
-              "ko-KR",
-            )}개를 선택했습니다. 한도 밖 키워드는 다음 기준일 수집 때 앞순번으로 이동합니다.`,
-          ]
-        : [`이번 수집에서는 발견한 성과 후보 ${targets.length.toLocaleString("ko-KR")}개를 모두 점검합니다.`]),
+      `검색광고 키워드 목록 ${snapshots.length.toLocaleString("ko-KR")}개를 수집했습니다.`,
+      `브랜드별 키워드 목록: ${formatBrandCounts(snapshots)}.`,
+      `실제 켜진 키워드: ${formatBrandCounts(enabledSnapshots)}.`,
+      ...(snapshots.some((snapshot) => snapshot.brandKey === "unassigned")
+        ? ["브랜드를 확정하지 못한 키워드는 성과 판단에서 별도 보류합니다."]
+        : []),
     ],
+  };
+}
+
+function buildSearchAdKeywordInventorySnapshot(input: {
+  env: EnvMap;
+  campaign: Record<string, unknown>;
+  campaignId: string;
+  adGroup: Record<string, unknown>;
+  adGroupId: string;
+  keyword: Record<string, unknown>;
+  keywordId: string;
+  collectedAt: string;
+}): SearchAdKeywordInventorySnapshot {
+  const campaignName = readString(input.campaign["name"]) ?? input.campaignId;
+  const adGroupName = readString(input.adGroup["name"]) ?? input.adGroupId;
+  const keywordText = readString(input.keyword["keyword"]) ?? input.keywordId;
+  const campaignStatus = readString(input.campaign["status"]) ?? "UNKNOWN";
+  const adGroupStatus = readString(input.adGroup["status"]) ?? "UNKNOWN";
+  const keywordStatus = readString(input.keyword["status"]) ?? "UNKNOWN";
+  const brandKey = inferSearchAdBrandKey(input.env, [campaignName, adGroupName, keywordText], "unassigned");
+  const trackingVerified = defaultSearchAdTrackingVerified(input.env, readString(input.campaign["trackingMode"]));
+
+  return {
+    id: `search-ad-keyword-inventory-${slugify(brandKey)}-${slugify(input.keywordId)}-${input.collectedAt.slice(0, 10)}`,
+    provider: "naver_search_ad",
+    brandKey,
+    campaignId: input.campaignId,
+    campaignName,
+    campaignStatus,
+    ...(readString(input.campaign["campaignTp"]) ?? readString(input.campaign["campaignType"])
+      ? { campaignType: readString(input.campaign["campaignTp"]) ?? readString(input.campaign["campaignType"]) }
+      : {}),
+    adGroupId: input.adGroupId,
+    adGroupName,
+    adGroupStatus,
+    ...(readString(input.adGroup["adgroupType"]) ? { adGroupType: readString(input.adGroup["adgroupType"]) } : {}),
+    keywordId: input.keywordId,
+    keyword: keywordText,
+    keywordStatus,
+    effectiveStatus:
+      isSearchAdEntityEnabled(input.campaign) && isSearchAdEntityEnabled(input.adGroup) && isSearchAdEntityEnabled(input.keyword)
+        ? "ON"
+        : "OFF",
+    trackingVerified,
+    collectedAt: input.collectedAt,
+    dataScope: "inventory_only",
   };
 }
 
@@ -1112,6 +1213,7 @@ function searchAdBrandLabel(brandKey: string): string {
   const labels: Record<string, string> = {
     stickersee: "스티커씨",
     coffeeprint: "커피프린트",
+    unassigned: "브랜드 미분류",
   };
 
   return labels[brandKey] ?? brandKey;
@@ -1323,7 +1425,7 @@ function statsDatePresetWindowDays(value: string): number {
   return windows[value] ?? 7;
 }
 
-function inferSearchAdBrandKey(env: EnvMap, values: string[]): string {
+function inferSearchAdBrandKey(env: EnvMap, values: string[], fallback = env.MARKETCREW_SEARCH_AD_STAT_BRAND_KEY ?? "stickersee"): string {
   const joined = values.join(" ").toLowerCase();
   if (joined.includes("커피프린트") || joined.includes("coffeeprint") || joined.includes("coffee print")) {
     return "coffeeprint";
@@ -1333,7 +1435,7 @@ function inferSearchAdBrandKey(env: EnvMap, values: string[]): string {
     return "stickersee";
   }
 
-  return env.MARKETCREW_SEARCH_AD_STAT_BRAND_KEY ?? "stickersee";
+  return fallback;
 }
 
 function defaultSearchAdTrackingVerified(env: EnvMap, trackingMode: string | undefined): boolean {
@@ -1359,6 +1461,15 @@ function isActiveSearchAdEntity(entity: Record<string, unknown>): boolean {
   }
 
   return true;
+}
+
+function isSearchAdEntityEnabled(entity: Record<string, unknown>): boolean {
+  if (parseBooleanLike(entity["userLock"]) === true) {
+    return false;
+  }
+
+  const status = readString(entity["status"]);
+  return status === "ELIGIBLE" || status === "LIMITED_ELIGIBLE";
 }
 
 function isShoppingCampaignEntity(entity: Record<string, unknown>): boolean {
@@ -1516,6 +1627,30 @@ function shoppingSearchAdStatsEnabled(env: EnvMap): boolean {
 
 function searchAdStatMaxCampaignCount(env: EnvMap): number {
   return clampCount(parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_STAT_MAX_CAMPAIGNS), 1, 20, 20);
+}
+
+function searchAdInventoryMaxCampaignCount(env: EnvMap): number {
+  return clampCount(
+    parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_INVENTORY_MAX_CAMPAIGNS) ??
+      parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_STAT_MAX_CAMPAIGNS),
+    1,
+    200,
+    100,
+  );
+}
+
+function searchAdInventoryMaxAdGroupCount(env: EnvMap): number {
+  return clampCount(
+    parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_INVENTORY_MAX_ADGROUPS) ??
+      parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_STAT_MAX_ADGROUPS),
+    1,
+    1_000,
+    500,
+  );
+}
+
+function searchAdInventoryMaxKeywordCountPerAdGroup(env: EnvMap): number {
+  return clampCount(parseOptionalEnvNumber(env.MARKETCREW_SEARCH_AD_INVENTORY_MAX_KEYWORDS_PER_ADGROUP), 1, 1_000, 1_000);
 }
 
 function searchAdStatMaxAdGroupCount(env: EnvMap): number {

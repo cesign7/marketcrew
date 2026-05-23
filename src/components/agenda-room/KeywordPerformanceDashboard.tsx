@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { AlertTriangle, Clock3, FileText, Lightbulb, MonitorSmartphone, Search, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
 import type {
+  KeywordDashboardBrandKey,
   KeywordPerformanceDashboardView,
   KeywordPerformanceRowView,
   KeywordPerformanceSegmentView,
@@ -9,22 +11,57 @@ import type {
 
 type KeywordPerformanceDashboardProps = {
   dashboard: KeywordPerformanceDashboardView;
+  selectedBrand?: KeywordDashboardBrandKey;
 };
 
-export function KeywordPerformanceDashboard({ dashboard }: KeywordPerformanceDashboardProps) {
+export function KeywordPerformanceDashboard({ dashboard, selectedBrand = "all" }: KeywordPerformanceDashboardProps) {
+  const activeBrand = dashboard.brandViews?.[selectedBrand] ? selectedBrand : "all";
+  const activeView = dashboard.brandViews?.[activeBrand] ?? dashboard;
+  const inventoryCards = activeView.inventorySummaryCards ?? [];
+
   return (
     <section className="keyword-performance-dashboard" aria-labelledby="keyword-performance-dashboard-title">
       <div className="section-heading compact">
         <div>
           <span className="eyebrow">그로 데스크</span>
           <h2 id="keyword-performance-dashboard-title">{dashboard.title}</h2>
-          <p>{dashboard.summaryLabel}</p>
+          <p>{activeView.summaryLabel}</p>
         </div>
         <div className="keyword-dashboard-meta" aria-label="성과 기준">
           <span>{dashboard.sourceLabel}</span>
           <span>{dashboard.updatedAtLabel}</span>
         </div>
       </div>
+
+      {dashboard.brandTabs?.length ? (
+        <nav className="keyword-dashboard-tabs" aria-label="브랜드 선택">
+          {dashboard.brandTabs.map((tab) => (
+            <Link
+              aria-current={tab.id === activeBrand ? "page" : undefined}
+              className={tab.id === activeBrand ? "is-active" : ""}
+              href={tab.href}
+              key={tab.id}
+              prefetch={false}
+              title={tab.summaryLabel}
+            >
+              <span>{tab.label}</span>
+              <small>{tab.summaryLabel}</small>
+            </Link>
+          ))}
+        </nav>
+      ) : null}
+
+      {inventoryCards.length > 0 ? (
+        <div className="keyword-inventory-summary-grid" aria-label="검색광고 키워드 목록 요약">
+          {inventoryCards.map((card) => (
+            <article className={`keyword-inventory-summary-card tone-${card.tone}`} key={card.id}>
+              <span>{card.label}</span>
+              <strong>{card.valueLabel}</strong>
+              <p>{card.description}</p>
+            </article>
+          ))}
+        </div>
+      ) : null}
 
       <section className="keyword-dashboard-guard" aria-label="충분한 클릭 기준">
         <strong>{dashboard.qualityGuardLabel}</strong>
@@ -39,19 +76,19 @@ export function KeywordPerformanceDashboard({ dashboard }: KeywordPerformanceDas
         <KeywordRankPanel
           emptyMessage="충분한 클릭 기준을 통과한 전환 키워드가 아직 없습니다."
           icon={<TrendingUp size={17} aria-hidden="true" />}
-          rows={dashboard.topConversionKeywords}
+          rows={activeView.topConversionKeywords}
           title="상위 전환 키워드 10개"
         />
         <KeywordRankPanel
           emptyMessage="충분한 클릭 기준을 통과한 하위 전환 키워드가 아직 없습니다."
           icon={<TrendingDown size={17} aria-hidden="true" />}
-          rows={dashboard.lowConversionKeywords}
+          rows={activeView.lowConversionKeywords}
           title="하위 전환 키워드 10개"
         />
         <KeywordRankPanel
           emptyMessage="낭비 후보로 볼 키워드가 아직 없습니다."
           icon={<AlertTriangle size={17} aria-hidden="true" />}
-          rows={dashboard.wasteKeywords}
+          rows={activeView.wasteKeywords}
           title="낭비 키워드"
         />
       </div>
@@ -60,24 +97,24 @@ export function KeywordPerformanceDashboard({ dashboard }: KeywordPerformanceDas
         <KeywordSegmentPanel
           emptyMessage="기기별 성과 스냅샷이 아직 없습니다."
           icon={<MonitorSmartphone size={17} aria-hidden="true" />}
-          rows={dashboard.deviceSegments}
+          rows={activeView.deviceSegments}
           title="PC/모바일 성과"
         />
         <KeywordSegmentPanel
           emptyMessage="시간대별 성과 스냅샷이 아직 없습니다."
           icon={<Clock3 size={17} aria-hidden="true" />}
-          rows={dashboard.timeSegments}
+          rows={activeView.timeSegments}
           title="시간대별 성과"
         />
       </div>
 
       <div className="keyword-dashboard-grid compact">
-        <ShoppingSearchTermPanel rows={dashboard.shoppingSearchTerms} />
-        <RecommendationKeywordPanel candidates={dashboard.recommendationKeywords} />
+        <ShoppingSearchTermPanel rows={activeView.shoppingSearchTerms} />
+        <RecommendationKeywordPanel candidates={activeView.recommendationKeywords} />
       </div>
 
       <div className="keyword-dashboard-grid single">
-        <RecommendationEvidencePanel evidence={dashboard.recommendationEvidence} />
+        <RecommendationEvidencePanel evidence={activeView.recommendationEvidence} />
       </div>
     </section>
   );

@@ -271,6 +271,13 @@ describe("읽기 전용 연동 수집", () => {
     expect(requestedPaths).toEqual(
       expect.arrayContaining(["/ncc/campaigns?all", "/ncc/adgroups?all", "/ncc/keywords?all", "/stats?all", "/stats?pcMblTp", "/stats?hh24"]),
     );
+    expect(report.searchAdKeywordInventorySnapshots).toHaveLength(1);
+    expect(report.searchAdKeywordInventorySnapshots?.[0]).toMatchObject({
+      brandKey: "stickersee",
+      keyword: "부처님오신날 선물카드",
+      effectiveStatus: "ON",
+      dataScope: "inventory_only",
+    });
     expect(report.searchAdPerformanceSnapshots).toHaveLength(4);
     expect(report.searchAdPerformanceSnapshots?.[0]).toMatchObject({
       provider: "naver_search_ad",
@@ -377,7 +384,10 @@ describe("읽기 전용 연동 수집", () => {
     expect(report.searchAdPerformanceSnapshots?.some((snapshot) => snapshot.brandKey === "coffeeprint" && snapshot.keyword === "기업 감사장")).toBe(
       true,
     );
+    expect(report.searchAdKeywordInventorySnapshots).toHaveLength(51);
+    expect(report.searchAdKeywordInventorySnapshots?.filter((snapshot) => snapshot.brandKey === "coffeeprint")).toHaveLength(1);
     expect(report.searchAdPerformanceSnapshots).toHaveLength(4);
+    expect(report.evidenceNotes.join(" ")).toContain("검색광고 키워드 목록 51개");
     expect(report.evidenceNotes.join(" ")).toContain("브랜드별 성과 후보: 스티커씨 50개, 커피프린트 1개");
     expect(report.evidenceNotes.join(" ")).toContain("이번 수집 대상: 스티커씨 3개, 커피프린트 1개");
   });

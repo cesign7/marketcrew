@@ -38,6 +38,7 @@ import {
   type OwnerDecisionType,
   type ProviderReadinessReport,
   type ProviderSyncReport,
+  type SearchAdKeywordInventorySnapshot,
   type SearchAdPerformanceSnapshot,
   type SearchTrendSnapshot,
   type SeasonalKeywordAdPlan,
@@ -61,6 +62,7 @@ import type {
   ApprovalPreviewView,
   InboxBucketView,
   KeywordPerformanceDashboardView,
+  KeywordPerformanceDashboardSliceView,
   KeywordPerformanceRowTone,
   OwnerDecisionFlowView,
   SeasonalKeywordPlanView,
@@ -707,7 +709,7 @@ function latestSearchAdPerformanceReports(providerSyncReports: ProviderSyncRepor
 
 function latestSyncedReportWithSnapshots(
   providerSyncReports: ProviderSyncReport[],
-  snapshotKey: "searchAdPerformanceSnapshots" | "shoppingSearchAdPerformanceSnapshots",
+  snapshotKey: "searchAdKeywordInventorySnapshots" | "searchAdPerformanceSnapshots" | "shoppingSearchAdPerformanceSnapshots",
 ): ProviderSyncReport | undefined {
   return providerSyncReports
     .filter((report) => report.provider === "search_ad" && report.status === "SYNCED" && (report[snapshotKey]?.length ?? 0) > 0)
@@ -747,20 +749,41 @@ function buildKeywordPerformanceDashboard(input: {
   const reports = latestSearchAdPerformanceReports(input.providerSyncReports);
   const searchSnapshots = reports.flatMap((report) => report.searchAdPerformanceSnapshots ?? []);
   const shoppingSnapshots = reports.flatMap((report) => report.shoppingSearchAdPerformanceSnapshots ?? []);
-  const keywordAggregates = aggregateKeywordPerformance(searchSnapshots);
-  const sufficientAggregates = keywordAggregates.filter(isSufficientKeywordAggregate);
+  const inventorySnapshots = latestSearchAdInventorySnapshots(input.providerSyncReports);
   const latestCheckedAt = latestCheckedAtLabel(reports, input.generatedAt);
   const recommendationContext = buildKeywordRecommendationContext({
     providerSyncReports: input.providerSyncReports,
     seasonalKeywordPlans: input.seasonalKeywordPlans,
     eventsById: input.eventsById,
   });
+  const allSlice = buildKeywordPerformanceDashboardSlice({
+    brandKey: "all",
+    searchSnapshots,
+    shoppingSnapshots,
+    inventorySnapshots,
+    recommendationContext,
+    providerSyncReports: input.providerSyncReports,
+  });
+  const coffeeprintSlice = buildKeywordPerformanceDashboardSlice({
+    brandKey: "coffeeprint",
+    searchSnapshots,
+    shoppingSnapshots,
+    inventorySnapshots,
+    recommendationContext,
+    providerSyncReports: input.providerSyncReports,
+  });
+  const stickerseeSlice = buildKeywordPerformanceDashboardSlice({
+    brandKey: "stickersee",
+    searchSnapshots,
+    shoppingSnapshots,
+    inventorySnapshots,
+    recommendationContext,
+    providerSyncReports: input.providerSyncReports,
+  });
 
   return {
     title: "키워드 성과 대시보드",
-    summaryLabel: `검색광고 키워드 ${keywordAggregates.length.toLocaleString("ko-KR")}개 · 쇼핑검색어 ${shoppingSnapshots.length.toLocaleString(
-      "ko-KR",
-    )}개를 그로가 먼저 점검합니다.`,
+    summaryLabel: allSlice.summaryLabel,
     sourceLabel: reports.length > 0 ? "읽기 전용 네이버 검색광고 성과 스냅샷 기준" : "성과 스냅샷 수집 대기",
     updatedAtLabel: latestCheckedAt,
     qualityGuardLabel: "클릭 1~2건으로 전환율이 과대 표시되지 않도록 충분한 클릭/비용 기준을 먼저 적용합니다.",
@@ -771,6 +794,52 @@ function buildKeywordPerformanceDashboard(input: {
       "기기/시간대 조정은 키워드 전체 중지가 아니라 낮은 구간만 따로 봅니다.",
       "실제 외부 광고 변경은 대표 승인과 쓰기 게이트 통과 전까지 차단합니다.",
     ],
+    brandTabs: [
+      { id: "all", label: "전체", href: "/characters/gro", summaryLabel: dashboardTabSummary(allSlice) },
+      { id: "coffeeprint", label: "커피프린트", href: "/characters/gro?brand=coffeeprint", summaryLabel: dashboardTabSummary(coffeeprintSlice) },
+      { id: "stickersee", label: "스티커씨", href: "/characters/gro?brand=stickersee", summaryLabel: dashboardTabSummary(stickerseeSlice) },
+    ],
+    brandViews: {
+      all: allSlice,
+      coffeeprint: coffeeprintSlice,
+      stickersee: stickerseeSlice,
+    },
+    inventorySummaryCards: allSlice.inventorySummaryCards,
+    topConversionKeywords: allSlice.topConversionKeywords,
+    lowConversionKeywords: allSlice.lowConversionKeywords,
+    wasteKeywords: allSlice.wasteKeywords,
+    deviceSegments: allSlice.deviceSegments,
+    timeSegments: allSlice.timeSegments,
+    shoppingSearchTerms: allSlice.shoppingSearchTerms,
+    recommendationKeywords: allSlice.recommendationKeywords,
+    recommendationEvidence: allSlice.recommendationEvidence,
+  };
+}
+
+function buildKeywordPerformanceDashboardSlice(input: {
+  brandKey: "all" | "coffeeprint" | "stickersee";
+  searchSnapshots: SearchAdPerformanceSnapshot[];
+  shoppingSnapshots: ShoppingSearchAdPerformanceSnapshot[];
+  inventorySnapshots: SearchAdKeywordInventorySnapshot[];
+  recommendationContext: KeywordRecommendationContext;
+  providerSyncReports: ProviderSyncReport[];
+}): KeywordPerformanceDashboardSliceView {
+  const searchSnapshots = filterSearchAdSnapshotsByDashboardBrand(input.searchSnapshots, input.brandKey);
+  const shoppingSnapshots = filterShoppingSearchSnapshotsByDashboardBrand(input.shoppingSnapshots, input.brandKey);
+  const inventorySnapshots = filterInventorySnapshotsByDashboardBrand(input.inventorySnapshots, input.brandKey);
+  const keywordAggregates = aggregateKeywordPerformance(searchSnapshots);
+  const sufficientAggregates = keywordAggregates.filter(isSufficientKeywordAggregate);
+  const recommendationCandidates = filterRecommendationCandidatesByDashboardBrand(input.recommendationContext.candidates, input.brandKey);
+  const recommendationEvidence = filterRecommendationEvidenceByDashboardBrand(input.recommendationContext.evidence, input.brandKey);
+
+  return {
+    summaryLabel: dashboardSummaryLabel({
+      brandKey: input.brandKey,
+      keywordAggregateCount: keywordAggregates.length,
+      shoppingSnapshotCount: shoppingSnapshots.length,
+      inventorySnapshots,
+    }),
+    inventorySummaryCards: buildKeywordInventorySummaryCards(input.brandKey, inventorySnapshots, searchSnapshots),
     topConversionKeywords: sufficientAggregates
       .filter((aggregate) => aggregate.conversions > 0)
       .sort(compareTopConversionAggregates)
@@ -795,9 +864,153 @@ function buildKeywordPerformanceDashboard(input: {
     deviceSegments: buildDeviceSegmentRows(searchSnapshots).slice(0, 10),
     timeSegments: buildTimeSegmentRows(searchSnapshots).slice(0, 10),
     shoppingSearchTerms: buildShoppingSearchTermRows(shoppingSnapshots, input.providerSyncReports).slice(0, 10),
-    recommendationKeywords: recommendationContext.candidates.slice(0, 10),
-    recommendationEvidence: recommendationContext.evidence.slice(0, 10),
+    recommendationKeywords: recommendationCandidates.slice(0, 10),
+    recommendationEvidence: recommendationEvidence.slice(0, 10),
   };
+}
+
+function latestSearchAdInventorySnapshots(providerSyncReports: ProviderSyncReport[]): SearchAdKeywordInventorySnapshot[] {
+  const report = latestSyncedReportWithSnapshots(providerSyncReports, "searchAdKeywordInventorySnapshots");
+  return report?.searchAdKeywordInventorySnapshots ?? [];
+}
+
+function filterInventorySnapshotsByDashboardBrand(
+  snapshots: SearchAdKeywordInventorySnapshot[],
+  brandKey: "all" | "coffeeprint" | "stickersee",
+): SearchAdKeywordInventorySnapshot[] {
+  return brandKey === "all" ? snapshots : snapshots.filter((snapshot) => normalizeBrandKey(snapshot.brandKey) === brandKey.toUpperCase());
+}
+
+function filterSearchAdSnapshotsByDashboardBrand(
+  snapshots: SearchAdPerformanceSnapshot[],
+  brandKey: "all" | "coffeeprint" | "stickersee",
+): SearchAdPerformanceSnapshot[] {
+  return brandKey === "all" ? snapshots : snapshots.filter((snapshot) => normalizeBrandKey(snapshot.brandKey) === brandKey.toUpperCase());
+}
+
+function filterShoppingSearchSnapshotsByDashboardBrand(
+  snapshots: ShoppingSearchAdPerformanceSnapshot[],
+  brandKey: "all" | "coffeeprint" | "stickersee",
+): ShoppingSearchAdPerformanceSnapshot[] {
+  return brandKey === "all" ? snapshots : snapshots.filter((snapshot) => normalizeBrandKey(snapshot.brandKey) === brandKey.toUpperCase());
+}
+
+function filterRecommendationCandidatesByDashboardBrand(
+  candidates: KeywordPerformanceDashboardView["recommendationKeywords"],
+  brandKey: "all" | "coffeeprint" | "stickersee",
+): KeywordPerformanceDashboardView["recommendationKeywords"] {
+  if (brandKey === "all") {
+    return candidates;
+  }
+
+  const label = brandLabelFromKey(brandKey);
+  return candidates.filter((candidate) => candidate.brandLabel === label || candidate.brandLabel === "브랜드 배정 필요" || candidate.brandLabel === "시즌 캠페인");
+}
+
+function filterRecommendationEvidenceByDashboardBrand(
+  evidence: KeywordPerformanceDashboardView["recommendationEvidence"],
+  brandKey: "all" | "coffeeprint" | "stickersee",
+): KeywordPerformanceDashboardView["recommendationEvidence"] {
+  if (brandKey === "all") {
+    return evidence;
+  }
+
+  const label = brandLabelFromKey(brandKey);
+  return evidence.filter((item) => {
+    if (item.sourceLabel.includes("키워드 수요") || item.sourceLabel.includes("데이터랩") || item.sourceLabel.includes("시즌")) {
+      return true;
+    }
+
+    return [item.title, item.summary, item.sourceDetailLabel ?? "", ...item.evidenceLabels].some((value) => value.includes(label));
+  });
+}
+
+function dashboardSummaryLabel(input: {
+  brandKey: "all" | "coffeeprint" | "stickersee";
+  keywordAggregateCount: number;
+  shoppingSnapshotCount: number;
+  inventorySnapshots: SearchAdKeywordInventorySnapshot[];
+}): string {
+  const brandLabel = input.brandKey === "all" ? "전체 브랜드" : brandLabelFromKey(input.brandKey);
+  if (input.inventorySnapshots.length > 0) {
+    const enabledCount = input.inventorySnapshots.filter((snapshot) => snapshot.effectiveStatus === "ON").length;
+    return `${brandLabel} 검색광고 키워드 목록 ${input.inventorySnapshots.length.toLocaleString(
+      "ko-KR",
+    )}개 · 켜진 키워드 ${enabledCount.toLocaleString("ko-KR")}개 · 성과 확인 ${input.keywordAggregateCount.toLocaleString(
+      "ko-KR",
+    )}개를 그로가 먼저 점검합니다.`;
+  }
+
+  return `${brandLabel} 검색광고 성과 키워드 ${input.keywordAggregateCount.toLocaleString(
+    "ko-KR",
+  )}개 · 쇼핑검색어 ${input.shoppingSnapshotCount.toLocaleString("ko-KR")}개를 그로가 먼저 점검합니다.`;
+}
+
+function dashboardTabSummary(slice: KeywordPerformanceDashboardSliceView): string {
+  const totalInventory = inventoryCardNumber(slice.inventorySummaryCards.find((card) => card.id.endsWith("-total")));
+  const enabledInventory = inventoryCardNumber(slice.inventorySummaryCards.find((card) => card.id.endsWith("-enabled")));
+  const performanceInventory = inventoryCardNumber(slice.inventorySummaryCards.find((card) => card.id.endsWith("-checked")));
+
+  if (totalInventory > 0) {
+    return `${totalInventory.toLocaleString("ko-KR")}개 중 ${enabledInventory.toLocaleString("ko-KR")}개 켜짐 · 성과 ${performanceInventory.toLocaleString("ko-KR")}개`;
+  }
+
+  return `성과 ${slice.topConversionKeywords.length + slice.lowConversionKeywords.length + slice.wasteKeywords.length}건`;
+}
+
+function inventoryCardNumber(card: KeywordPerformanceDashboardSliceView["inventorySummaryCards"][number] | undefined): number {
+  const value = card?.valueLabel.replace(/[^\d]/g, "");
+  return value ? Number(value) : 0;
+}
+
+function buildKeywordInventorySummaryCards(
+  brandKey: "all" | "coffeeprint" | "stickersee",
+  inventorySnapshots: SearchAdKeywordInventorySnapshot[],
+  performanceSnapshots: SearchAdPerformanceSnapshot[],
+): KeywordPerformanceDashboardSliceView["inventorySummaryCards"] {
+  const prefix = brandKey === "all" ? "all" : brandKey;
+  const enabledSnapshots = inventorySnapshots.filter((snapshot) => snapshot.effectiveStatus === "ON");
+  const performanceKeywordIds = new Set(
+    performanceSnapshots
+      .filter((snapshot) => snapshot.device === "ALL")
+      .map((snapshot) => `${normalizeBrandKey(snapshot.brandKey)}::${normalizeRecommendationKey(snapshot.keyword)}`),
+  );
+  const checkedCount = inventorySnapshots.filter((snapshot) =>
+    performanceKeywordIds.has(`${normalizeBrandKey(snapshot.brandKey)}::${normalizeRecommendationKey(snapshot.keyword)}`),
+  ).length;
+  const uncollectedCount = Math.max(0, enabledSnapshots.length - checkedCount);
+  const unassignedCount = inventorySnapshots.filter((snapshot) => normalizeBrandKey(snapshot.brandKey) === "UNASSIGNED").length;
+
+  return [
+    {
+      id: `${prefix}-total`,
+      label: "전체 키워드",
+      valueLabel: `${inventorySnapshots.length.toLocaleString("ko-KR")}개`,
+      description: "광고 API에서 읽은 키워드 목록입니다.",
+      tone: "neutral",
+    },
+    {
+      id: `${prefix}-enabled`,
+      label: "켜진 키워드",
+      valueLabel: `${enabledSnapshots.length.toLocaleString("ko-KR")}개`,
+      description: "캠페인, 광고그룹, 키워드가 모두 켜진 항목입니다.",
+      tone: "good",
+    },
+    {
+      id: `${prefix}-checked`,
+      label: "성과 확인",
+      valueLabel: `${checkedCount.toLocaleString("ko-KR")}개`,
+      description: "이번 수집에서 성과 스냅샷까지 연결된 키워드입니다.",
+      tone: checkedCount > 0 ? "good" : "warning",
+    },
+    {
+      id: `${prefix}-waiting`,
+      label: brandKey === "all" && unassignedCount > 0 ? "미분류/대기" : "성과 대기",
+      valueLabel: `${(brandKey === "all" ? unassignedCount : uncollectedCount).toLocaleString("ko-KR")}개`,
+      description: brandKey === "all" && unassignedCount > 0 ? "브랜드명을 확정하지 못한 키워드입니다." : "회전 수집 한도 밖이거나 성과가 아직 없는 키워드입니다.",
+      tone: brandKey === "all" && unassignedCount > 0 ? "warning" : "neutral",
+    },
+  ];
 }
 
 function aggregateKeywordPerformance(snapshots: SearchAdPerformanceSnapshot[]): KeywordAggregate[] {
@@ -1709,6 +1922,7 @@ function brandLabelFromKey(brandKey: string): string {
   const labels: Record<string, string> = {
     STICKERSEE: "스티커씨",
     COFFEEPRINT: "커피프린트",
+    UNASSIGNED: "브랜드 미분류",
   };
 
   return labels[brandKey.toUpperCase()] ?? brandKey;
@@ -2541,6 +2755,12 @@ function buildProviderSnapshotLabels(report: ProviderSyncReport): string[] {
 
   if (report.keywordDemandSnapshots?.length) {
     labels.push(`키워드 수요 ${report.keywordDemandSnapshots.length.toLocaleString("ko-KR")}건`);
+  }
+
+  if (report.searchAdKeywordInventorySnapshots?.length) {
+    const enabledCount = report.searchAdKeywordInventorySnapshots.filter((snapshot) => snapshot.effectiveStatus === "ON").length;
+    labels.push(`검색광고 키워드 목록 ${report.searchAdKeywordInventorySnapshots.length.toLocaleString("ko-KR")}건`);
+    labels.push(`켜진 키워드 ${enabledCount.toLocaleString("ko-KR")}건`);
   }
 
   if (report.searchAdPerformanceSnapshots?.length) {
