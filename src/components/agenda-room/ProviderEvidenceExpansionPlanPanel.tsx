@@ -1,11 +1,13 @@
 import type { ProviderEvidenceExpansionPlanView } from "@/features/agenda-room/types";
 
 type ProviderEvidenceExpansionPlanPanelProps = {
-  plans: ProviderEvidenceExpansionPlanView[];
+  plans?: ProviderEvidenceExpansionPlanView[];
 };
 
 export function ProviderEvidenceExpansionPlanPanel({ plans }: ProviderEvidenceExpansionPlanPanelProps) {
-  if (plans.length === 0) {
+  const safePlans = plans ?? [];
+
+  if (safePlans.length === 0) {
     return null;
   }
 
@@ -20,7 +22,7 @@ export function ProviderEvidenceExpansionPlanPanel({ plans }: ProviderEvidenceEx
       </div>
 
       <ol className="evidence-expansion-list">
-        {plans.map((plan) => (
+        {safePlans.map((plan) => (
           <li className="evidence-expansion-card" key={plan.id}>
             <header>
               <div>

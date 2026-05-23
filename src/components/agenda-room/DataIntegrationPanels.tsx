@@ -39,7 +39,7 @@ type DataIntegrationPanelsProps = {
   initialPeriod: DataPeriodFilter;
   plannerPreview: PlannerPreviewView;
   providerDataContracts: ProviderDataContractView[];
-  providerEvidenceExpansionPlans: ProviderEvidenceExpansionPlanView[];
+  providerEvidenceExpansionPlans?: ProviderEvidenceExpansionPlanView[];
   providerReadiness: ProviderReadinessView[];
   providerSyncEvidence: ProviderSyncEvidenceView[];
 };
@@ -56,7 +56,7 @@ export function DataIntegrationPanels({
   initialPeriod,
   plannerPreview,
   providerDataContracts,
-  providerEvidenceExpansionPlans,
+  providerEvidenceExpansionPlans = [],
   providerReadiness,
   providerSyncEvidence,
 }: DataIntegrationPanelsProps) {

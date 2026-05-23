@@ -22,4 +22,10 @@ describe("ProviderEvidenceExpansionPlanPanel", () => {
     expect(html).toContain("스마트스토어 데이터솔루션");
     expect(html).not.toContain("PC_MOBILE_TARGET");
   });
+
+  it("캐시된 예전 view model처럼 계획 필드가 없어도 화면을 깨뜨리지 않는다", () => {
+    const html = renderToString(createElement(ProviderEvidenceExpansionPlanPanel, {}));
+
+    expect(html).toBe("");
+  });
 });
