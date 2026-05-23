@@ -121,11 +121,34 @@ describe("buildAgendaRoomViewModel", () => {
 
     const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
 
-    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).toContain("브랜드별 개별 검토 안건");
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).toContain("추천 안건 연결 기록 없음");
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).not.toContain("브랜드별 개별 검토 안건");
     expect(viewModel.aiPilotInsight.recommendedApprovalLabels).not.toContain(
       "approval-agenda-provider-channel-balance-stickersee-coffeeprint-2026-05-23",
     );
     expect(viewModel.aiPilotInsight.recommendedApprovalLabels).not.toContain("스마트스토어/자체몰 매출 균형 점검 안건");
+  });
+
+  it("사용 중단된 교차 브랜드 AI 판단은 최신 실행이어도 운영 화면에서 제외한다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    repository.saveAgentRuns([buildGeminiPlannerAgentRun(), buildDeprecatedCrossBrandGeminiPlannerAgentRun()]);
+    repository.saveAgentRunWorkflowLinks([
+      buildGeminiPlannerLink(),
+      {
+        ...buildGeminiPlannerLink(),
+        id: "agent-link-gemini-deprecated-channel-balance",
+        agentRunId: "planner-audit-planner-result-gemini-deprecated-channel-balance",
+        objectId: "approval-agenda-provider-channel-balance-stickersee-coffeeprint-2026-05-23",
+      },
+    ]);
+
+    const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
+
+    expect(viewModel.aiPilotInsight.statusLabel).toBe("저장된 판단");
+    expect(viewModel.aiPilotInsight.summary).toContain("실제 수집 근거로 부처님오신날 선물카드 안건");
+    expect(viewModel.aiPilotInsight.summary).not.toContain("스마트스토어/자체몰");
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).toContain("부처님오신날 선물카드 키워드 테스트 승인안");
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).not.toContain("브랜드별 개별 검토 안건");
   });
 
   it("읽기 전용 연동 집계를 담당 캐릭터 안건으로 함께 보여준다", () => {
@@ -456,5 +479,16 @@ function buildGeminiPlannerLink(): AgentRunWorkflowLink {
     objectId: "approval-agenda-season-plan-buddha-gift-card",
     relation: "generated",
     createdAt: "2026-05-23T03:07:44.100Z",
+  };
+}
+
+function buildDeprecatedCrossBrandGeminiPlannerAgentRun(): AgentRun {
+  return {
+    ...buildGeminiPlannerAgentRun(),
+    id: "planner-audit-planner-result-gemini-deprecated-channel-balance",
+    outputSummary: "스마트스토어와 자체몰의 매출 균형을 통합 검토합니다.",
+    evidenceIds: ["commerce-aggregate-STICKERSEE-2026-05-22", "shop-aggregate-youngcart-2026-05-22"],
+    startedAt: "2026-05-23T03:08:43.902Z",
+    finishedAt: "2026-05-23T03:08:44.100Z",
   };
 }

@@ -2,7 +2,7 @@
   "project": "marketcrew2",
   "currentFeature": "ai-marketing-character-ops",
   "phase": "completed",
-  "updatedAt": "2026-05-23T15:27:44+09:00",
+  "updatedAt": "2026-05-23T15:40:42+09:00",
   "features": {
     "ai-marketing-character-ops": {
       "phase": "completed",
@@ -13,9 +13,9 @@
       "analysisPath": "docs/03-analysis/ai-marketing-character-ops.analysis.md",
       "qaPath": "docs/05-qa/ai-marketing-character-ops.qa-report.md",
       "reportPath": "docs/04-report/ai-marketing-character-ops.report.md",
-      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-26.md",
+      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-27.md",
       "matchRate": 100,
-      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속 module-28에서 메뉴/정보구조를 브랜드 우선으로 재정렬했다. 스티커씨와 커피프린트는 서로 비교하지 않고, 스마트스토어/자체몰/향후 커피프린트 스마트스토어는 각 브랜드 안의 판매채널로 다룬다. channel-balance 교차 브랜드 안건과 commerce_cross_channel AI 판독 근거를 제거했고, 상단 필터와 데이터 화면 문구를 브랜드 기준으로 바꿨다. 실제 provider write는 계속 차단한다."
+      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속 module-29에서 실제 AI 파일럿 재실행 전 production DB에 남은 예전 channel-balance 교차 브랜드 결재안이 AI 후보로 섞이지 않도록 차단했다. LLM 입력, Railway llm-real-pilot API, Gemini 프롬프트/응답 정규화, 운영 화면 AI 파일럿 판단 패널이 같은 브랜드 분리 기준을 사용한다. 스티커씨와 커피프린트는 서로 비교하지 않고, 스마트스토어/자체몰/향후 커피프린트 스마트스토어는 각 브랜드 안의 판매채널로 다룬다. 실제 provider write는 계속 차단한다."
     },
     "ops-persistence-provenance-foundation": {
       "phase": "completed",

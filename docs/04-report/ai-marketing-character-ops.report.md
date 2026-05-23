@@ -100,6 +100,14 @@ QA Verdict:    QA_PASS
 
 검증은 `npm run typecheck`, 표적 테스트 3 files / 11 tests, 전체 단위 테스트 50 files / 130 tests, `npm run build`, `npm audit --omit=dev`를 통과했다. 1차 MVP 대비 진행율은 100% 유지다.
 
+## 1.8 2026-05-23 Brand-Separated AI Pilot Follow-up
+
+실제 Gemini 파일럿 재실행 전, production DB에 남아 있던 예전 `스마트스토어/자체몰 매출 균형` 결재안이 다시 AI 판단 후보로 섞이지 않도록 차단했다.
+
+`buildPlannerInputFromApprovals`와 Railway 백엔드 `/api/operations/llm-real-pilot`은 사용 중단된 교차 브랜드 결재안을 제외한다. Gemini 프롬프트에는 스티커씨와 커피프린트는 서로 다른 브랜드이며, 두 브랜드의 매출/예산을 비교하거나 하나의 균형 안건으로 묶지 않는다는 규칙을 명시했다. 저장된 이전 AI 실행 이력도 같은 기준으로 걸러 운영 화면에 잘못된 최신 판단이 남지 않게 했다.
+
+검증은 `npm run typecheck`, 표적 테스트 4 files / 16 tests, 전체 단위 테스트 51 files / 137 tests, `npm run build`, `npm run test:e2e` 11 tests, `npm audit --omit=dev` 0 vulnerabilities를 통과했다. 1차 MVP 대비 진행율은 100% 유지다.
+
 ---
 
 ## 2. Related Documents

@@ -13,6 +13,10 @@ import {
 import { buildProviderSignalAgendaArtifacts } from "@/lib/application/provider-signal-agenda";
 import { buildLlmDryRunQueue } from "@/lib/application/llm-dry-run-queue";
 import {
+  containsDeprecatedCrossBrandJudgment,
+  isDeprecatedCrossBrandApprovalId,
+} from "@/lib/application/deprecated-approvals";
+import {
   getProviderHistoryPolicy,
   type AgendaCandidate,
   type AgentRun,
@@ -243,6 +247,7 @@ function buildAiPilotInsightView(
 ): AgendaRoomViewModel["aiPilotInsight"] {
   const latestLlmRun = [...agentRuns]
     .filter((run) => run.runType === "moa_planner" && run.mode === "llm")
+    .filter(isVisibleAiPilotRun)
     .sort((left, right) => (right.finishedAt ?? right.startedAt).localeCompare(left.finishedAt ?? left.startedAt))[0];
 
   if (!latestLlmRun) {
@@ -264,7 +269,8 @@ function buildAiPilotInsightView(
   const approvalById = new Map(approvalRequests.map((approval) => [approval.id, approval]));
   const linkedApprovalIds = workflowLinks
     .filter((link) => link.agentRunId === latestLlmRun.id && link.objectType === "approval_request")
-    .map((link) => link.objectId);
+    .map((link) => link.objectId)
+    .filter((approvalId) => !isDeprecatedCrossBrandApprovalId(approvalId));
   const recommendedApprovalLabels = linkedApprovalIds.length > 0
     ? linkedApprovalIds.map((approvalId) => approvalLabelFromId(approvalId, approvalById))
     : ["추천 안건 연결 기록 없음"];
@@ -288,6 +294,10 @@ function buildAiPilotInsightView(
     recommendedApprovalLabels,
     evidenceCategoryLabels: buildEvidenceCategoryLabels(latestLlmRun.evidenceIds),
   };
+}
+
+function isVisibleAiPilotRun(run: AgentRun): boolean {
+  return !containsDeprecatedCrossBrandJudgment(`${run.inputSummary} ${run.outputSummary}`);
 }
 
 function buildLatestOwnerDecisionByApprovalId(ownerDecisions: OwnerDecision[]): Map<string, OwnerDecision> {

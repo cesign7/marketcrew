@@ -22,6 +22,28 @@ describe("LLM planner interface", () => {
     expect(JSON.stringify(input)).not.toContain("afterState");
   });
 
+  it("사용 중단된 교차 브랜드 결재안은 AI 입력 후보에서 제외한다", () => {
+    const cycle = runSampleAgendaCycle();
+    const deprecatedCrossBrandApproval = {
+      ...cycle.approvalRequests[0],
+      id: "approval-agenda-provider-channel-balance-stickersee-coffeeprint-2026-05-23",
+      title: "스마트스토어/자체몰 매출 균형 점검 안건",
+      evidenceSummary: "스마트스토어와 자체몰의 매출 균형을 통합 검토합니다.",
+      evidenceIds: ["commerce-aggregate-STICKERSEE-2026-05-22", "shop-aggregate-youngcart-2026-05-22"],
+      status: "PENDING" as const,
+    };
+
+    const input = buildPlannerInputFromApprovals(
+      [deprecatedCrossBrandApproval, ...cycle.approvalRequests],
+      cycle.generatedAt,
+    );
+
+    expect(input.candidateSummaries.map((candidate) => candidate.approvalRequestId)).not.toContain(
+      "approval-agenda-provider-channel-balance-stickersee-coffeeprint-2026-05-23",
+    );
+    expect(JSON.stringify(input)).not.toContain("스마트스토어/자체몰 매출 균형");
+  });
+
   it("deterministic fallback은 승인 가능 안건을 우선 추천하고 token estimate를 남긴다", () => {
     const cycle = runSampleAgendaCycle();
     const input = buildPlannerInputFromApprovals(cycle.approvalRequests, cycle.generatedAt);

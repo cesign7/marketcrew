@@ -12,6 +12,8 @@ describe("Gemini planner pilot", () => {
       const prompt = body.contents[0].parts[0].text as string;
       expect(prompt).toContain("원천 행");
       expect(prompt).toContain("approval-real-1");
+      expect(prompt).toContain("스티커씨와 커피프린트는 서로 다른 브랜드");
+      expect(prompt).toContain("두 브랜드의 매출이나 예산을 비교하거나 하나의 균형 안건으로 묶지 않는다");
       expect(prompt).not.toContain("customerName");
 
       return new Response(
@@ -106,6 +108,60 @@ describe("Gemini planner pilot", () => {
     expect(pilot.audit.model).toBe("gemini-3.5-flash");
     expect(pilot.audit.tokenUsage.totalEstimate).toBe(1020);
     expect(pilot.audit.billing.estimatedCostKrw).toBeGreaterThan(0);
+  });
+
+  it("Gemini 응답에 사용 중단된 교차 브랜드 판단 문구가 섞이면 규칙 기반 요약으로 되돌린다", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          candidates: [
+            {
+              content: {
+                parts: [
+                  {
+                    text: JSON.stringify({
+                      title: "스마트스토어/자체몰 매출 균형 점검",
+                      summary: "스마트스토어와 자체몰의 매출 균형을 통합 검토해야 합니다.",
+                      recommendedApprovalIds: ["approval-real-1"],
+                      evidenceIds: ["commerce-aggregate-stickersee-2026-05-23"],
+                      judgmentNotes: [],
+                      missingEvidenceRequests: [],
+                    }),
+                  },
+                ],
+              },
+            },
+          ],
+          usageMetadata: {
+            promptTokenCount: 900,
+            candidatesTokenCount: 120,
+            totalTokenCount: 1020,
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    const pilot = await runGeminiPlannerPilot({
+      plannerInput: buildPlannerInput(),
+      context: {
+        providerSyncReports: [],
+        keywordDemandSnapshots: [],
+        searchTrendSnapshots: [],
+      },
+      env: {
+        AI_LLM_PROVIDER: "gemini",
+        AI_LLM_MODEL_STRATEGIC: "gemini-3.5-flash",
+        GEMINI_API_KEY: "test-key",
+      },
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      generatedAt: GENERATED_AT,
+    });
+
+    expect(pilot.result.recommendedApprovalIds).toEqual(["approval-real-1"]);
+    expect(pilot.result.title).toBe("모아 실제 AI 파일럿 요약");
+    expect(pilot.result.summary).not.toContain("스마트스토어/자체몰");
+    expect(pilot.result.summary).not.toContain("매출 균형");
   });
 });
 

@@ -6,6 +6,7 @@ import type {
   LlmPlannerResult,
   RiskLevel,
 } from "@/lib/domain";
+import { filterActiveApprovalRequests } from "@/lib/application/deprecated-approvals";
 
 export interface LlmPlanner {
   plan(input: LlmPlannerInput): Promise<LlmPlannerResult>;
@@ -23,12 +24,14 @@ export function buildPlannerInputFromApprovals(
   generatedAt: string,
   maxCandidates = 5,
 ): LlmPlannerInput {
+  const activeApprovalRequests = filterActiveApprovalRequests(approvalRequests);
+
   return {
     id: `planner-input-${generatedAt}`,
     generatedAt,
     source: "signal_summary",
     rawRowsIncluded: false,
-    candidateSummaries: approvalRequests.slice(0, maxCandidates).map((request) => ({
+    candidateSummaries: activeApprovalRequests.slice(0, maxCandidates).map((request) => ({
       approvalRequestId: request.id,
       title: request.title,
       owner: ownerFromExecutionPlan(request.executionPlan.workType),

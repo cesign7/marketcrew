@@ -8,6 +8,7 @@ import type {
   ProviderSyncReport,
   SearchTrendSnapshot,
 } from "@/lib/domain";
+import { containsDeprecatedCrossBrandJudgment } from "@/lib/application/deprecated-approvals";
 import { resolveOfficialLlmPricing } from "./official-pricing";
 import { buildDeterministicPlannerResult } from "./planner";
 
@@ -137,6 +138,9 @@ export function buildGeminiPlannerPrompt(input: LlmPlannerInput, context: Gemini
       "원천 행이나 개인정보는 입력에 없으며, 집계 요약과 근거 ID만 사용한다.",
       "추천 안건 ID는 candidateSummaries 안의 approvalRequestId에서만 고른다.",
       "근거 ID는 입력에 있는 evidenceIds 또는 수집 요약 ID에서만 고른다.",
+      "스티커씨와 커피프린트는 서로 다른 브랜드다.",
+      "두 브랜드의 매출이나 예산을 비교하거나 하나의 균형 안건으로 묶지 않는다.",
+      "커피프린트 스마트스토어는 커피프린트 브랜드 안의 판매채널 확장으로만 다룬다.",
       "부족한 근거가 있으면 missingEvidenceRequests에 한국어로 짧게 적는다.",
     ],
     requiredJsonShape: {
@@ -191,8 +195,11 @@ function buildGeminiPlannerResult(input: {
       .flatMap((candidate) => candidate.evidenceIds),
   );
   const evidenceIds = selectedEvidenceIds.length > 0 ? selectedEvidenceIds : fallbackEvidenceIds;
-  const title = asText(input.parsed.title) ?? "모아 실제 AI 파일럿 요약";
-  const summary = buildResultSummary(input.parsed, fallback.summary);
+  const parsedTitle = asText(input.parsed.title);
+  const parsedSummary = buildResultSummary(input.parsed, fallback.summary);
+  const containsDeprecatedJudgment = containsDeprecatedCrossBrandJudgment(`${parsedTitle ?? ""} ${parsedSummary}`);
+  const title = containsDeprecatedJudgment ? "모아 실제 AI 파일럿 요약" : parsedTitle ?? "모아 실제 AI 파일럿 요약";
+  const summary = containsDeprecatedJudgment ? fallback.summary : parsedSummary;
 
   return {
     id: `planner-result-gemini-${compactTimestamp(input.generatedAt)}`,

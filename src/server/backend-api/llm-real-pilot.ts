@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { clearAgendaRoomViewModelCache } from "@/features/agenda-room/loadAgendaRoomViewModel";
 import { buildLlmCostGovernanceView } from "@/features/agenda-room/buildLlmCostGovernanceView";
 import { resolveAiOperationsSettings } from "@/features/people/ai-operations-settings";
+import { filterActiveApprovalRequests } from "@/lib/application/deprecated-approvals";
 import { recordPlannerAgentRun } from "@/lib/application/agent-run-recorder";
 import { buildProviderReadinessReports } from "@/lib/integrations/providers/readiness";
 import { buildGeminiPlannerPrompt, runGeminiPlannerPilot } from "@/lib/llm/gemini-planner";
@@ -12,7 +13,9 @@ export async function handleLlmRealPilot() {
   const generatedAt = new Date().toISOString();
   const repository = createBackendWorkflowRepository();
   const providerSyncReports = repository.listProviderSyncReports();
-  const approvalRequests = repository.listApprovalRequests().filter((approval) => approval.status === "PENDING");
+  const approvalRequests = filterActiveApprovalRequests(
+    repository.listApprovalRequests().filter((approval) => approval.status === "PENDING"),
+  );
   if (providerSyncReports.length === 0 || approvalRequests.length === 0) {
     return NextResponse.json(
       {
