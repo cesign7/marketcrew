@@ -16,6 +16,7 @@ import {
   getProviderHistoryPolicy,
   type AgendaCandidate,
   type AgentRun,
+  type AgentRunWorkflowLink,
   type ApprovalRequest,
   type CharacterKey,
   type CharacterReport,
@@ -192,6 +193,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
     plannerPreview: buildPlannerPreviewView(plannerResult, plannerAudit),
     llmCostGovernance,
     llmDryRunQueue,
+    aiPilotInsight: buildAiPilotInsightView(agentRuns, input.repository?.listAgentRunWorkflowLinks() ?? [], allApprovalRequests),
     agentRunSummary: buildAgentRunSummaryView(agentRuns),
     productGrowthOpportunities: productGrowthOpportunities.map(buildProductGrowthOpportunityView),
     aiEvidenceBriefs: aiEvidenceBriefs.map((brief) => ({
@@ -222,6 +224,85 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
       status: "준비",
     })),
   };
+}
+
+function buildAiPilotInsightView(
+  agentRuns: AgentRun[],
+  workflowLinks: AgentRunWorkflowLink[],
+  approvalRequests: ApprovalRequest[],
+): AgendaRoomViewModel["aiPilotInsight"] {
+  const latestLlmRun = [...agentRuns]
+    .filter((run) => run.runType === "moa_planner" && run.mode === "llm")
+    .sort((left, right) => (right.finishedAt ?? right.startedAt).localeCompare(left.finishedAt ?? left.startedAt))[0];
+
+  if (!latestLlmRun) {
+    return {
+      title: "AI 파일럿 판단",
+      statusLabel: "저장된 판단 없음",
+      tone: "waiting",
+      summary: "아직 실제 AI 파일럿 결과가 저장되지 않았습니다. 비용 가드와 원천 행 제외 조건을 통과한 뒤 실행한 결과만 이곳에 표시합니다.",
+      modelLabel: "실제 호출 전",
+      tokenCostLabel: "토큰/비용 기록 없음",
+      evidenceLabel: "근거 연결 전",
+      finishedAtLabel: "실행 전",
+      inputPolicyLabels: ["원천 행 제외", "집계 요약과 근거 ID만 사용", "외부 반영 없음"],
+      recommendedApprovalLabels: ["실제 AI 파일럿 실행 후 추천 안건이 표시됩니다."],
+      evidenceCategoryLabels: ["근거 없음"],
+    };
+  }
+
+  const approvalById = new Map(approvalRequests.map((approval) => [approval.id, approval]));
+  const linkedApprovalIds = workflowLinks
+    .filter((link) => link.agentRunId === latestLlmRun.id && link.objectType === "approval_request")
+    .map((link) => link.objectId);
+  const recommendedApprovalLabels = linkedApprovalIds.length > 0
+    ? linkedApprovalIds.map((approvalId) => approvalLabelFromId(approvalId, approvalById))
+    : ["추천 안건 연결 기록 없음"];
+
+  return {
+    title: "AI 파일럿 판단",
+    statusLabel: latestLlmRun.status === "SUCCEEDED" ? "저장된 판단" : agentRunStatusLabel(latestLlmRun.status),
+    tone: latestLlmRun.status === "SUCCEEDED" ? "ready" : "blocked",
+    summary: toOperatorKorean(latestLlmRun.outputSummary),
+    modelLabel: `연동 ${agentRunProviderLabel(latestLlmRun.provider)} · 모델 ${agentRunModelLabel(latestLlmRun.model)}`,
+    tokenCostLabel: `입력 ${latestLlmRun.tokenUsage.inputTokens.toLocaleString("ko-KR")}토큰 · 출력 ${latestLlmRun.tokenUsage.outputTokens.toLocaleString(
+      "ko-KR",
+    )}토큰 · 총 ${latestLlmRun.tokenUsage.totalTokens.toLocaleString("ko-KR")}토큰 · 약 ${latestLlmRun.tokenUsage.estimatedCostKrw.toLocaleString(
+      "ko-KR",
+    )}원`,
+    evidenceLabel: `근거 ${latestLlmRun.evidenceIds.length.toLocaleString("ko-KR")}개 · 추천 안건 ${linkedApprovalIds.length.toLocaleString(
+      "ko-KR",
+    )}건`,
+    finishedAtLabel: formatKoreanDateTime(latestLlmRun.finishedAt ?? latestLlmRun.startedAt),
+    inputPolicyLabels: ["원천 행 제외", "집계 요약과 근거 ID만 사용", "고객 식별정보 제외", "외부 반영 없음"],
+    recommendedApprovalLabels,
+    evidenceCategoryLabels: buildEvidenceCategoryLabels(latestLlmRun.evidenceIds),
+  };
+}
+
+function approvalLabelFromId(approvalId: string, approvalById: Map<string, ApprovalRequest>): string {
+  const approval = approvalById.get(approvalId);
+  if (approval) {
+    return approval.title;
+  }
+
+  if (approvalId.includes("provider-channel-balance-stickersee-coffeeprint")) {
+    return "스마트스토어/자체몰 매출 균형 점검 안건";
+  }
+
+  if (approvalId.includes("provider-smartstore-stickersee")) {
+    return "스마트스토어 상위 상품 키워드 확장 안건";
+  }
+
+  if (approvalId.includes("provider-youngcart-coffeeprint")) {
+    return "영카트 재구매 고객군 CRM 초안 안건";
+  }
+
+  if (approvalId.includes("season-plan-buddha-gift-card")) {
+    return "부처님오신날 선물카드 키워드 테스트 승인안";
+  }
+
+  return "추천 안건 기록";
 }
 
 function buildAgentRunSummaryView(agentRuns: AgentRun[]): AgendaRoomViewModel["agentRunSummary"] {

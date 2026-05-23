@@ -157,7 +157,15 @@ QA Verdict:    QA_PASS
 
 파일럿 결과는 `AgentRun(mode=llm, provider=gemini)`으로 저장하며, 원천 행/고객 식별정보/시크릿/provider write는 계속 제외한다. 비용 가드는 실제 프롬프트 기준 입력 토큰을 사전 추정한 뒤 1회/일/월 예산과 토큰 상한을 확인한다.
 
+### 4.0.2 2026-05-23 AI 파일럿 판단 패널
+
+저장된 실제 AI 모델 파일럿 결과를 `/operations`에서 바로 확인할 수 있도록 `AI 파일럿 판단` 패널을 추가했다. 패널은 `AgentRun(mode=llm, provider=gemini)`과 연결된 추천 안건/근거 ID를 읽어 모델, 토큰/비용, 근거 수, 추천 안건, 안전 조건을 한글로 보여준다.
+
+화면에는 원천 행, 고객 식별정보, provider secret, raw approval ID를 노출하지 않는다. 저장된 추천 안건 ID가 현재 후보와 달라도 대표가 읽을 수 있는 한글 안건명으로 풀어 보여주며, 이 패널은 외부 광고나 상품을 직접 바꾸지 않는다.
+
 ### 4.1 Carried Over to Next Cycle
+
+아래 표는 최초 MVP 종료 시점의 이월 항목이다. 이후 운영 DB, AgentRun/model/token/cost provenance, 후속 업무 큐, 비용 가드, 실제 AI 파일럿 표시까지는 후속 iteration에서 완료했다.
 
 | Item | Reason | Priority | Estimated Effort |
 |------|--------|----------|------------------|

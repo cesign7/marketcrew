@@ -293,6 +293,20 @@ export type LlmCostGovernanceView = {
 
 export type LlmDryRunQueueView = LlmDryRunQueue;
 
+export type AiPilotInsightView = {
+  title: string;
+  statusLabel: string;
+  tone: "ready" | "waiting" | "blocked";
+  summary: string;
+  modelLabel: string;
+  tokenCostLabel: string;
+  evidenceLabel: string;
+  finishedAtLabel: string;
+  inputPolicyLabels: string[];
+  recommendedApprovalLabels: string[];
+  evidenceCategoryLabels: string[];
+};
+
 export type ProductGrowthOpportunityView = {
   id: string;
   owner: string;
@@ -392,6 +406,7 @@ export type AgendaRoomViewModel = {
   plannerPreview: PlannerPreviewView;
   llmCostGovernance: LlmCostGovernanceView;
   llmDryRunQueue: LlmDryRunQueueView;
+  aiPilotInsight: AiPilotInsightView;
   agentRunSummary: AgentRunSummaryView;
   productGrowthOpportunities: ProductGrowthOpportunityView[];
   aiEvidenceBriefs: AiEvidenceBriefView[];

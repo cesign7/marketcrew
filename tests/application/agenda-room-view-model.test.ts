@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildAgendaRoomViewModel } from "../../src/features/agenda-room/buildAgendaRoomViewModel";
 import { normalizeAgendaRoomViewModelCompatibility } from "../../src/features/agenda-room/loadAgendaRoomViewModel";
-import type { ProviderSyncReport } from "../../src/lib/domain";
+import type { AgentRun, AgentRunWorkflowLink, ProviderSyncReport } from "../../src/lib/domain";
 import { createMemoryMarketingWorkflowRepository } from "../../src/lib/persistence/memory-repository";
 
 describe("buildAgendaRoomViewModel", () => {
@@ -80,6 +80,48 @@ describe("buildAgendaRoomViewModel", () => {
     expect(viewModel.plannerPreview.audit.sourceCountLabels).toContain("후보 2건");
     expect(viewModel.llmCostGovernance.statusLabel).toBe("실제 호출 차단");
     expect(viewModel.llmCostGovernance.gateChecks.find((check) => check.id === "rate-policy")?.tone).toBe("blocked");
+    expect(viewModel.aiPilotInsight.statusLabel).toBe("저장된 판단 없음");
+    expect(viewModel.aiPilotInsight.inputPolicyLabels).toContain("원천 행 제외");
+  });
+
+  it("저장된 실제 LLM 파일럿 판단을 운영 화면용 요약으로 보여준다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    repository.saveAgentRuns([buildGeminiPlannerAgentRun()]);
+    repository.saveAgentRunWorkflowLinks([buildGeminiPlannerLink()]);
+
+    const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
+
+    expect(viewModel.aiPilotInsight.statusLabel).toBe("저장된 판단");
+    expect(viewModel.aiPilotInsight.tone).toBe("ready");
+    expect(viewModel.aiPilotInsight.summary).toContain("실제 수집 근거로 부처님오신날 선물카드 안건");
+    expect(viewModel.aiPilotInsight.modelLabel).toBe("연동 Gemini · 모델 gemini-3.5-flash");
+    expect(viewModel.aiPilotInsight.tokenCostLabel).toContain("총 900토큰");
+    expect(viewModel.aiPilotInsight.tokenCostLabel).toContain("약 18원");
+    expect(viewModel.aiPilotInsight.evidenceLabel).toBe("근거 2개 · 추천 안건 1건");
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).toContain("부처님오신날 선물카드 키워드 테스트 승인안");
+    expect(viewModel.aiPilotInsight.evidenceCategoryLabels).toEqual(["키워드 수요 1개", "스마트스토어 집계 1개"]);
+    expect(viewModel.aiPilotInsight.inputPolicyLabels).toEqual(
+      expect.arrayContaining(["집계 요약과 근거 ID만 사용", "고객 식별정보 제외", "외부 반영 없음"]),
+    );
+  });
+
+  it("저장된 LLM 추천 안건 ID가 현재 화면 후보와 달라도 원문 ID를 노출하지 않는다", () => {
+    const repository = createMemoryMarketingWorkflowRepository();
+    repository.saveAgentRuns([buildGeminiPlannerAgentRun()]);
+    repository.saveAgentRunWorkflowLinks([
+      {
+        ...buildGeminiPlannerLink(),
+        id: "agent-link-gemini-channel-balance-current",
+        objectId: "approval-agenda-provider-channel-balance-stickersee-coffeeprint-2026-05-23",
+      },
+    ]);
+
+    const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
+
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).toContain("스마트스토어/자체몰 매출 균형 점검 안건");
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).not.toContain(
+      "approval-agenda-provider-channel-balance-stickersee-coffeeprint-2026-05-23",
+    );
   });
 
   it("읽기 전용 연동 집계를 담당 캐릭터 안건으로 함께 보여준다", () => {
@@ -215,11 +257,13 @@ describe("buildAgendaRoomViewModel", () => {
           : bucket,
       ),
       evidenceRequestQueue: undefined,
+      aiPilotInsight: undefined,
     } as unknown as typeof currentViewModel;
 
     const normalizedViewModel = normalizeAgendaRoomViewModelCompatibility(staleBackendViewModel);
 
     expect(normalizedViewModel.evidenceRequestQueue.title).toBe("근거 요청 큐");
+    expect(normalizedViewModel.aiPilotInsight.title).toBe("AI 파일럿 판단");
     expect(normalizedViewModel.summary.waitingEvidence).toBe(currentViewModel.summary.waitingEvidence);
     expect(normalizedViewModel.inboxBuckets.find((bucket) => bucket.id === "WAITING_EVIDENCE")?.count).toBe(2);
   });
@@ -369,4 +413,41 @@ function buildProviderAggregateReports(): ProviderSyncReport[] {
       },
     },
   ];
+}
+
+function buildGeminiPlannerAgentRun(): AgentRun {
+  return {
+    id: "planner-audit-planner-result-gemini-2026-05-23T030743902Z",
+    runnerKey: "moa_planner",
+    runType: "moa_planner",
+    mode: "llm",
+    provider: "gemini",
+    model: "gemini-3.5-flash",
+    status: "SUCCEEDED",
+    inputSummary: "결재 후보 3건과 연동 근거 메모 8개를 요약 입력으로 사용했습니다.",
+    outputSummary: "실제 수집 근거로 부처님오신날 선물카드 안건을 우선 검토합니다.",
+    rawRowsIncluded: false,
+    tokenUsage: {
+      inputTokens: 800,
+      outputTokens: 100,
+      totalTokens: 900,
+      estimated: true,
+      estimatedCostKrw: 18,
+      basis: "Gemini usageMetadata와 저장된 환율 기준 실제 호출 비용 추정",
+    },
+    evidenceIds: ["kw-demand-buddha-gift-card", "commerce-aggregate-STICKERSEE-2026-05-22"],
+    startedAt: "2026-05-23T03:07:43.902Z",
+    finishedAt: "2026-05-23T03:07:44.100Z",
+  };
+}
+
+function buildGeminiPlannerLink(): AgentRunWorkflowLink {
+  return {
+    id: "agent-link-gemini-approval-buddha-gift-card",
+    agentRunId: "planner-audit-planner-result-gemini-2026-05-23T030743902Z",
+    objectType: "approval_request",
+    objectId: "approval-agenda-season-plan-buddha-gift-card",
+    relation: "generated",
+    createdAt: "2026-05-23T03:07:44.100Z",
+  };
 }

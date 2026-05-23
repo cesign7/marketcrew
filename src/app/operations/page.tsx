@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ClipboardList, ShieldCheck, UsersRound } from "lucide-react";
 import { AgendaCard } from "@/components/agenda-room/AgendaCard";
+import { AiPilotInsightPanel } from "@/components/agenda-room/AiPilotInsightPanel";
 import { CharacterRail } from "@/components/agenda-room/CharacterRail";
 import { EvidenceRequestQueuePanel } from "@/components/agenda-room/EvidenceRequestQueuePanel";
 import { InboxBucketBar } from "@/components/agenda-room/InboxBucketBar";
@@ -57,6 +58,8 @@ export default async function OperationsPage() {
       <EvidenceRequestQueuePanel queue={viewModel.evidenceRequestQueue} />
 
       <LlmDryRunQueuePanel queue={viewModel.llmDryRunQueue} />
+
+      <AiPilotInsightPanel insight={viewModel.aiPilotInsight} />
 
       <div className="daily-brief-grid">
         <section className="moa-brief-panel" aria-labelledby="moa-brief-title">
