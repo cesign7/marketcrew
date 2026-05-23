@@ -1,12 +1,20 @@
 import Link from "next/link";
 import { ArrowRight, ClipboardList, Clock3, Gauge, ShieldCheck } from "lucide-react";
-import type { AgendaCardView, CharacterStatus, OwnerDecisionFlowView, WorkDeskCardView } from "@/features/agenda-room/types";
+import type {
+  AgendaCardView,
+  CharacterStatus,
+  KeywordPerformanceDashboardView,
+  OwnerDecisionFlowView,
+  WorkDeskCardView,
+} from "@/features/agenda-room/types";
+import { KeywordPerformanceDashboard } from "./KeywordPerformanceDashboard";
 import { WorkDeskCardList } from "./WorkDeskCardList";
 
 type CharacterDeskProps = {
   characters: CharacterStatus[];
   agendaCards: AgendaCardView[];
   workDeskCards: WorkDeskCardView[];
+  keywordPerformanceDashboard?: KeywordPerformanceDashboardView;
   ownerDecisionFlows: OwnerDecisionFlowView[];
   selectedCharacterId?: string;
 };
@@ -46,6 +54,7 @@ export function CharacterDesk({
   characters,
   agendaCards,
   workDeskCards,
+  keywordPerformanceDashboard,
   ownerDecisionFlows,
   selectedCharacterId,
 }: CharacterDeskProps) {
@@ -84,6 +93,10 @@ export function CharacterDesk({
           />
         ))}
       </div>
+
+      {selectedCharacterId === "gro" && keywordPerformanceDashboard ? (
+        <KeywordPerformanceDashboard dashboard={keywordPerformanceDashboard} />
+      ) : null}
 
       <WorkDeskCardList
         cards={selectedWorkDeskCards}

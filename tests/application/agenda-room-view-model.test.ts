@@ -284,6 +284,22 @@ describe("buildAgendaRoomViewModel", () => {
       recommendedActionLabel: "입찰 하향 또는 상품 노출 점검",
     });
     expect(shoppingCard?.metricLabels).toContain("직접 전환율 0%");
+
+    const keywordDashboard = viewModel.keywordPerformanceDashboard;
+    expect(keywordDashboard.title).toBe("키워드 성과 대시보드");
+    expect(keywordDashboard.minimumCriteriaLabels[0]).toContain("클릭 10회");
+    expect(keywordDashboard.topConversionKeywords[0]?.keyword).toBe("생일축하스티커");
+    expect(keywordDashboard.lowConversionKeywords.map((row) => row.keyword)).toContain("생일 답례품");
+    expect(keywordDashboard.wasteKeywords[0]?.keyword).toBe("생일 답례품");
+    expect(keywordDashboard.deviceSegments.map((row) => row.segmentLabel)).toEqual(
+      expect.arrayContaining(["기기 모바일", "기기 PC"]),
+    );
+    expect(keywordDashboard.timeSegments.map((row) => row.segmentLabel)).toContain("시간 09-23");
+    expect(keywordDashboard.shoppingSearchTerms[0]).toMatchObject({
+      searchKeyword: "스승의날 카드",
+      productName: "스티커씨 선물카드",
+      landingFitLabel: "랜딩 적합도 점검",
+    });
   });
 
   it("같은 근거의 연동 수집 이력은 결재 미리보기에서 최신 1건과 누적 횟수로 접는다", () => {

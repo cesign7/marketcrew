@@ -29,6 +29,7 @@ export default async function CharacterDetailPage({ params }: CharacterDetailPag
       <CharacterDesk
         agendaCards={viewModel.agendaCards}
         characters={viewModel.characters}
+        keywordPerformanceDashboard={viewModel.keywordPerformanceDashboard}
         workDeskCards={viewModel.workDeskCards}
         ownerDecisionFlows={viewModel.ownerDecisionFlows}
         selectedCharacterId={character.id}

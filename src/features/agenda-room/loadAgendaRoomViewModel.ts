@@ -59,7 +59,8 @@ export function normalizeAgendaRoomViewModelCompatibility(viewModel: AgendaRoomV
     partialViewModel.evidenceRequestQueue &&
     partialViewModel.llmDryRunQueue &&
     partialViewModel.aiPilotInsight &&
-    partialViewModel.workDeskCards
+    partialViewModel.workDeskCards &&
+    partialViewModel.keywordPerformanceDashboard
   ) {
     return normalizeProductGrowthOpportunityImages(viewModel);
   }
@@ -88,6 +89,7 @@ export function normalizeAgendaRoomViewModelCompatibility(viewModel: AgendaRoomV
   return normalizeProductGrowthOpportunityImages({
     ...withEvidenceQueue,
     workDeskCards: partialViewModel.workDeskCards ?? fallbackViewModel.workDeskCards,
+    keywordPerformanceDashboard: partialViewModel.keywordPerformanceDashboard ?? fallbackViewModel.keywordPerformanceDashboard,
     llmDryRunQueue: partialViewModel.llmDryRunQueue ?? fallbackViewModel.llmDryRunQueue,
     aiPilotInsight: partialViewModel.aiPilotInsight ?? fallbackViewModel.aiPilotInsight,
   });

@@ -144,6 +144,78 @@ export type WorkDeskCardView = {
   };
 };
 
+export type KeywordPerformanceRowTone = "good" | "warning" | "danger" | "neutral";
+
+export type KeywordPerformanceRowView = {
+  id: string;
+  keyword: string;
+  brandLabel: string;
+  scopeLabel: string;
+  conversionRateLabel: string;
+  clicksLabel: string;
+  ordersLabel: string;
+  costLabel: string;
+  cpaLabel: string;
+  roasLabel: string;
+  noteLabel: string;
+  tone: KeywordPerformanceRowTone;
+  evidenceLabels: string[];
+};
+
+export type KeywordPerformanceSegmentView = {
+  id: string;
+  keyword: string;
+  brandLabel: string;
+  segmentLabel: string;
+  conversionRateLabel: string;
+  clicksLabel: string;
+  ordersLabel: string;
+  costLabel: string;
+  cpaLabel: string;
+  noteLabel: string;
+  tone: KeywordPerformanceRowTone;
+};
+
+export type ShoppingSearchTermView = {
+  id: string;
+  searchKeyword: string;
+  brandLabel: string;
+  productName: string;
+  productImageUrl: string;
+  productImageAlt: string;
+  campaignLabel: string;
+  directConversionRateLabel: string;
+  clicksLabel: string;
+  costLabel: string;
+  landingFitLabel: string;
+  noteLabel: string;
+  tone: KeywordPerformanceRowTone;
+};
+
+export type KeywordRecommendationEvidenceView = {
+  id: string;
+  title: string;
+  sourceLabel: string;
+  summary: string;
+  evidenceLabels: string[];
+};
+
+export type KeywordPerformanceDashboardView = {
+  title: string;
+  summaryLabel: string;
+  sourceLabel: string;
+  updatedAtLabel: string;
+  qualityGuardLabel: string;
+  minimumCriteriaLabels: string[];
+  topConversionKeywords: KeywordPerformanceRowView[];
+  lowConversionKeywords: KeywordPerformanceRowView[];
+  wasteKeywords: KeywordPerformanceRowView[];
+  deviceSegments: KeywordPerformanceSegmentView[];
+  timeSegments: KeywordPerformanceSegmentView[];
+  shoppingSearchTerms: ShoppingSearchTermView[];
+  recommendationEvidence: KeywordRecommendationEvidenceView[];
+};
+
 export type OwnerDecisionFlowView = {
   id: string;
   title: string;
@@ -443,6 +515,7 @@ export type AgendaRoomViewModel = {
   inboxBuckets: InboxBucketView[];
   characters: CharacterStatus[];
   workDeskCards: WorkDeskCardView[];
+  keywordPerformanceDashboard: KeywordPerformanceDashboardView;
   agendaCards: AgendaCardView[];
   seasonalKeywordPlans: SeasonalKeywordPlanView[];
   approvalPreviews: ApprovalPreviewView[];

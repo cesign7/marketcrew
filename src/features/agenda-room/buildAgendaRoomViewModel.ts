@@ -30,6 +30,7 @@ import {
   type CharacterReport,
   type EvidenceRequest,
   type HypothesisCandidate,
+  type KeywordDemandSnapshot,
   type LlmPlannerAuditRun,
   type LlmPlannerResult,
   type MarketingCalendarEvent,
@@ -38,6 +39,7 @@ import {
   type ProviderReadinessReport,
   type ProviderSyncReport,
   type SearchAdPerformanceSnapshot,
+  type SearchTrendSnapshot,
   type SeasonalKeywordAdPlan,
   type ShoppingSearchAdPerformanceSnapshot,
 } from "@/lib/domain";
@@ -58,6 +60,8 @@ import type {
   AgendaRoomViewModel,
   ApprovalPreviewView,
   InboxBucketView,
+  KeywordPerformanceDashboardView,
+  KeywordPerformanceRowTone,
   OwnerDecisionFlowView,
   SeasonalKeywordPlanView,
   WorkDeskCardView,
@@ -160,6 +164,12 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
     .slice(0, providerSyncReports.length > 0 ? 2 : 1)
     .map((request) => buildOwnerDecisionFlowView(request, agendaCycle.generatedAt, providerSyncReports));
   const workDeskCards = buildWorkDeskCards(providerSyncReports, agendaCycle.generatedAt);
+  const keywordPerformanceDashboard = buildKeywordPerformanceDashboard({
+    providerSyncReports,
+    generatedAt: agendaCycle.generatedAt,
+    seasonalKeywordPlans: agendaCycle.seasonalKeywordAdPlans,
+    eventsById,
+  });
   const failedExecutionCount =
     agendaCycle.executionResults.filter((result) => result.state !== "APPLIED").length +
     ownerDecisionFlows.filter((flow) => !["실행됨", "내부 초안 기록됨"].includes(flow.executionStateLabel)).length;
@@ -193,6 +203,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
       workDeskCards,
     }),
     workDeskCards,
+    keywordPerformanceDashboard,
     agendaCards: allApprovalRequests.map((request) =>
       buildAgendaCardView(
         request,
@@ -703,6 +714,455 @@ function latestSyncedReportWithSnapshots(
     .sort((left, right) => right.checkedAt.localeCompare(left.checkedAt))[0];
 }
 
+const KEYWORD_DASHBOARD_MIN_CLICKS = 10;
+const KEYWORD_DASHBOARD_MIN_COST = 1000;
+const KEYWORD_DASHBOARD_DEFAULT_TARGET_CPA = 20000;
+const KEYWORD_DASHBOARD_DEFAULT_TARGET_ROAS = 1.5;
+
+type KeywordAggregate = {
+  id: string;
+  keyword: string;
+  brandKey: string;
+  brandLabel: string;
+  scopeLabel: string;
+  windowDays: number;
+  clicks: number;
+  cost: number;
+  conversions: number;
+  revenue: number;
+  targetCpa?: number;
+  targetRoas?: number;
+  trackingVerified: boolean;
+  evidenceLabels: string[];
+};
+
+function buildKeywordPerformanceDashboard(input: {
+  providerSyncReports: ProviderSyncReport[];
+  generatedAt: string;
+  seasonalKeywordPlans: SeasonalKeywordAdPlan[];
+  eventsById: Map<string, MarketingCalendarEvent>;
+}): KeywordPerformanceDashboardView {
+  const reports = latestSearchAdPerformanceReports(input.providerSyncReports);
+  const searchSnapshots = reports.flatMap((report) => report.searchAdPerformanceSnapshots ?? []);
+  const shoppingSnapshots = reports.flatMap((report) => report.shoppingSearchAdPerformanceSnapshots ?? []);
+  const keywordAggregates = aggregateKeywordPerformance(searchSnapshots);
+  const sufficientAggregates = keywordAggregates.filter(isSufficientKeywordAggregate);
+  const latestCheckedAt = latestCheckedAtLabel(reports, input.generatedAt);
+
+  return {
+    title: "키워드 성과 대시보드",
+    summaryLabel: `검색광고 키워드 ${keywordAggregates.length.toLocaleString("ko-KR")}개 · 쇼핑검색어 ${shoppingSnapshots.length.toLocaleString(
+      "ko-KR",
+    )}개를 그로가 먼저 점검합니다.`,
+    sourceLabel: reports.length > 0 ? "읽기 전용 네이버 검색광고 성과 스냅샷 기준" : "성과 스냅샷 수집 대기",
+    updatedAtLabel: latestCheckedAt,
+    qualityGuardLabel: "클릭 1~2건으로 전환율이 과대 표시되지 않도록 충분한 클릭/비용 기준을 먼저 적용합니다.",
+    minimumCriteriaLabels: [
+      `순위 반영 기준: 클릭 ${KEYWORD_DASHBOARD_MIN_CLICKS.toLocaleString("ko-KR")}회 이상 또는 비용 ${KEYWORD_DASHBOARD_MIN_COST.toLocaleString(
+        "ko-KR",
+      )}원 이상`,
+      "기기/시간대 조정은 키워드 전체 중지가 아니라 낮은 구간만 따로 봅니다.",
+      "실제 외부 광고 변경은 대표 승인과 쓰기 게이트 통과 전까지 차단합니다.",
+    ],
+    topConversionKeywords: sufficientAggregates
+      .filter((aggregate) => aggregate.conversions > 0)
+      .sort(compareTopConversionAggregates)
+      .slice(0, 10)
+      .map((aggregate, index) => keywordAggregateRow(aggregate, index, "good", "전환율과 주문이 함께 확인된 키워드입니다.")),
+    lowConversionKeywords: sufficientAggregates
+      .sort(compareLowConversionAggregates)
+      .slice(0, 10)
+      .map((aggregate, index) =>
+        keywordAggregateRow(
+          aggregate,
+          index,
+          aggregate.conversions === 0 ? "danger" : "warning",
+          aggregate.conversions === 0 ? "주문 없는 클릭이 누적되어 유지 예외를 확인해야 합니다." : "전환율이 낮아 입찰/랜딩 점검이 필요합니다.",
+        ),
+      ),
+    wasteKeywords: sufficientAggregates
+      .filter(isWasteKeywordAggregate)
+      .sort(compareWasteAggregates)
+      .slice(0, 10)
+      .map((aggregate, index) => keywordAggregateRow(aggregate, index, "danger", wasteKeywordNote(aggregate))),
+    deviceSegments: buildDeviceSegmentRows(searchSnapshots).slice(0, 10),
+    timeSegments: buildTimeSegmentRows(searchSnapshots).slice(0, 10),
+    shoppingSearchTerms: buildShoppingSearchTermRows(shoppingSnapshots).slice(0, 10),
+    recommendationEvidence: buildKeywordRecommendationEvidence({
+      providerSyncReports: input.providerSyncReports,
+      seasonalKeywordPlans: input.seasonalKeywordPlans,
+      eventsById: input.eventsById,
+    }).slice(0, 10),
+  };
+}
+
+function aggregateKeywordPerformance(snapshots: SearchAdPerformanceSnapshot[]): KeywordAggregate[] {
+  const snapshotsByKeyword = new Map<string, SearchAdPerformanceSnapshot[]>();
+
+  for (const snapshot of snapshots) {
+    const key = `${snapshot.brandKey}::${snapshot.keyword}`;
+    snapshotsByKeyword.set(key, [...(snapshotsByKeyword.get(key) ?? []), snapshot]);
+  }
+
+  return [...snapshotsByKeyword.values()].map((group) => {
+    const rankSnapshots = snapshotsForKeywordRanking(group);
+    const primary = rankSnapshots[0] ?? group[0]!;
+    const clicks = sum(rankSnapshots.map((snapshot) => snapshot.clicks));
+    const cost = sum(rankSnapshots.map((snapshot) => snapshot.cost));
+    const conversions = sum(rankSnapshots.map((snapshot) => snapshot.conversions));
+    const revenue = sum(rankSnapshots.map((snapshot) => snapshot.revenue));
+    const targetCpa = firstDefined(rankSnapshots.map((snapshot) => snapshot.targetCpa));
+    const targetRoas = firstDefined(rankSnapshots.map((snapshot) => snapshot.targetRoas));
+
+    return {
+      id: `keyword-dashboard-${primary.brandKey}-${primary.keyword}`,
+      keyword: primary.keyword,
+      brandKey: primary.brandKey,
+      brandLabel: brandLabelFromKey(primary.brandKey),
+      scopeLabel: `${primary.windowDays.toLocaleString("ko-KR")}일 · ${rankSnapshots.length.toLocaleString("ko-KR")}개 성과 구간`,
+      windowDays: primary.windowDays,
+      clicks,
+      cost,
+      conversions,
+      revenue,
+      targetCpa,
+      targetRoas,
+      trackingVerified: rankSnapshots.every((snapshot) => snapshot.trackingVerified),
+      evidenceLabels: rankSnapshots.map((snapshot) => snapshot.id),
+    };
+  });
+}
+
+function snapshotsForKeywordRanking(group: SearchAdPerformanceSnapshot[]): SearchAdPerformanceSnapshot[] {
+  const allDeviceSnapshots = group.filter((snapshot) => snapshot.device === "ALL");
+  if (allDeviceSnapshots.length > 0) {
+    return allDeviceSnapshots;
+  }
+
+  return group;
+}
+
+function isSufficientKeywordAggregate(aggregate: KeywordAggregate): boolean {
+  return aggregate.clicks >= KEYWORD_DASHBOARD_MIN_CLICKS || aggregate.cost >= KEYWORD_DASHBOARD_MIN_COST;
+}
+
+function compareTopConversionAggregates(left: KeywordAggregate, right: KeywordAggregate): number {
+  return (
+    conversionRate(right) - conversionRate(left) ||
+    right.conversions - left.conversions ||
+    right.revenue - left.revenue ||
+    right.clicks - left.clicks
+  );
+}
+
+function compareLowConversionAggregates(left: KeywordAggregate, right: KeywordAggregate): number {
+  return conversionRate(left) - conversionRate(right) || right.cost - left.cost || right.clicks - left.clicks;
+}
+
+function compareWasteAggregates(left: KeywordAggregate, right: KeywordAggregate): number {
+  return right.cost - left.cost || right.clicks - left.clicks || conversionRate(left) - conversionRate(right);
+}
+
+function isWasteKeywordAggregate(aggregate: KeywordAggregate): boolean {
+  if (aggregate.conversions === 0 && aggregate.clicks >= KEYWORD_DASHBOARD_MIN_CLICKS) {
+    return true;
+  }
+
+  const cpa = costPerOrder(aggregate);
+  const roas = roasValue(aggregate);
+  const cpaTarget = aggregate.targetCpa ?? KEYWORD_DASHBOARD_DEFAULT_TARGET_CPA;
+  const roasTarget = aggregate.targetRoas ?? KEYWORD_DASHBOARD_DEFAULT_TARGET_ROAS;
+
+  return Boolean((cpa && cpa > cpaTarget) || (roas !== undefined && roas < roasTarget));
+}
+
+function keywordAggregateRow(
+  aggregate: KeywordAggregate,
+  index: number,
+  tone: KeywordPerformanceRowTone,
+  noteLabel: string,
+): KeywordPerformanceDashboardView["topConversionKeywords"][number] {
+  return {
+    id: `${aggregate.id}-${index}`,
+    keyword: aggregate.keyword,
+    brandLabel: aggregate.brandLabel,
+    scopeLabel: aggregate.scopeLabel,
+    conversionRateLabel: `전환율 ${formatPercent(conversionRate(aggregate))}`,
+    clicksLabel: `클릭 ${aggregate.clicks.toLocaleString("ko-KR")}회`,
+    ordersLabel: `주문 ${aggregate.conversions.toLocaleString("ko-KR")}건`,
+    costLabel: `비용 ${aggregate.cost.toLocaleString("ko-KR")}원`,
+    cpaLabel: aggregate.conversions > 0 ? `CPA ${Math.round(aggregate.cost / aggregate.conversions).toLocaleString("ko-KR")}원` : "CPA 없음",
+    roasLabel: aggregate.cost > 0 ? `ROAS ${formatNumber(roasValue(aggregate) ?? 0)}배` : "ROAS 없음",
+    noteLabel,
+    tone,
+    evidenceLabels: aggregate.evidenceLabels.map((id) => `근거 ${id}`),
+  };
+}
+
+function wasteKeywordNote(aggregate: KeywordAggregate): string {
+  if (aggregate.conversions === 0) {
+    return "클릭은 충분하지만 주문이 없어 제외/하향 후보입니다.";
+  }
+
+  const cpa = costPerOrder(aggregate);
+  if (cpa && cpa > (aggregate.targetCpa ?? KEYWORD_DASHBOARD_DEFAULT_TARGET_CPA)) {
+    return "주문은 있으나 목표 CPA를 넘어서 입찰 하향 후보입니다.";
+  }
+
+  return "ROAS가 낮아 예산 유지 여부를 다시 봐야 합니다.";
+}
+
+function buildDeviceSegmentRows(snapshots: SearchAdPerformanceSnapshot[]): KeywordPerformanceDashboardView["deviceSegments"] {
+  return snapshots
+    .filter((snapshot) => snapshot.device !== "ALL")
+    .sort(compareSegmentSnapshots)
+    .map((snapshot, index) => segmentRow(snapshot, index, `기기 ${deviceLabel(snapshot.device)}`));
+}
+
+function buildTimeSegmentRows(snapshots: SearchAdPerformanceSnapshot[]): KeywordPerformanceDashboardView["timeSegments"] {
+  return snapshots
+    .filter((snapshot) => Boolean(snapshot.timeSlot))
+    .sort(compareSegmentSnapshots)
+    .map((snapshot, index) => segmentRow(snapshot, index, `시간 ${snapshot.timeSlot}`));
+}
+
+function compareSegmentSnapshots(left: SearchAdPerformanceSnapshot, right: SearchAdPerformanceSnapshot): number {
+  return conversionRateFromValues(left.clicks, left.conversions) - conversionRateFromValues(right.clicks, right.conversions) || right.cost - left.cost;
+}
+
+function segmentRow(
+  snapshot: SearchAdPerformanceSnapshot,
+  index: number,
+  segmentLabel: string,
+): KeywordPerformanceDashboardView["deviceSegments"][number] {
+  const cpa = snapshot.conversions > 0 ? Math.round(snapshot.cost / snapshot.conversions) : undefined;
+  const tone = snapshot.conversions === 0 && snapshot.clicks >= KEYWORD_DASHBOARD_MIN_CLICKS ? "danger" : "warning";
+
+  return {
+    id: `${snapshot.id}-${index}`,
+    keyword: snapshot.keyword,
+    brandLabel: brandLabelFromKey(snapshot.brandKey),
+    segmentLabel,
+    conversionRateLabel: `전환율 ${formatPercent(conversionRateFromValues(snapshot.clicks, snapshot.conversions))}`,
+    clicksLabel: `클릭 ${snapshot.clicks.toLocaleString("ko-KR")}회`,
+    ordersLabel: `주문 ${snapshot.conversions.toLocaleString("ko-KR")}건`,
+    costLabel: `비용 ${snapshot.cost.toLocaleString("ko-KR")}원`,
+    cpaLabel: cpa ? `CPA ${cpa.toLocaleString("ko-KR")}원` : "CPA 없음",
+    noteLabel: snapshot.trackingVerified ? "성과 낮은 구간만 따로 조정합니다." : "전환 추적 확인 후 판단합니다.",
+    tone,
+  };
+}
+
+function buildShoppingSearchTermRows(
+  snapshots: ShoppingSearchAdPerformanceSnapshot[],
+): KeywordPerformanceDashboardView["shoppingSearchTerms"] {
+  return [...snapshots]
+    .sort((left, right) => left.directConversionRate - right.directConversionRate || right.cost - left.cost || right.clicks - left.clicks)
+    .map((snapshot, index) => {
+      const productName = snapshot.productGroupName ?? snapshot.mallName ?? "상품명 확인 필요";
+      const tone: KeywordPerformanceRowTone = snapshot.directConversionRate === 0 ? "danger" : snapshot.directConversionRate < 0.02 ? "warning" : "neutral";
+
+      return {
+        id: `${snapshot.id}-${index}`,
+        searchKeyword: snapshot.searchKeyword,
+        brandLabel: brandLabelFromKey(snapshot.brandKey),
+        productName,
+        productImageUrl: buildKeywordThumbnailDataUri(productName),
+        productImageAlt: `${productName} 상품 이미지`,
+        campaignLabel: `${snapshot.campaignName} · ${snapshot.adGroupName}`,
+        directConversionRateLabel: `직접 전환율 ${formatPercent(snapshot.directConversionRate)}`,
+        clicksLabel: `클릭 ${snapshot.clicks.toLocaleString("ko-KR")}회`,
+        costLabel: `비용 ${snapshot.cost.toLocaleString("ko-KR")}원`,
+        landingFitLabel: shoppingLandingFitLabel(snapshot.directConversionRate),
+        noteLabel: "상품명, 이미지, 랜딩 적합도를 함께 확인합니다.",
+        tone,
+      };
+    });
+}
+
+function shoppingLandingFitLabel(directConversionRate: number): string {
+  if (directConversionRate === 0) {
+    return "랜딩 적합도 점검";
+  }
+
+  if (directConversionRate < 0.02) {
+    return "상품 노출 조건 점검";
+  }
+
+  return "랜딩 유지 후보";
+}
+
+function buildKeywordRecommendationEvidence(input: {
+  providerSyncReports: ProviderSyncReport[];
+  seasonalKeywordPlans: SeasonalKeywordAdPlan[];
+  eventsById: Map<string, MarketingCalendarEvent>;
+}): KeywordPerformanceDashboardView["recommendationEvidence"] {
+  const demandEvidence = input.providerSyncReports
+    .flatMap((report) => report.keywordDemandSnapshots ?? [])
+    .sort(compareKeywordDemandSnapshots)
+    .slice(0, 4)
+    .map(keywordDemandEvidence);
+  const trendEvidence = input.providerSyncReports
+    .flatMap((report) => report.searchTrendSnapshots ?? [])
+    .sort(compareSearchTrendSnapshots)
+    .slice(0, 3)
+    .map(searchTrendEvidence);
+  const seasonEvidence = input.seasonalKeywordPlans.slice(0, 3).map((plan) => seasonalKeywordEvidence(plan, input.eventsById.get(plan.eventId)));
+  const commerceEvidence = input.providerSyncReports.flatMap((report) => {
+    const evidence: KeywordPerformanceDashboardView["recommendationEvidence"] = [];
+
+    if (report.commerceAggregateSnapshot) {
+      const snapshot = report.commerceAggregateSnapshot;
+      evidence.push({
+        id: `keyword-recommendation-commerce-${snapshot.id}`,
+        title: "실제 주문 상품명",
+        sourceLabel: brandLabelFromKey(snapshot.brandKey),
+        summary: snapshot.topProductName
+          ? `${snapshot.topProductName} 주문 흐름을 키워드 후보 근거로 연결합니다.`
+          : `${brandLabelFromKey(snapshot.brandKey)} 주문 흐름을 키워드 후보 근거로 연결합니다.`,
+        evidenceLabels: [`근거 ${snapshot.id}`, "실제 주문 집계"],
+      });
+    }
+
+    if (report.shopAggregateSnapshot) {
+      const snapshot = report.shopAggregateSnapshot;
+      evidence.push({
+        id: `keyword-recommendation-shop-${snapshot.id}`,
+        title: "쇼핑몰 주문 흐름",
+        sourceLabel: brandLabelFromKey(snapshot.brandKey),
+        summary: `${brandLabelFromKey(snapshot.brandKey)} 주문/재구매 흐름을 키워드 후보 근거로 연결합니다.`,
+        evidenceLabels: [`근거 ${snapshot.id}`, "실제 주문 집계"],
+      });
+    }
+
+    return evidence;
+  });
+
+  return [...demandEvidence, ...trendEvidence, ...seasonEvidence, ...commerceEvidence];
+}
+
+function compareKeywordDemandSnapshots(left: KeywordDemandSnapshot, right: KeywordDemandSnapshot): number {
+  return keywordDemandVolume(right) - keywordDemandVolume(left);
+}
+
+function keywordDemandEvidence(snapshot: KeywordDemandSnapshot): KeywordPerformanceDashboardView["recommendationEvidence"][number] {
+  return {
+    id: `keyword-recommendation-demand-${snapshot.id}`,
+    title: snapshot.keyword,
+    sourceLabel: "네이버 키워드 수요",
+    summary: `월 검색 ${keywordDemandVolume(snapshot).toLocaleString("ko-KR")}회 기준으로 추천 후보에 올립니다.`,
+    evidenceLabels: [
+      `PC ${Number(snapshot.monthlyPcSearches ?? 0).toLocaleString("ko-KR")}회`,
+      `모바일 ${Number(snapshot.monthlyMobileSearches ?? 0).toLocaleString("ko-KR")}회`,
+      `경쟁 ${competitionLabel(snapshot.competitionIndex)}`,
+    ],
+  };
+}
+
+function compareSearchTrendSnapshots(left: SearchTrendSnapshot, right: SearchTrendSnapshot): number {
+  return maxTrendRatio(right) - maxTrendRatio(left);
+}
+
+function searchTrendEvidence(snapshot: SearchTrendSnapshot): KeywordPerformanceDashboardView["recommendationEvidence"][number] {
+  return {
+    id: `keyword-recommendation-trend-${snapshot.id}`,
+    title: snapshot.keywordGroupName,
+    sourceLabel: "데이터랩 추이",
+    summary: `상대지수 최대 ${formatNumber(maxTrendRatio(snapshot))} 기준입니다. 절대 검색량처럼 보지 않습니다.`,
+    evidenceLabels: [`기간 ${snapshot.startDate}~${snapshot.endDate}`, "상대 추이", `근거 ${snapshot.id}`],
+  };
+}
+
+function seasonalKeywordEvidence(
+  plan: SeasonalKeywordAdPlan,
+  event?: MarketingCalendarEvent,
+): KeywordPerformanceDashboardView["recommendationEvidence"][number] {
+  const calendarBasis = event?.eventType === "solar" ? "양력" : "음력";
+  const keywords = [...plan.keywordSet.add, ...plan.keywordSet.expand].slice(0, 3);
+
+  return {
+    id: `keyword-recommendation-season-${plan.id}`,
+    title: event?.name ?? "시즌 키워드",
+    sourceLabel: `${calendarBasis} 시즌 윈도우`,
+    summary: `${keywords.join(", ") || "키워드 후보"}를 전년도 같은 ${calendarBasis} 이벤트 윈도우와 함께 봅니다.`,
+    evidenceLabels: [`단계 ${seasonStageLabel(plan.seasonStage)}`, "전년도/명절 윈도우 비교", `근거 ${plan.id}`],
+  };
+}
+
+function keywordDemandVolume(snapshot: KeywordDemandSnapshot): number {
+  return Number(snapshot.monthlyPcSearches ?? 0) + Number(snapshot.monthlyMobileSearches ?? 0);
+}
+
+function competitionLabel(value: KeywordDemandSnapshot["competitionIndex"]): string {
+  const labels: Record<NonNullable<KeywordDemandSnapshot["competitionIndex"]>, string> = {
+    LOW: "낮음",
+    MEDIUM: "중간",
+    HIGH: "높음",
+    UNKNOWN: "미확인",
+  };
+
+  return value ? labels[value] : "미확인";
+}
+
+function maxTrendRatio(snapshot: SearchTrendSnapshot): number {
+  return Math.max(0, ...snapshot.ratios.map((ratio) => ratio.ratio));
+}
+
+function seasonStageLabel(stage: SeasonalKeywordAdPlan["seasonStage"]): string {
+  const labels: Record<SeasonalKeywordAdPlan["seasonStage"], string> = {
+    DISCOVER: "발굴",
+    VALIDATE: "검증",
+    TEST: "소액 테스트",
+    SCALE: "확대",
+    PEAK_GUARD: "피크 방어",
+    TAPER: "축소",
+    REVIEW: "회고",
+  };
+
+  return labels[stage];
+}
+
+function conversionRate(aggregate: KeywordAggregate): number {
+  return conversionRateFromValues(aggregate.clicks, aggregate.conversions);
+}
+
+function conversionRateFromValues(clicks: number, conversions: number): number {
+  return clicks > 0 ? conversions / clicks : 0;
+}
+
+function costPerOrder(aggregate: KeywordAggregate): number | undefined {
+  return aggregate.conversions > 0 ? aggregate.cost / aggregate.conversions : undefined;
+}
+
+function roasValue(aggregate: KeywordAggregate): number | undefined {
+  return aggregate.cost > 0 ? aggregate.revenue / aggregate.cost : undefined;
+}
+
+function firstDefined<T>(values: Array<T | undefined>): T | undefined {
+  return values.find((value): value is T => value !== undefined);
+}
+
+function latestCheckedAtLabel(reports: ProviderSyncReport[], fallbackGeneratedAt: string): string {
+  const latestCheckedAt = reports.map((report) => report.checkedAt).sort((left, right) => right.localeCompare(left))[0];
+
+  return `갱신 ${formatKoreanDateTime(latestCheckedAt ?? fallbackGeneratedAt)}`;
+}
+
+function buildKeywordThumbnailDataUri(productName: string): string {
+  const label = compactProductLabel(productName);
+  const svg = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 72 72">`,
+    `<rect width="72" height="72" rx="10" fill="#edf6f1"/>`,
+    `<rect x="13" y="15" width="46" height="34" rx="7" fill="#ffffff" stroke="#b7dfcf" stroke-width="3"/>`,
+    `<path d="M20 27h32M20 37h24" stroke="#17745f" stroke-width="4" stroke-linecap="round" opacity="0.72"/>`,
+    `<circle cx="53" cy="20" r="7" fill="#17745f" opacity="0.9"/>`,
+    `<text x="36" y="62" text-anchor="middle" font-size="11" font-family="Arial, sans-serif" font-weight="700" fill="#17745f">${escapeSvgText(label)}</text>`,
+    `</svg>`,
+  ].join("");
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
 function buildKeywordWorkDeskCards(report: ProviderSyncReport, generatedAt: string): WorkDeskCardView[] {
   const diagnoses = buildAdPerformanceDiagnoses({
     snapshots: report.searchAdPerformanceSnapshots ?? [],
@@ -953,6 +1413,10 @@ function sum(values: number[]): number {
 
 function formatPercent(value: number): string {
   return `${(value * 100).toLocaleString("ko-KR", { maximumFractionDigits: 1 })}%`;
+}
+
+function formatNumber(value: number): string {
+  return value.toLocaleString("ko-KR", { maximumFractionDigits: 1 });
 }
 
 function buildMoaSummary(approvalRequests: ApprovalRequest[], providerAgendaCount: number): string {

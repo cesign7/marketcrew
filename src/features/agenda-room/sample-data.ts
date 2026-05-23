@@ -147,6 +147,25 @@ export const agendaRoomSample: AgendaRoomViewModel = {
     },
   ],
   workDeskCards: [],
+  keywordPerformanceDashboard: {
+    title: "키워드 성과 대시보드",
+    summaryLabel: "검색광고 키워드 0개 · 쇼핑검색어 0개를 그로가 먼저 점검합니다.",
+    sourceLabel: "성과 스냅샷 수집 대기",
+    updatedAtLabel: "갱신 2026-05-22 09:20",
+    qualityGuardLabel: "클릭 1~2건으로 전환율이 과대 표시되지 않도록 충분한 클릭/비용 기준을 먼저 적용합니다.",
+    minimumCriteriaLabels: [
+      "순위 반영 기준: 클릭 10회 이상 또는 비용 1,000원 이상",
+      "기기/시간대 조정은 키워드 전체 중지가 아니라 낮은 구간만 따로 봅니다.",
+      "실제 외부 광고 변경은 대표 승인과 쓰기 게이트 통과 전까지 차단합니다.",
+    ],
+    topConversionKeywords: [],
+    lowConversionKeywords: [],
+    wasteKeywords: [],
+    deviceSegments: [],
+    timeSegments: [],
+    shoppingSearchTerms: [],
+    recommendationEvidence: [],
+  },
   agendaCards: [
     {
       id: "agenda-001",

@@ -1287,6 +1287,282 @@ button:disabled {
   text-align: center;
 }
 
+.keyword-performance-dashboard {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 4px;
+}
+
+.keyword-dashboard-meta,
+.keyword-dashboard-guard div,
+.keyword-rank-tags,
+.keyword-rank-metrics,
+.shopping-term-metrics,
+.keyword-evidence-list article div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.keyword-dashboard-meta span,
+.keyword-dashboard-guard span,
+.keyword-rank-tags span,
+.keyword-rank-metrics span,
+.shopping-term-metrics span,
+.keyword-evidence-list small {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  padding: 4px 8px;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.keyword-dashboard-meta {
+  justify-content: flex-end;
+  max-width: 360px;
+}
+
+.keyword-dashboard-guard {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 12px;
+}
+
+.keyword-dashboard-guard strong {
+  font-size: 13px;
+}
+
+.keyword-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.keyword-dashboard-grid.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.keyword-dashboard-panel {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 12px;
+  box-shadow: var(--shadow);
+}
+
+.keyword-dashboard-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.keyword-dashboard-panel header span,
+.keyword-dashboard-panel header small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 900;
+}
+
+.keyword-dashboard-panel header span {
+  min-width: 0;
+  font-size: 14px;
+}
+
+.keyword-dashboard-panel header small {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  padding: 4px 8px;
+  color: var(--ink-muted);
+  font-size: 11px;
+}
+
+.keyword-rank-list,
+.keyword-segment-list,
+.shopping-term-list,
+.keyword-evidence-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.keyword-rank-item,
+.keyword-segment-row,
+.shopping-term-row,
+.keyword-evidence-list article {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.keyword-rank-item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  padding: 9px;
+}
+
+.keyword-rank-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.keyword-rank-main,
+.keyword-segment-row > div,
+.shopping-term-row > div,
+.keyword-evidence-list article {
+  min-width: 0;
+}
+
+.keyword-rank-main strong,
+.keyword-segment-row strong,
+.shopping-term-row strong,
+.keyword-evidence-list strong {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keyword-rank-main p,
+.keyword-segment-row p,
+.keyword-evidence-list p {
+  margin: 6px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.keyword-rank-metrics {
+  grid-column: 1 / -1;
+}
+
+.keyword-segment-row {
+  display: grid;
+  gap: 7px;
+  padding: 9px;
+}
+
+.keyword-segment-row div:nth-child(2) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.keyword-segment-row div:nth-child(2) span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 4px 8px;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.keyword-segment-row > div:first-child span,
+.shopping-term-row small,
+.shopping-term-row > div:first-of-type span,
+.keyword-evidence-list article > span {
+  display: block;
+  overflow: hidden;
+  margin-top: 3px;
+  color: var(--ink-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shopping-term-row {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 9px;
+  padding: 9px;
+}
+
+.shopping-term-row img {
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  object-fit: cover;
+}
+
+.shopping-term-metrics {
+  grid-column: 1 / -1;
+}
+
+.keyword-evidence-list article {
+  display: grid;
+  gap: 6px;
+  padding: 9px;
+}
+
+.keyword-rank-item.tone-good,
+.keyword-segment-row.tone-good,
+.shopping-term-row.tone-good {
+  border-color: #b7d8c9;
+  background: #f1f8f4;
+}
+
+.keyword-rank-item.tone-warning,
+.keyword-segment-row.tone-warning,
+.shopping-term-row.tone-warning {
+  border-color: #e8d6a6;
+  background: #fff8e8;
+}
+
+.keyword-rank-item.tone-danger,
+.keyword-segment-row.tone-danger,
+.shopping-term-row.tone-danger {
+  border-color: #f0c3bc;
+  background: #fff1ef;
+}
+
+.keyword-dashboard-empty {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  margin: 0;
+  padding: 14px;
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
 .agenda-card h3 {
   margin: 10px 0 0;
   font-size: 18px;
@@ -4933,6 +5209,8 @@ button:disabled {
   .daily-brief-grid,
   .execution-grid,
   .work-desk-card-grid,
+  .keyword-dashboard-grid,
+  .keyword-dashboard-grid.compact,
   .bucket-bar,
   .provider-readiness-grid,
   .provider-sync-grid,
@@ -5176,6 +5454,7 @@ button:disabled {
   .agenda-card-header,
   .agenda-footer,
   .keyword-card header,
+  .keyword-dashboard-panel header,
   .data-contract-provider > header,
   .approval-preview-header,
   .approval-provenance header,
@@ -5202,6 +5481,11 @@ button:disabled {
   .ai-person-card > header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .keyword-dashboard-meta {
+    justify-content: flex-start;
+    max-width: 100%;
   }
 
   .product-opportunity-card header {

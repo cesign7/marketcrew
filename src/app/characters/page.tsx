@@ -18,6 +18,7 @@ export default async function CharactersPage() {
       <CharacterDesk
         agendaCards={viewModel.agendaCards}
         characters={viewModel.characters}
+        keywordPerformanceDashboard={viewModel.keywordPerformanceDashboard}
         workDeskCards={viewModel.workDeskCards}
         ownerDecisionFlows={viewModel.ownerDecisionFlows}
       />
