@@ -72,6 +72,31 @@ export function AiPeopleOffice({ view }: AiPeopleOfficeProps) {
         </div>
       </div>
 
+      <div className="ai-exploration-policy" aria-label={view.explorationPolicy.title}>
+        <header>
+          <div>
+            <span className="eyebrow">판단 방식</span>
+            <h2>{view.explorationPolicy.title}</h2>
+            <p>{view.explorationPolicy.summary}</p>
+          </div>
+          <span>{view.explorationPolicy.steps.at(-1)?.title ?? "검증"}</span>
+        </header>
+        <ol className="ai-exploration-steps">
+          {view.explorationPolicy.steps.map((step, index) => (
+            <li key={step.title}>
+              <span>{index + 1}</span>
+              <strong>{step.title}</strong>
+              <p>{step.description}</p>
+            </li>
+          ))}
+        </ol>
+        <div className="ai-exploration-safeguards" aria-label="안전 기준">
+          {view.explorationPolicy.safeguards.map((safeguard) => (
+            <span key={safeguard}>{safeguard}</span>
+          ))}
+        </div>
+      </div>
+
       <div className="ai-people-toolbar">
         <div>
           <span className="eyebrow">캐릭터 롤모델</span>

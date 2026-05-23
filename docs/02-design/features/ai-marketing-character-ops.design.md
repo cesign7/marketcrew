@@ -3,7 +3,7 @@
 > **Summary**: 하위 AI 캐릭터가 마케팅 데이터를 읽고 근거 있는 안건을 상신하면, 모아가 대표 결재용 실행 계획으로 묶고, 승인 후 mock/sandbox executor와 성과 추적까지 이어지는 bottom-up AI 마케팅 운영실 설계.
 >
 > **Project**: marketcrew2
-> **Version**: 0.2
+> **Version**: 0.3
 > **Author**: Codex
 > **Date**: 2026-05-22 KST
 > **Status**: Draft
@@ -370,7 +370,40 @@ Design decisions:
 
 다섯 모듈은 write gate, 배포 안전장치, rollback 근거가 명시적으로 열리기 전까지 모두 read-only로 유지한다. 화면 문구는 한국어로 쓰되, 원천 필드 상세 안의 provider 필드명과 API 식별자는 정확성을 위해 원문을 유지한다.
 
-### 3.5 Persistence Shape
+### 3.5 LLM 자유 탐색과 근거 요청 루프
+
+정형 `SignalSummary`는 LLM 입력 비용을 통제하기 위한 기본 입력이다. 다만 캐릭터는 이 요약만 해석하는 수동 보고자가 아니라, 정해진 신호 밖의 조합을 `HypothesisCandidate`로 제안하고 필요한 근거를 `EvidenceRequest`로 요청할 수 있어야 한다.
+
+```ts
+type HypothesisCandidate = {
+  id: string;
+  character: CharacterKey;
+  title: string;
+  hypothesis: string;
+  reasonFromKnownSignals: string[];
+  requestedEvidence: EvidenceRequest[];
+  status: "DRAFT" | "WAITING_EVIDENCE" | "VERIFIED" | "REJECTED" | "PROMOTED";
+};
+
+type EvidenceRequest = {
+  id: string;
+  requestedBy: CharacterKey;
+  verifier: "day";
+  neededSource: "search_ad" | "smartstore" | "youngcart" | "datalab" | "internal";
+  neededFields: string[];
+  comparisonWindow: string;
+  reason: string;
+};
+```
+
+Promotion guard:
+
+- `HypothesisCandidate.status`가 `VERIFIED`가 되기 전에는 `ApprovalRequest`로 승격하지 않는다.
+- 데이는 원천 필드/집계 기준/비교 기간을 확인하고, 부족하면 `WAITING_EVIDENCE`로 유지한다.
+- 모아는 `VERIFIED` 후보만 묶어 대표 결재용 안건으로 올린다.
+- `/people` 인사과 화면은 이 정책을 캐릭터 롤모델과 판단 방식 카드로 보여준다.
+
+### 3.6 Persistence Shape
 
 For MVP, a repository interface should support an in-memory/sample implementation first, then Prisma/Postgres.
 
@@ -840,6 +873,8 @@ src/
 | 광고 성과 분해 | `module-16` | 기기, 시간대, 요일별 광고 성과와 전환 근거 | 25-35 |
 | 커머스 품질 스냅샷 | `module-17` | 스마트스토어 순매출, 취소/반품/교환, 구매확정 근거 | 25-35 |
 | 검색/커머스 분석 확장 | `module-18` | 데이터랩 세그먼트와 스마트스토어 데이터솔루션 권한 기반 확장 | 30-40 |
+| 자유 탐색 정책 UI | `module-19` | 인사과 판단 방식 카드와 캐릭터별 자유 탐색/근거 요청 롤모델 | 8-12 |
+| 근거 요청 큐와 승격 가드 | `module-20` | `HypothesisCandidate`, `EvidenceRequest`, 데이 검증, 모아 승격 제한 | 25-35 |
 
 #### Recommended Session Plan
 
@@ -866,3 +901,4 @@ src/
 |---------|------|---------|--------|
 | 0.1 | 2026-05-22 | Initial PDCA design document from v0.5 plan, selected Pragmatic Balance architecture, defined domain/API/UI/test/session contracts | Codex |
 | 0.2 | 2026-05-23 | Added provider evidence expansion order and module map for ad settings, performance breakdown, commerce quality, DataLab segments, and commerce analytics | Codex |
+| 0.3 | 2026-05-23 | Added LLM free exploration, evidence request, verified promotion guard, and people-office role model UI module | Codex |

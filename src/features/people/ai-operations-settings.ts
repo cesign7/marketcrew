@@ -25,11 +25,22 @@ export type AiCharacterProfileView = AiCharacterProfileSettings & {
   estimatedCostLabel: string;
 };
 
+export type AiExplorationPolicyView = {
+  title: string;
+  summary: string;
+  steps: Array<{
+    title: string;
+    description: string;
+  }>;
+  safeguards: string[];
+};
+
 export type AiPeopleOfficeView = {
   settings: AiOperationsSettings;
   monthLabel: string;
   modelUsageRows: AiModelUsageRow[];
   characterProfiles: AiCharacterProfileView[];
+  explorationPolicy: AiExplorationPolicyView;
   totalInputTokensLabel: string;
   totalOutputTokensLabel: string;
   totalCostLabel: string;
@@ -48,6 +59,84 @@ export type AiPeopleOfficeView = {
 type EnvMap = Record<string, string | undefined>;
 
 const settingsId = "default";
+
+const explorationPolicyView: AiExplorationPolicyView = {
+  title: "자유 탐색과 근거 요청 원칙",
+  summary:
+    "AI 모델은 정해진 이상신호만 확인하지 않고, 낯선 가설과 필요한 근거를 먼저 제안합니다. 확인된 근거만 결재 안건으로 승격합니다.",
+  steps: [
+    {
+      title: "정형 감지",
+      description: "이미 정한 신호로 누락 없이 기본 위험을 잡습니다.",
+    },
+    {
+      title: "자유 탐색",
+      description: "상품·키워드·기기·시간대·고객군 조합에서 예상 못 한 기회와 이상신호를 찾습니다.",
+    },
+    {
+      title: "근거 요청",
+      description: "확정 판단 전 필요한 원천 필드, 비교 기간, 세그먼트를 데이에게 요청합니다.",
+    },
+    {
+      title: "검증 후 안건화",
+      description: "실제 데이터로 확인된 가설만 모아가 대표 결재 안건으로 올립니다.",
+    },
+  ],
+  safeguards: ["없는 데이터를 근거처럼 말하지 않음", "가설과 확인된 사실을 분리", "확인 전 외부 반영 금지"],
+};
+
+const explorationProfileGuidance: Record<
+  CharacterKey,
+  {
+    roleModel: string;
+    responsibility: string;
+    outputContract: string;
+    monthlyReviewRule: string;
+  }
+> = {
+  moa: {
+    roleModel: "낯선 가설은 바로 결재하지 않고 검증된 근거만 안건으로 승격합니다.",
+    responsibility: "하위 캐릭터의 자유 탐색 가설과 근거 요청을 비용, 근거, 실행 위험 기준으로 정리합니다.",
+    outputContract: "가설, 확인된 사실, 추가 근거 요청을 분리해 대표가 승인/보류/보강을 바로 판단하게 합니다.",
+    monthlyReviewRule: "월말에는 승인된 가설과 반려된 가설을 비교해 다음 달 탐색 범위를 조정합니다.",
+  },
+  gro: {
+    roleModel: "정해진 지표 밖의 키워드·기기·시간대 조합도 자유 탐색합니다.",
+    responsibility: "네이버 키워드광고와 검색 수요에서 새 가설을 만들고 필요한 광고 설정 근거를 요청합니다.",
+    outputContract: "키워드, 기기, 시간대 가설마다 예상 효과, 예산 상한, 중단 기준, 필요한 근거를 함께 보고합니다.",
+    monthlyReviewRule: "월별로 자유 탐색 키워드의 승인률, 광고비 대비 성과, 중단 기준 적중률을 확인합니다.",
+  },
+  pro: {
+    roleModel: "상품·시즌·채널 조합 가설을 만들고 필요한 근거를 요청합니다.",
+    responsibility: "스티커씨와 커피프린트 상품 흐름에서 묶음, 노출, 신규 상품, 시즌 용도 가설을 발굴합니다.",
+    outputContract: "상품명, 채널, 시즌 가설, 필요한 판매/검색/마진 근거를 분리해 남깁니다.",
+    monthlyReviewRule: "월별 상품 가설이 주문, 재구매, 마진, 검색 수요로 확인됐는지 비교합니다.",
+  },
+  copy: {
+    roleModel: "고객 언어와 숨은 구매 이유 가설을 제안하되 승인 전에는 초안으로만 둡니다.",
+    responsibility: "광고 문구, 상세페이지, 시즌 메시지에서 새로운 고객 동기와 표현 후보를 찾습니다.",
+    outputContract: "문구 초안, 고객 가설, 확인할 클릭/전환 근거, 게시 전 승인 조건을 함께 보고합니다.",
+    monthlyReviewRule: "월별 문구 가설의 클릭률, 전환, 반려 사유를 모아 다음 실험 기준을 고칩니다.",
+  },
+  ripi: {
+    roleModel: "재구매 고객군과 이탈 조짐을 자유 탐색하고 개인정보 없이 근거를 요청합니다.",
+    responsibility: "구매 주기, 고객군, 쿠폰/메시지 반응에서 예상 못 한 후속 업무 후보를 찾습니다.",
+    outputContract: "고객군 가설, 집계 근거, 발송 조건, 개인정보 제외 기준을 분리해 보고합니다.",
+    monthlyReviewRule: "월별 재구매 가설이 반복 구매, 이탈 방지, 비용 절감으로 이어졌는지 비교합니다.",
+  },
+  maru: {
+    roleModel: "마진·예산·기회비용의 예상 못 한 위험을 찾고 확인 전 지출 확대를 막습니다.",
+    responsibility: "광고비, 할인, 상품 마진, 실행 비용에서 숨은 손익 리스크와 확인할 근거를 찾습니다.",
+    outputContract: "승인 가능 예산, 손익 가설, 중단 기준, 확인할 비용 근거를 함께 제시합니다.",
+    monthlyReviewRule: "월별 자유 탐색 안건의 비용 대비 성과와 예산 초과 방지 효과를 점검합니다.",
+  },
+  day: {
+    roleModel: "LLM이 제안한 근거 후보를 실제 원천 필드와 집계 기준으로 검증합니다.",
+    responsibility: "수집 누락, 전년동기, 음력 명절 비교, 세그먼트, 원천 필드 후보를 확인해 가설 신뢰도를 매깁니다.",
+    outputContract: "확인된 근거, 부족한 근거, 추가 수집 요청, 판단 보류 사유를 명확히 남깁니다.",
+    monthlyReviewRule: "월별 근거 부족 안건과 잘못된 가설을 줄이는 데이터 보강 우선순위를 냅니다.",
+  },
+};
 
 export function buildDefaultAiOperationsSettings(input: {
   env?: EnvMap;
@@ -79,10 +168,10 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "AI 업무실장",
         provider: defaultProvider,
         model: strategicModel,
-        roleModel: "대표 비서실장처럼 각 담당자의 안건을 묶고 대표 결재에 맞게 우선순위를 정합니다.",
-        responsibility: "하위 캐릭터가 올린 안건을 비용, 근거, 실행 위험 기준으로 정리합니다.",
-        outputContract: "대표가 바로 승인/보류/보강을 판단할 수 있는 3줄 결론과 근거 ID를 남깁니다.",
-        monthlyReviewRule: "월말에는 모델별 사용량과 승인 성과를 묶어 다음 달 호출 한도를 제안합니다.",
+        roleModel: `대표 비서실장처럼 각 담당자의 안건을 묶고 대표 결재에 맞게 우선순위를 정합니다. ${explorationProfileGuidance.moa.roleModel}`,
+        responsibility: explorationProfileGuidance.moa.responsibility,
+        outputContract: explorationProfileGuidance.moa.outputContract,
+        monthlyReviewRule: explorationProfileGuidance.moa.monthlyReviewRule,
         updatedAt: now,
       },
       {
@@ -91,10 +180,10 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "퍼포먼스 마케터",
         provider: defaultProvider,
         model: strategicModel,
-        roleModel: "광고 성과 담당자처럼 시즌 키워드, 광고 효율, 신규 수요를 먼저 찾습니다.",
-        responsibility: "네이버 키워드광고와 검색 수요를 보고 테스트 안건을 상신합니다.",
-        outputContract: "키워드, 예상 효과, 예산 상한, 중단 기준을 함께 보고합니다.",
-        monthlyReviewRule: "월별 광고비 대비 매출 기여와 키워드 발굴 적중률을 봅니다.",
+        roleModel: `광고 성과 담당자처럼 시즌 키워드, 광고 효율, 신규 수요를 먼저 찾습니다. ${explorationProfileGuidance.gro.roleModel}`,
+        responsibility: explorationProfileGuidance.gro.responsibility,
+        outputContract: explorationProfileGuidance.gro.outputContract,
+        monthlyReviewRule: explorationProfileGuidance.gro.monthlyReviewRule,
         updatedAt: now,
       },
       {
@@ -103,10 +192,10 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "상품 기획자",
         provider: defaultProvider,
         model: defaultModel,
-        roleModel: "상품 기획자처럼 상품별 판매 흐름과 시즌 구색을 연결합니다.",
-        responsibility: "스티커씨와 커피프린트 상품 데이터를 보고 묶음, 노출, 신규 상품 후보를 올립니다.",
-        outputContract: "상품명, 채널, 제안 이유, 필요한 근거를 분리해 남깁니다.",
-        monthlyReviewRule: "월별 상품 제안이 실제 주문/재구매로 이어졌는지 확인합니다.",
+        roleModel: `상품 기획자처럼 상품별 판매 흐름과 시즌 구색을 연결합니다. ${explorationProfileGuidance.pro.roleModel}`,
+        responsibility: explorationProfileGuidance.pro.responsibility,
+        outputContract: explorationProfileGuidance.pro.outputContract,
+        monthlyReviewRule: explorationProfileGuidance.pro.monthlyReviewRule,
         updatedAt: now,
       },
       {
@@ -115,10 +204,10 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "콘텐츠 기획자",
         provider: defaultProvider,
         model: defaultModel,
-        roleModel: "콘텐츠 전략가처럼 승인된 안건을 고객이 이해하는 문장으로 바꿉니다.",
-        responsibility: "광고 문구, 상세페이지 메시지, 시즌 선물 제안을 작성합니다.",
-        outputContract: "대표 승인 전에는 초안만 만들고 외부 채널에는 쓰지 않습니다.",
-        monthlyReviewRule: "월별 문구 테스트의 클릭률, 전환, 반려 사유를 모아 개선합니다.",
+        roleModel: `콘텐츠 전략가처럼 승인된 안건을 고객이 이해하는 문장으로 바꿉니다. ${explorationProfileGuidance.copy.roleModel}`,
+        responsibility: explorationProfileGuidance.copy.responsibility,
+        outputContract: explorationProfileGuidance.copy.outputContract,
+        monthlyReviewRule: explorationProfileGuidance.copy.monthlyReviewRule,
         updatedAt: now,
       },
       {
@@ -127,10 +216,10 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "고객 관리 담당자",
         provider: defaultProvider,
         model: defaultModel,
-        roleModel: "재구매 관리 담당자처럼 구매 이후의 재방문과 반복 구매 신호를 관리합니다.",
-        responsibility: "고객군, 재구매 타이밍, 쿠폰/메시지 후보를 후속 업무로 올립니다.",
-        outputContract: "개인정보 원문 없이 집계 근거와 실행 조건만 보고합니다.",
-        monthlyReviewRule: "월별 재구매 후보와 실제 후속 성과를 비교합니다.",
+        roleModel: `재구매 관리 담당자처럼 구매 이후의 재방문과 반복 구매 신호를 관리합니다. ${explorationProfileGuidance.ripi.roleModel}`,
+        responsibility: explorationProfileGuidance.ripi.responsibility,
+        outputContract: explorationProfileGuidance.ripi.outputContract,
+        monthlyReviewRule: explorationProfileGuidance.ripi.monthlyReviewRule,
         updatedAt: now,
       },
       {
@@ -139,10 +228,10 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "손익 관리자",
         provider: defaultProvider,
         model: defaultModel,
-        roleModel: "손익 관리 담당자처럼 광고비와 마진 위험을 먼저 막습니다.",
-        responsibility: "예산 초과, 손익 악화, 성과 측정 누락을 결재 전에 검토합니다.",
-        outputContract: "승인 가능 예산, 중단 기준, 성과 확인일을 함께 제시합니다.",
-        monthlyReviewRule: "월별 AI 비용과 마케팅 비용이 승인 성과에 맞는지 점검합니다.",
+        roleModel: `손익 관리 담당자처럼 광고비와 마진 위험을 먼저 막습니다. ${explorationProfileGuidance.maru.roleModel}`,
+        responsibility: explorationProfileGuidance.maru.responsibility,
+        outputContract: explorationProfileGuidance.maru.outputContract,
+        monthlyReviewRule: explorationProfileGuidance.maru.monthlyReviewRule,
         updatedAt: now,
       },
       {
@@ -151,10 +240,10 @@ export function buildDefaultAiOperationsSettings(input: {
         departmentRole: "데이터 분석가",
         provider: defaultProvider,
         model: defaultModel,
-        roleModel: "데이터 감사 담당자처럼 원천 필드와 집계 기준을 검증합니다.",
-        responsibility: "수집 누락, 전년동기, 음력 명절 비교, 근거 품질을 확인합니다.",
-        outputContract: "분석에 쓴 기간, 채널, 원천 필드, 저장 필드를 명확히 남깁니다.",
-        monthlyReviewRule: "월별 수집 실패와 근거 부족 안건을 줄이는 개선안을 냅니다.",
+        roleModel: `데이터 감사 담당자처럼 원천 필드와 집계 기준을 검증합니다. ${explorationProfileGuidance.day.roleModel}`,
+        responsibility: explorationProfileGuidance.day.responsibility,
+        outputContract: explorationProfileGuidance.day.outputContract,
+        monthlyReviewRule: explorationProfileGuidance.day.monthlyReviewRule,
         updatedAt: now,
       },
     ],
@@ -205,18 +294,18 @@ export function sanitizeAiOperationsSettings(
       };
     }
 
-    return {
+    return enrichCharacterExplorationGuidance({
       id: fallbackProfile.id,
       name: fallbackProfile.name,
       departmentRole: localizePeopleOfficeText(cleanText(rawProfile.departmentRole, fallbackProfile.departmentRole, 80)),
       provider: resolveProvider(cleanText(rawProfile.provider, fallbackProfile.provider, 40)),
       model: cleanText(rawProfile.model, fallbackProfile.model, 80),
-      roleModel: localizePeopleOfficeText(cleanText(rawProfile.roleModel, fallbackProfile.roleModel, 220)),
-      responsibility: cleanText(rawProfile.responsibility, fallbackProfile.responsibility, 220),
-      outputContract: cleanText(rawProfile.outputContract, fallbackProfile.outputContract, 220),
-      monthlyReviewRule: cleanText(rawProfile.monthlyReviewRule, fallbackProfile.monthlyReviewRule, 220),
+      roleModel: localizePeopleOfficeText(cleanText(rawProfile.roleModel, fallbackProfile.roleModel, 280)),
+      responsibility: cleanText(rawProfile.responsibility, fallbackProfile.responsibility, 280),
+      outputContract: cleanText(rawProfile.outputContract, fallbackProfile.outputContract, 280),
+      monthlyReviewRule: cleanText(rawProfile.monthlyReviewRule, fallbackProfile.monthlyReviewRule, 280),
       updatedAt: now,
-    };
+    });
   });
 
   return {
@@ -276,6 +365,7 @@ export function buildAiPeopleOfficeView(input: {
     settings: input.settings,
     monthLabel: formatMonthLabel(generatedAt),
     modelUsageRows,
+    explorationPolicy: explorationPolicyView,
     characterProfiles: input.settings.characterProfiles.map((profile) => {
       const usage = usageByCharacter.get(profile.id) ?? { inputTokens: 0, outputTokens: 0, costKrw: 0 };
       return {
@@ -423,6 +513,26 @@ function characterFromRunner(runnerKey: string): CharacterKey {
   }
 
   return "moa";
+}
+
+function enrichCharacterExplorationGuidance(profile: AiCharacterProfileSettings): AiCharacterProfileSettings {
+  const guidance = explorationProfileGuidance[profile.id];
+
+  return {
+    ...profile,
+    roleModel: appendGuidance(profile.roleModel, guidance.roleModel),
+    responsibility: appendGuidance(profile.responsibility, guidance.responsibility),
+    outputContract: appendGuidance(profile.outputContract, guidance.outputContract),
+    monthlyReviewRule: appendGuidance(profile.monthlyReviewRule, guidance.monthlyReviewRule),
+  };
+}
+
+function appendGuidance(value: string, guidance: string): string {
+  if (!guidance || value.includes(guidance)) {
+    return value;
+  }
+
+  return `${value} ${guidance}`.trim();
 }
 
 function resolveProvider(value: unknown): AgentRunProvider {

@@ -95,4 +95,54 @@ describe("AI operations view loader", () => {
     expect(visibleText).toContain("제미나이 3.5 빠른 모델");
     expect(visibleText).not.toMatch(/Chief of Staff|Performance Marketer|Merchandiser|Creative Strategist|Lifecycle Marketer|FP&A Controller|BI Analyst|AgentRun|CRM 담당자/);
   });
+
+  it("인사과는 정해진 신호 밖의 자유 탐색과 근거 요청 원칙을 함께 보여준다", () => {
+    const settings = buildDefaultAiOperationsSettings({
+      now: "2026-05-23T00:00:00.000Z",
+    });
+    const view = buildAiPeopleOfficeView({
+      settings,
+      agentRuns: [],
+      generatedAt: "2026-05-23T00:00:00.000Z",
+    });
+
+    expect(view.explorationPolicy).toMatchObject({
+      title: "자유 탐색과 근거 요청 원칙",
+      summary: expect.stringContaining("정해진 이상신호만 확인하지 않고"),
+    });
+    expect(view.explorationPolicy.steps.map((step) => step.title)).toEqual([
+      "정형 감지",
+      "자유 탐색",
+      "근거 요청",
+      "검증 후 안건화",
+    ]);
+    expect(view.explorationPolicy.safeguards).toContain("없는 데이터를 근거처럼 말하지 않음");
+  });
+
+  it("기존 저장 캐릭터 롤모델에도 자유 탐색과 검증 책임을 보강한다", () => {
+    const fallback = buildDefaultAiOperationsSettings({ now: "2026-05-23T00:00:00.000Z" });
+    const settings = resolveAiOperationsSettings({
+      stored: {
+        ...fallback,
+        characterProfiles: fallback.characterProfiles.map((profile) => ({
+          ...profile,
+          roleModel: `${profile.name} 기존 역할`,
+          responsibility: `${profile.name} 기존 책임`,
+          outputContract: `${profile.name} 기존 보고`,
+        })),
+      },
+      now: "2026-05-23T00:00:00.000Z",
+    });
+    const profileText = Object.fromEntries(
+      settings.characterProfiles.map((profile) => [
+        profile.id,
+        `${profile.roleModel} ${profile.responsibility} ${profile.outputContract}`,
+      ]),
+    );
+
+    expect(profileText.moa).toContain("검증된 근거만 안건으로 승격");
+    expect(profileText.gro).toContain("키워드·기기·시간대 조합");
+    expect(profileText.pro).toContain("상품·시즌·채널 조합 가설");
+    expect(profileText.day).toContain("근거 후보를 실제 원천 필드와 집계 기준으로 검증");
+  });
 });

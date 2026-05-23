@@ -1466,6 +1466,7 @@ button:disabled {
 
 .ai-budget-settings-card,
 .ai-payroll-summary,
+.ai-exploration-policy,
 .ai-people-toolbar,
 .ai-person-card {
   border: 1px solid var(--line);
@@ -1484,6 +1485,7 @@ button:disabled {
 
 .ai-budget-settings-card > header,
 .ai-payroll-summary > header,
+.ai-exploration-policy > header,
 .ai-people-toolbar,
 .ai-person-card > header,
 .ai-model-usage-grid article > header {
@@ -1495,6 +1497,7 @@ button:disabled {
 
 .ai-budget-settings-card h2,
 .ai-payroll-summary h2,
+.ai-exploration-policy h2,
 .ai-people-toolbar h2 {
   margin: 4px 0 0;
   font-size: 20px;
@@ -1502,6 +1505,7 @@ button:disabled {
 
 .ai-budget-settings-card p,
 .ai-payroll-summary p,
+.ai-exploration-policy p,
 .ai-people-toolbar p,
 .ai-model-usage-grid p {
   margin: 7px 0 0;
@@ -1512,6 +1516,7 @@ button:disabled {
 
 .ai-budget-settings-card > header > span,
 .ai-payroll-summary > header > span,
+.ai-exploration-policy > header > span,
 .ai-people-toolbar > span,
 .ai-person-card > header > span,
 .ai-model-usage-grid article > header > span {
@@ -1662,6 +1667,66 @@ button:disabled {
 .ai-model-usage-grid article div span:nth-child(5) {
   color: var(--blue);
   background: #edf3f8;
+}
+
+.ai-exploration-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-exploration-steps li {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfa;
+  padding: 11px;
+}
+
+.ai-exploration-steps li > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #eef4f1;
+  color: var(--teal-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.ai-exploration-steps strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.ai-exploration-steps p {
+  margin: 0;
+}
+
+.ai-exploration-safeguards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ai-exploration-safeguards span {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #f8efd9;
+  padding: 6px 9px;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .ai-people-toolbar {
@@ -3872,6 +3937,7 @@ button:disabled {
   .settings-grid,
   .ai-budget-form-grid,
   .ai-model-usage-grid,
+  .ai-exploration-steps,
   .ai-people-grid,
   .llm-governance-check-grid,
   .llm-pricing-grid,
@@ -4078,6 +4144,7 @@ button:disabled {
   .approval-agent-run-card header,
   .ai-budget-settings-card > header,
   .ai-payroll-summary > header,
+  .ai-exploration-policy > header,
   .ai-people-toolbar,
   .ai-person-card > header {
     align-items: flex-start;
