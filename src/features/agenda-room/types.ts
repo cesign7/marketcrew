@@ -198,6 +198,16 @@ export type KeywordRecommendationEvidenceView = {
   sourceLabel: string;
   summary: string;
   evidenceLabels: string[];
+  sourceDetailLabel?: string;
+};
+
+export type KeywordRecommendationCandidateView = {
+  id: string;
+  keyword: string;
+  brandLabel: string;
+  sourceLabel: string;
+  reasonLabel: string;
+  evidenceLabels: string[];
 };
 
 export type KeywordPerformanceDashboardView = {
@@ -213,6 +223,7 @@ export type KeywordPerformanceDashboardView = {
   deviceSegments: KeywordPerformanceSegmentView[];
   timeSegments: KeywordPerformanceSegmentView[];
   shoppingSearchTerms: ShoppingSearchTermView[];
+  recommendationKeywords: KeywordRecommendationCandidateView[];
   recommendationEvidence: KeywordRecommendationEvidenceView[];
 };
 

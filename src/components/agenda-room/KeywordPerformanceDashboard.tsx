@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AlertTriangle, Clock3, MonitorSmartphone, Search, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
+import { AlertTriangle, Clock3, FileText, Lightbulb, MonitorSmartphone, Search, ShoppingBag, TrendingDown, TrendingUp } from "lucide-react";
 import type {
   KeywordPerformanceDashboardView,
   KeywordPerformanceRowView,
@@ -73,6 +73,10 @@ export function KeywordPerformanceDashboard({ dashboard }: KeywordPerformanceDas
 
       <div className="keyword-dashboard-grid compact">
         <ShoppingSearchTermPanel rows={dashboard.shoppingSearchTerms} />
+        <RecommendationKeywordPanel candidates={dashboard.recommendationKeywords} />
+      </div>
+
+      <div className="keyword-dashboard-grid single">
         <RecommendationEvidencePanel evidence={dashboard.recommendationEvidence} />
       </div>
     </section>
@@ -184,14 +188,15 @@ function KeywordSegmentPanel({
 
 function ShoppingSearchTermPanel({ rows }: { rows: ShoppingSearchTermView[] }) {
   return (
-    <section className="keyword-dashboard-panel" aria-label="쇼핑검색광고 검색어">
+    <section className="keyword-dashboard-panel" aria-label="쇼핑검색광고 점검 검색어">
       <header>
         <span>
           <ShoppingBag size={17} aria-hidden="true" />
-          쇼핑검색광고 검색어
+          쇼핑검색광고 점검 검색어
         </span>
         <small>{rows.length.toLocaleString("ko-KR")}건</small>
       </header>
+      <p className="keyword-dashboard-note">직접 전환율이 낮고 비용/클릭이 쌓인 검색어부터 보여줍니다.</p>
       {rows.length > 0 ? (
         <div className="shopping-term-list">
           {rows.map((row) => (
@@ -218,16 +223,50 @@ function ShoppingSearchTermPanel({ rows }: { rows: ShoppingSearchTermView[] }) {
   );
 }
 
-function RecommendationEvidencePanel({ evidence }: { evidence: KeywordPerformanceDashboardView["recommendationEvidence"] }) {
+function RecommendationKeywordPanel({ candidates }: { candidates: KeywordPerformanceDashboardView["recommendationKeywords"] }) {
   return (
-    <section className="keyword-dashboard-panel" aria-label="추천 키워드 근거">
+    <section className="keyword-dashboard-panel" aria-label="추천 키워드 후보">
       <header>
         <span>
-          <Search size={17} aria-hidden="true" />
-          추천 키워드 근거
+          <Lightbulb size={17} aria-hidden="true" />
+          추천 키워드 후보
+        </span>
+        <small>{candidates.length.toLocaleString("ko-KR")}건</small>
+      </header>
+      {candidates.length > 0 ? (
+        <div className="keyword-candidate-list">
+          {candidates.map((candidate) => (
+            <article className="keyword-candidate-card" key={candidate.id}>
+              <span>{candidate.sourceLabel}</span>
+              <strong title={candidate.keyword}>{candidate.keyword}</strong>
+              <p>{candidate.reasonLabel}</p>
+              <div>
+                <small>{candidate.brandLabel}</small>
+                {candidate.evidenceLabels.map((label) => (
+                  <small key={`${candidate.id}-${label}`}>{label}</small>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="keyword-dashboard-empty">추천 후보로 정리된 키워드가 아직 없습니다.</p>
+      )}
+    </section>
+  );
+}
+
+function RecommendationEvidencePanel({ evidence }: { evidence: KeywordPerformanceDashboardView["recommendationEvidence"] }) {
+  return (
+    <section className="keyword-dashboard-panel" aria-label="추천 판단 근거">
+      <header>
+        <span>
+          <FileText size={17} aria-hidden="true" />
+          추천 판단 근거
         </span>
         <small>{evidence.length.toLocaleString("ko-KR")}건</small>
       </header>
+      <p className="keyword-dashboard-note">위 후보를 만든 검색 수요, 시즌 윈도우, 주문 원천을 분리해서 보여줍니다.</p>
       {evidence.length > 0 ? (
         <div className="keyword-evidence-list">
           {evidence.map((item) => (
@@ -235,6 +274,15 @@ function RecommendationEvidencePanel({ evidence }: { evidence: KeywordPerformanc
               <span>{item.sourceLabel}</span>
               <strong title={item.title}>{item.title}</strong>
               <p>{item.summary}</p>
+              {item.sourceDetailLabel ? (
+                <details className="keyword-source-detail">
+                  <summary>
+                    <Search size={14} aria-hidden="true" />
+                    원천 보기
+                  </summary>
+                  <p>{item.sourceDetailLabel}</p>
+                </details>
+              ) : null}
               <div>
                 {item.evidenceLabels.map((label) => (
                   <small key={`${item.id}-${label}`}>{label}</small>

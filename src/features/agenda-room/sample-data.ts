@@ -164,6 +164,7 @@ export const agendaRoomSample: AgendaRoomViewModel = {
     deviceSegments: [],
     timeSegments: [],
     shoppingSearchTerms: [],
+    recommendationKeywords: [],
     recommendationEvidence: [],
   },
   agendaCards: [

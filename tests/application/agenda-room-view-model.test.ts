@@ -300,6 +300,7 @@ describe("buildAgendaRoomViewModel", () => {
       productName: "스티커씨 선물카드",
       landingFitLabel: "랜딩 적합도 점검",
     });
+    expect(keywordDashboard.recommendationKeywords.map((candidate) => candidate.keyword)).toContain("부처님오신날 선물카드");
   });
 
   it("추천 키워드 근거는 누적 수집 이력이 반복되어도 키워드와 추이 단위로 접는다", () => {
@@ -351,6 +352,14 @@ describe("buildAgendaRoomViewModel", () => {
     expect(evidence.filter((item) => item.sourceLabel === "네이버 키워드 수요" && item.title === "추석 선물카드")).toHaveLength(1);
     expect(evidence.filter((item) => item.sourceLabel === "네이버 키워드 수요" && item.title === "부처님오신날 선물카드")).toHaveLength(1);
     expect(evidence.filter((item) => item.sourceLabel === "데이터랩 추이" && item.title === "부처님오신날 선물카드")).toHaveLength(0);
+    expect(viewModel.keywordPerformanceDashboard.recommendationKeywords.filter((item) => item.keyword === "부처님오신날 선물카드")).toHaveLength(1);
+    expect(viewModel.keywordPerformanceDashboard.recommendationKeywords.map((candidate) => candidate.keyword)).toEqual(
+      expect.arrayContaining(["생일축하스티커"]),
+    );
+    const commerceEvidence = evidence.find((item) => item.title === "스티커씨 실제 주문 상품명");
+    expect(commerceEvidence?.summary).toContain("후보를 주문 상품명에서 추출했습니다");
+    expect(commerceEvidence?.summary).not.toContain("Thank you");
+    expect(commerceEvidence?.sourceDetailLabel).toContain("원천 상품명:");
     const buddhaSeasonEvidence = evidence.find((item) => item.sourceLabel === "음력 시즌 윈도우" && item.title === "부처님오신날");
     expect(buddhaSeasonEvidence?.summary.match(/부처님오신날 선물카드/g)).toHaveLength(1);
   });

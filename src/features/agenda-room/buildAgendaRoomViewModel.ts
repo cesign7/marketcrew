@@ -718,6 +718,8 @@ const KEYWORD_DASHBOARD_MIN_CLICKS = 10;
 const KEYWORD_DASHBOARD_MIN_COST = 1000;
 const KEYWORD_DASHBOARD_DEFAULT_TARGET_CPA = 20000;
 const KEYWORD_DASHBOARD_DEFAULT_TARGET_ROAS = 1.5;
+const PRODUCT_KEYWORD_PATTERN = /스티커|답례|구디백|어린이집|유치원|학원|선물|카드|포장|커피|드립|쿠폰/;
+const PRODUCT_KEYWORD_STOP_WORDS = new Set(["주문", "소량", "감사", "제작", "원형", "옵션"]);
 
 type KeywordAggregate = {
   id: string;
@@ -748,6 +750,11 @@ function buildKeywordPerformanceDashboard(input: {
   const keywordAggregates = aggregateKeywordPerformance(searchSnapshots);
   const sufficientAggregates = keywordAggregates.filter(isSufficientKeywordAggregate);
   const latestCheckedAt = latestCheckedAtLabel(reports, input.generatedAt);
+  const recommendationContext = buildKeywordRecommendationContext({
+    providerSyncReports: input.providerSyncReports,
+    seasonalKeywordPlans: input.seasonalKeywordPlans,
+    eventsById: input.eventsById,
+  });
 
   return {
     title: "키워드 성과 대시보드",
@@ -788,11 +795,8 @@ function buildKeywordPerformanceDashboard(input: {
     deviceSegments: buildDeviceSegmentRows(searchSnapshots).slice(0, 10),
     timeSegments: buildTimeSegmentRows(searchSnapshots).slice(0, 10),
     shoppingSearchTerms: buildShoppingSearchTermRows(shoppingSnapshots).slice(0, 10),
-    recommendationEvidence: buildKeywordRecommendationEvidence({
-      providerSyncReports: input.providerSyncReports,
-      seasonalKeywordPlans: input.seasonalKeywordPlans,
-      eventsById: input.eventsById,
-    }).slice(0, 10),
+    recommendationKeywords: recommendationContext.candidates.slice(0, 10),
+    recommendationEvidence: recommendationContext.evidence.slice(0, 10),
   };
 }
 
@@ -959,8 +963,9 @@ function buildShoppingSearchTermRows(
   return [...snapshots]
     .sort((left, right) => left.directConversionRate - right.directConversionRate || right.cost - left.cost || right.clicks - left.clicks)
     .map((snapshot, index) => {
-      const productName = snapshot.productGroupName ?? snapshot.mallName ?? "상품명 확인 필요";
+      const productName = snapshot.productGroupName ?? snapshot.mallName ?? "연결 상품 확인 필요";
       const tone: KeywordPerformanceRowTone = snapshot.directConversionRate === 0 ? "danger" : snapshot.directConversionRate < 0.02 ? "warning" : "neutral";
+      const needsProductMapping = !snapshot.productGroupName && !snapshot.mallName;
 
       return {
         id: `${snapshot.id}-${index}`,
@@ -974,7 +979,7 @@ function buildShoppingSearchTermRows(
         clicksLabel: `클릭 ${snapshot.clicks.toLocaleString("ko-KR")}회`,
         costLabel: `비용 ${snapshot.cost.toLocaleString("ko-KR")}원`,
         landingFitLabel: shoppingLandingFitLabel(snapshot.directConversionRate),
-        noteLabel: "상품명, 이미지, 랜딩 적합도를 함께 확인합니다.",
+        noteLabel: needsProductMapping ? "상품 그룹과 랜딩 연결을 먼저 확인합니다." : "상품명, 이미지, 랜딩 적합도를 함께 확인합니다.",
         tone,
       };
     });
@@ -992,57 +997,92 @@ function shoppingLandingFitLabel(directConversionRate: number): string {
   return "랜딩 유지 후보";
 }
 
-function buildKeywordRecommendationEvidence(input: {
+type KeywordRecommendationContext = {
+  candidates: KeywordPerformanceDashboardView["recommendationKeywords"];
+  evidence: KeywordPerformanceDashboardView["recommendationEvidence"];
+};
+
+function buildKeywordRecommendationContext(input: {
   providerSyncReports: ProviderSyncReport[];
   seasonalKeywordPlans: SeasonalKeywordAdPlan[];
   eventsById: Map<string, MarketingCalendarEvent>;
-}): KeywordPerformanceDashboardView["recommendationEvidence"] {
+}): KeywordRecommendationContext {
   const reportsByLatest = [...input.providerSyncReports].sort((left, right) => right.checkedAt.localeCompare(left.checkedAt));
-  const demandEvidence = latestUniqueKeywordDemandSnapshots(
+  const demandSnapshots = latestUniqueKeywordDemandSnapshots(
     reportsByLatest.flatMap((report) => report.keywordDemandSnapshots ?? []),
   )
     .sort(compareKeywordDemandSnapshots)
-    .slice(0, 4)
-    .map(keywordDemandEvidence);
-  const trendEvidence = latestUniqueSearchTrendSnapshots(
+    .slice(0, 4);
+  const trendSnapshots = latestUniqueSearchTrendSnapshots(
     reportsByLatest.flatMap((report) => report.searchTrendSnapshots ?? []),
   )
     .filter((snapshot) => maxTrendRatio(snapshot) > 0)
     .sort(compareSearchTrendSnapshots)
-    .slice(0, 3)
-    .map(searchTrendEvidence);
+    .slice(0, 3);
+  const demandCandidates = demandSnapshots.map(keywordDemandCandidate);
+  const demandEvidence = demandSnapshots.map(keywordDemandEvidence);
+  const trendEvidence = trendSnapshots.map(searchTrendEvidence);
+  const seasonCandidates = input.seasonalKeywordPlans.flatMap((plan) => seasonalKeywordCandidates(plan, input.eventsById.get(plan.eventId)));
   const seasonEvidence = input.seasonalKeywordPlans.slice(0, 3).map((plan) => seasonalKeywordEvidence(plan, input.eventsById.get(plan.eventId)));
-  const commerceEvidence = reportsByLatest.flatMap((report) => {
+  const commerceContext = buildCommerceKeywordRecommendationContext(reportsByLatest);
+
+  return {
+    candidates: dedupeKeywordRecommendationCandidates([...demandCandidates, ...commerceContext.candidates, ...seasonCandidates]),
+    evidence: dedupeKeywordRecommendationEvidence([...demandEvidence, ...trendEvidence, ...seasonEvidence, ...commerceContext.evidence]),
+  };
+}
+
+function buildCommerceKeywordRecommendationContext(reportsByLatest: ProviderSyncReport[]): KeywordRecommendationContext {
+  const candidates: KeywordRecommendationContext["candidates"] = [];
+  const evidenceItems: KeywordRecommendationContext["evidence"] = [];
+
+  for (const report of reportsByLatest) {
     const evidence: KeywordPerformanceDashboardView["recommendationEvidence"] = [];
 
     if (report.commerceAggregateSnapshot) {
       const snapshot = report.commerceAggregateSnapshot;
+      const extractedKeywords = extractProductKeywordCandidates(snapshot.topProductName);
+      candidates.push(
+        ...extractedKeywords.map((keyword, index) => ({
+          id: `keyword-candidate-commerce-${snapshot.id}-${index}`,
+          keyword,
+          brandLabel: brandLabelFromKey(snapshot.brandKey),
+          sourceLabel: "실제 주문 상품명",
+          reasonLabel: "최근 주문 상품명에서 반복 구매 문맥을 추출했습니다.",
+          evidenceLabels: [`근거 ${snapshot.id}`, `${snapshot.paidOrderCount.toLocaleString("ko-KR")}건 주문`],
+        })),
+      );
       evidence.push({
         id: `keyword-recommendation-commerce-${snapshot.id}`,
-        title: "실제 주문 상품명",
-        sourceLabel: brandLabelFromKey(snapshot.brandKey),
-        summary: snapshot.topProductName
-          ? `${snapshot.topProductName} 주문 흐름을 키워드 후보 근거로 연결합니다.`
-          : `${brandLabelFromKey(snapshot.brandKey)} 주문 흐름을 키워드 후보 근거로 연결합니다.`,
-        evidenceLabels: [`근거 ${snapshot.id}`, "실제 주문 집계"],
+        title: `${brandLabelFromKey(snapshot.brandKey)} 실제 주문 상품명`,
+        sourceLabel: "실제 주문 집계",
+        summary:
+          extractedKeywords.length > 0
+            ? `${extractedKeywords.slice(0, 4).join(", ")} 후보를 주문 상품명에서 추출했습니다.`
+            : `${brandLabelFromKey(snapshot.brandKey)} 주문 흐름을 키워드 후보 근거로 둡니다.`,
+        evidenceLabels: [`근거 ${snapshot.id}`, `${snapshot.paidOrderCount.toLocaleString("ko-KR")}건 주문`, "원천 상품명 접기"],
+        sourceDetailLabel: snapshot.topProductName ? `원천 상품명: ${snapshot.topProductName}` : undefined,
       });
     }
 
     if (report.shopAggregateSnapshot) {
       const snapshot = report.shopAggregateSnapshot;
+      candidates.push(...shopFlowKeywordCandidates(snapshot.brandKey, snapshot.id, snapshot.orderCount, snapshot.repeatCustomerCount));
       evidence.push({
         id: `keyword-recommendation-shop-${snapshot.id}`,
-        title: "쇼핑몰 주문 흐름",
-        sourceLabel: brandLabelFromKey(snapshot.brandKey),
-        summary: `${brandLabelFromKey(snapshot.brandKey)} 주문/재구매 흐름을 키워드 후보 근거로 연결합니다.`,
-        evidenceLabels: [`근거 ${snapshot.id}`, "실제 주문 집계"],
+        title: `${brandLabelFromKey(snapshot.brandKey)} 쇼핑몰 주문 흐름`,
+        sourceLabel: "실제 주문 집계",
+        summary: `${snapshot.orderCount.toLocaleString("ko-KR")}건 주문과 재구매 ${snapshot.repeatCustomerCount.toLocaleString(
+          "ko-KR",
+        )}명 흐름에서 재구매·선물형 후보를 봅니다.`,
+        evidenceLabels: [`근거 ${snapshot.id}`, "쇼핑몰 주문/재구매 집계"],
       });
     }
 
-    return evidence;
-  });
+    evidenceItems.push(...evidence);
+  }
 
-  return dedupeKeywordRecommendationEvidence([...demandEvidence, ...trendEvidence, ...seasonEvidence, ...commerceEvidence]);
+  return { candidates, evidence: evidenceItems };
 }
 
 function latestUniqueKeywordDemandSnapshots(snapshots: KeywordDemandSnapshot[]): KeywordDemandSnapshot[] {
@@ -1098,6 +1138,25 @@ function dedupeKeywordRecommendationEvidence(
   return [...uniqueEvidence.values()];
 }
 
+function dedupeKeywordRecommendationCandidates(
+  candidates: KeywordPerformanceDashboardView["recommendationKeywords"],
+): KeywordPerformanceDashboardView["recommendationKeywords"] {
+  const uniqueCandidates = new Map<string, KeywordPerformanceDashboardView["recommendationKeywords"][number]>();
+
+  for (const candidate of candidates) {
+    const brandKey =
+      candidate.brandLabel === "브랜드 배정 필요" || candidate.brandLabel === "시즌 캠페인"
+        ? "공통"
+        : normalizeRecommendationKey(candidate.brandLabel);
+    const key = [brandKey, normalizeRecommendationKey(candidate.keyword)].join("::");
+    if (!uniqueCandidates.has(key)) {
+      uniqueCandidates.set(key, candidate);
+    }
+  }
+
+  return [...uniqueCandidates.values()];
+}
+
 function normalizeRecommendationKey(value: string): string {
   return value.replace(/\s+/g, "").toLowerCase();
 }
@@ -1117,6 +1176,17 @@ function keywordDemandEvidence(snapshot: KeywordDemandSnapshot): KeywordPerforma
       `모바일 ${Number(snapshot.monthlyMobileSearches ?? 0).toLocaleString("ko-KR")}회`,
       `경쟁 ${competitionLabel(snapshot.competitionIndex)}`,
     ],
+  };
+}
+
+function keywordDemandCandidate(snapshot: KeywordDemandSnapshot): KeywordPerformanceDashboardView["recommendationKeywords"][number] {
+  return {
+    id: `keyword-candidate-demand-${snapshot.id}`,
+    keyword: snapshot.keyword,
+    brandLabel: "브랜드 배정 필요",
+    sourceLabel: "네이버 키워드 수요",
+    reasonLabel: `월 검색 ${keywordDemandVolume(snapshot).toLocaleString("ko-KR")}회 · 경쟁 ${competitionLabel(snapshot.competitionIndex)}`,
+    evidenceLabels: [`근거 ${snapshot.id}`],
   };
 }
 
@@ -1148,6 +1218,84 @@ function seasonalKeywordEvidence(
     summary: `${keywords.join(", ") || "키워드 후보"}를 전년도 같은 ${calendarBasis} 이벤트 윈도우와 함께 봅니다.`,
     evidenceLabels: [`단계 ${seasonStageLabel(plan.seasonStage)}`, "전년도/명절 윈도우 비교", `근거 ${plan.id}`],
   };
+}
+
+function seasonalKeywordCandidates(
+  plan: SeasonalKeywordAdPlan,
+  event?: MarketingCalendarEvent,
+): KeywordPerformanceDashboardView["recommendationKeywords"] {
+  const eventName = event?.name ?? "시즌";
+  return uniqueKeywordLabels([...plan.keywordSet.add, ...plan.keywordSet.expand])
+    .slice(0, 4)
+    .map((keyword, index) => ({
+      id: `keyword-candidate-season-${plan.id}-${index}`,
+      keyword,
+      brandLabel: "시즌 캠페인",
+      sourceLabel: `${eventName} 시즌`,
+      reasonLabel: "전년도 같은 이벤트 윈도우와 함께 검증할 후보입니다.",
+      evidenceLabels: [`근거 ${plan.id}`, `단계 ${seasonStageLabel(plan.seasonStage)}`],
+    }));
+}
+
+function shopFlowKeywordCandidates(
+  brandKey: string,
+  evidenceId: string,
+  orderCount: number,
+  repeatCustomerCount: number,
+): KeywordPerformanceDashboardView["recommendationKeywords"] {
+  const brandLabel = brandLabelFromKey(brandKey);
+  const keywords = repeatCustomerCount > 0 ? [`${brandLabel} 재구매`, `${brandLabel} 선물`] : [`${brandLabel} 선물`];
+
+  return keywords.map((keyword, index) => ({
+    id: `keyword-candidate-shop-${evidenceId}-${index}`,
+    keyword,
+    brandLabel,
+    sourceLabel: "쇼핑몰 주문 흐름",
+    reasonLabel: `${orderCount.toLocaleString("ko-KR")}건 주문 · 재구매 ${repeatCustomerCount.toLocaleString("ko-KR")}명`,
+    evidenceLabels: [`근거 ${evidenceId}`],
+  }));
+}
+
+function extractProductKeywordCandidates(productName?: string): string[] {
+  if (!productName) {
+    return [];
+  }
+
+  const rawTokens = productName
+    .split(/[\s,/()_\-[\]{}·]+/)
+    .map((token) => token.replace(/[^\p{Script=Hangul}A-Za-z0-9]/gu, "").trim())
+    .filter((token) => token.length >= 2 && !/^\d+$/.test(token));
+  const tokens = uniqueKeywordLabels(rawTokens);
+  const hasSticker = tokens.some((token) => token.includes("스티커"));
+  const hasReplyGift = tokens.some((token) => token.includes("답례"));
+  const candidates: string[] = [];
+
+  if (tokens.some((token) => token.includes("생일축하스티커"))) {
+    candidates.push("생일축하스티커");
+  }
+  if (hasSticker && hasReplyGift) {
+    candidates.push("답례품 스티커");
+  }
+  if (tokens.some((token) => token.includes("어린이집")) && hasReplyGift) {
+    candidates.push("어린이집 답례품");
+  }
+  if (tokens.some((token) => token.includes("유치원")) && hasReplyGift) {
+    candidates.push("유치원 답례품");
+  }
+  if (tokens.some((token) => token.includes("구디백")) && hasSticker) {
+    candidates.push("구디백 스티커");
+  }
+
+  candidates.push(
+    ...tokens.filter((token) => {
+      if (PRODUCT_KEYWORD_STOP_WORDS.has(token)) {
+        return false;
+      }
+      return token.length <= 16 && PRODUCT_KEYWORD_PATTERN.test(token);
+    }),
+  );
+
+  return uniqueKeywordLabels(candidates).slice(0, 5);
 }
 
 function uniqueKeywordLabels(keywords: string[]): string[] {

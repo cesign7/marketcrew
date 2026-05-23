@@ -1299,6 +1299,7 @@ button:disabled {
 .keyword-rank-tags,
 .keyword-rank-metrics,
 .shopping-term-metrics,
+.keyword-candidate-list article div,
 .keyword-evidence-list article div {
   display: flex;
   flex-wrap: wrap;
@@ -1310,6 +1311,7 @@ button:disabled {
 .keyword-rank-tags span,
 .keyword-rank-metrics span,
 .shopping-term-metrics span,
+.keyword-candidate-list small,
 .keyword-evidence-list small {
   display: inline-flex;
   align-items: center;
@@ -1350,6 +1352,10 @@ button:disabled {
 
 .keyword-dashboard-grid.compact {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.keyword-dashboard-grid.single {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .keyword-dashboard-panel {
@@ -1397,6 +1403,7 @@ button:disabled {
 .keyword-rank-list,
 .keyword-segment-list,
 .shopping-term-list,
+.keyword-candidate-list,
 .keyword-evidence-list {
   display: grid;
   gap: 8px;
@@ -1409,6 +1416,7 @@ button:disabled {
 .keyword-rank-item,
 .keyword-segment-row,
 .shopping-term-row,
+.keyword-candidate-card,
 .keyword-evidence-list article {
   min-width: 0;
   border: 1px solid var(--line);
@@ -1439,6 +1447,7 @@ button:disabled {
 .keyword-rank-main,
 .keyword-segment-row > div,
 .shopping-term-row > div,
+.keyword-candidate-card,
 .keyword-evidence-list article {
   min-width: 0;
 }
@@ -1446,6 +1455,7 @@ button:disabled {
 .keyword-rank-main strong,
 .keyword-segment-row strong,
 .shopping-term-row strong,
+.keyword-candidate-card strong,
 .keyword-evidence-list strong {
   display: block;
   overflow: hidden;
@@ -1458,6 +1468,8 @@ button:disabled {
 
 .keyword-rank-main p,
 .keyword-segment-row p,
+.keyword-dashboard-note,
+.keyword-candidate-card p,
 .keyword-evidence-list p {
   margin: 6px 0 0;
   color: var(--ink-muted);
@@ -1494,6 +1506,7 @@ button:disabled {
 .keyword-segment-row > div:first-child span,
 .shopping-term-row small,
 .shopping-term-row > div:first-of-type span,
+.keyword-candidate-card > span,
 .keyword-evidence-list article > span {
   display: block;
   overflow: hidden;
@@ -1529,6 +1542,43 @@ button:disabled {
   display: grid;
   gap: 6px;
   padding: 9px;
+}
+
+.keyword-candidate-card {
+  display: grid;
+  gap: 6px;
+  padding: 9px;
+  border-color: #c8d9ef;
+  background: #f2f7fd;
+}
+
+.keyword-dashboard-note {
+  margin: -2px 0 0;
+  font-weight: 800;
+}
+
+.keyword-source-detail {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 7px 8px;
+}
+
+.keyword-source-detail summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.keyword-source-detail p {
+  max-height: 90px;
+  overflow: auto;
+  margin-top: 7px;
+  word-break: keep-all;
 }
 
 .keyword-rank-item.tone-good,
