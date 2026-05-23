@@ -3057,6 +3057,14 @@ button:disabled {
   background: #f6f8f7;
 }
 
+.sync-snapshot-list span,
+.opportunity-evidence-grid span {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sync-note-list {
   display: grid;
   padding-left: 18px;
@@ -3562,9 +3570,18 @@ button:disabled {
   display: inline-flex;
   align-items: center;
   width: fit-content;
+  max-width: 100%;
   gap: 7px;
   margin-top: 12px;
   color: var(--teal-strong);
+}
+
+.target-label span {
+  display: inline-block;
+  max-width: min(100%, 220px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product-opportunity-card footer {
@@ -3999,11 +4016,15 @@ button:disabled {
 .keyword-chips span {
   border: 1px solid var(--line);
   border-radius: 999px;
+  max-width: 220px;
+  overflow: hidden;
   padding: 6px 9px;
   background: #fbfcfa;
   color: var(--ink);
   font-size: 12px;
   font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .keyword-card p {

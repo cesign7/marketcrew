@@ -17,47 +17,52 @@ export function ProductGrowthOpportunityPanel({ opportunities }: ProductGrowthOp
       </div>
       {opportunities.length > 0 ? (
         <div className="product-opportunity-list">
-          {opportunities.map((opportunity) => (
-            <article className="product-opportunity-card" key={opportunity.id}>
-              <header>
-                <span className="product-opportunity-thumb">
-                  <img src={opportunity.productImageUrl} alt={opportunity.productImageAlt} loading="lazy" />
-                  <span className="product-opportunity-icon" aria-hidden="true">
-                    <OpportunityIcon kindLabel={opportunity.kindLabel} />
+          {opportunities.map((opportunity) => {
+            const displayTitle = truncateProductText(opportunity.title, 28);
+            const displayTargetLabel = truncateProductText(opportunity.targetLabel, 16);
+
+            return (
+              <article className="product-opportunity-card" key={opportunity.id}>
+                <header>
+                  <span className="product-opportunity-thumb">
+                    <img src={opportunity.productImageUrl} alt={opportunity.productImageAlt} loading="lazy" />
+                    <span className="product-opportunity-icon" aria-hidden="true">
+                      <OpportunityIcon kindLabel={opportunity.kindLabel} />
+                    </span>
                   </span>
-                </span>
-                <div className="product-opportunity-title-block">
-                  <span className="eyebrow">{opportunity.owner} · {opportunity.kindLabel}</span>
-                  <div className="product-opportunity-title-wrap">
-                    <h3 tabIndex={0} title={opportunity.title}>{opportunity.title}</h3>
-                    <span className="product-opportunity-title-popover" aria-hidden="true">{opportunity.title}</span>
+                  <div className="product-opportunity-title-block">
+                    <span className="eyebrow">{opportunity.owner} · {opportunity.kindLabel}</span>
+                    <div className="product-opportunity-title-wrap">
+                      <h3 tabIndex={0} title={opportunity.title}>{displayTitle}</h3>
+                      <span className="product-opportunity-title-popover" aria-hidden="true">{opportunity.title}</span>
+                    </div>
                   </div>
+                  <span className="confidence-pill">{opportunity.confidenceLabel}</span>
+                </header>
+                <p>{opportunity.summary}</p>
+                <div className="target-label" title={opportunity.targetLabel}>
+                  <ShieldCheck size={15} aria-hidden="true" />
+                  <span>{displayTargetLabel}</span>
                 </div>
-                <span className="confidence-pill">{opportunity.confidenceLabel}</span>
-              </header>
-              <p>{opportunity.summary}</p>
-              <div className="target-label">
-                <ShieldCheck size={15} aria-hidden="true" />
-                <span>{opportunity.targetLabel}</span>
-              </div>
-              <div className="keyword-chips" aria-label={`${opportunity.title} 키워드 후보`}>
-                {opportunity.keywords.length > 0 ? (
-                  opportunity.keywords.map((keyword) => <span key={keyword}>{keyword}</span>)
-                ) : (
-                  <span>키워드 추가 수집 필요</span>
-                )}
-              </div>
-              <div className="opportunity-evidence-grid">
-                {opportunity.evidenceLabels.map((label) => (
-                  <span key={label}>{label}</span>
-                ))}
-              </div>
-              <footer>
-                <strong>{opportunity.nextAction}</strong>
-                <span>{opportunity.guardrail}</span>
-              </footer>
-            </article>
-          ))}
+                <div className="keyword-chips" aria-label={`${opportunity.title} 키워드 후보`}>
+                  {opportunity.keywords.length > 0 ? (
+                    opportunity.keywords.map((keyword) => <span key={keyword} title={keyword}>{truncateProductText(keyword, 18)}</span>)
+                  ) : (
+                    <span>키워드 추가 수집 필요</span>
+                  )}
+                </div>
+                <div className="opportunity-evidence-grid">
+                  {opportunity.evidenceLabels.map((label) => (
+                    <span key={label} title={label}>{truncateProductText(label, 24)}</span>
+                  ))}
+                </div>
+                <footer>
+                  <strong>{opportunity.nextAction}</strong>
+                  <span>{opportunity.guardrail}</span>
+                </footer>
+              </article>
+            );
+          })}
         </div>
       ) : (
         <div className="empty-panel">
@@ -79,4 +84,15 @@ function OpportunityIcon({ kindLabel }: { kindLabel: string }) {
   }
 
   return <Search size={18} aria-hidden="true" />;
+}
+
+function truncateProductText(value: string, maxLength: number): string {
+  const normalized = value.trim();
+  const characters = [...normalized];
+
+  if (characters.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${characters.slice(0, maxLength).join("").trimEnd()}...`;
 }
