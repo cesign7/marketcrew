@@ -337,6 +337,8 @@ QA Verdict:    QA_PASS
 - 실제 LLM 호출은 dry-run 전용에서 집계 근거 입력과 AgentRun 감사를 남기는 읽기 전용 Gemini 파일럿으로 확장했다.
 - 검색광고 결재안은 키워드/예산뿐 아니라 광고 유형, 적용 위치, 기기/매체, 시간대, 제외 키워드 범위까지 결재 전에 고르게 바꿨다.
 - 기존 저장 결재안도 내부 초안/채널/외부 반영 경계/성과 확인 실행 범위를 갖도록 소급 적용했다.
+- 검색광고 저성과 판단은 LLM이 먼저 추측하지 않고 `SearchAdPerformanceSnapshot`과 규칙 엔진이 낮은 전환율, 주문 없는 클릭, 높은 CPA, 기기/시간대 차이, 전환 추적 미확인을 먼저 판정하도록 확장했다.
+- 조정 가능한 광고 성과 안건은 그로, 전환 추적/주문 연결 검증은 데이가 맡도록 담당자 배정과 인사과 기본 롤모델을 보강했다.
 
 **Fixed:**
 
@@ -354,3 +356,4 @@ QA Verdict:    QA_PASS
 | 1.3 | 2026-05-23 | Added real provider collection reset and read-only Gemini LLM pilot evidence | Codex |
 | 1.4 | 2026-05-23 | Added AI-proposed search ad execution scope and owner-editable decision recording | Codex |
 | 1.5 | 2026-05-23 | Added execution scope backfill API and applied it to local saved approval requests | Codex |
+| 1.6 | 2026-05-23 | Added Search Ad performance rule engine, owner assignment, AI evidence summary, and data contract fields before LLM judgment | Codex |

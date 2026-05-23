@@ -186,6 +186,7 @@ function buildGeminiPlannerResult(input: {
       report.shopAggregateSnapshot?.id,
       ...(report.keywordDemandSnapshots ?? []).map((snapshot) => snapshot.id),
       ...(report.searchTrendSnapshots ?? []).map((snapshot) => snapshot.id),
+      ...(report.searchAdPerformanceSnapshots ?? []).map((snapshot) => snapshot.id),
     ]),
   ].filter((id): id is string => Boolean(id)));
   const selectedEvidenceIds = uniqueStrings(asStringArray(input.parsed.evidenceIds)).filter((id) => allowedEvidenceIds.has(id));
@@ -275,6 +276,25 @@ function summarizeProviderEvidence(context: GeminiPlannerContext) {
       evidenceNotes: report.evidenceNotes,
       keywordDemandSnapshotCount: report.keywordDemandSnapshots?.length ?? 0,
       searchTrendSnapshotCount: report.searchTrendSnapshots?.length ?? 0,
+      searchAdPerformanceSnapshotCount: report.searchAdPerformanceSnapshots?.length ?? 0,
+      searchAdPerformanceSnapshots: (report.searchAdPerformanceSnapshots ?? []).slice(0, 8).map((snapshot) => ({
+        id: snapshot.id,
+        brandKey: snapshot.brandKey,
+        campaignName: snapshot.campaignName,
+        adGroupName: snapshot.adGroupName,
+        keyword: snapshot.keyword,
+        device: snapshot.device,
+        timeSlot: snapshot.timeSlot,
+        windowDays: snapshot.windowDays,
+        clicks: snapshot.clicks,
+        cost: snapshot.cost,
+        conversions: snapshot.conversions,
+        revenue: snapshot.revenue,
+        targetCpa: snapshot.targetCpa,
+        targetRoas: snapshot.targetRoas,
+        trackingVerified: snapshot.trackingVerified,
+        dataScope: snapshot.dataScope,
+      })),
       commerceAggregateSnapshot: report.commerceAggregateSnapshot
         ? {
             id: report.commerceAggregateSnapshot.id,

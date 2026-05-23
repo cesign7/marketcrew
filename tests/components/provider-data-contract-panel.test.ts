@@ -13,6 +13,10 @@ describe("ProviderDataContractPanel", () => {
     expect(html).toContain('href="#smartstore-stored"');
     expect(html).toContain("relKeyword");
     expect(html).toContain("KeywordDemandSnapshot.keyword");
+    expect(html).toContain("GET /stats");
+    expect(html).toContain("SearchAdPerformanceSnapshot.keyword");
+    expect(html).toContain("pcMblTp");
+    expect(html).toContain("hh24");
     expect(html).toContain("CommerceAggregateSnapshot.brandKey");
     expect(html).toContain("topProductImageUrl");
     expect(html).toContain("ShopAggregateSnapshot.brandKey");

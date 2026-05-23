@@ -229,6 +229,7 @@ function buildProviderSyncAgentRun(report: ProviderSyncReport): AgentRun {
       ...(report.generatedSignal?.evidenceRowIds ?? []),
       ...(report.keywordDemandSnapshots ?? []).map((snapshot) => snapshot.id),
       ...(report.searchTrendSnapshots ?? []).map((snapshot) => snapshot.id),
+      ...(report.searchAdPerformanceSnapshots ?? []).map((snapshot) => snapshot.id),
       report.commerceAggregateSnapshot?.id,
       report.shopAggregateSnapshot?.id,
     ].filter(Boolean) as string[]),

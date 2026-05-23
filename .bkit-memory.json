@@ -2,7 +2,7 @@
   "project": "marketcrew2",
   "currentFeature": "ai-marketing-character-ops",
   "phase": "completed",
-  "updatedAt": "2026-05-23T15:40:42+09:00",
+  "updatedAt": "2026-05-23T16:03:36+09:00",
   "features": {
     "ai-marketing-character-ops": {
       "phase": "completed",
@@ -13,9 +13,9 @@
       "analysisPath": "docs/03-analysis/ai-marketing-character-ops.analysis.md",
       "qaPath": "docs/05-qa/ai-marketing-character-ops.qa-report.md",
       "reportPath": "docs/04-report/ai-marketing-character-ops.report.md",
-      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-27.md",
+      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-28.md",
       "matchRate": 100,
-      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속 module-29에서 실제 AI 파일럿 재실행 전 production DB에 남은 예전 channel-balance 교차 브랜드 결재안이 AI 후보로 섞이지 않도록 차단했다. LLM 입력, Railway llm-real-pilot API, Gemini 프롬프트/응답 정규화, 운영 화면 AI 파일럿 판단 패널이 같은 브랜드 분리 기준을 사용한다. 스티커씨와 커피프린트는 서로 비교하지 않고, 스마트스토어/자체몰/향후 커피프린트 스마트스토어는 각 브랜드 안의 판매채널로 다룬다. 실제 provider write는 계속 차단한다."
+      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속 module-30에서 실제 AI 판단 전에 검색광고 성과 규칙 엔진을 추가했다. SearchAdPerformanceSnapshot은 브랜드별 집계 성과만 저장하고, buildAdPerformanceDiagnoses가 주문 없는 클릭, 낮은 전환율, 높은 CPA, 기기/시간대 성과 차이, 전환 추적 미확인을 먼저 판정한다. 조정 가능한 광고 성과 안건은 그로, 추적/주문 연결 검증은 데이가 맡는다. Gemini 입력, AI 판독 근거, AgentRun, Outcome 기준선, /data 명세는 같은 성과 스냅샷 근거 ID를 추적한다. 실제 provider write는 계속 차단한다."
     },
     "ops-persistence-provenance-foundation": {
       "phase": "completed",

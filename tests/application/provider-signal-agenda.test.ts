@@ -45,6 +45,37 @@ describe("buildProviderSignalAgendaArtifacts", () => {
     expect(artifacts.agendaCandidates).toEqual([]);
     expect(artifacts.approvalRequests).toEqual([]);
   });
+
+  it("검색광고 성과 이상신호를 그로의 저성과 키워드 조정 안건으로 올린다", () => {
+    const artifacts = buildProviderSignalAgendaArtifacts({
+      providerSyncReports: [buildSearchAdPerformanceReport()],
+      signals: [],
+      generatedAt: "2026-05-23T08:00:00.000Z",
+      moaSynthesisReportId: "moa-synthesis-sample-001",
+    });
+
+    expect(artifacts.agendaCandidates.map((candidate) => [candidate.character, candidate.title])).toEqual([
+      ["gro", "저성과 검색광고 키워드 조정 안건"],
+    ]);
+    expect(artifacts.agendaCandidates[0]?.summary).toContain("주문 없는 키워드");
+    expect(artifacts.agendaCandidates[0]?.summary).toContain("기기/시간대");
+    expect(artifacts.approvalRequests).toHaveLength(1);
+    expect(artifacts.approvalRequests[0]).toMatchObject({
+      title: "저성과 검색광고 키워드 조정 안건",
+      status: "PENDING",
+      dataConfidence: "READY_TO_APPROVE",
+      executionPlan: {
+        workType: "SEARCH_AD_BID_BUDGET",
+        executorKey: "internal-search-ad-performance-planner",
+        requiresWriteGate: false,
+      },
+    });
+    expect(artifacts.approvalRequests[0]?.executionPlan.executionScopeProposal?.fields.map((field) => field.label)).toContain(
+      "기기/매체",
+    );
+    expect(artifacts.characterReports.map((report) => report.character)).toEqual(["gro"]);
+    expect(artifacts.performanceCheckpoints[0]?.metrics).toEqual(expect.arrayContaining(["CVR", "CPA", "ROAS"]));
+  });
 });
 
 function buildSyncedProviderReports(): ProviderSyncReport[] {
@@ -131,4 +162,87 @@ function buildSyncedProviderReports(): ProviderSyncReport[] {
       },
     },
   ];
+}
+
+function buildSearchAdPerformanceReport(): ProviderSyncReport {
+  return {
+    id: "provider-sync-search-ad-performance-2026-05-23",
+    provider: "search_ad",
+    label: "네이버 키워드광고 성과 읽기 전용 수집",
+    status: "SYNCED",
+    readOnly: true,
+    networkAttempted: true,
+    writeAttempted: false,
+    endpoint: "https://api.searchad.naver.com/stats",
+    sourceUrl: "http://naver.github.io/searchad-apidoc/",
+    missingEnvKeys: [],
+    evidenceNotes: ["키워드/기기/시간대 성과 집계만 저장했습니다."],
+    checkedAt: "2026-05-23T08:00:00.000Z",
+    httpStatus: 200,
+    searchAdPerformanceSnapshots: [
+      {
+        id: "ad-perf-stickersee-no-order-2026-05-23",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignName: "스티커씨 검색광고",
+        adGroupName: "대표 상품",
+        keyword: "생일 답례품",
+        device: "ALL",
+        timeSlot: "09-23",
+        windowDays: 7,
+        impressions: 2400,
+        clicks: 64,
+        cost: 38400,
+        conversions: 0,
+        revenue: 0,
+        targetCpa: 12000,
+        targetRoas: 2.5,
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+      {
+        id: "ad-perf-stickersee-mobile-2026-05-23",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignName: "스티커씨 검색광고",
+        adGroupName: "대표 상품",
+        keyword: "생일축하스티커",
+        device: "MOBILE",
+        timeSlot: "18-23",
+        windowDays: 7,
+        impressions: 1800,
+        clicks: 120,
+        cost: 72000,
+        conversions: 2,
+        revenue: 60000,
+        targetCpa: 12000,
+        targetRoas: 2.5,
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+      {
+        id: "ad-perf-stickersee-pc-2026-05-23",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignName: "스티커씨 검색광고",
+        adGroupName: "대표 상품",
+        keyword: "생일축하스티커",
+        device: "PC",
+        timeSlot: "09-17",
+        windowDays: 7,
+        impressions: 1200,
+        clicks: 80,
+        cost: 40000,
+        conversions: 8,
+        revenue: 240000,
+        targetCpa: 12000,
+        targetRoas: 2.5,
+        trackingVerified: true,
+        collectedAt: "2026-05-23T08:00:00.000Z",
+        dataScope: "aggregate_only",
+      },
+    ],
+  };
 }

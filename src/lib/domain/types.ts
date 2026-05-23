@@ -74,6 +74,7 @@ export interface ProviderSyncReport {
   failureReason?: string;
   keywordDemandSnapshots?: KeywordDemandSnapshot[];
   searchTrendSnapshots?: SearchTrendSnapshot[];
+  searchAdPerformanceSnapshots?: SearchAdPerformanceSnapshot[];
   commerceAggregateSnapshot?: CommerceAggregateSnapshot;
   shopAggregateSnapshot?: ShopAggregateSnapshot;
   generatedSignal?: Signal;
@@ -363,6 +364,28 @@ export interface SearchTrendSnapshot {
   ratios: Array<{ period: string; ratio: number }>;
   collectedAt: string;
   note: "relative_ratio_not_absolute_volume";
+}
+
+export interface SearchAdPerformanceSnapshot {
+  id: string;
+  provider: "naver_search_ad";
+  brandKey: string;
+  campaignName: string;
+  adGroupName: string;
+  keyword: string;
+  device: "PC" | "MOBILE" | "ALL";
+  timeSlot?: string;
+  windowDays: number;
+  impressions: number;
+  clicks: number;
+  cost: number;
+  conversions: number;
+  revenue: number;
+  targetCpa?: number;
+  targetRoas?: number;
+  trackingVerified: boolean;
+  collectedAt: string;
+  dataScope: "aggregate_only";
 }
 
 export interface SeasonalKeywordAdPlan {

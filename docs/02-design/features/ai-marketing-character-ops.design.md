@@ -392,6 +392,46 @@ Design decisions:
 
 다섯 모듈은 write gate, 배포 안전장치, rollback 근거가 명시적으로 열리기 전까지 모두 read-only로 유지한다. 화면 문구는 한국어로 쓰되, 원천 필드 상세 안의 provider 필드명과 API 식별자는 정확성을 위해 원문을 유지한다.
 
+#### 검색광고 성과 규칙 엔진
+
+`module-30`은 `module-16`의 성과 분해 수집을 실제 LLM 판단 전에 사용할 수 있는 규칙 엔진 계약으로 고정한다. 네이버 검색광고 `/stats` 계열 집계는 원천 행이 아니라 아래 요약 타입으로 저장한다.
+
+```ts
+type SearchAdPerformanceSnapshot = {
+  id: string;
+  provider: "naver_search_ad";
+  brandKey: string;
+  campaignName: string;
+  adGroupName: string;
+  keyword: string;
+  device: "PC" | "MOBILE" | "ALL";
+  timeSlot?: string;
+  windowDays: number;
+  impressions: number;
+  clicks: number;
+  cost: number;
+  conversions: number;
+  revenue: number;
+  targetCpa?: number;
+  targetRoas?: number;
+  trackingVerified: boolean;
+  dataScope: "aggregate_only";
+};
+```
+
+판정 순서는 deterministic rules first, LLM second다.
+
+| 규칙 | 담당 | 안건화 |
+|---|---|---|
+| `TRACKING_UNVERIFIED` | 데이 | 전환 추적/주문 연결 근거 확인 요청 |
+| `CLICKS_NO_ORDER` | 그로 | 일시중지, 입찰 하향, 제외 키워드, 랜딩 점검 안건 |
+| `LOW_CVR` | 그로 | 입찰 하향 또는 문구/랜딩 점검 안건 |
+| `HIGH_CPA` | 그로 | 예산 축소, 전환 좋은 키워드로 이동 안건 |
+| `DEVICE_GAP` | 그로 | PC/모바일 가중치 조정 또는 분리 집행 안건 |
+| `TIME_SLOT_GAP` | 그로 | 저성과 시간대 제외 또는 예산 집중 시간대 조정 안건 |
+
+Gemini planner prompt에는 `SearchAdPerformanceSnapshot`의 집계 요약과 근거 ID만 포함한다. provider sync AgentRun, AI 판독 근거, Outcome 기준선은 같은 snapshot ID를 추적한다.
+
 ### 3.5 LLM 자유 탐색과 근거 요청 루프
 
 정형 `SignalSummary`는 LLM 입력 비용을 통제하기 위한 기본 입력이다. 다만 캐릭터는 이 요약만 해석하는 수동 보고자가 아니라, 정해진 신호 밖의 조합을 `HypothesisCandidate`로 제안하고 필요한 근거를 `EvidenceRequest`로 요청할 수 있어야 한다.
@@ -922,6 +962,7 @@ src/
 | AI 실행 큐 모의 실행 | `module-22` | 비용 가드 안에서 실제 호출 전 입력 범위, 토큰, 근거, 감사 기록을 큐로 고정 | Done in iteration 17 |
 | 결재 실행 범위 선택 | `module-26` | AI가 검색광고 실행 범위를 제안하고 대표가 그대로 확정하거나 수정값을 저장 | Done in iteration 24 |
 | 실행 범위 소급 적용 | `module-27` | 기존 저장 결재안과 대표 결정에 실행 범위 제안/선택값을 백필 | Done in iteration 25 |
+| 검색광고 성과 규칙 엔진 | `module-30` | 낮은 전환율, 주문 없는 클릭, 높은 CPA, 기기/시간대 차이, 전환 추적 미확인을 LLM 전 규칙으로 판정하고 그로/데이에 배정 | Done in iteration 28 |
 
 #### Recommended Session Plan
 
@@ -953,3 +994,4 @@ src/
 | 0.4 | 2026-05-23 | Added AI execution queue dry-run contract, API, and AgentRun audit boundary before live LLM adapter | Codex |
 | 0.5 | 2026-05-23 | Added owner-editable AI execution scope proposal contract for search ad approvals | Codex |
 | 0.6 | 2026-05-23 | Added execution scope backfill API for saved approvals and decisions | Codex |
+| 0.7 | 2026-05-23 | Added Search Ad performance rule engine contract and character assignment before LLM judgment | Codex |

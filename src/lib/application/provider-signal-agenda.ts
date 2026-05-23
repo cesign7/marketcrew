@@ -10,9 +10,11 @@ import type {
   PerformanceCheckpoint,
   ProviderSyncReport,
   RiskLevel,
+  SearchAdPerformanceSnapshot,
   ShopAggregateSnapshot,
   Signal,
 } from "../domain";
+import { buildAdPerformanceDiagnoses, type AdPerformanceDiagnosis } from "./ad-performance-diagnostics";
 import { buildExecutionScopeProposalForApproval } from "./execution-scope-proposal";
 
 export type ProviderSignalAgendaArtifacts = {
@@ -33,10 +35,20 @@ export function buildProviderSignalAgendaArtifacts(input: {
   const signalsById = new Map(input.signals.map((signal) => [signal.id, signal]));
   const commerceReport = latestSyncedReport(input.providerSyncReports, "smartstore", "commerceAggregateSnapshot");
   const shopReport = latestSyncedReport(input.providerSyncReports, "shop", "shopAggregateSnapshot");
+  const searchAdPerformanceReport = latestSyncedReport(input.providerSyncReports, "search_ad", "searchAdPerformanceSnapshots");
+  const searchAdPerformanceDiagnoses = searchAdPerformanceReport
+    ? buildAdPerformanceDiagnoses({
+        snapshots: searchAdPerformanceReport.searchAdPerformanceSnapshots ?? [],
+        generatedAt,
+      })
+    : [];
 
   const agendaCandidates = [
     commerceReport ? buildCommerceAgendaCandidate(commerceReport, signalsById, generatedAt) : undefined,
     shopReport ? buildShopAgendaCandidate(shopReport, signalsById, generatedAt) : undefined,
+    searchAdPerformanceReport && searchAdPerformanceDiagnoses.length > 0
+      ? buildSearchAdPerformanceAgendaCandidate(searchAdPerformanceReport, searchAdPerformanceDiagnoses, generatedAt)
+      : undefined,
   ].filter((candidate): candidate is AgendaCandidate => Boolean(candidate));
   const characterReports = buildCharacterReports(agendaCandidates, generatedAt);
   const approvalRequests = agendaCandidates.map((candidate) =>
@@ -48,7 +60,9 @@ export function buildProviderSignalAgendaArtifacts(input: {
         ? commerceReport
         : candidate.id.includes("youngcart")
           ? shopReport
-          : commerceReport ?? shopReport,
+          : candidate.id.includes("search-ad-performance")
+            ? searchAdPerformanceReport
+            : commerceReport ?? shopReport ?? searchAdPerformanceReport,
     }),
   );
   const performanceCheckpoints = buildPerformanceCheckpoints(approvalRequests, generatedAt);
@@ -103,6 +117,41 @@ function buildShopAgendaCandidate(
     opportunityIds: [snapshot.id],
     dataConfidence: confidence,
     duplicateKey: `provider-agenda:youngcart:${snapshot.brandKey}:${report.checkedAt.slice(0, 10)}`,
+    createdAt: generatedAt,
+  };
+}
+
+function buildSearchAdPerformanceAgendaCandidate(
+  report: ProviderSyncReport,
+  diagnoses: AdPerformanceDiagnosis[],
+  generatedAt: string,
+): AgendaCandidate {
+  const actionableDiagnoses = diagnoses.filter((diagnosis) => diagnosis.character === "gro");
+  const owner = actionableDiagnoses.length > 0 ? "gro" : "day";
+  const representativeDiagnoses = (actionableDiagnoses.length > 0 ? actionableDiagnoses : diagnoses).slice(0, 3);
+  const highSeverityCount = actionableDiagnoses.filter((diagnosis) => diagnosis.severity === "HIGH").length;
+  const evidenceIds = Array.from(new Set(representativeDiagnoses.flatMap((diagnosis) => diagnosis.evidenceIds)));
+  const title =
+    owner === "gro" ? "저성과 검색광고 키워드 조정 안건" : "검색광고 전환 추적 근거 확인 요청";
+
+  return {
+    id: `agenda-provider-search-ad-performance-${brandSlugFromSnapshots(report.searchAdPerformanceSnapshots ?? [])}-${report.checkedAt.slice(0, 10)}`,
+    character: owner,
+    title,
+    summary:
+      owner === "gro"
+        ? `주문 없는 키워드, 높은 CPA, 기기/시간대 성과 차이 등 검색광고 성과 이상신호 ${diagnoses.length.toLocaleString(
+            "ko-KR",
+          )}건을 데이터 규칙으로 확인했습니다. 그로가 입찰/예산/일시중지/제외 키워드 조정안을 상신합니다.`
+        : `검색광고 클릭/비용은 확인됐지만 전환 추적 검증이 필요합니다. 데이가 주문 연결과 추적 누락 여부를 먼저 확인해야 합니다.`,
+    severity: highSeverityCount > 0 ? "HIGH" : "MEDIUM",
+    sourceSignalIds: report.generatedSignal ? [report.generatedSignal.id] : [],
+    opportunityIds: evidenceIds,
+    dataConfidence: owner === "gro" ? "READY_TO_APPROVE" : "AD_TRACKING_UNVERIFIED",
+    duplicateKey: `provider-agenda:search-ad-performance:${brandSlugFromSnapshots(report.searchAdPerformanceSnapshots ?? [])}:${report.checkedAt.slice(
+      0,
+      10,
+    )}`,
     createdAt: generatedAt,
   };
 }
@@ -199,7 +248,12 @@ function buildMeasurementPlan(candidate: AgendaCandidate, generatedAt: string): 
       { label: "D+14", dueDate: addDays(baselineDate, 14) },
       { label: "D+30", dueDate: addDays(baselineDate, 30) },
     ],
-    metrics: candidate.character === "ripi" ? ["SALES", "CVR"] : ["SALES", "MARGIN", "ROAS"],
+    metrics:
+      candidate.character === "ripi"
+        ? ["SALES", "CVR"]
+        : candidate.character === "gro"
+          ? ["CTR", "CVR", "CPA", "ROAS", "SPEND", "SALES"]
+          : ["SALES", "MARGIN", "ROAS"],
   };
 }
 
@@ -222,7 +276,7 @@ function buildPerformanceCheckpoints(
     );
 }
 
-function latestSyncedReport<K extends "commerceAggregateSnapshot" | "shopAggregateSnapshot">(
+function latestSyncedReport<K extends "commerceAggregateSnapshot" | "shopAggregateSnapshot" | "searchAdPerformanceSnapshots">(
   reports: ProviderSyncReport[],
   provider: ProviderSyncReport["provider"],
   snapshotKey: K,
@@ -252,6 +306,10 @@ function requireSnapshot<TSnapshot extends CommerceAggregateSnapshot | ShopAggre
 }
 
 function workTypeFromCharacter(character: CharacterKey): ExecutionPlan["workType"] {
+  if (character === "gro") {
+    return "SEARCH_AD_BID_BUDGET";
+  }
+
   if (character === "pro") {
     return "PRODUCT_DRAFT";
   }
@@ -265,6 +323,7 @@ function workTypeFromCharacter(character: CharacterKey): ExecutionPlan["workType
 
 function executorKeyFromCharacter(character: CharacterKey): string {
   const keys: Partial<Record<CharacterKey, string>> = {
+    gro: "internal-search-ad-performance-planner",
     pro: "internal-product-opportunity-planner",
     ripi: "internal-crm-draft-planner",
     maru: "internal-margin-channel-reviewer",
@@ -275,6 +334,7 @@ function executorKeyFromCharacter(character: CharacterKey): string {
 
 function actionFromCharacter(character: CharacterKey): string {
   const actions: Partial<Record<CharacterKey, string>> = {
+    gro: "검색광고 저성과 키워드 조정 초안",
     pro: "상품별 키워드/랜딩 초안",
     ripi: "재구매 고객군 CRM 초안",
     maru: "채널 손익/예산 점검안",
@@ -314,4 +374,9 @@ function slugify(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9가-힣]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function brandSlugFromSnapshots(snapshots: SearchAdPerformanceSnapshot[]): string {
+  const brandKeys = Array.from(new Set(snapshots.map((snapshot) => snapshot.brandKey).filter(Boolean))).sort();
+  return slugify(brandKeys.join("-") || "unknown");
 }

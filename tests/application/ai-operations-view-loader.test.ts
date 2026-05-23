@@ -179,7 +179,9 @@ describe("AI operations view loader", () => {
 
     expect(profileText.moa).toContain("검증된 근거만 안건으로 승격");
     expect(profileText.gro).toContain("키워드·기기·시간대 조합");
+    expect(profileText.gro).toContain("주문 없는 클릭");
     expect(profileText.pro).toContain("상품·시즌·채널 조합 가설");
-    expect(profileText.day).toContain("근거 후보를 실제 원천 필드와 집계 기준으로 검증");
+    expect(profileText.day).toContain("규칙 엔진의 광고 성과 판정");
+    expect(profileText.day).toContain("전환 추적");
   });
 });

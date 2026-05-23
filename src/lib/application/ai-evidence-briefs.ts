@@ -45,16 +45,34 @@ function buildSearchAdBrief(report: ProviderSyncReport, generatedAt: string): Ai
     .filter((snapshot) => snapshot.rateLimitState !== "FAILED")
     .sort((left, right) => keywordSearchVolume(right) - keywordSearchVolume(left));
   const topSnapshots = snapshots.slice(0, 5);
+  const performanceSnapshots = [...(report.searchAdPerformanceSnapshots ?? [])]
+    .sort((left, right) => searchAdPerformanceRiskScore(right) - searchAdPerformanceRiskScore(left))
+    .slice(0, 5);
   const staleSnapshot = topSnapshots.some(
     (snapshot) => snapshot.rateLimitState !== "OK" || snapshot.cachedUntil <= generatedAt,
   );
   const decision =
     report.status !== "SYNCED"
       ? "APPROVAL_BLOCKED"
-      : staleSnapshot || topSnapshots.length < 2
+      : performanceSnapshots.length === 0 && (staleSnapshot || topSnapshots.length < 2)
         ? "NEEDS_MORE_EVIDENCE"
         : "JUDGMENT_READY";
   const strongest = topSnapshots[0];
+  const summaryParts =
+    decision === "APPROVAL_BLOCKED"
+      ? [`키워드광고 수집이 실패해 AI 판단 근거로 사용할 수 없습니다.${report.failureReason ? ` 사유: ${report.failureReason}` : ""}`]
+      : [
+          topSnapshots.length > 0
+            ? `상위 키워드 ${topSnapshots.length.toLocaleString("ko-KR")}개와 최대 월검색 ${keywordSearchVolume(
+                strongest,
+              ).toLocaleString("ko-KR")}회를 요약 근거로 사용합니다.`
+            : undefined,
+          performanceSnapshots.length > 0
+            ? `성과 이상 ${performanceSnapshots.length.toLocaleString("ko-KR")}건을 검색광고 규칙 엔진 근거로 사용합니다.`
+            : undefined,
+        ].filter((part): part is string => Boolean(part));
+  const summary =
+    summaryParts.length > 0 ? summaryParts.join(" ") : "키워드광고 요약 근거가 부족해 결재 전 보강이 필요합니다.";
 
   return buildBrief({
     id: `ai-evidence-${report.id}`,
@@ -62,18 +80,13 @@ function buildSearchAdBrief(report: ProviderSyncReport, generatedAt: string): Ai
     channelLabel: "네이버 키워드광고",
     title: "네이버 키워드광고 AI 판독 근거",
     decision,
-    summary:
-      decision === "APPROVAL_BLOCKED"
-        ? `키워드광고 수집이 실패해 AI 판단 근거로 사용할 수 없습니다.${report.failureReason ? ` 사유: ${report.failureReason}` : ""}`
-        : `상위 키워드 ${topSnapshots.length.toLocaleString("ko-KR")}개와 최대 월검색 ${keywordSearchVolume(
-            strongest,
-          ).toLocaleString("ko-KR")}회를 요약 근거로 사용합니다.`,
-    allowedUseCases: ["키워드 확장 후보 선별", "시즌 검색 수요 우선순위 판단", "광고 초안 검토"],
+    summary,
+    allowedUseCases: ["키워드 확장 후보 선별", "시즌 검색 수요 우선순위 판단", "광고 초안 검토", "저성과 키워드 조정 근거"],
     blockedUseCases: [
       "광고비/입찰가 즉시 변경",
       ...(decision === "JUDGMENT_READY" ? ["원천 검색어 전체 재해석"] : ["결재 상신"]),
     ],
-    evidenceIds: topSnapshots.map((snapshot) => snapshot.id),
+    evidenceIds: [...topSnapshots.map((snapshot) => snapshot.id), ...performanceSnapshots.map((snapshot) => snapshot.id)],
     sourceReportIds: [report.id],
     checkedAt: report.checkedAt,
   });
@@ -183,6 +196,16 @@ function keywordSearchVolume(snapshot: NonNullable<ProviderSyncReport["keywordDe
   }
 
   return (snapshot.monthlyPcSearches ?? 0) + (snapshot.monthlyMobileSearches ?? 0);
+}
+
+function searchAdPerformanceRiskScore(
+  snapshot: NonNullable<ProviderSyncReport["searchAdPerformanceSnapshots"]>[number],
+): number {
+  const noOrderPenalty = snapshot.clicks > 0 && snapshot.conversions === 0 ? snapshot.cost + snapshot.clicks * 100 : 0;
+  const cpaPenalty = snapshot.targetCpa && snapshot.conversions > 0 ? Math.max(0, snapshot.cost / snapshot.conversions - snapshot.targetCpa) : 0;
+  const trackingPenalty = snapshot.trackingVerified ? 0 : 100_000;
+
+  return noOrderPenalty + cpaPenalty + trackingPenalty;
 }
 
 function decisionLabel(decision: AiEvidenceDecision): string {

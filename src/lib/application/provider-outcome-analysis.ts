@@ -106,7 +106,8 @@ function hasOutcomeEvidence(report: ProviderSyncReport): boolean {
     report.commerceAggregateSnapshot ||
       report.shopAggregateSnapshot ||
       report.keywordDemandSnapshots?.length ||
-      report.searchTrendSnapshots?.length,
+      report.searchTrendSnapshots?.length ||
+      report.searchAdPerformanceSnapshots?.length,
   );
 }
 
@@ -159,6 +160,17 @@ function buildOutcomeEvidenceLabels(report: ProviderSyncReport): string[] {
     );
   }
 
+  if (report.searchAdPerformanceSnapshots?.length) {
+    labels.push(
+      ...report.searchAdPerformanceSnapshots.slice(0, 3).map(
+        (snapshot) =>
+          `검색광고 성과 ${snapshot.keyword} 클릭 ${snapshot.clicks.toLocaleString("ko-KR")}회 주문 ${snapshot.conversions.toLocaleString(
+            "ko-KR",
+          )}건`,
+      ),
+    );
+  }
+
   if (report.searchTrendSnapshots?.length) {
     labels.push(`데이터랩 상대 추이 ${report.searchTrendSnapshots.length.toLocaleString("ko-KR")}건`);
   }
@@ -172,6 +184,7 @@ function buildOutcomeEvidenceIds(report: ProviderSyncReport): string[] {
     report.shopAggregateSnapshot?.id,
     ...(report.keywordDemandSnapshots ?? []).map((snapshot) => snapshot.id),
     ...(report.searchTrendSnapshots ?? []).map((snapshot) => snapshot.id),
+    ...(report.searchAdPerformanceSnapshots ?? []).map((snapshot) => snapshot.id),
     report.generatedSignal?.id,
   ].filter((id): id is string => Boolean(id));
 }

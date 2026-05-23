@@ -20,10 +20,12 @@ describe("buildAiEvidenceBriefs", () => {
     const keywordBrief = briefs.find((brief) => brief.providerKey === "search_ad");
     expect(keywordBrief?.title).toBe("네이버 키워드광고 AI 판독 근거");
     expect(keywordBrief?.summary).toContain("상위 키워드 2개");
+    expect(keywordBrief?.summary).toContain("성과 이상 1건");
     expect(keywordBrief?.allowedUseCases).toContain("키워드 확장 후보 선별");
+    expect(keywordBrief?.allowedUseCases).toContain("저성과 키워드 조정 근거");
     expect(keywordBrief?.blockedUseCases).toContain("광고비/입찰가 즉시 변경");
     expect(keywordBrief?.rawDataPolicyLabel).toBe("원천 행 제외, 요약 근거와 근거 ID만 사용");
-    expect(keywordBrief?.evidenceIds).toEqual(["kw-1", "kw-2"]);
+    expect(keywordBrief?.evidenceIds).toEqual(["kw-1", "kw-2", "ad-perf-stickersee-no-order-2026-05-22"]);
 
     const datalabBrief = briefs.find((brief) => brief.providerKey === "datalab");
     expect(datalabBrief?.decisionLabel).toBe("원천 확인 필요");
@@ -134,6 +136,29 @@ function buildProviderReports(): ProviderSyncReport[] {
           cachedUntil: "2026-05-23T02:00:00.000Z",
           collectedAt: "2026-05-22T02:00:00.000Z",
           rateLimitState: "OK",
+        },
+      ],
+      searchAdPerformanceSnapshots: [
+        {
+          id: "ad-perf-stickersee-no-order-2026-05-22",
+          provider: "naver_search_ad",
+          brandKey: "STICKERSEE",
+          campaignName: "스티커씨 검색광고",
+          adGroupName: "대표 상품",
+          keyword: "생일 답례품",
+          device: "MOBILE",
+          timeSlot: "18-23",
+          windowDays: 7,
+          impressions: 2400,
+          clicks: 64,
+          cost: 38400,
+          conversions: 0,
+          revenue: 0,
+          targetCpa: 12000,
+          targetRoas: 2.5,
+          trackingVerified: true,
+          collectedAt: "2026-05-22T02:00:00.000Z",
+          dataScope: "aggregate_only",
         },
       ],
     },

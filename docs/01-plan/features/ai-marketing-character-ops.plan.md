@@ -466,6 +466,8 @@ API로 더 가져올 수 있는 모든 항목을 한 번에 LLM 판단에 넣지
 
 이 순서는 `/data` 화면에도 그대로 보여준다. 단, 실제 수집 구현은 각 항목의 공식 API 권한, 조회 가능 기간, 호출 제한, 개인정보 저장 금지 조건을 통과한 뒤 별도 iteration으로 진행한다.
 
+2026-05-23 후속 `module-30`에서는 2순위 성과 판단의 첫 계약을 구현했다. 네이버 검색광고 `/stats` 계열에서 만들 수 있는 집계 스냅샷을 `SearchAdPerformanceSnapshot`으로 모델링하고, LLM 호출 전에 deterministic 규칙 엔진이 낮은 전환율, 클릭은 있는데 주문이 없는 키워드, 높은 CPA, 기기/시간대 성과 차이, 전환 추적 미확인을 먼저 판정한다. 조정 가능한 광고 성과 안건은 `그로`, 추적/주문 연결 검증은 `데이`가 맡는다.
+
 ### 3.10 자유 탐색과 근거 요청 정책
 
 정해진 `Signal` 기준은 누락을 막기 위한 기본 안전망이다. LLM 캐릭터의 역할은 여기서 멈추지 않고, 대표가 미처 생각하지 못한 상품/키워드/기기/시간대/고객군 조합을 가설로 제안하는 데 있다. 다만 가설은 곧바로 결재 안건이 아니며, 실제 원천 필드와 집계 근거가 확인될 때만 모아가 대표 결재 안건으로 승격한다.
@@ -941,6 +943,14 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 - 4순위는 데이터랩 세그먼트다. 상대 지표이므로 절대 수요가 아니라 시즌 고객군 보조 근거로 표시한다.
 - 5순위는 스마트스토어 데이터솔루션이다. 판매/고객/유입 분석 권한이 열리면 상품 발굴과 채널 판단을 확장한다.
 
+### Slice 6B: 검색광고 성과 규칙 엔진
+
+- 완료 목표: LLM이 저성과 키워드를 직접 추측하기 전에 코드가 확정 가능한 광고 성과 이상신호를 먼저 계산한다.
+- `SearchAdPerformanceSnapshot`은 브랜드, 캠페인, 광고그룹, 키워드, 기기, 시간대, 클릭, 광고비, 전환, 전환매출, 목표 CPA/ROAS, 전환 추적 확인 상태를 가진다.
+- 규칙 엔진은 `CLICKS_NO_ORDER`, `LOW_CVR`, `HIGH_CPA`, `DEVICE_GAP`, `TIME_SLOT_GAP`, `TRACKING_UNVERIFIED`를 만든다.
+- 담당 배정은 `TRACKING_UNVERIFIED -> 데이`, 그 외 조정 가능한 성과 이상은 `그로`가 기본이다.
+- 모아와 LLM은 이 결과를 요약 근거로 읽고 결재문 초안을 보완한다. 원천 행 전체는 전달하지 않는다.
+
 ### Slice 7: Outcome Tracking and Performance Reports
 
 - 승인 전 baseline 저장.
@@ -1003,3 +1013,4 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 | 0.8 | 2026-05-23 | Added AI execution queue dry-run slice before real LLM adapter calls | Codex |
 | 0.9 | 2026-05-23 | Added AI-proposed execution scope and owner-editable scope selection for search ad approvals | Codex |
 | 1.0 | 2026-05-23 | Added execution scope backfill for saved approval requests and decisions | Codex |
+| 1.1 | 2026-05-23 | Added Search Ad performance rule engine, owner assignment, AI summary evidence, and data contract fields before LLM judgment | Codex |

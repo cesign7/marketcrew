@@ -11,7 +11,8 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
       incoming: {
         id: "search-ad-incoming",
         title: "불러오는 데이터",
-        description: "키워드 도구 응답에서 후보 키워드의 월간 검색량, 경쟁도, 평균 클릭률만 읽습니다.",
+        description:
+          "키워드 도구 응답에서 후보 키워드 수요를 읽고, 성과 판단이 열리면 /stats 집계에서 키워드·기기·시간대 성과를 읽습니다.",
         safetyNote: "API 키, 서명, 고객 ID, 응답 원문은 저장하지 않습니다.",
         columns: [
           {
@@ -50,6 +51,18 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             description: "모바일 광고 평균 클릭률 후보 값입니다.",
             sample: "1.8",
           },
+          {
+            key: "GET /stats",
+            label: "성과 집계",
+            description: "키워드/광고그룹/캠페인 단위의 노출, 클릭, 비용, 전환, 매출 집계를 읽는 검색광고 통계 요청입니다.",
+            sample: "fields=impCnt,clkCnt,salesAmt,ccnt,convAmt",
+          },
+          {
+            key: "breakdown",
+            label: "기기/시간대 구분",
+            description: "PC/모바일, 요일, 시간대 같은 성과 분해 조건입니다. 공식 제공 범위 안에서만 판단합니다.",
+            sample: "pcMblTp 또는 hh24",
+          },
         ],
         sampleRows: [
           {
@@ -81,12 +94,31 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
               { key: "keywordList[0].compIdx", label: "경쟁도", handling: "경쟁 수준으로 변환" },
             ],
           },
+          {
+            id: "search-ad-source-stats",
+            title: "GET /stats 성과 집계",
+            description: "네이버 검색광고 통계 API의 원문 요청/응답 후보입니다. LLM 전 규칙 엔진이 먼저 낮은 전환율, 주문 없는 클릭, 높은 CPA, 기기/시간대 차이를 계산합니다.",
+            fields: [
+              { key: "id 또는 ids", label: "조회 대상 ID", handling: "캠페인/광고그룹/키워드 단위 집계 대상" },
+              { key: "fields", label: "지표 목록", handling: "impCnt, clkCnt, salesAmt, ccnt, convAmt, ctr, crto, ror, cpConv 후보" },
+              { key: "timeRange", label: "조회 기간", handling: "최근 7일/30일 같은 집계 기간으로 저장" },
+              { key: "timeIncrement", label: "집계 단위", handling: "일별 추이 필요 시 점검" },
+              { key: "breakdown=pcMblTp", label: "PC/모바일", handling: "기기 성과 차이 규칙에 사용" },
+              { key: "breakdown=hh24", label: "시간대", handling: "시간대 성과 차이 규칙에 사용" },
+              { key: "breakdown=dayw", label: "요일", handling: "요일 성과 차이 후보, 기본 안건은 보수 처리" },
+              { key: "response.rows[0].impCnt", label: "노출수", handling: "성과 스냅샷 노출수로 저장" },
+              { key: "response.rows[0].clkCnt", label: "클릭수", handling: "주문 없는 클릭/표본 기준에 사용" },
+              { key: "response.rows[0].salesAmt", label: "광고비", handling: "CPA/예산 낭비 규칙에 사용" },
+              { key: "response.rows[0].ccnt", label: "전환수", handling: "전환율과 주문 없음 규칙에 사용" },
+              { key: "response.rows[0].convAmt", label: "전환매출", handling: "ROAS 후보로 저장" },
+            ],
+          },
         ],
       },
       stored: {
         id: "search-ad-stored",
         title: "저장하는 데이터",
-        description: "원천 응답을 그대로 두지 않고 키워드 수요 요약과 연동 실행 기록으로 저장합니다.",
+        description: "원천 응답을 그대로 두지 않고 키워드 수요 요약, 성과 집계 스냅샷, 연동 실행 기록으로 저장합니다.",
         safetyNote: "AI 입력에는 키워드와 요약 지표, 근거 ID만 전달합니다.",
         columns: [
           {
@@ -125,6 +157,36 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
             description: "어떤 읽기 전용 수집에서 만들어졌는지 추적하는 내부 ID입니다.",
             sample: "provider-sync-search-ad-2026-05-22",
           },
+          {
+            key: "SearchAdPerformanceSnapshot.keyword",
+            label: "성과 키워드",
+            description: "규칙 엔진이 저성과 여부를 판단한 광고 키워드입니다.",
+            sample: "생일 답례품",
+          },
+          {
+            key: "SearchAdPerformanceSnapshot.device",
+            label: "기기",
+            description: "PC, MOBILE, ALL 중 하나로 저장하는 집계 기기 조건입니다.",
+            sample: "MOBILE",
+          },
+          {
+            key: "SearchAdPerformanceSnapshot.timeSlot",
+            label: "시간대",
+            description: "시간대 breakdown이 있을 때 저장하는 집계 구간입니다.",
+            sample: "18-23",
+          },
+          {
+            key: "SearchAdPerformanceSnapshot.clicks/conversions/cost/revenue",
+            label: "성과 집계",
+            description: "클릭, 전환, 광고비, 전환매출 집계입니다. 원문 행이 아니라 요약 스냅샷만 저장합니다.",
+            sample: "클릭 64 / 주문 0 / 비용 38,400원",
+          },
+          {
+            key: "SearchAdPerformanceSnapshot.trackingVerified",
+            label: "추적 확인",
+            description: "전환 추적/주문 연결이 확인됐는지 표시합니다. false면 데이가 먼저 확인합니다.",
+            sample: "true",
+          },
         ],
         sampleRows: [
           {
@@ -134,6 +196,15 @@ export function buildProviderDataContracts(): ProviderDataContractView[] {
               { key: "searches", label: "검색수", value: "PC 420 / 모바일 1,800" },
               { key: "competition", label: "경쟁", value: "MEDIUM" },
               { key: "rateLimit", label: "상태", value: "OK" },
+            ],
+          },
+          {
+            id: "search-ad-stored-sample-2",
+            values: [
+              { key: "keyword", label: "성과 키워드", value: "생일 답례품" },
+              { key: "device", label: "기기/시간", value: "모바일 18-23" },
+              { key: "performance", label: "성과", value: "클릭 64 / 주문 0 / 비용 38,400원" },
+              { key: "owner", label: "담당", value: "그로 조정안 또는 데이 추적 확인" },
             ],
           },
         ],

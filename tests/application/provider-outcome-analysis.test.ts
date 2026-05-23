@@ -33,7 +33,11 @@ describe("provider outcome analysis", () => {
     expect(result.outcomeReport?.baselineSummary).toContain("스마트스토어 매출 600,120원");
     expect(result.outcomeReport?.checkpointSummary).toContain("수집 기록 provider-sync-smartstore-2026-05-22");
     expect(result.outcomeReport?.evidenceLabels).toEqual(
-      expect.arrayContaining(["스마트스토어 30일 주문 100건", "키워드광고 월검색 최대 16,000회"]),
+      expect.arrayContaining([
+        "스마트스토어 30일 주문 100건",
+        "키워드광고 월검색 최대 16,000회",
+        "검색광고 성과 생일 답례품 클릭 64회 주문 0건",
+      ]),
     );
     expect(result.outcomeReport?.sourceReportIds).toEqual([
       "provider-sync-smartstore-2026-05-22",
@@ -98,6 +102,29 @@ function buildProviderReports(): ProviderSyncReport[] {
           cachedUntil: "2026-05-23T02:00:00.000Z",
           collectedAt: NOW,
           rateLimitState: "OK",
+        },
+      ],
+      searchAdPerformanceSnapshots: [
+        {
+          id: "ad-perf-stickersee-no-order-2026-05-22",
+          provider: "naver_search_ad",
+          brandKey: "STICKERSEE",
+          campaignName: "스티커씨 검색광고",
+          adGroupName: "대표 상품",
+          keyword: "생일 답례품",
+          device: "MOBILE",
+          timeSlot: "18-23",
+          windowDays: 7,
+          impressions: 2400,
+          clicks: 64,
+          cost: 38400,
+          conversions: 0,
+          revenue: 0,
+          targetCpa: 12000,
+          targetRoas: 2.5,
+          trackingVerified: true,
+          collectedAt: NOW,
+          dataScope: "aggregate_only",
         },
       ],
     },

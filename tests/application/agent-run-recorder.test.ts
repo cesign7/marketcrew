@@ -38,6 +38,9 @@ describe("AgentRunRecorder", () => {
       provider: "naver",
       status: "SUCCEEDED",
     });
+    expect(run.evidenceIds).toEqual(
+      expect.arrayContaining(["kw-demand-gift-card-2026-05-22", "ad-perf-stickersee-no-order-2026-05-22"]),
+    );
     expect(repository.listAgentRunsForWorkflowObject({ objectType: "provider_sync_report", objectId: report.id })).toHaveLength(1);
     expect(repository.listAgentRunsForWorkflowObject({ objectType: "signal", objectId: report.generatedSignal!.id })).toHaveLength(1);
   });
@@ -103,6 +106,28 @@ function buildProviderSyncReport(): ProviderSyncReport {
         cachedUntil: "2026-05-23",
         collectedAt: checkedAt,
         rateLimitState: "OK",
+      },
+    ],
+    searchAdPerformanceSnapshots: [
+      {
+        id: "ad-perf-stickersee-no-order-2026-05-22",
+        provider: "naver_search_ad",
+        brandKey: "STICKERSEE",
+        campaignName: "스티커씨 검색광고",
+        adGroupName: "대표 상품",
+        keyword: "추석선물카드",
+        device: "ALL",
+        timeSlot: "09-23",
+        windowDays: 7,
+        impressions: 1800,
+        clicks: 54,
+        cost: 32400,
+        conversions: 0,
+        revenue: 0,
+        targetCpa: 12000,
+        trackingVerified: true,
+        collectedAt: checkedAt,
+        dataScope: "aggregate_only",
       },
     ],
     generatedSignal: {

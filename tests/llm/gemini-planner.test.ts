@@ -27,7 +27,11 @@ describe("Gemini planner pilot", () => {
                       title: "실제 수집 기반 우선 안건",
                       summary: "스티커씨 상위 상품과 커피프린트 재구매 안건을 먼저 검토합니다.",
                       recommendedApprovalIds: ["approval-real-1", "unknown-approval"],
-                      evidenceIds: ["commerce-aggregate-stickersee-2026-05-23", "unknown-evidence"],
+                      evidenceIds: [
+                        "commerce-aggregate-stickersee-2026-05-23",
+                        "ad-perf-stickersee-no-order-2026-05-23",
+                        "unknown-evidence",
+                      ],
                       judgmentNotes: ["스마트스토어 주문 집계가 충분합니다."],
                       missingEvidenceRequests: ["광고비 대비 매출 연결은 다음 수집에서 확인합니다."],
                     }),
@@ -78,6 +82,44 @@ describe("Gemini planner pilot", () => {
               dataScope: "aggregate_only",
             },
           },
+          {
+            id: "provider-sync-search-ad-performance-2026-05-23",
+            provider: "search_ad",
+            label: "네이버 키워드광고 성과 읽기 전용 수집",
+            status: "SYNCED",
+            readOnly: true,
+            networkAttempted: true,
+            writeAttempted: false,
+            endpoint: "https://api.searchad.naver.com/stats",
+            sourceUrl: "https://naver.github.io/searchad-apidoc/",
+            missingEnvKeys: [],
+            evidenceNotes: ["키워드/기기/시간대 성과 집계만 저장했습니다."],
+            checkedAt: GENERATED_AT,
+            historyPolicy: getProviderHistoryPolicy("search_ad"),
+            searchAdPerformanceSnapshots: [
+              {
+                id: "ad-perf-stickersee-no-order-2026-05-23",
+                provider: "naver_search_ad",
+                brandKey: "STICKERSEE",
+                campaignName: "스티커씨 검색광고",
+                adGroupName: "대표 상품",
+                keyword: "생일 답례품",
+                device: "MOBILE",
+                timeSlot: "18-23",
+                windowDays: 7,
+                impressions: 2400,
+                clicks: 64,
+                cost: 38400,
+                conversions: 0,
+                revenue: 0,
+                targetCpa: 12000,
+                targetRoas: 2.5,
+                trackingVerified: true,
+                collectedAt: GENERATED_AT,
+                dataScope: "aggregate_only",
+              },
+            ],
+          },
         ],
         keywordDemandSnapshots: [],
         searchTrendSnapshots: [],
@@ -102,7 +144,10 @@ describe("Gemini planner pilot", () => {
     );
     expect(pilot.result.mode).toBe("llm_ready");
     expect(pilot.result.recommendedApprovalIds).toEqual(["approval-real-1"]);
-    expect(pilot.result.evidenceIds).toEqual(["commerce-aggregate-stickersee-2026-05-23"]);
+    expect(pilot.result.evidenceIds).toEqual([
+      "commerce-aggregate-stickersee-2026-05-23",
+      "ad-perf-stickersee-no-order-2026-05-23",
+    ]);
     expect(pilot.result.rawRowsIncluded).toBe(false);
     expect(pilot.audit.provider).toBe("gemini");
     expect(pilot.audit.model).toBe("gemini-3.5-flash");
