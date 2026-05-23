@@ -37,6 +37,9 @@ export type ProviderSource = "sample" | "smartstore" | "search_ad" | "shop" | "c
 export type ProviderKey = "search_ad" | "datalab" | "smartstore" | "shop" | "llm";
 export type ProviderReadinessStatus = "READY" | "READ_ONLY_READY" | "MISSING_CONFIG" | "WRITE_DISABLED" | "BLOCKED";
 export type ProviderSyncStatus = "SKIPPED_MISSING_CONFIG" | "READY_READ_ONLY" | "SYNCED" | "FAILED";
+export type HypothesisStatus = "WAITING_EVIDENCE" | "VERIFIED" | "REJECTED" | "PROMOTED";
+export type EvidenceRequestStatus = "REQUESTED" | "COLLECTING" | "VERIFIED" | "INSUFFICIENT";
+export type EvidenceSourceKind = "search_ad" | "smartstore" | "shop" | "datalab" | "internal";
 
 export interface ProviderReadinessReport {
   provider: ProviderKey;
@@ -198,6 +201,8 @@ export type AgentRunStatus = "SUCCEEDED" | "FAILED" | "SKIPPED";
 export type WorkflowObjectType =
   | "signal"
   | "agenda_candidate"
+  | "hypothesis_candidate"
+  | "evidence_request"
   | "character_report"
   | "moa_synthesis_report"
   | "approval_request"
@@ -393,6 +398,35 @@ export interface AgendaCandidate {
   dataConfidence: DataConfidence;
   duplicateKey: string;
   createdAt: string;
+}
+
+export interface HypothesisCandidate {
+  id: string;
+  character: CharacterKey;
+  title: string;
+  hypothesis: string;
+  reasonFromKnownSignals: string[];
+  requestedEvidenceIds: string[];
+  status: HypothesisStatus;
+  promotedAgendaCandidateId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EvidenceRequest {
+  id: string;
+  hypothesisId: string;
+  requestedBy: CharacterKey;
+  verifier: "day";
+  neededSource: EvidenceSourceKind;
+  neededFields: string[];
+  comparisonWindow: string;
+  reason: string;
+  status: EvidenceRequestStatus;
+  verificationNote?: string;
+  verifiedEvidenceIds: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CharacterReport {

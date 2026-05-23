@@ -10,6 +10,8 @@ const workflowCollectionKeys = [
   "keywordDemandSnapshots",
   "searchTrendSnapshots",
   "agendaCandidates",
+  "hypothesisCandidates",
+  "evidenceRequests",
   "characterReports",
   "moaSynthesisReports",
   "approvalRequests",

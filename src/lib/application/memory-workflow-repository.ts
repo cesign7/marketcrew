@@ -6,7 +6,9 @@ import type {
   ApprovalRequest,
   CharacterReport,
   ExecutionResult,
+  EvidenceRequest,
   FollowUpInternalTask,
+  HypothesisCandidate,
   KeywordDemandSnapshot,
   MoaSynthesisReport,
   OutcomeReport,
@@ -32,6 +34,8 @@ class MemoryMarketingWorkflowRepository implements MarketingWorkflowRepository {
   private keywordDemandSnapshots: KeywordDemandSnapshot[] = [];
   private searchTrendSnapshots: SearchTrendSnapshot[] = [];
   private agendaCandidates: AgendaCandidate[] = [];
+  private hypothesisCandidates: HypothesisCandidate[] = [];
+  private evidenceRequests: EvidenceRequest[] = [];
   private characterReports: CharacterReport[] = [];
   private moaSynthesisReports: MoaSynthesisReport[] = [];
   private approvalRequests: ApprovalRequest[] = [];
@@ -57,6 +61,8 @@ class MemoryMarketingWorkflowRepository implements MarketingWorkflowRepository {
     this.keywordDemandSnapshots = [...state.keywordDemandSnapshots];
     this.searchTrendSnapshots = [...state.searchTrendSnapshots];
     this.agendaCandidates = [...state.agendaCandidates];
+    this.hypothesisCandidates = [...state.hypothesisCandidates];
+    this.evidenceRequests = [...state.evidenceRequests];
     this.characterReports = [...state.characterReports];
     this.moaSynthesisReports = [...state.moaSynthesisReports];
     this.approvalRequests = [...state.approvalRequests];
@@ -110,6 +116,22 @@ class MemoryMarketingWorkflowRepository implements MarketingWorkflowRepository {
 
   listAgendaCandidates(): AgendaCandidate[] {
     return [...this.agendaCandidates];
+  }
+
+  saveHypothesisCandidates(candidates: HypothesisCandidate[]): void {
+    this.hypothesisCandidates = upsertById(this.hypothesisCandidates, candidates);
+  }
+
+  listHypothesisCandidates(): HypothesisCandidate[] {
+    return [...this.hypothesisCandidates];
+  }
+
+  saveEvidenceRequests(requests: EvidenceRequest[]): void {
+    this.evidenceRequests = upsertById(this.evidenceRequests, requests);
+  }
+
+  listEvidenceRequests(): EvidenceRequest[] {
+    return [...this.evidenceRequests];
   }
 
   saveCharacterReports(reports: CharacterReport[]): void {

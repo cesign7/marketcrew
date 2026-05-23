@@ -3,9 +3,9 @@
 > **Summary**: 하위 AI 캐릭터가 마케팅 데이터를 읽고 근거 있는 안건을 상신하면, 모아가 대표 결재용 실행 계획으로 묶고, 승인 후 mock/sandbox executor와 성과 추적까지 이어지는 bottom-up AI 마케팅 운영실 설계.
 >
 > **Project**: marketcrew2
-> **Version**: 0.3
+> **Version**: 0.4
 > **Author**: Codex
-> **Date**: 2026-05-22 KST
+> **Date**: 2026-05-23 KST
 > **Status**: Draft
 > **Planning Doc**: [ai-marketing-character-ops.plan.md](../../01-plan/features/ai-marketing-character-ops.plan.md)
 
@@ -381,27 +381,37 @@ type HypothesisCandidate = {
   title: string;
   hypothesis: string;
   reasonFromKnownSignals: string[];
-  requestedEvidence: EvidenceRequest[];
-  status: "DRAFT" | "WAITING_EVIDENCE" | "VERIFIED" | "REJECTED" | "PROMOTED";
+  requestedEvidenceIds: string[];
+  status: "WAITING_EVIDENCE" | "VERIFIED" | "REJECTED" | "PROMOTED";
+  promotedAgendaCandidateId?: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 type EvidenceRequest = {
   id: string;
+  hypothesisId: string;
   requestedBy: CharacterKey;
   verifier: "day";
-  neededSource: "search_ad" | "smartstore" | "youngcart" | "datalab" | "internal";
+  neededSource: "search_ad" | "smartstore" | "shop" | "datalab" | "internal";
   neededFields: string[];
   comparisonWindow: string;
   reason: string;
+  status: "REQUESTED" | "COLLECTING" | "VERIFIED" | "INSUFFICIENT";
+  verificationNote?: string;
+  verifiedEvidenceIds: string[];
+  createdAt: string;
+  updatedAt: string;
 };
 ```
 
 Promotion guard:
 
 - `HypothesisCandidate.status`가 `VERIFIED`가 되기 전에는 `ApprovalRequest`로 승격하지 않는다.
-- 데이는 원천 필드/집계 기준/비교 기간을 확인하고, 부족하면 `WAITING_EVIDENCE`로 유지한다.
-- 모아는 `VERIFIED` 후보만 묶어 대표 결재용 안건으로 올린다.
+- 데이는 원천 필드/집계 기준/비교 기간을 확인하고, 부족하면 연결된 `EvidenceRequest`를 `REQUESTED`, `COLLECTING`, `INSUFFICIENT` 중 하나로 유지한다.
+- 모아는 가설과 연결된 모든 근거 요청이 `VERIFIED`일 때만 `AgendaCandidate`로 승격한다.
 - `/people` 인사과 화면은 이 정책을 캐릭터 롤모델과 판단 방식 카드로 보여준다.
+- `/operations` 업무실은 이 정책을 `근거 요청 큐` 패널로 보여주며, 검증 전 가설은 `WAITING_EVIDENCE` bucket에 포함한다.
 
 ### 3.6 Persistence Shape
 
@@ -874,7 +884,7 @@ src/
 | 커머스 품질 스냅샷 | `module-17` | 스마트스토어 순매출, 취소/반품/교환, 구매확정 근거 | 25-35 |
 | 검색/커머스 분석 확장 | `module-18` | 데이터랩 세그먼트와 스마트스토어 데이터솔루션 권한 기반 확장 | 30-40 |
 | 자유 탐색 정책 UI | `module-19` | 인사과 판단 방식 카드와 캐릭터별 자유 탐색/근거 요청 롤모델 | 8-12 |
-| 근거 요청 큐와 승격 가드 | `module-20` | `HypothesisCandidate`, `EvidenceRequest`, 데이 검증, 모아 승격 제한 | 25-35 |
+| 근거 요청 큐와 승격 가드 | `module-20` | `HypothesisCandidate`, `EvidenceRequest`, 데이 검증, 모아 승격 제한 | Done in iteration 15 |
 
 #### Recommended Session Plan
 

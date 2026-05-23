@@ -6,7 +6,9 @@ import type {
   ApprovalRequest,
   CharacterReport,
   ExecutionResult,
+  EvidenceRequest,
   FollowUpInternalTask,
+  HypothesisCandidate,
   KeywordDemandSnapshot,
   MoaSynthesisReport,
   OutcomeReport,
@@ -26,6 +28,8 @@ export type WorkflowRepositoryState = {
   keywordDemandSnapshots: KeywordDemandSnapshot[];
   searchTrendSnapshots: SearchTrendSnapshot[];
   agendaCandidates: AgendaCandidate[];
+  hypothesisCandidates: HypothesisCandidate[];
+  evidenceRequests: EvidenceRequest[];
   characterReports: CharacterReport[];
   moaSynthesisReports: MoaSynthesisReport[];
   approvalRequests: ApprovalRequest[];
@@ -49,6 +53,8 @@ export const workflowCollectionKeys: WorkflowCollectionKey[] = [
   "keywordDemandSnapshots",
   "searchTrendSnapshots",
   "agendaCandidates",
+  "hypothesisCandidates",
+  "evidenceRequests",
   "characterReports",
   "moaSynthesisReports",
   "approvalRequests",
@@ -71,6 +77,8 @@ export function createEmptyWorkflowRepositoryState(): WorkflowRepositoryState {
     keywordDemandSnapshots: [],
     searchTrendSnapshots: [],
     agendaCandidates: [],
+    hypothesisCandidates: [],
+    evidenceRequests: [],
     characterReports: [],
     moaSynthesisReports: [],
     approvalRequests: [],
@@ -94,6 +102,8 @@ export function readWorkflowRepositoryState(repository: MarketingWorkflowReposit
     keywordDemandSnapshots: repository.listKeywordDemandSnapshots(),
     searchTrendSnapshots: repository.listSearchTrendSnapshots(),
     agendaCandidates: repository.listAgendaCandidates(),
+    hypothesisCandidates: repository.listHypothesisCandidates(),
+    evidenceRequests: repository.listEvidenceRequests(),
     characterReports: repository.listCharacterReports(),
     moaSynthesisReports: repository.listMoaSynthesisReports(),
     approvalRequests: repository.listApprovalRequests(),
@@ -119,6 +129,8 @@ export function normalizeWorkflowRepositoryState(
     keywordDemandSnapshots: asArray(parsed?.keywordDemandSnapshots),
     searchTrendSnapshots: asArray(parsed?.searchTrendSnapshots),
     agendaCandidates: asArray(parsed?.agendaCandidates),
+    hypothesisCandidates: asArray(parsed?.hypothesisCandidates),
+    evidenceRequests: asArray(parsed?.evidenceRequests),
     characterReports: asArray(parsed?.characterReports),
     moaSynthesisReports: asArray(parsed?.moaSynthesisReports),
     approvalRequests: asArray(parsed?.approvalRequests),

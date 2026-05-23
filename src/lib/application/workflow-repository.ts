@@ -6,7 +6,9 @@ import type {
   ApprovalRequest,
   CharacterReport,
   ExecutionResult,
+  EvidenceRequest,
   FollowUpInternalTask,
+  HypothesisCandidate,
   KeywordDemandSnapshot,
   MoaSynthesisReport,
   OutcomeReport,
@@ -31,6 +33,10 @@ export interface MarketingWorkflowRepository {
   listSearchTrendSnapshots(): SearchTrendSnapshot[];
   saveAgendaCandidates(candidates: AgendaCandidate[]): void;
   listAgendaCandidates(): AgendaCandidate[];
+  saveHypothesisCandidates(candidates: HypothesisCandidate[]): void;
+  listHypothesisCandidates(): HypothesisCandidate[];
+  saveEvidenceRequests(requests: EvidenceRequest[]): void;
+  listEvidenceRequests(): EvidenceRequest[];
   saveCharacterReports(reports: CharacterReport[]): void;
   listCharacterReports(): CharacterReport[];
   saveMoaSynthesisReport(report: MoaSynthesisReport): void;

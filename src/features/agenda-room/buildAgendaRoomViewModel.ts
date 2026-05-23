@@ -1,5 +1,10 @@
 import { runSampleAgendaCycle } from "@/lib/application/agenda-cycle";
 import { buildAiEvidenceBriefs } from "@/lib/application/ai-evidence-briefs";
+import {
+  buildSampleHypothesisEvidenceQueue,
+  canPromoteHypothesis,
+  type HypothesisEvidenceQueue,
+} from "@/lib/application/evidence-request-guard";
 import { processOwnerDecision } from "@/lib/application/approval-workflow";
 import {
   buildProductGrowthOpportunities,
@@ -13,6 +18,8 @@ import {
   type ApprovalRequest,
   type CharacterKey,
   type CharacterReport,
+  type EvidenceRequest,
+  type HypothesisCandidate,
   type LlmPlannerAuditRun,
   type LlmPlannerResult,
   type MarketingCalendarEvent,
@@ -67,6 +74,8 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
     providerSyncReports,
     generatedAt: agendaCycle.generatedAt,
   });
+  const hypothesisEvidenceQueue = resolveHypothesisEvidenceQueue(input.repository, agendaCycle.generatedAt);
+  const openEvidenceRequestCount = hypothesisEvidenceQueue.evidenceRequests.filter(isOpenEvidenceRequest).length;
   const persistedProviderApprovalById = new Map(
     (input.repository?.listApprovalRequests() ?? [])
       .filter(isProviderApprovalRequest)
@@ -120,7 +129,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
     },
     summary: {
       waitingApproval: pendingApprovals.length,
-      waitingEvidence: waitingEvidence.length,
+      waitingEvidence: waitingEvidence.length + openEvidenceRequestCount,
       readyToApply: allApprovalRequests.filter((request) => request.dataConfidence === "READY_TO_APPROVE").length,
       failedExecutions: failedExecutionCount,
     },
@@ -128,7 +137,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
       approvalCount: pendingApprovals.length,
       seasonalKeywordCount: agendaCycle.seasonalKeywordAdPlans.length,
       trackingCount: allPerformanceCheckpoints.length,
-      waitingEvidenceCount: waitingEvidence.length,
+      waitingEvidenceCount: waitingEvidence.length + openEvidenceRequestCount,
       autoHoldCount: allAgendaCandidates.length - agendaCycle.promotedAgendaCandidates.length - providerArtifacts.agendaCandidates.length,
       failedExecutionCount,
     }),
@@ -171,6 +180,7 @@ export function buildAgendaRoomViewModel(input: BuildAgendaRoomViewModelInput = 
       ...brief,
       checkedAt: formatKoreanDateTime(brief.checkedAt),
     })),
+    evidenceRequestQueue: buildEvidenceRequestQueueView(hypothesisEvidenceQueue),
     executionResults: [
       ...ownerDecisionFlows.map((flow) => ({
         id: `decision-flow-${flow.id}`,
@@ -234,6 +244,135 @@ function countBy<TItem, TKey>(items: TItem[], keyFn: (item: TItem) => TKey): Map
   }
 
   return counts;
+}
+
+function resolveHypothesisEvidenceQueue(
+  repository: MarketingWorkflowRepository | undefined,
+  generatedAt: string,
+): HypothesisEvidenceQueue {
+  const sampleQueue = buildSampleHypothesisEvidenceQueue({ generatedAt });
+
+  if (!repository) {
+    return sampleQueue;
+  }
+
+  const storedHypotheses = repository.listHypothesisCandidates();
+  const storedEvidenceRequests = repository.listEvidenceRequests();
+
+  if (storedHypotheses.length === 0) {
+    repository.saveHypothesisCandidates(sampleQueue.hypotheses);
+  }
+
+  if (storedEvidenceRequests.length === 0) {
+    repository.saveEvidenceRequests(sampleQueue.evidenceRequests);
+  }
+
+  return {
+    hypotheses: storedHypotheses.length > 0 ? storedHypotheses : sampleQueue.hypotheses,
+    evidenceRequests: storedEvidenceRequests.length > 0 ? storedEvidenceRequests : sampleQueue.evidenceRequests,
+  };
+}
+
+function buildEvidenceRequestQueueView(queue: HypothesisEvidenceQueue): AgendaRoomViewModel["evidenceRequestQueue"] {
+  const openRequestCount = queue.evidenceRequests.filter(isOpenEvidenceRequest).length;
+  const verifiedHypothesisCount = queue.hypotheses.filter((hypothesis) =>
+    canPromoteHypothesis(hypothesis, queue.evidenceRequests),
+  ).length;
+
+  return {
+    title: "근거 요청 큐",
+    summaryLabel: `검증 대기 ${openRequestCount.toLocaleString("ko-KR")}건 · 승격 가능 ${verifiedHypothesisCount.toLocaleString(
+      "ko-KR",
+    )}건`,
+    guardrailLabel: "검증 전 결재 승격 차단 · 데이가 요청 근거를 확인한 뒤에만 대표 결재로 올라갑니다.",
+    openRequestCount,
+    verifiedHypothesisCount,
+    items: queue.hypotheses.map((hypothesis) => {
+      const requests = evidenceRequestsForHypothesis(hypothesis, queue.evidenceRequests);
+      const primaryRequest = requests.find((request) => request.status !== "VERIFIED") ?? requests[0];
+      const canPromote = canPromoteHypothesis(hypothesis, queue.evidenceRequests);
+      const tone = evidenceRequestTone(hypothesis, requests, canPromote);
+
+      return {
+        id: primaryRequest?.id ?? `evidence-request-${hypothesis.id}`,
+        title: hypothesis.title,
+        ownerName: characterName(hypothesis.character),
+        verifierName: primaryRequest ? characterName(primaryRequest.verifier) : "데이",
+        statusLabel: evidenceRequestStatusLabel(hypothesis, primaryRequest, canPromote),
+        tone,
+        hypothesis: hypothesis.hypothesis,
+        requestedFields: requests.flatMap((request) => request.neededFields),
+        comparisonWindow: primaryRequest?.comparisonWindow ?? "확인 기간 지정 필요",
+        reason: primaryRequest?.reason ?? "추가 근거 항목 지정이 필요합니다.",
+        promotionLabel: canPromote ? "승격 가능" : tone === "blocked" ? "보강 필요" : "검증 전 차단",
+        evidenceLabels: buildEvidenceRequestEvidenceLabels(requests),
+      };
+    }),
+  };
+}
+
+function evidenceRequestsForHypothesis(
+  hypothesis: HypothesisCandidate,
+  evidenceRequests: EvidenceRequest[],
+): EvidenceRequest[] {
+  return evidenceRequests.filter((request) => hypothesis.requestedEvidenceIds.includes(request.id));
+}
+
+function isOpenEvidenceRequest(request: EvidenceRequest): boolean {
+  return request.status === "REQUESTED" || request.status === "COLLECTING" || request.status === "INSUFFICIENT";
+}
+
+function evidenceRequestTone(
+  hypothesis: HypothesisCandidate,
+  requests: EvidenceRequest[],
+  canPromote: boolean,
+): AgendaRoomViewModel["evidenceRequestQueue"]["items"][number]["tone"] {
+  if (canPromote) {
+    return "ready";
+  }
+
+  if (hypothesis.status === "REJECTED" || requests.some((request) => request.status === "INSUFFICIENT")) {
+    return "blocked";
+  }
+
+  return "waiting";
+}
+
+function evidenceRequestStatusLabel(
+  hypothesis: HypothesisCandidate,
+  request: EvidenceRequest | undefined,
+  canPromote: boolean,
+): string {
+  if (canPromote) {
+    return "근거 확인 완료";
+  }
+
+  if (hypothesis.status === "REJECTED") {
+    return "가설 반려";
+  }
+
+  if (!request) {
+    return "요청 항목 필요";
+  }
+
+  const labels: Record<EvidenceRequest["status"], string> = {
+    REQUESTED: "데이 확인 대기",
+    COLLECTING: "근거 수집 중",
+    VERIFIED: "근거 확인 완료",
+    INSUFFICIENT: "근거 부족",
+  };
+
+  return labels[request.status];
+}
+
+function buildEvidenceRequestEvidenceLabels(requests: EvidenceRequest[]): string[] {
+  const evidenceIds = requests.flatMap((request) => request.verifiedEvidenceIds);
+
+  if (evidenceIds.length === 0) {
+    return ["검증 근거 대기"];
+  }
+
+  return evidenceIds.map((id) => evidenceCategoryLabel(id));
 }
 
 function agentRunTypeLabel(runType: AgentRun["runType"]): string {

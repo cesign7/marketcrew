@@ -3,9 +3,9 @@
 > **Summary**: 스마트스토어, 네이버 키워드광고, 자체 쇼핑몰 데이터와 음력/양력 이벤트 캘린더를 함께 읽고 하위 캐릭터들이 먼저 안건을 발굴해 대표 결재를 올리며, 대표가 승인하면 즉시 반영하고 이후 성과까지 보고하는 회사형 AI 마케팅 업무시스템을 만든다. 키워드 광고는 상품 시즌성과 별도로 시즌 키워드 생애주기, 예산/입찰 안전장치, 검색수 캐시를 가진다.
 >
 > **Project**: marketcrew2
-> **Version**: 0.7
+> **Version**: 0.8
 > **Author**: Codex
-> **Date**: 2026-05-22 KST
+> **Date**: 2026-05-23 KST
 > **Status**: Draft
 
 ---
@@ -150,7 +150,7 @@ Rule of thumb:
 | FR-21 | 시즌 키워드 광고 안건은 예산 상한, 입찰가 상한, 중지 조건, 제외 키워드 후보, 재고/마진 조건을 포함해야 한다. | High | Pending |
 | FR-22 | 키워드 수요 조회 결과는 `KeywordDemandSnapshot`으로 캐시하고, LLM에는 상위 후보 요약과 근거 ID만 전달해야 한다. | High | Pending |
 | FR-23 | 데이터 연동 화면은 PC/모바일 광고 설정, 시간대 성과, 스마트스토어 순매출/클레임, 데이터랩 세그먼트, 판매 분석 확장을 어떤 순서로 반영할지 보여줘야 한다. | Medium | Pending |
-| FR-24 | LLM 캐릭터는 정해진 이상신호 밖의 상품/키워드/기기/시간대/고객군 가설을 자유 탐색할 수 있어야 하며, 확인 전에는 결재가 아니라 근거 요청으로 남겨야 한다. | High | Pending |
+| FR-24 | LLM 캐릭터는 정해진 이상신호 밖의 상품/키워드/기기/시간대/고객군 가설을 자유 탐색할 수 있어야 하며, 확인 전에는 결재가 아니라 근거 요청으로 남겨야 한다. | High | Implemented in module-20 |
 
 ### 3.2 Non-Functional Requirements
 
@@ -479,6 +479,8 @@ API로 더 가져올 수 있는 모든 항목을 한 번에 LLM 판단에 넣지
 - 가설과 확인된 사실을 화면과 저장 데이터에서 분리한다.
 - 확인 전에는 외부 광고/상품/CRM에 반영하지 않는다.
 - 자유 탐색 결과가 반복적으로 반려되면 캐릭터별 월간 평가에서 탐색 범위를 조정한다.
+- 2026-05-23 구현 기준으로 `HypothesisCandidate`와 `EvidenceRequest`를 저장소 컬렉션에 분리하고, `/operations`는 `근거 요청 큐`에서 검증 대기와 승격 가능 가설을 한글로 표시한다.
+- 승격 규칙은 `HypothesisCandidate.status=VERIFIED`이고 연결된 모든 `EvidenceRequest.status=VERIFIED`일 때만 `AgendaCandidate`로 변환한다. 그 외 상태는 `WAITING_EVIDENCE` bucket에 남긴다.
 
 ---
 
@@ -899,11 +901,13 @@ Decision: keep the visible character count at 7 for MVP. Add modes/skills under 
 
 ### Slice 5A: 자유 탐색과 근거 요청 루프
 
+- Status: `module-19`에서 인사과 롤모델 정책을 구현했고, `module-20`에서 근거 요청 큐와 승격 가드를 구현했다.
 - 담당 캐릭터는 정해진 `Signal` 후보 외에도 상품/키워드/기기/시간대/고객군 조합 가설을 생성한다.
 - 모든 가설은 `Hypothesis` 상태로 시작하며, 필요한 원천 필드와 비교 기준을 함께 남긴다.
 - 데이는 근거 후보를 검증하고 `확인됨`, `근거 부족`, `수집 필요`, `판단 보류`로 표시한다.
 - 모아는 확인된 가설만 대표 결재 안건으로 승격하고, 미확인 가설은 추가 근거 대기 또는 월간 학습 대상으로 남긴다.
 - `/people` 인사과 화면은 캐릭터별 롤모델에 자유 탐색과 검증 책임을 보여주고 수정 가능해야 한다.
+- `/operations`는 검증 전 가설을 결재 목록과 분리해 `근거 요청 큐`로 보여주며, 검증 완료 가설만 `승격 가능`으로 표시한다.
 
 ### Slice 6: Real Provider Executors
 

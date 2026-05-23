@@ -12,10 +12,24 @@ describe("buildAgendaRoomViewModel", () => {
       ["TODAY_APPROVAL", 1],
       ["SEASONAL_KEYWORD_REVIEW", 2],
       ["TRACKING_OUTCOME", 3],
-      ["WAITING_EVIDENCE", 1],
+      ["WAITING_EVIDENCE", 2],
       ["AUTO_HOLD", 0],
       ["FAILED_EXECUTION", 1],
     ]);
+    expect(viewModel.summary.waitingEvidence).toBe(2);
+    expect(viewModel.evidenceRequestQueue.title).toBe("근거 요청 큐");
+    expect(viewModel.evidenceRequestQueue.guardrailLabel).toContain("검증 전 결재 승격 차단");
+    expect(viewModel.evidenceRequestQueue.items.map((item) => item.title)).toContain(
+      "부처님오신날 선물카드 모바일 저녁 광고 가설",
+    );
+    expect(
+      viewModel.evidenceRequestQueue.items.find((item) => item.id === "evidence-request-gro-mobile-evening-gift-card")
+        ?.statusLabel,
+    ).toBe("데이 확인 대기");
+    expect(
+      viewModel.evidenceRequestQueue.items.find((item) => item.id === "evidence-request-pro-stickersee-season-bundle")
+        ?.promotionLabel,
+    ).toBe("승격 가능");
 
     const readyPreview = viewModel.approvalPreviews.find((preview) => preview.statusLabel === "대표 승인 대기");
     expect(readyPreview).toBeDefined();

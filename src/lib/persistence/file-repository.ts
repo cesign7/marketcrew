@@ -8,7 +8,9 @@ import type {
   ApprovalRequest,
   CharacterReport,
   ExecutionResult,
+  EvidenceRequest,
   FollowUpInternalTask,
+  HypothesisCandidate,
   KeywordDemandSnapshot,
   MoaSynthesisReport,
   OutcomeReport,
@@ -75,6 +77,22 @@ class FileMarketingWorkflowRepository implements MarketingWorkflowRepository {
 
   listAgendaCandidates(): AgendaCandidate[] {
     return this.listCollection("agendaCandidates");
+  }
+
+  saveHypothesisCandidates(candidates: HypothesisCandidate[]): void {
+    this.saveCollection("hypothesisCandidates", candidates);
+  }
+
+  listHypothesisCandidates(): HypothesisCandidate[] {
+    return this.listCollection("hypothesisCandidates");
+  }
+
+  saveEvidenceRequests(requests: EvidenceRequest[]): void {
+    this.saveCollection("evidenceRequests", requests);
+  }
+
+  listEvidenceRequests(): EvidenceRequest[] {
+    return this.listCollection("evidenceRequests");
   }
 
   saveCharacterReports(reports: CharacterReport[]): void {

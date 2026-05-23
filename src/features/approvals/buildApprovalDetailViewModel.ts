@@ -342,6 +342,8 @@ function workflowObjectLabel(objectType: WorkflowObjectType): string {
   const labels: Record<WorkflowObjectType, string> = {
     signal: "시그널",
     agenda_candidate: "안건 후보",
+    hypothesis_candidate: "가설 후보",
+    evidence_request: "근거 요청",
     character_report: "캐릭터 보고",
     moa_synthesis_report: "모아 종합",
     approval_request: "결재안",

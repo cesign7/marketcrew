@@ -15,7 +15,7 @@ test("운영실에서 실제 AI 모델 호출 전 비용 가드를 확인한다"
   await expect(page.locator(".llm-governance-token-row")).toContainText("원천 행 제외");
   const pricingReference = page.getByLabel("공식 AI 모델 가격 기준");
   await expect(pricingReference.getByText("공식 가격 기준")).toBeVisible();
-  await expect(pricingReference.getByText("Gemini 3.5 Flash")).toBeVisible();
+  await expect(pricingReference.getByText("제미나이 3.5 빠른 모델")).toBeVisible();
   await expect(pricingReference.getByText("입력 $1.50 / 100만 토큰")).toBeVisible();
   await expect(pricingReference.getByText("출력 $9.00 / 100만 토큰")).toBeVisible();
   await page.goto("/approvals");

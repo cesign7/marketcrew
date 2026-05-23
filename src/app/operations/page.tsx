@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ClipboardList, ShieldCheck, UsersRound } from "lucide-react";
 import { AgendaCard } from "@/components/agenda-room/AgendaCard";
 import { CharacterRail } from "@/components/agenda-room/CharacterRail";
+import { EvidenceRequestQueuePanel } from "@/components/agenda-room/EvidenceRequestQueuePanel";
 import { InboxBucketBar } from "@/components/agenda-room/InboxBucketBar";
 import { AppShell } from "@/components/layout/AppShell";
 import { loadAgendaRoomViewModel } from "@/features/agenda-room/loadAgendaRoomViewModel";
@@ -51,6 +52,8 @@ export default async function OperationsPage() {
       </section>
 
       <InboxBucketBar buckets={viewModel.inboxBuckets} />
+
+      <EvidenceRequestQueuePanel queue={viewModel.evidenceRequestQueue} />
 
       <div className="daily-brief-grid">
         <section className="moa-brief-panel" aria-labelledby="moa-brief-title">

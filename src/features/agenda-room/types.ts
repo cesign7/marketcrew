@@ -319,6 +319,28 @@ export type AiEvidenceBriefView = {
   rawDataPolicyLabel: string;
 };
 
+export type EvidenceRequestQueueView = {
+  title: string;
+  summaryLabel: string;
+  guardrailLabel: string;
+  openRequestCount: number;
+  verifiedHypothesisCount: number;
+  items: Array<{
+    id: string;
+    title: string;
+    ownerName: string;
+    verifierName: string;
+    statusLabel: string;
+    tone: "waiting" | "ready" | "blocked";
+    hypothesis: string;
+    requestedFields: string[];
+    comparisonWindow: string;
+    reason: string;
+    promotionLabel: string;
+    evidenceLabels: string[];
+  }>;
+};
+
 export type AgentRunSummaryView = {
   totalRuns: number;
   totalTokensLabel: string;
@@ -364,6 +386,7 @@ export type AgendaRoomViewModel = {
   agentRunSummary: AgentRunSummaryView;
   productGrowthOpportunities: ProductGrowthOpportunityView[];
   aiEvidenceBriefs: AiEvidenceBriefView[];
+  evidenceRequestQueue: EvidenceRequestQueueView;
   executionResults: ExecutionResultView[];
   outcomeCheckpoints: OutcomeCheckpointView[];
 };

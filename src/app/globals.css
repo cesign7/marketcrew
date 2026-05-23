@@ -1029,6 +1029,7 @@ button:disabled {
 .collection-policy-section,
 .data-contract-section,
 .ai-evidence-section,
+.evidence-request-section,
 .evidence-expansion-section,
 .provider-readiness-section,
 .provider-sync-section,
@@ -1073,6 +1074,7 @@ button:disabled {
 .provider-readiness-grid,
 .provider-sync-grid,
 .ai-evidence-grid,
+.evidence-request-grid,
 .collection-policy-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1082,6 +1084,7 @@ button:disabled {
 .provider-card,
 .provider-sync-card,
 .ai-evidence-card,
+.evidence-request-card,
 .collection-policy-card,
 .product-opportunity-card,
 .agent-run-card,
@@ -1099,6 +1102,7 @@ button:disabled {
 .provider-card header,
 .provider-sync-card header,
 .ai-evidence-card header,
+.evidence-request-card header,
 .collection-policy-card header,
 .product-opportunity-card header,
 .planner-preview-card header,
@@ -1106,6 +1110,7 @@ button:disabled {
 .owner-submit-card header,
 .provider-state-row,
 .sync-status-row,
+.evidence-request-meta,
 .planner-metrics,
 .planner-evidence-row,
 .planner-constraints,
@@ -1138,8 +1143,13 @@ button:disabled {
   min-height: 46px;
 }
 
+.evidence-request-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .provider-icon,
 .ai-evidence-icon,
+.evidence-request-icon,
 .planner-icon {
   display: grid;
   place-items: center;
@@ -1172,6 +1182,21 @@ button:disabled {
   background: #f8e9e7;
 }
 
+.request-ready .evidence-request-icon {
+  color: var(--teal-strong);
+  background: #e3f2ef;
+}
+
+.request-waiting .evidence-request-icon {
+  color: var(--gold);
+  background: #f8efd9;
+}
+
+.request-blocked .evidence-request-icon {
+  color: var(--red);
+  background: #f8e9e7;
+}
+
 .provider-card strong {
   display: block;
   font-size: 14px;
@@ -1179,6 +1204,7 @@ button:disabled {
 
 .provider-card header span:not(.provider-icon),
 .provider-sync-card header span:not(.provider-icon),
+.evidence-request-card header span:not(.evidence-request-icon),
 .planner-mode {
   display: inline-flex;
   width: fit-content;
@@ -1200,8 +1226,53 @@ button:disabled {
   background: #f8e9e7;
 }
 
+.evidence-request-card header {
+  justify-content: space-between;
+}
+
+.evidence-request-card header > div {
+  min-width: 0;
+}
+
+.evidence-request-card h3 {
+  margin: 6px 0 0;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.evidence-request-card p,
+.evidence-request-card footer {
+  margin: 12px 0 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.evidence-request-card header > strong,
+.queue-summary-label {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #eef4f1;
+  padding: 6px 9px;
+  color: var(--teal-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.request-waiting header > strong {
+  color: var(--gold);
+  background: #f8efd9;
+}
+
+.request-blocked header > strong {
+  color: var(--red);
+  background: #f8e9e7;
+}
+
 .provider-state-row,
 .sync-status-row,
+.evidence-request-meta,
 .planner-metrics,
 .planner-constraints,
 .planner-audit-grid,
@@ -1219,6 +1290,7 @@ button:disabled {
 
 .provider-state-row span,
 .sync-status-row span,
+.evidence-request-meta span,
 .planner-metrics span,
 .planner-constraints span,
 .planner-audit-grid span,
@@ -1234,6 +1306,33 @@ button:disabled {
   border-radius: 999px;
   background: #fbfcfa;
   padding: 5px 8px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.evidence-request-fields {
+  margin-top: 12px;
+}
+
+.evidence-request-fields strong {
+  display: block;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.evidence-request-fields div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.evidence-request-fields span {
+  border-radius: 8px;
+  background: #fbfcfa;
+  padding: 6px 8px;
   color: var(--ink-muted);
   font-size: 12px;
   font-weight: 800;
@@ -3824,6 +3923,7 @@ button:disabled {
 
   .daily-brief-grid,
   .workspace-grid,
+  .evidence-request-grid,
   .evidence-expansion-list,
   .collection-schedule-board,
   .collection-policy-grid {
@@ -4114,6 +4214,7 @@ button:disabled {
 
   .summary-strip,
   .keyword-list,
+  .evidence-request-grid,
   .agenda-details,
   .diff-grid,
   .data-source-field-grid,
