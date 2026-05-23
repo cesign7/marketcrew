@@ -89,15 +89,16 @@ const navItems = [
 }>;
 
 const characterDeskItems = [
-  { label: "모아", description: "대표 결재 분류", href: "/characters/moa", initial: "모" },
-  { label: "그로", description: "광고 키워드", href: "/characters/gro", initial: "그" },
-  { label: "마루", description: "브랜드 운영", href: "/characters/maru", initial: "마" },
-  { label: "프로", description: "상품 전략", href: "/characters/pro", initial: "프" },
-  { label: "리피", description: "재구매", href: "/characters/ripi", initial: "리" },
-  { label: "카피", description: "문안", href: "/characters/copy", initial: "카" },
-  { label: "데이", description: "근거 확인", href: "/characters/day", initial: "데" },
+  { label: "모아", menuLabel: "모아 데스크", description: "대표 결재 분류", href: "/characters/moa", initial: "모" },
+  { label: "그로", menuLabel: "그로 데스크", description: "광고 키워드", href: "/characters/gro", initial: "그" },
+  { label: "마루", menuLabel: "마루 데스크", description: "브랜드 운영", href: "/characters/maru", initial: "마" },
+  { label: "프로", menuLabel: "프로 데스크", description: "상품 전략", href: "/characters/pro", initial: "프" },
+  { label: "리피", menuLabel: "리피 데스크", description: "재구매", href: "/characters/ripi", initial: "리" },
+  { label: "카피", menuLabel: "카피 데스크", description: "문안", href: "/characters/copy", initial: "카" },
+  { label: "데이", menuLabel: "데이 데스크", description: "근거 확인", href: "/characters/day", initial: "데" },
 ] satisfies Array<{
   label: string;
+  menuLabel: string;
   description: string;
   href: string;
   initial: string;
@@ -235,15 +236,15 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
               </Link>
             );
           })}
-          <span className="app-nav-section-label">직원 데스크</span>
-          <div className="app-character-nav">
+          <span className="app-nav-section-label">캐릭터별 데스크</span>
+          <div className="app-character-menu" aria-label="캐릭터별 데스크">
             {characterDeskItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
                   aria-current={isActive ? "page" : undefined}
-                  aria-label={`${item.label} 데스크`}
-                  className={`app-character-link${isActive ? " is-active" : ""}${
+                  aria-label={item.menuLabel}
+                  className={`app-character-menu-link${isActive ? " is-active" : ""}${
                     pendingHref === item.href && !isActive ? " is-pending" : ""
                   }`}
                   href={item.href}
@@ -256,10 +257,10 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
                   onMouseEnter={() => warmRoute(item.href)}
                   onTouchStart={() => warmRoute(item.href)}
                   prefetch
-                  title={`${item.label} 데스크 - ${item.description}`}
+                  title={`${item.menuLabel} - ${item.description}`}
                 >
                   <span aria-hidden="true">{item.initial}</span>
-                  <strong>{item.label}</strong>
+                  <strong>{item.menuLabel}</strong>
                   <small>{item.description}</small>
                 </Link>
               );
