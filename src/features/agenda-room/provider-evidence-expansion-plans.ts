@@ -108,9 +108,9 @@ export function buildProviderEvidenceExpansionPlans(): ProviderEvidenceExpansion
       id: "evidence-plan-commerce-data-solution",
       phaseLabel: "5단계",
       priorityLabel: "가능 시 확장",
-      providerKeys: ["smartstore", "commerce_cross_channel"],
-      title: "스마트스토어 데이터솔루션",
-      summary: "브랜드스토어 권한과 구독이 가능할 때 상품별 검색/마케팅/시간대 결제 성과를 붙입니다.",
+      providerKeys: ["smartstore"],
+      title: "스티커씨 스마트스토어 데이터솔루션",
+      summary: "스티커씨 스마트스토어 권한과 구독이 가능할 때 상품별 검색/마케팅/시간대 결제 성과를 붙입니다.",
       evidenceToAdd: [
         "시간대별 유입과 결제 성과",
         "검색 채널 키워드별 유입과 결제 성과",
@@ -121,7 +121,7 @@ export function buildProviderEvidenceExpansionPlans(): ProviderEvidenceExpansion
       judgmentExamples: [
         "광고 키워드가 실제 결제 키워드와 맞는지 확인",
         "상품별로 돈 되는 검색어를 발굴",
-        "스마트스토어 결제 피크와 광고 성과 피크를 대조",
+        "스티커씨 스마트스토어 결제 피크와 광고 성과 피크를 대조",
       ],
       acceptanceChecks: [
         "브랜드스토어/데이터솔루션 권한이 없으면 선택 확장으로 표시",
@@ -129,6 +129,30 @@ export function buildProviderEvidenceExpansionPlans(): ProviderEvidenceExpansion
       ],
       sourceLabel: "네이버 커머스 API 데이터솔루션",
       sourceUrl: "https://apicenter.commerce.naver.com/docs/commerce-api/current/%ED%8C%90%EB%A7%A4-%EB%B6%84%EC%84%9D",
+    },
+    {
+      id: "evidence-plan-coffeeprint-smartstore-onboarding",
+      phaseLabel: "6단계",
+      priorityLabel: "입점 전 준비",
+      providerKeys: ["shop"],
+      title: "커피프린트 스마트스토어 추가 준비",
+      summary: "커피프린트는 자체 쇼핑몰과 앞으로 추가될 스마트스토어를 같은 브랜드 안의 판매채널로 분리 관리합니다.",
+      evidenceToAdd: [
+        "커피프린트 판매채널 목록",
+        "자체몰 상품 코드와 스마트스토어 상품 코드 매핑",
+        "채널별 주문/취소/클레임 집계",
+        "채널별 광고 랜딩 가능 상품",
+      ],
+      judgmentExamples: [
+        "커피프린트 스마트스토어 입점 후에도 자체몰과 같은 브랜드 안에서 따로 성과 판단",
+        "브랜드가 다른 스티커씨와 매출·예산을 직접 비교하지 않음",
+      ],
+      acceptanceChecks: [
+        "커피프린트 스마트스토어 API 키가 열리기 전에는 준비 항목으로만 표시",
+        "같은 브랜드 안의 채널 성과만 합산하거나 비교",
+      ],
+      sourceLabel: "커피프린트 스마트스토어 추가 계획",
+      sourceUrl: "https://apicenter.commerce.naver.com/docs/commerce-api/current",
     },
   ];
 }

@@ -179,7 +179,7 @@ Rule of thumb:
 | Signal Type | Default Window | Comparison Baseline | Use Case |
 |-------------|----------------|---------------------|----------|
 | `daily_spike` | 어제 | 최근 7일 평균, 같은 요일 4주 평균 | 광고비 급증, 주문 급감, API 실패 같은 빠른 운영 이슈 |
-| `weekly_trend` | 최근 7일 | 이전 7일 | 광고 성과, 상품 판매, 채널별 매출의 단기 변화 |
+| `weekly_trend` | 최근 7일 | 이전 7일 | 광고 성과, 상품 판매, 브랜드별 매출의 단기 변화 |
 | `monthly_trend` | 최근 30일 | 이전 30일 | 재구매/CRM, 상품군 흐름, 큰 캠페인 성과 |
 | `seasonal_yoy` | 최근 7일 또는 30일 | 전년도 같은 기간, 가능하면 같은 요일 정렬 | 시즌성 상품, 명절/행사/계절 상품의 정상/비정상 판단 |
 | `lunar_event_yoy` | 이벤트 D-45 ~ D+7 기본 | 전년도 같은 음력 이벤트의 D-45 ~ D+7 | 설날, 추석, 부처님오신날처럼 음력일이 기준인 상품/키워드/캠페인 판단 |
@@ -257,7 +257,7 @@ Opportunity types:
 Inputs:
 
 - 상품명, 카테고리, 태그, 가격, 마진, 재고.
-- 스마트스토어/자체몰 매출과 주문 추세.
+- 브랜드별 매출과 주문 추세. 스티커씨와 커피프린트는 서로 비교하지 않고 각 브랜드 안의 판매채널만 함께 본다.
 - 네이버 키워드광고 성과와 검색어/키워드 후보.
 - 마케팅 캘린더의 이벤트명, 음력/양력 여부, 이벤트 윈도우.
 - 전년도 같은 이벤트 윈도우의 상품/키워드/매출 성과.
@@ -461,7 +461,8 @@ API로 더 가져올 수 있는 모든 항목을 한 번에 LLM 판단에 넣지
 | 2 | 기기·시간대·요일 성과 | 네이버 키워드광고 | PC/모바일별 노출·클릭·광고비, 시간대별 성과, 요일별 성과, 구매 전환수/전환액, 광고수익률 | 입찰 조정, 시간대 제외, 예산 배분 안건의 근거를 만든다. |
 | 3 | 스마트스토어 순매출과 클레임 | 스마트스토어(스티커씨) | 상품/옵션별 주문수, 할인액/배송비 반영 순매출 후보, 취소/반품/교환, 구매확정일, 상품 코드 매핑 | 광고 성과가 주문 품질과 실제 매출로 이어지는지 판단한다. |
 | 4 | 데이터랩 세그먼트 | 네이버 데이터랩 | 성별, 연령, 기기, 기간 단위별 상대 검색 추이 | 시즌 키워드가 어느 고객군에서 움직이는지 보조 근거로 쓴다. |
-| 5 | 스마트스토어 데이터솔루션 | 네이버 커머스 API | 판매 분석, 고객 분석, 결제 고객, 유입/전환 분석 가능 범위 | API 권한이 열리는 경우 상품 발굴과 채널별 수요 판단을 확장한다. |
+| 5 | 스티커씨 스마트스토어 데이터솔루션 | 네이버 커머스 API | 판매 분석, 고객 분석, 결제 고객, 유입/전환 분석 가능 범위 | API 권한이 열리는 경우 스티커씨 상품 발굴과 스마트스토어 수요 판단을 확장한다. |
+| 6 | 커피프린트 스마트스토어 추가 준비 | 커피프린트 판매채널 계획 | 자체몰 상품 코드와 향후 스마트스토어 상품 코드 매핑, 채널별 주문/클레임 집계 후보 | 커피프린트 안에서 자체몰과 스마트스토어를 분리 관리한다. 스티커씨와 직접 비교하지 않는다. |
 
 이 순서는 `/data` 화면에도 그대로 보여준다. 단, 실제 수집 구현은 각 항목의 공식 API 권한, 조회 가능 기간, 호출 제한, 개인정보 저장 금지 조건을 통과한 뒤 별도 iteration으로 진행한다.
 
@@ -774,7 +775,8 @@ External role model benchmarks:
 | Reference Product | What to Borrow | Character Impact |
 |-------------------|----------------|------------------|
 | Shopify Sidekick | Store-context assistant that can analyze, create, and prepare changes for merchant review. | `moa`는 승인 전에는 대표 검토 가능한 변경안/결재 요청으로 정리하고, 승인 후에는 preflight와 executor 상태를 대표에게 보고한다. `maru`는 store operations signal을 읽는 캐릭터로 둔다. |
-| Triple Whale Moby | Ecommerce-specific AI operator that connects multiple commerce/advertising data sources into actionable recommendations. | `moa`, `gro`, `maru`, `pro`는 채널별 숫자를 따로 보지 않고 cross-channel 안건으로 묶을 수 있어야 한다. |
+| Shopify / Google Ads / Cafe24 관리자 구조 | 스토어, 광고계정, 멀티쇼핑몰처럼 먼저 현재 운영 단위를 고정하고 그 안에서 판매채널과 데이터 소스를 탐색한다. | MarketCrew 상단 기준은 브랜드다. `스티커씨`와 `커피프린트`는 분리 운영하고, 광고/데이터랩은 브랜드별 해석 근거로 붙인다. |
+| Triple Whale Moby | Ecommerce-specific AI operator that connects multiple commerce/advertising data sources into actionable recommendations. | 여러 데이터 소스는 한 화면에서 볼 수 있지만, 서로 다른 브랜드의 매출/예산을 하나의 균형 안건으로 묶지 않는다. 같은 브랜드 안의 판매채널 확장이나 상품/광고/CRM 근거 연결에만 사용한다. |
 | Northbeam | Attribution and marketing measurement across touchpoints. | `gro`는 단순 클릭/비용 감시가 아니라 어떤 광고 접점이 매출에 기여했는지 보는 성과 분석가로 둔다. `day`는 측정 신뢰도 검증을 맡는다. |
 | Klaviyo K:AI | Campaign/flow creation, customer agent, personalization, and predictive/generative CRM features. | `ripi`는 재구매/세그먼트/개인화 안건을 만들고, `copy`는 캠페인 메시지 초안을 만든다. |
 | HubSpot Breeze | Assistant, agents, and data enrichment for go-to-market workflows. | 캐릭터는 고정된 메뉴가 아니라 업무별 agent profile로 확장 가능해야 한다. |

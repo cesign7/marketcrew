@@ -18,9 +18,9 @@ import {
   filterProviderSyncEvidence,
   dataPeriodLabel,
   dataPeriodPolicyLabel,
-  normalizeDataChannel,
+  normalizeDataBusiness,
   normalizeDataPeriod,
-  type DataChannelFilter,
+  type DataBusinessFilter,
   type DataPeriodFilter,
 } from "@/features/agenda-room/data-filters";
 import { AgentRunSummaryPanel } from "./AgentRunSummaryPanel";
@@ -35,7 +35,7 @@ import { ProviderSyncEvidencePanel } from "./ProviderSyncEvidencePanel";
 type DataIntegrationPanelsProps = {
   agentRunSummary: AgentRunSummaryView;
   aiEvidenceBriefs: AiEvidenceBriefView[];
-  initialChannel: DataChannelFilter;
+  initialBusiness: DataBusinessFilter;
   initialPeriod: DataPeriodFilter;
   plannerPreview: PlannerPreviewView;
   providerDataContracts: ProviderDataContractView[];
@@ -52,7 +52,7 @@ type ViewFilterChangeEvent = CustomEvent<{
 export function DataIntegrationPanels({
   agentRunSummary,
   aiEvidenceBriefs,
-  initialChannel,
+  initialBusiness,
   initialPeriod,
   plannerPreview,
   providerDataContracts,
@@ -61,7 +61,7 @@ export function DataIntegrationPanels({
   providerSyncEvidence,
 }: DataIntegrationPanelsProps) {
   const [selectedFilter, setSelectedFilter] = useState({
-    channel: initialChannel,
+    channel: initialBusiness,
     period: initialPeriod,
   });
 
@@ -69,7 +69,7 @@ export function DataIntegrationPanels({
     function handleFilterChange(event: Event) {
       const detail = (event as ViewFilterChangeEvent).detail;
       setSelectedFilter({
-        channel: normalizeDataChannel(detail?.channel),
+        channel: normalizeDataBusiness(detail?.channel),
         period: normalizeDataPeriod(detail?.period),
       });
     }

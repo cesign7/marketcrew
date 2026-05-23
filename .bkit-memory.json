@@ -2,7 +2,7 @@
   "project": "marketcrew2",
   "currentFeature": "ai-marketing-character-ops",
   "phase": "completed",
-  "updatedAt": "2026-05-23T14:49:03+09:00",
+  "updatedAt": "2026-05-23T15:27:44+09:00",
   "features": {
     "ai-marketing-character-ops": {
       "phase": "completed",
@@ -13,9 +13,9 @@
       "analysisPath": "docs/03-analysis/ai-marketing-character-ops.analysis.md",
       "qaPath": "docs/05-qa/ai-marketing-character-ops.qa-report.md",
       "reportPath": "docs/04-report/ai-marketing-character-ops.report.md",
-      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-25.md",
+      "actPath": "docs/04-act/ai-marketing-character-ops.iteration-26.md",
       "matchRate": 100,
-      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속 module-27에서 실행 범위 소급 적용을 추가했다. 검색광고용 ExecutionScopeProposal 로직을 공통 모듈로 분리하고, 내부 초안/상품/CRM 안건에도 적용 채널, 실행 방식, 담당 범위, 외부 반영 경계, 성과 확인 범위를 제안한다. /api/operations/execution-scope-backfill GET/POST로 미리보기와 적용 결과를 확인할 수 있으며, 로컬 marketcrew Postgres DB의 기존 저장 결재안 3건에 소급 적용했고 재조회 결과 각 6개 필드가 확인됐다. 대표 결정은 저장된 건이 없어 적용 0건이다. 실제 provider write는 계속 차단한다. 검증은 표적 테스트 3 files/11 tests, 전체 단위 테스트 50 files/130 tests, 타입 검사, 빌드, audit 0 vulnerabilities를 통과했다."
+      "next": "1차 MVP는 완료 상태를 유지한다. 2026-05-23 후속 module-28에서 메뉴/정보구조를 브랜드 우선으로 재정렬했다. 스티커씨와 커피프린트는 서로 비교하지 않고, 스마트스토어/자체몰/향후 커피프린트 스마트스토어는 각 브랜드 안의 판매채널로 다룬다. channel-balance 교차 브랜드 안건과 commerce_cross_channel AI 판독 근거를 제거했고, 상단 필터와 데이터 화면 문구를 브랜드 기준으로 바꿨다. 실제 provider write는 계속 차단한다."
     },
     "ops-persistence-provenance-foundation": {
       "phase": "completed",

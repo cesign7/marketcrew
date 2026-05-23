@@ -24,7 +24,7 @@ export function ProviderDataContractPanel({ contracts }: ProviderDataContractPan
 
       <SourceFieldOverview contracts={contractsWithSourceFields} />
 
-      <div className="data-contract-link-panel" aria-label="채널별 데이터 명세 바로가기">
+      <div className="data-contract-link-panel" aria-label="브랜드별 데이터 명세 바로가기">
         {contracts.map((contract) => (
           <article className="data-contract-link-card" key={`${contract.providerKey}-${contract.channelKey}`}>
             <div>

@@ -31,7 +31,7 @@ export default async function SettingsPage() {
           <KeyRound size={20} aria-hidden="true" />
           <div>
             <strong>연동 키</strong>
-            <p>채널별 읽기 키가 없으면 샘플/캐시 근거로 유지하고, 누락 키는 아래 준비상태에서 확인합니다.</p>
+            <p>브랜드와 연동처별 읽기 키가 없으면 샘플/캐시 근거로 유지하고, 누락 키는 아래 준비상태에서 확인합니다.</p>
           </div>
         </article>
         <article className="settings-card">

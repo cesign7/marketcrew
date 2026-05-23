@@ -9,33 +9,33 @@ export type ViewFilterOption = {
 };
 
 type ViewFilterControlsProps = {
-  channelFilters: ViewFilterOption[];
+  businessFilters: ViewFilterOption[];
   periodFilters: ViewFilterOption[];
 };
 
 const DEFAULT_CHANNEL = "all";
 const DEFAULT_PERIOD = "today";
 
-export function ViewFilterControls({ channelFilters, periodFilters }: ViewFilterControlsProps) {
+export function ViewFilterControls({ businessFilters, periodFilters }: ViewFilterControlsProps) {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const urlChannel = normalizeFilterValue(searchParams.get("channel"), channelFilters, DEFAULT_CHANNEL);
+  const urlBusiness = normalizeFilterValue(searchParams.get("channel"), businessFilters, DEFAULT_CHANNEL);
   const urlPeriod = normalizeFilterValue(searchParams.get("period"), periodFilters, DEFAULT_PERIOD);
   const [selectedFilter, setSelectedFilter] = useState({
-    channel: urlChannel,
+    channel: urlBusiness,
     period: urlPeriod,
   });
 
   useEffect(() => {
     setSelectedFilter({
-      channel: urlChannel,
+      channel: urlBusiness,
       period: urlPeriod,
     });
-  }, [urlChannel, urlPeriod]);
+  }, [urlBusiness, urlPeriod]);
 
   function updateFilter(key: "channel" | "period", value: string) {
     const nextParams = new URLSearchParams(window.location.search);
-    if (!isAllowedFilterValue(nextParams.get("channel"), channelFilters)) {
+    if (!isAllowedFilterValue(nextParams.get("channel"), businessFilters)) {
       nextParams.delete("channel");
     }
     if (!isAllowedFilterValue(nextParams.get("period"), periodFilters)) {
@@ -64,9 +64,9 @@ export function ViewFilterControls({ channelFilters, periodFilters }: ViewFilter
 
   return (
     <section className="view-control-bar" aria-busy={isPending} aria-label="화면 보기 기준">
-      <div className="filter-group" aria-label="채널 기준">
-        <span>채널</span>
-        {channelFilters.map((filter) => (
+      <div className="filter-group" aria-label="브랜드 기준">
+        <span>브랜드</span>
+        {businessFilters.map((filter) => (
           <button
             aria-pressed={selectedFilter.channel === filter.value}
             key={filter.value}

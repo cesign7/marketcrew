@@ -8,7 +8,7 @@ export type AiEvidenceDecision =
 
 export type AiEvidenceBrief = {
   id: string;
-  providerKey: ProviderSyncReport["provider"] | "commerce_cross_channel";
+  providerKey: ProviderSyncReport["provider"];
   channelLabel: string;
   title: string;
   decision: AiEvidenceDecision;
@@ -31,17 +31,12 @@ export function buildAiEvidenceBriefs(input: {
   const datalabReport = latestReport(input.providerSyncReports, "datalab");
   const smartstoreReport = latestReport(input.providerSyncReports, "smartstore");
   const shopReport = latestReport(input.providerSyncReports, "shop");
-  const commerceSnapshot = smartstoreReport?.commerceAggregateSnapshot;
-  const shopSnapshot = shopReport?.shopAggregateSnapshot;
 
   return [
     searchAdReport ? buildSearchAdBrief(searchAdReport, input.generatedAt) : undefined,
     datalabReport ? buildDataLabBrief(datalabReport) : undefined,
     smartstoreReport ? buildSmartstoreBrief(smartstoreReport) : undefined,
     shopReport ? buildShopBrief(shopReport) : undefined,
-    smartstoreReport && shopReport && commerceSnapshot && shopSnapshot
-      ? buildCrossChannelBrief(smartstoreReport, shopReport)
-      : undefined,
   ].filter((brief): brief is AiEvidenceBrief => Boolean(brief));
 }
 
@@ -129,7 +124,7 @@ function buildSmartstoreBrief(report: ProviderSyncReport): AiEvidenceBrief {
           snapshot.topProductName ? ` 상위 상품: ${snapshot.topProductName}` : ""
         }`
       : `스마트스토어 집계 자료가 없어 AI 판단 근거가 부족합니다.${report.failureReason ? ` 사유: ${report.failureReason}` : ""}`,
-    allowedUseCases: ["상위 상품/매출 신호 판단", "상품별 키워드 초안 근거", "채널별 매출 변화 확인"],
+    allowedUseCases: ["상위 상품/매출 신호 판단", "상품별 키워드 초안 근거", "스티커씨 스마트스토어 변화 확인"],
     blockedUseCases: ["상품 가격/옵션 즉시 변경", "재고/배송 상태 단정", "외부 계정 자동 수정"],
     evidenceIds: snapshot ? [snapshot.id] : [],
     sourceReportIds: [report.id],
@@ -163,31 +158,6 @@ function buildShopBrief(report: ProviderSyncReport): AiEvidenceBrief {
     evidenceIds: snapshot ? [snapshot.id] : [],
     sourceReportIds: [report.id],
     checkedAt: report.checkedAt,
-  });
-}
-
-function buildCrossChannelBrief(smartstoreReport: ProviderSyncReport, shopReport: ProviderSyncReport): AiEvidenceBrief {
-  const commerce = smartstoreReport.commerceAggregateSnapshot!;
-  const shop = shopReport.shopAggregateSnapshot!;
-  const decision =
-    smartstoreReport.status === "SYNCED" && shopReport.status === "SYNCED" && commerce.grossSales > 0 && shop.grossSales > 0
-      ? "JUDGMENT_READY"
-      : "NEEDS_MORE_EVIDENCE";
-
-  return buildBrief({
-    id: `ai-evidence-cross-channel-${smartstoreReport.id}-${shopReport.id}`,
-    providerKey: "commerce_cross_channel",
-    channelLabel: "채널 통합",
-    title: "스마트스토어/쇼핑몰 통합 AI 판독 근거",
-    decision,
-    summary: `스티커씨 매출 ${commerce.grossSales.toLocaleString("ko-KR")}원과 커피프린트 매출 ${shop.grossSales.toLocaleString(
-      "ko-KR",
-    )}원을 함께 보며 광고, 상품, 재구매 안건을 분리합니다.`,
-    allowedUseCases: ["채널별 우선순위 조정", "상품 발굴 후보 선별", "광고와 재구매 업무 분리"],
-    blockedUseCases: ["채널 간 예산 자동 이동", "가격/쿠폰 즉시 변경", "고객별 행동 추론"],
-    evidenceIds: [commerce.id, shop.id],
-    sourceReportIds: [smartstoreReport.id, shopReport.id],
-    checkedAt: [smartstoreReport.checkedAt, shopReport.checkedAt].sort().at(-1) ?? smartstoreReport.checkedAt,
   });
 }
 

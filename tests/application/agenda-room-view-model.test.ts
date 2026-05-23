@@ -71,7 +71,8 @@ describe("buildAgendaRoomViewModel", () => {
       "기기·시간대·요일 성과",
       "스마트스토어 순매출과 클레임",
       "데이터랩 세그먼트",
-      "스마트스토어 데이터솔루션",
+      "스티커씨 스마트스토어 데이터솔루션",
+      "커피프린트 스마트스토어 추가 준비",
     ]);
     expect(viewModel.providerReadiness.find((provider) => provider.id === "search_ad")?.canWriteLabel).toBe("쓰기 차단");
     expect(viewModel.plannerPreview.rawRowsLabel).toBe("원천 행 제외");
@@ -120,10 +121,11 @@ describe("buildAgendaRoomViewModel", () => {
 
     const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
 
-    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).toContain("스마트스토어/자체몰 매출 균형 점검 안건");
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).toContain("브랜드별 개별 검토 안건");
     expect(viewModel.aiPilotInsight.recommendedApprovalLabels).not.toContain(
       "approval-agenda-provider-channel-balance-stickersee-coffeeprint-2026-05-23",
     );
+    expect(viewModel.aiPilotInsight.recommendedApprovalLabels).not.toContain("스마트스토어/자체몰 매출 균형 점검 안건");
   });
 
   it("읽기 전용 연동 집계를 담당 캐릭터 안건으로 함께 보여준다", () => {
@@ -135,18 +137,18 @@ describe("buildAgendaRoomViewModel", () => {
     const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
 
     expect(viewModel.moaReport.summary).toContain("실제 읽기 전용 연동 집계");
-    expect(viewModel.summary.waitingApproval).toBe(4);
+    expect(viewModel.summary.waitingApproval).toBe(3);
     expect(viewModel.agendaCards.map((card) => card.title)).toEqual(
       expect.arrayContaining([
         "스마트스토어 상위 상품 키워드 확장 안건",
         "영카트 재구매 고객군 CRM 초안 안건",
-        "스마트스토어/자체몰 매출 균형 점검 안건",
       ]),
     );
+    expect(viewModel.agendaCards.map((card) => card.title)).not.toContain("스마트스토어/자체몰 매출 균형 점검 안건");
     expect(viewModel.agendaCards.find((card) => card.owner === "프로")?.source).toContain("연동 수집");
     expect(viewModel.characters.find((character) => character.id === "pro")?.queueCount).toBe(1);
     expect(viewModel.characters.find((character) => character.id === "ripi")?.queueCount).toBe(1);
-    expect(viewModel.characters.find((character) => character.id === "maru")?.queueCount).toBe(1);
+    expect(viewModel.characters.find((character) => character.id === "maru")?.queueCount).toBe(0);
     expect(viewModel.providerSyncEvidence.map((report) => report.providerLabel)).toEqual([
       "네이버 키워드광고",
       "스마트스토어(스티커씨)",
@@ -180,7 +182,6 @@ describe("buildAgendaRoomViewModel", () => {
       ["search_ad", "판단 가능"],
       ["smartstore", "판단 가능"],
       ["shop", "판단 가능"],
-      ["commerce_cross_channel", "판단 가능"],
     ]);
     expect(viewModel.aiEvidenceBriefs.find((brief) => brief.providerKey === "search_ad")?.blockedUseCases).toContain(
       "광고비/입찰가 즉시 변경",
@@ -189,7 +190,7 @@ describe("buildAgendaRoomViewModel", () => {
     const smartstorePreview = viewModel.approvalPreviews.find((preview) => preview.title === "스마트스토어 상위 상품 키워드 확장 안건");
     expect(smartstorePreview?.provenance.providerEvidenceLabels[0]).toContain("스마트스토어");
     expect(smartstorePreview?.provenance.agentRunLabels[0]).toContain("모아 계획");
-    expect(viewModel.plannerPreview.audit.sourceCountLabels).toContain("후보 5건");
+    expect(viewModel.plannerPreview.audit.sourceCountLabels).toContain("후보 4건");
     expect(viewModel.ownerDecisionFlows).toHaveLength(2);
     expect(viewModel.ownerDecisionFlows[0]?.outcomeEvidenceLabels).toContain("키워드광고 월검색 최대 16,000회");
     expect(viewModel.ownerDecisionFlows[1]?.outcomeSummary).toContain("내부 초안 실행");
@@ -232,12 +233,16 @@ describe("buildAgendaRoomViewModel", () => {
 
     const viewModel = buildAgendaRoomViewModel({ repository, env: {} });
 
-    const balancePreview = viewModel.approvalPreviews.find(
-      (preview) => preview.title === "스마트스토어/자체몰 매출 균형 점검 안건",
+    const smartstorePreview = viewModel.approvalPreviews.find(
+      (preview) => preview.title === "스마트스토어 상위 상품 키워드 확장 안건",
     );
-    expect(balancePreview?.provenance.summaryLabel).toContain("연동 수집 2개 (누적 4회)");
-    expect(balancePreview?.provenance.providerEvidenceLabels).toEqual([
+    expect(smartstorePreview?.provenance.summaryLabel).toContain("연동 수집 1개 (누적 2회)");
+    expect(smartstorePreview?.provenance.providerEvidenceLabels).toEqual([
       "스마트스토어(스티커씨) · 최신 동기화 완료 · 스티커씨 주문 100건, 스티커씨 매출 602,620원 · 누적 2회",
+    ]);
+
+    const shopPreview = viewModel.approvalPreviews.find((preview) => preview.title === "영카트 재구매 고객군 CRM 초안 안건");
+    expect(shopPreview?.provenance.providerEvidenceLabels).toEqual([
       "쇼핑몰(커피프린트) · 최신 동기화 완료 · 커피프린트 주문 28건, 커피프린트 재구매 4명 · 누적 2회",
     ]);
   });

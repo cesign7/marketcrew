@@ -308,7 +308,7 @@ function approvalLabelFromId(approvalId: string, approvalById: Map<string, Appro
   }
 
   if (approvalId.includes("provider-channel-balance-stickersee-coffeeprint")) {
-    return "스마트스토어/자체몰 매출 균형 점검 안건";
+    return "브랜드별 개별 검토 안건";
   }
 
   if (approvalId.includes("provider-smartstore-stickersee")) {

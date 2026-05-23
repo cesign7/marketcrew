@@ -14,8 +14,8 @@ describe("buildAiEvidenceBriefs", () => {
       ["datalab", "SOURCE_REVIEW_REQUIRED"],
       ["smartstore", "JUDGMENT_READY"],
       ["shop", "JUDGMENT_READY"],
-      ["commerce_cross_channel", "JUDGMENT_READY"],
     ]);
+    expect(briefs.map((brief) => brief.providerKey)).not.toContain("commerce_cross_channel");
 
     const keywordBrief = briefs.find((brief) => brief.providerKey === "search_ad");
     expect(keywordBrief?.title).toBe("네이버 키워드광고 AI 판독 근거");
@@ -33,11 +33,11 @@ describe("buildAiEvidenceBriefs", () => {
     expect(smartstoreBrief?.summary).toContain("스티커씨 주문 100건");
     expect(smartstoreBrief?.blockedUseCases).toContain("상품 가격/옵션 즉시 변경");
 
-    const crossChannelBrief = briefs.find((brief) => brief.providerKey === "commerce_cross_channel");
-    expect(crossChannelBrief?.evidenceIds).toEqual([
-      "commerce-aggregate-STICKERSEE-2026-05-22",
-      "shop-aggregate-COFFEEPRINT-2026-05-22",
-    ]);
+    const commerceSummaries = briefs
+      .filter((brief) => brief.providerKey === "smartstore" || brief.providerKey === "shop")
+      .map((brief) => brief.summary)
+      .join(" ");
+    expect(commerceSummaries).not.toContain("함께");
   });
 
   it("수집 실패나 오래된 키워드 캐시는 결재 금지나 보강 필요로 낮춘다", () => {

@@ -49,18 +49,18 @@ export function ProviderSyncEvidencePanel({
           <div className="provider-sync-scope" id={`${headingId}-all`}>
             <div className="provider-sync-scope-heading">
               <span>전체 근거</span>
-              <strong>채널 통합 확인</strong>
-              <p>광고, 트렌드, 스마트스토어(스티커씨), 쇼핑몰(커피프린트) 근거를 한 번에 봅니다.</p>
+              <strong>브랜드별 근거 확인</strong>
+              <p>광고, 트렌드, 스티커씨 스마트스토어, 커피프린트 쇼핑몰 근거를 한 화면에서 보되 판단은 브랜드별로 분리합니다.</p>
             </div>
             <ProviderSyncCardGrid reports={reports} showHistoryPolicy={showHistoryPolicy} />
           </div>
 
           {channelGroups.length > 0 ? (
-            <div className="provider-sync-channel-groups" aria-label="채널별 연동 근거">
+            <div className="provider-sync-channel-groups" aria-label="브랜드별 연동 근거">
               <div className="provider-sync-scope-heading">
                 <span>구분 보기</span>
-                <strong>채널별 상세</strong>
-                <p>같은 근거를 운영 채널 단위로 다시 묶어 스티커씨와 커피프린트 흐름을 분리해 확인합니다.</p>
+                <strong>브랜드별 상세</strong>
+                <p>스티커씨와 커피프린트는 서로 비교하지 않고 각 브랜드의 판매채널과 근거만 따로 확인합니다.</p>
               </div>
               {channelGroups.map((group) => (
                 <section className="provider-sync-channel-block" id={`${headingId}-${group.id}`} key={group.id}>

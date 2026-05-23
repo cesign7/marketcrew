@@ -6,10 +6,10 @@ import type {
   ProviderSyncEvidenceView,
 } from "./types";
 
-export type DataChannelFilter = "all" | "stickersee" | "coffeeprint";
+export type DataBusinessFilter = "all" | "stickersee" | "coffeeprint";
 export type DataPeriodFilter = "today" | "7d" | "30d" | "last-year" | "holiday";
 
-export function normalizeDataChannel(value: string | undefined): DataChannelFilter {
+export function normalizeDataBusiness(value: string | undefined): DataBusinessFilter {
   if (value === "stickersee" || value === "coffeeprint") {
     return value;
   }
@@ -51,14 +51,14 @@ export function dataPeriodPolicyLabel(period: DataPeriodFilter): string {
 
 export function filterProviderReadiness(
   providers: ProviderReadinessView[],
-  selectedChannel: DataChannelFilter,
+  selectedBusiness: DataBusinessFilter,
 ): ProviderReadinessView[] {
-  if (selectedChannel === "all") {
+  if (selectedBusiness === "all") {
     return providers;
   }
 
   return providers.filter((provider) => {
-    if (selectedChannel === "stickersee") {
+    if (selectedBusiness === "stickersee") {
       return provider.id === "smartstore";
     }
     return provider.id === "shop";
@@ -67,14 +67,14 @@ export function filterProviderReadiness(
 
 export function filterProviderSyncEvidence(
   reports: ProviderSyncEvidenceView[],
-  selectedChannel: DataChannelFilter,
+  selectedBusiness: DataBusinessFilter,
 ): ProviderSyncEvidenceView[] {
-  if (selectedChannel === "all") {
+  if (selectedBusiness === "all") {
     return reports;
   }
 
   return reports.filter((report) => {
-    if (selectedChannel === "stickersee") {
+    if (selectedBusiness === "stickersee") {
       return report.channelKey === "smartstore-stickersee";
     }
     return report.channelKey === "shop-coffeeprint";
@@ -83,14 +83,14 @@ export function filterProviderSyncEvidence(
 
 export function filterProviderDataContracts(
   contracts: ProviderDataContractView[],
-  selectedChannel: DataChannelFilter,
+  selectedBusiness: DataBusinessFilter,
 ): ProviderDataContractView[] {
-  if (selectedChannel === "all") {
+  if (selectedBusiness === "all") {
     return contracts;
   }
 
   return contracts.filter((contract) => {
-    if (selectedChannel === "stickersee") {
+    if (selectedBusiness === "stickersee") {
       return contract.providerKey === "smartstore";
     }
     return contract.providerKey === "shop";
@@ -99,9 +99,9 @@ export function filterProviderDataContracts(
 
 export function filterProviderEvidenceExpansionPlans(
   plans: ProviderEvidenceExpansionPlanView[],
-  selectedChannel: DataChannelFilter,
+  selectedBusiness: DataBusinessFilter,
 ): ProviderEvidenceExpansionPlanView[] {
-  if (selectedChannel === "all") {
+  if (selectedBusiness === "all") {
     return plans;
   }
 
@@ -110,7 +110,7 @@ export function filterProviderEvidenceExpansionPlans(
       (providerKey) => providerKey === "search_ad" || providerKey === "datalab",
     );
 
-    if (selectedChannel === "stickersee") {
+    if (selectedBusiness === "stickersee") {
       return hasSharedMarketingEvidence || plan.providerKeys.some((providerKey) => providerKey === "smartstore");
     }
 
@@ -120,14 +120,14 @@ export function filterProviderEvidenceExpansionPlans(
 
 export function filterAiEvidenceBriefs(
   briefs: AiEvidenceBriefView[],
-  selectedChannel: DataChannelFilter,
+  selectedBusiness: DataBusinessFilter,
 ): AiEvidenceBriefView[] {
-  if (selectedChannel === "all") {
+  if (selectedBusiness === "all") {
     return briefs;
   }
 
   return briefs.filter((brief) => {
-    if (selectedChannel === "stickersee") {
+    if (selectedBusiness === "stickersee") {
       return brief.providerKey === "smartstore" || brief.providerKey === "search_ad";
     }
 

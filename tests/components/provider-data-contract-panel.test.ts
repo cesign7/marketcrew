@@ -5,7 +5,7 @@ import { ProviderDataContractPanel } from "../../src/components/agenda-room/Prov
 import { buildProviderDataContracts } from "../../src/features/agenda-room/provider-data-contracts";
 
 describe("ProviderDataContractPanel", () => {
-  it("채널별로 불러오는 데이터와 저장하는 데이터 명세 링크를 보여준다", () => {
+  it("브랜드별로 불러오는 데이터와 저장하는 데이터 명세 링크를 보여준다", () => {
     const html = renderToString(createElement(ProviderDataContractPanel, { contracts: buildProviderDataContracts() }));
 
     expect(html).toContain("불러오는 데이터와 저장하는 데이터");

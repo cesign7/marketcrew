@@ -37,7 +37,6 @@ export function buildProviderSignalAgendaArtifacts(input: {
   const agendaCandidates = [
     commerceReport ? buildCommerceAgendaCandidate(commerceReport, signalsById, generatedAt) : undefined,
     shopReport ? buildShopAgendaCandidate(shopReport, signalsById, generatedAt) : undefined,
-    commerceReport && shopReport ? buildCrossChannelAgendaCandidate(commerceReport, shopReport, signalsById, generatedAt) : undefined,
   ].filter((candidate): candidate is AgendaCandidate => Boolean(candidate));
   const characterReports = buildCharacterReports(agendaCandidates, generatedAt);
   const approvalRequests = agendaCandidates.map((candidate) =>
@@ -104,32 +103,6 @@ function buildShopAgendaCandidate(
     opportunityIds: [snapshot.id],
     dataConfidence: confidence,
     duplicateKey: `provider-agenda:youngcart:${snapshot.brandKey}:${report.checkedAt.slice(0, 10)}`,
-    createdAt: generatedAt,
-  };
-}
-
-function buildCrossChannelAgendaCandidate(
-  commerceReport: ProviderSyncReport,
-  shopReport: ProviderSyncReport,
-  signalsById: Map<string, Signal>,
-  generatedAt: string,
-): AgendaCandidate {
-  const commerce = requireSnapshot(commerceReport.commerceAggregateSnapshot, "commerceAggregateSnapshot");
-  const shop = requireSnapshot(shopReport.shopAggregateSnapshot, "shopAggregateSnapshot");
-  const commerceSignal = resolveReportSignal(commerceReport, signalsById);
-  const shopSignal = resolveReportSignal(shopReport, signalsById);
-  const confidence = commerce.grossSales > 0 && shop.grossSales > 0 ? "READY_TO_APPROVE" : "EVIDENCE_WEAK";
-
-  return {
-    id: `agenda-provider-channel-balance-${slugify(commerce.brandKey)}-${slugify(shop.brandKey)}-${generatedAt.slice(0, 10)}`,
-    character: "maru",
-    title: "스마트스토어/자체몰 매출 균형 점검 안건",
-    summary: `스마트스토어 매출 ${commerce.grossSales.toLocaleString("ko-KR")}원과 자체몰 매출 ${shop.grossSales.toLocaleString("ko-KR")}원을 함께 보니, 광고 예산과 재구매 유도 초안을 같은 안건으로 묶어 검토할 필요가 있습니다.`,
-    severity: confidence === "READY_TO_APPROVE" ? "HIGH" : "MEDIUM",
-    sourceSignalIds: [commerceSignal?.id, shopSignal?.id].filter((id): id is string => Boolean(id)),
-    opportunityIds: [commerce.id, shop.id],
-    dataConfidence: confidence,
-    duplicateKey: `provider-agenda:channel-balance:${commerce.brandKey}:${shop.brandKey}:${generatedAt.slice(0, 10)}`,
     createdAt: generatedAt,
   };
 }

@@ -1,6 +1,6 @@
 import { DataIntegrationPanels } from "@/components/agenda-room/DataIntegrationPanels";
 import { AppShell } from "@/components/layout/AppShell";
-import { normalizeDataChannel, normalizeDataPeriod } from "@/features/agenda-room/data-filters";
+import { normalizeDataBusiness, normalizeDataPeriod } from "@/features/agenda-room/data-filters";
 import { loadAgendaRoomViewModel } from "@/features/agenda-room/loadAgendaRoomViewModel";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ type DataPageProps = {
 
 export default async function DataPage({ searchParams }: DataPageProps) {
   const params = await searchParams;
-  const selectedChannel = normalizeDataChannel(params?.channel);
+  const selectedBusiness = normalizeDataBusiness(params?.channel);
   const selectedPeriod = normalizeDataPeriod(params?.period);
   const viewModel = await loadAgendaRoomViewModel();
 
@@ -29,7 +29,7 @@ export default async function DataPage({ searchParams }: DataPageProps) {
       <DataIntegrationPanels
         agentRunSummary={viewModel.agentRunSummary}
         aiEvidenceBriefs={viewModel.aiEvidenceBriefs}
-        initialChannel={selectedChannel}
+        initialBusiness={selectedBusiness}
         initialPeriod={selectedPeriod}
         plannerPreview={viewModel.plannerPreview}
         providerDataContracts={viewModel.providerDataContracts}

@@ -169,7 +169,7 @@ QA Verdict:    QA_PASS
 
 ### 4.0.1 2026-05-23 실제 데이터/LLM 파일럿
 
-대표 요청에 따라 기존 운영 생성 레코드를 백업 후 초기화하고, Search Ad, DataLab, 스마트스토어(스티커씨), 쇼핑몰(커피프린트) 네 채널을 읽기 전용으로 다시 수집했다. 이후 `POST /api/operations/llm-real-pilot`로 실제 provider 집계, 후보 안건, 근거 ID만 Gemini `gemini-3.5-flash`에 전달하는 파일럿을 수행했다.
+대표 요청에 따라 기존 운영 생성 레코드를 백업 후 초기화하고, Search Ad, DataLab, 스마트스토어(스티커씨), 쇼핑몰(커피프린트) 네 연동처를 읽기 전용으로 다시 수집했다. 이후 `POST /api/operations/llm-real-pilot`로 실제 provider 집계, 후보 안건, 근거 ID만 Gemini `gemini-3.5-flash`에 전달하는 파일럿을 수행했다.
 
 파일럿 결과는 `AgentRun(mode=llm, provider=gemini)`으로 저장하며, 원천 행/고객 식별정보/시크릿/provider write는 계속 제외한다. 비용 가드는 실제 프롬프트 기준 입력 토큰을 사전 추정한 뒤 1회/일/월 예산과 토큰 상한을 확인한다.
 

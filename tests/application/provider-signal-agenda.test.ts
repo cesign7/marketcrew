@@ -3,7 +3,7 @@ import { buildProviderSignalAgendaArtifacts } from "../../src/lib/application/pr
 import type { ProviderSyncReport } from "../../src/lib/domain";
 
 describe("buildProviderSignalAgendaArtifacts", () => {
-  it("커머스/영카트 aggregate signal을 프로, 리피, 마루 안건으로 만든다", () => {
+  it("커머스/영카트 aggregate signal을 브랜드별 프로, 리피 안건으로 분리한다", () => {
     const reports = buildSyncedProviderReports();
     const artifacts = buildProviderSignalAgendaArtifacts({
       providerSyncReports: reports,
@@ -15,18 +15,17 @@ describe("buildProviderSignalAgendaArtifacts", () => {
     expect(artifacts.agendaCandidates.map((candidate) => [candidate.character, candidate.title])).toEqual([
       ["pro", "스마트스토어 상위 상품 키워드 확장 안건"],
       ["ripi", "영카트 재구매 고객군 CRM 초안 안건"],
-      ["maru", "스마트스토어/자체몰 매출 균형 점검 안건"],
     ]);
-    expect(artifacts.approvalRequests).toHaveLength(3);
+    expect(artifacts.agendaCandidates.map((candidate) => candidate.title).join(" ")).not.toContain("균형");
+    expect(artifacts.approvalRequests).toHaveLength(2);
     expect(artifacts.approvalRequests.every((request) => request.status === "PENDING")).toBe(true);
     expect(artifacts.approvalRequests.every((request) => request.executionPlan.requiresWriteGate === false)).toBe(true);
     expect(artifacts.approvalRequests.map((request) => request.executionPlan.executorKey)).toEqual([
       "internal-product-opportunity-planner",
       "internal-crm-draft-planner",
-      "internal-margin-channel-reviewer",
     ]);
-    expect(artifacts.performanceCheckpoints).toHaveLength(15);
-    expect(artifacts.characterReports.map((report) => report.character)).toEqual(["pro", "ripi", "maru"]);
+    expect(artifacts.performanceCheckpoints).toHaveLength(10);
+    expect(artifacts.characterReports.map((report) => report.character)).toEqual(["pro", "ripi"]);
   });
 
   it("성공한 aggregate snapshot이 없으면 안건을 만들지 않는다", () => {

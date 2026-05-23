@@ -37,7 +37,7 @@
 - 현재 기능명: `ai-marketing-character-ops`
 - 현재 PDCA 단계: `completed`
 - 1차 MVP 완료 상황: `ai-marketing-character-ops`는 iteration 11과 QA report까지 완료했고, 최신 Check에서 1차 MVP match rate는 92%, QA verdict는 `QA_PASS`다. `/operations`에서 올라온 안건을 보고 `/approvals/[id]`에서 provider 근거, diff, 대표 결정, write gate 차단, 저장된 outcome report를 확인할 수 있다.
-- 현재 진행 작업: `ops-persistence-provenance-foundation` PDCA cycle #2는 QA/report까지 완료했다. Check 7/7, matchRate 98%, QA verdict `QA_PASS`다. `.env` 기준 local runtime은 새 `marketcrew` Postgres DB를 읽고 쓴다. `/operations`와 `/approvals/[id]`에서 AgentRun, model/token/cost, provider evidence, 스티커씨/커피프린트 채널 근거를 확인할 수 있다. 실제 provider write는 계속 차단한다.
+- 현재 진행 작업: `ops-persistence-provenance-foundation` PDCA cycle #2는 QA/report까지 완료했다. Check 7/7, matchRate 98%, QA verdict `QA_PASS`다. `.env` 기준 local runtime은 새 `marketcrew` Postgres DB를 읽고 쓴다. `/operations`와 `/approvals/[id]`에서 AgentRun, model/token/cost, provider evidence, 스티커씨/커피프린트 브랜드별 근거를 확인할 수 있다. 실제 provider write는 계속 차단한다.
 - 현재 진행 작업 2: `follow-up-task-queue-owner-learning` PDCA cycle #3는 Check/QA/report까지 완료했다. `/follow-ups` 전용 큐, owner learning signal, `PATCH /api/follow-ups/[id]` 상태 변경 API, `/operations` 후속 업무 link가 동작한다. `npm test -- --run` 20 files/67 tests, typecheck, build, audit 0 vulnerabilities, follow-ups Playwright smoke, in-app browser smoke를 통과했다. 1차 MVP 대비 진행율은 99%다.
 - 현재 진행 작업 3: `real-llm-provider-cost-governance` PDCA cycle #4는 Check/QA/report까지 완료했다. `/operations`에 LLM 비용 가드가 표시되고 `/api/operations/llm-cost-governance`가 read-only로 provider/key, env 단가, 1회/일 예산, AgentRun 누적 비용, token cap, raw row privacy gate를 반환한다. 현재 local env는 Gemini provider/key가 준비됐지만 단가/예산 env가 없어 의도대로 `live call 차단`이다. `npm test -- --run` 21 files/70 tests, typecheck, build, audit 0 vulnerabilities, LLM cost governance Playwright smoke, localhost:3001 HTTP/API smoke를 통과했다. 1차 MVP 대비 진행율은 99.5%였다.
 - 현재 진행 작업 4: `mvp-final-provenance-closeout`은 `/operations` 결재 미리보기 카드에 `카드별 근거 추적`을 추가해 데이터 근거, AI 실행 이력, 연동 수집 기록, 성과 체크포인트, 안전 조건을 카드 안에서 바로 확인하게 했다. 검증은 typecheck, full unit, build, audit, full e2e 3 tests, localhost:3001 browser text scan을 통과했다. 1차 MVP 대비 진행율은 100%다.
@@ -49,6 +49,7 @@
 - 현재 진행 작업 10: 2026-05-23 AI 실행 큐 후속으로 `/operations`에 `AI 실행 큐`를 추가했고, `GET /api/operations/llm-dry-run-queue`와 `llm_dry_run` AgentRun 감사 이력이 비용 가드, 토큰, 근거 ID, 원천 행 제외 상태를 실제 LLM 호출 전 모의 실행으로 기록한다. 비용 조건이 열려도 이 단계는 `모의 실행만 기록`이며 실제 provider write와 실제 LLM call은 계속 차단한다.
 - 현재 진행 작업 11: 2026-05-23 검색광고 결재 실행 범위 후속으로 `ExecutionPlan.executionScopeProposal`과 `OwnerDecision.executionScopeSelection`을 추가했다. 결재 상세에서 AI가 광고 유형, 적용 위치, 기기/매체, 시간대, 예산/입찰, 제외 키워드를 먼저 제안하고 대표가 그대로 확정하거나 수정값을 저장한다. 검증은 공식 Search AD 문서 확인, 표적 테스트 3 files/11 tests, 전체 단위 테스트 49 files/128 tests, 타입 검사, 빌드, audit 0 vulnerabilities, 결재 상세 Playwright e2e를 통과했다. 실제 provider write는 계속 차단한다.
 - 현재 진행 작업 12: 2026-05-23 실행 범위 소급 적용 후속으로 `backfillExecutionScopes`와 `/api/operations/execution-scope-backfill`을 추가했다. 내부 초안/상품/CRM 안건에도 적용 채널, 실행 방식, 담당 범위, 외부 반영 경계, 성과 확인 범위를 제안한다. 로컬 `marketcrew` Postgres DB의 기존 저장 결재안 3건을 소급 적용했고 재조회 결과 각 6개 필드가 확인됐다. 저장된 대표 결정은 0건이라 결정 기록 소급 적용은 없었다. 검증은 표적 테스트 3 files/11 tests, 전체 단위 테스트 50 files/130 tests, 타입 검사, 빌드, audit 0 vulnerabilities를 통과했다.
+- 현재 진행 작업 13: 2026-05-23 메뉴/정보구조 후속으로 스티커씨와 커피프린트를 서로 비교하는 `channel-balance` 안건과 `commerce_cross_channel` AI 판독 근거를 제거했다. 상단 필터는 브랜드 기준으로 표시하고, 데이터 화면은 브랜드별 근거와 브랜드 안의 판매채널을 분리해서 설명한다. 커피프린트 스마트스토어 추가 예정은 스티커씨와 비교하지 않고 커피프린트 브랜드 안의 판매채널 확장 준비로 다룬다.
 - 클라우드 연결 상태: GitHub `https://github.com/cesign7/marketcrew`의 기본 브랜치는 `main`이며 현재 MVP 커밋이 올라가 있다. Vercel production은 `https://marketcrew.vercel.app`이고 Git 연결의 production branch도 `main`이다. Railway project는 `marketcrew`, Postgres service는 `Online`, API service는 `marketcrew-api`, 공개 URL은 `https://api.marketcrew.app`이다. Vercel production env에는 `MARKETCREW_AUTH_SECRET`, `MARKETCREW_OWNER_PASSWORD_HASH`, `MARKETCREW_BACKEND_API_URL`, `MARKETCREW_BACKEND_API_TOKEN`, `MARKETCREW_BACKEND_API_TIMEOUT_MS`만 남아 있다. Railway 쪽 API 토큰 키는 `MARKETCREW_API_TOKEN`이고, backend health는 `/api/backend/health`, 화면 read model은 `/api/operations/view-model`, workflow summary는 `/api/operations/workflow-state`다. Custom domain `marketcrew.app`과 `www.marketcrew.app`은 Vercel project에 추가됐고 Cloudflare DNS는 `A @ 76.76.21.21`, `A www 76.76.21.21`, DNS only로 설정됐다. API custom domain `api.marketcrew.app`은 Railway `marketcrew-api`에 연결되어 있다. 공개 앱은 대표 로그인으로 보호한다. 기존 GitHub branch `feat-ai-marketing-operations-mvp`는 아직 남아 있으며 삭제는 명시 지시 전까지 하지 않는다.
 - 다음 권장 작업: 1차 MVP는 완료로 닫고, 이후 작업은 운영 배포 후 production DB에 `/api/operations/execution-scope-backfill`을 실행해 적용 내역을 확인하는 것, 실제 LLM adapter가 `ExecutionScopeProposal`까지 제안하도록 연결하는 것, normalized analytics schema, 실제 provider write executor 설계처럼 후속 확장으로 진행한다. 실제 LLM call은 비용 가드와 원천 행 제외 계약을 통과해야 하며, provider write executor는 별도 PDCA와 명시 승인 전까지 시작하지 않는다.
 
@@ -57,6 +58,8 @@
 ## 제품 방향
 
 이 제품은 단순한 대시보드가 아니다. 대표 혼자 광고와 마케팅을 관리하기 어렵기 때문에, AI 직원들이 데이터를 보고 먼저 안건을 올리고, 모아가 결재 문서로 정리하고, 대표 승인 후 실행과 성과 보고까지 이어지는 회사형 AI 마케팅 운영실이다.
+
+정보 구조의 최상위 기준은 `브랜드/사업`이다. 현재 운영 브랜드는 `스티커씨`와 `커피프린트`이며 두 브랜드는 서로 비교 대상이 아니다. 스마트스토어, 자체 쇼핑몰, 향후 추가될 커피프린트 스마트스토어, 네이버 키워드광고, 데이터랩은 브랜드 안에 붙는 판매채널 또는 근거 소스다. 전체 화면은 한 번에 볼 수 있어도 AI 판단과 결재 안건은 브랜드별로 분리해야 한다.
 
 기본 업무 흐름은 아래와 같다.
 
@@ -109,7 +112,7 @@ MVP의 화면에 보이는 캐릭터는 7개로 유지한다.
 |----|------|------|
 | `moa` | 모아 | AI 업무실장. 하위 보고를 대표 결재 안건으로 종합한다. |
 | `gro` | 그로 | 퍼포먼스 마케터. 네이버 키워드광고, 키워드 기회, 시즌 키워드 광고 생애주기를 담당한다. |
-| `maru` | 마루 | 커머스 운영 분석가. 스마트스토어/자체몰 매출, 주문, 재고, 이벤트 준비 상태를 담당한다. |
+| `maru` | 마루 | 커머스 운영 분석가. 브랜드별 매출, 주문, 재고, 판매채널 준비 상태를 담당한다. 서로 다른 브랜드의 매출을 직접 비교하지 않는다. |
 | `day` | 데이 | 데이터 QA와 근거 감사 담당. 데이터 신뢰도, 누락 근거, API 실패, 실행 전 점검을 담당한다. |
 | `copy` | 카피 | 캠페인 문안 담당. 광고 문구, 상품 메시지, 이벤트 캠페인 초안을 만든다. |
 | `ripi` | 리피 | 재구매/고객 관리 마케터. 재구매, 고객군, VIP, 휴면 고객 안건을 담당한다. |

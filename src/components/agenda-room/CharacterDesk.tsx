@@ -20,7 +20,7 @@ const characterFocus: Record<string, { focus: string; nextReport: string }> = {
   },
   pro: {
     focus: "스마트스토어와 쇼핑몰 상품 흐름을 보고 상품별 기회를 찾습니다.",
-    nextReport: "상품 묶음, 재고, 채널별 노출 후보를 보강합니다.",
+    nextReport: "상품 묶음, 재고, 브랜드 안의 판매채널 노출 후보를 보강합니다.",
   },
   copy: {
     focus: "승인된 상품/이벤트에 맞춰 광고 문구와 상세 메시지를 준비합니다.",

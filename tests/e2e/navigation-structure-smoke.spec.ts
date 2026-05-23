@@ -16,7 +16,7 @@ test("대표 업무실은 왼쪽 업무 메뉴와 상단 기준 필터로 나뉜
   const topControls = page.getByRole("region", { name: "화면 보기 기준" });
   await expect(topControls.getByRole("button", { name: "전체" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "스티커씨" })).toBeVisible();
-  await expect(topControls.getByRole("button", { name: "커피" })).toBeVisible();
+  await expect(topControls.getByRole("button", { name: "커피프린트" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "광고" })).toHaveCount(0);
   await expect(topControls.getByRole("button", { name: "오늘" })).toBeVisible();
   await expect(topControls.getByRole("button", { name: "7일" })).toBeVisible();
@@ -91,6 +91,7 @@ test("데이터 연동 메뉴와 상단 채널/기간 필터가 클릭에 반응
   await expect(page.locator(".data-contract-table").first()).toContainText("칼럼");
 
   const topControls = page.getByRole("region", { name: "화면 보기 기준" });
+  await expect(topControls.getByLabel("브랜드 기준")).toBeVisible();
   await topControls.getByRole("button", { name: "스티커씨" }).click();
   await expect(page).toHaveURL(/\/data\?channel=stickersee$/);
   await expect(topControls.getByRole("button", { name: "스티커씨" })).toHaveAttribute("aria-pressed", "true");

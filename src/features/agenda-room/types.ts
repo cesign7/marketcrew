@@ -231,7 +231,7 @@ export type ProviderEvidenceExpansionPlanView = {
   id: string;
   phaseLabel: string;
   priorityLabel: string;
-  providerKeys: Array<ProviderDataContractView["providerKey"] | "commerce_cross_channel">;
+  providerKeys: ProviderDataContractView["providerKey"][];
   title: string;
   summary: string;
   evidenceToAdd: string[];
@@ -341,7 +341,7 @@ export type ProductGrowthOpportunityView = {
 
 export type AiEvidenceBriefView = {
   id: string;
-  providerKey: "search_ad" | "datalab" | "smartstore" | "shop" | "commerce_cross_channel";
+  providerKey: "search_ad" | "datalab" | "smartstore" | "shop";
   channelLabel: string;
   title: string;
   decisionLabel: string;

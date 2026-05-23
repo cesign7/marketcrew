@@ -55,7 +55,7 @@ const navItems = [
   {
     key: "data",
     label: "데이터 연동",
-    description: "채널별 수집 근거",
+    description: "브랜드별 수집 근거",
     href: "/data",
     icon: DatabaseZap,
   },
@@ -88,10 +88,10 @@ const navItems = [
   icon: typeof LayoutDashboard;
 }>;
 
-const channelFilters: ViewFilterOption[] = [
+const businessFilters: ViewFilterOption[] = [
   { label: "전체", value: "all" },
   { label: "스티커씨", value: "stickersee" },
-  { label: "커피", value: "coffeeprint" },
+  { label: "커피프린트", value: "coffeeprint" },
 ];
 const periodFilters: ViewFilterOption[] = [
   { label: "오늘", value: "today" },
@@ -240,7 +240,7 @@ export function AppShell({ active, eyebrow, title, description, generatedAt, act
             </section>
           </div>
 
-          <ViewFilterControls channelFilters={channelFilters} periodFilters={periodFilters} />
+          <ViewFilterControls businessFilters={businessFilters} periodFilters={periodFilters} />
         </header>
 
         <main className="operations-shell">{children}</main>
