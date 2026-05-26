@@ -417,6 +417,33 @@ table {
   margin: 0;
 }
 
+.target-chip {
+  background: #eef4ff;
+  border-radius: 999px;
+  color: #344054;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 4px 8px;
+}
+
+.technical-details {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.technical-details summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.technical-details code {
+  display: inline-block;
+  margin-top: 6px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
 .severity {
   border-radius: 999px;
   display: inline-flex;

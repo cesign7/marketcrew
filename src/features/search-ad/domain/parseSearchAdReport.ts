@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { inferAdProductFromReportType } from "./reportTypes";
 import { getReportColumns, SEARCH_AD_REPORT_PARSER_VERSION } from "./reportColumnSchemas";
+import { isSearchTermReport } from "./targetDisplay";
 import type { BrandKey, SearchAdNormalizedRow, SearchAdRawReportRow, SearchAdReportType } from "./types";
 
 type ParseOptions = {
@@ -43,7 +44,7 @@ export function parseSearchAdReport(reportType: SearchAdReportType, rawText: str
 
     const searchableText = Object.values(rawRow).join(" ");
     const brandKey = inferBrandKey(searchableText);
-    const adProductType = inferAdProductFromReportType(reportType);
+    const adProductType = inferAdProductFromText(searchableText) ?? inferAdProductFromReportType(reportType);
 
     return {
       id: `${options.reportFileId}-row-${index + 1}`,
@@ -68,13 +69,9 @@ export function parseSearchAdReport(reportType: SearchAdReportType, rawText: str
 
 export function normalizeRawRow(reportType: SearchAdReportType, row: SearchAdRawReportRow & { brandKey: BrandKey }, sourceDate: string): SearchAdNormalizedRow {
   const raw = row.rawRow;
-  const fallbackLabel =
-    stringValue(raw.targetName) ??
-    stringValue(raw.searchTerm) ??
-    stringValue(raw.keywordText) ??
-    stringValue(raw.productName) ??
-    stringValue(raw.adId) ??
-    stringValue(raw.criterionId);
+  const fallbackSearchLabel = isSearchTermReport(reportType)
+    ? normalizedStringValue(raw.searchTerm) ?? normalizedStringValue(raw.keywordText) ?? normalizedStringValue(raw.targetName) ?? normalizedStringValue(raw.productName)
+    : undefined;
 
   return {
     id: `${row.id}-normalized`,
@@ -82,13 +79,18 @@ export function normalizeRawRow(reportType: SearchAdReportType, row: SearchAdRaw
     reportType,
     brandKey: row.brandKey,
     adProductType: row.adProductType ?? inferAdProductFromReportType(reportType),
-    campaignId: stringValue(raw.campaignId),
-    campaignName: stringValue(raw.campaignName),
-    adgroupId: stringValue(raw.adgroupId),
-    adgroupName: stringValue(raw.adgroupName),
-    keywordId: stringValue(raw.keywordId),
-    keywordText: stringValue(raw.keywordText) ?? fallbackLabel,
-    searchTerm: stringValue(raw.searchTerm) ?? fallbackLabel,
+    campaignId: normalizedStringValue(raw.campaignId),
+    campaignName: normalizedStringValue(raw.campaignName),
+    adgroupId: normalizedStringValue(raw.adgroupId),
+    adgroupName: normalizedStringValue(raw.adgroupName),
+    keywordId: normalizedStringValue(raw.keywordId),
+    keywordText: normalizedStringValue(raw.keywordText) ?? fallbackSearchLabel,
+    searchTerm: normalizedStringValue(raw.searchTerm) ?? fallbackSearchLabel,
+    adId: normalizedStringValue(raw.adId),
+    criterionId: normalizedStringValue(raw.criterionId),
+    extensionId: normalizedStringValue(raw.extensionId),
+    mediaId: normalizedStringValue(raw.mediaId),
+    device: normalizedStringValue(raw.device),
     impressions: numberValue(raw.impressions),
     clicks: numberValue(raw.clicks),
     cost: numberValue(raw.cost),
@@ -106,6 +108,19 @@ export function inferBrandKey(value: string): BrandKey | undefined {
 
   if (normalized.includes("스티커씨") || normalized.includes("stickersee") || normalized.includes("sticker-see")) {
     return "stickersee";
+  }
+
+  return undefined;
+}
+
+function inferAdProductFromText(value: string) {
+  const normalized = value.toLowerCase();
+  if (normalized.includes("쇼핑검색") || normalized.includes("shopping")) {
+    return "shopping_search" as const;
+  }
+
+  if (normalized.includes("파워링크") || normalized.includes("powerlink")) {
+    return "powerlink" as const;
   }
 
   return undefined;
@@ -131,6 +146,11 @@ function normalizeReportString(value: string | undefined) {
 
 function stringValue(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function normalizedStringValue(value: unknown) {
+  const text = stringValue(value);
+  return text && text !== "-" ? text : undefined;
 }
 
 function numberValue(value: unknown) {

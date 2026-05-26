@@ -11,6 +11,7 @@ import {
   createSampleStateView,
 } from "@/features/search-ad/domain/sampleData";
 import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
+import { isSearchTermReport } from "@/features/search-ad/domain/targetDisplay";
 import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport";
 import { buildSearchAdRuleResults } from "@/features/search-ad/domain/ruleEngine";
 import type {
@@ -285,10 +286,12 @@ export async function getSearchAdSearchTermsView(filters = DEFAULT_SEARCH_AD_FIL
 
   try {
     await ensureSearchAdSchema();
+    const rows = await listNormalizedRowsByFilters(filters, 500);
+    const ruleResults = await listSearchAdRuleResultsFromDb(filters, 500);
     return {
       filters,
-      rows: await listNormalizedRowsByFilters(filters, 500),
-      ruleResults: await listSearchAdRuleResultsFromDb(filters, 500),
+      rows: rows.filter((row) => isSearchTermReport(row.reportType)),
+      ruleResults: ruleResults.filter((rule) => rule.targetType === "search_term"),
     };
   } catch (error) {
     if (canUseSampleFallback()) {
@@ -646,9 +649,10 @@ export async function saveDownloadedReport(input: {
       `
         INSERT INTO search_ad_report_normalized_rows (
           id, report_row_id, report_type, brand_key, ad_product_type, campaign_id, campaign_name, adgroup_id, adgroup_name,
-          keyword_id, keyword_text, search_term, impressions, clicks, cost, conversions, sales_amount, source_date
+          keyword_id, keyword_text, search_term, ad_id, criterion_id, extension_id, media_id, device,
+          impressions, clicks, cost, conversions, sales_amount, source_date
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
       `,
       [
         row.id,
@@ -663,6 +667,11 @@ export async function saveDownloadedReport(input: {
         row.keywordId ?? null,
         row.keywordText ?? null,
         row.searchTerm ?? null,
+        row.adId ?? null,
+        row.criterionId ?? null,
+        row.extensionId ?? null,
+        row.mediaId ?? null,
+        row.device ?? null,
         row.impressions,
         row.clicks,
         row.cost,
@@ -749,7 +758,7 @@ function hydrateReportRowWithState(row: SearchAdRawReportRow, lookup: StateBrand
   const campaignMatch = campaignId ? lookup.campaigns.get(campaignId) : undefined;
   const match = keywordMatch ?? adgroupMatch ?? campaignMatch;
   const brandKey = row.brandKey ?? match?.brandKey;
-  const adProductType = row.adProductType ?? match?.adProductType;
+  const adProductType = match?.adProductType ?? row.adProductType;
   const rawRow = {
     ...row.rawRow,
     ...(campaignMatch?.name && !row.rawRow.campaignName ? { campaignName: campaignMatch.name } : {}),
@@ -859,6 +868,11 @@ export async function ensureSearchAdSchema() {
       keyword_id TEXT,
       keyword_text TEXT,
       search_term TEXT,
+      ad_id TEXT,
+      criterion_id TEXT,
+      extension_id TEXT,
+      media_id TEXT,
+      device TEXT,
       impressions NUMERIC NOT NULL DEFAULT 0,
       clicks NUMERIC NOT NULL DEFAULT 0,
       cost NUMERIC NOT NULL DEFAULT 0,
@@ -985,6 +999,15 @@ export async function ensureSearchAdSchema() {
 
     CREATE INDEX IF NOT EXISTS search_ad_adgroup_latest_idx
       ON search_ad_adgroup_snapshots (provider_adgroup_id, collected_at DESC);
+  `);
+
+  await query(`
+    ALTER TABLE search_ad_report_normalized_rows
+      ADD COLUMN IF NOT EXISTS ad_id TEXT,
+      ADD COLUMN IF NOT EXISTS criterion_id TEXT,
+      ADD COLUMN IF NOT EXISTS extension_id TEXT,
+      ADD COLUMN IF NOT EXISTS media_id TEXT,
+      ADD COLUMN IF NOT EXISTS device TEXT;
   `);
 }
 
@@ -1247,6 +1270,11 @@ async function listNormalizedRowsByFilters(filters: SearchAdFilters, limit: numb
     keyword_id: string | null;
     keyword_text: string | null;
     search_term: string | null;
+    ad_id: string | null;
+    criterion_id: string | null;
+    extension_id: string | null;
+    media_id: string | null;
+    device: string | null;
     impressions: string;
     clicks: string;
     cost: string;
@@ -1344,6 +1372,11 @@ async function listNormalizedRowsForReport(reportId: string): Promise<SearchAdNo
     keyword_id: string | null;
     keyword_text: string | null;
     search_term: string | null;
+    ad_id: string | null;
+    criterion_id: string | null;
+    extension_id: string | null;
+    media_id: string | null;
+    device: string | null;
     impressions: string;
     clicks: string;
     cost: string;
@@ -1468,6 +1501,11 @@ function mapNormalizedRow(row: {
   keyword_id: string | null;
   keyword_text: string | null;
   search_term: string | null;
+  ad_id?: string | null;
+  criterion_id?: string | null;
+  extension_id?: string | null;
+  media_id?: string | null;
+  device?: string | null;
   impressions: string;
   clicks: string;
   cost: string;
@@ -1488,6 +1526,11 @@ function mapNormalizedRow(row: {
     keywordId: row.keyword_id ?? undefined,
     keywordText: row.keyword_text ?? undefined,
     searchTerm: row.search_term ?? undefined,
+    adId: row.ad_id ?? undefined,
+    criterionId: row.criterion_id ?? undefined,
+    extensionId: row.extension_id ?? undefined,
+    mediaId: row.media_id ?? undefined,
+    device: row.device ?? undefined,
     impressions: Number(row.impressions),
     clicks: Number(row.clicks),
     cost: Number(row.cost),

@@ -83,6 +83,11 @@ export type SearchAdNormalizedRow = {
   keywordId?: string;
   keywordText?: string;
   searchTerm?: string;
+  adId?: string;
+  criterionId?: string;
+  extensionId?: string;
+  mediaId?: string;
+  device?: string;
   impressions: number;
   clicks: number;
   cost: number;
@@ -109,7 +114,7 @@ export type SearchAdRuleResult = {
   brandKey: BrandKey;
   adProductType: AdProductType;
   category: RuleCategory;
-  targetType: "campaign" | "adgroup" | "keyword" | "search_term";
+  targetType: "campaign" | "adgroup" | "keyword" | "search_term" | "ad" | "criterion" | "ad_extension";
   targetId?: string;
   targetLabel: string;
   severity: RuleSeverity;

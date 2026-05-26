@@ -1,4 +1,5 @@
 import { getAdProductLabel, getBrandLabel, getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
+import { getNormalizedRowDisplayTarget } from "@/features/search-ad/domain/targetDisplay";
 import type { SearchAdReportDetailView } from "@/features/search-ad/domain/types";
 import { formatWon } from "@/components/search-ad/SearchAdCards";
 
@@ -36,7 +37,7 @@ export function ReportEasyTable({ view }: { view: SearchAdReportDetailView }) {
             <tr>
               <th>브랜드</th>
               <th>광고유형</th>
-              <th>검색어/대상</th>
+              <th>연결 대상</th>
               <th>캠페인</th>
               <th>광고그룹</th>
               <th>비용</th>
@@ -50,7 +51,7 @@ export function ReportEasyTable({ view }: { view: SearchAdReportDetailView }) {
               <tr key={row.id}>
                 <td>{getBrandLabel(row.brandKey)}</td>
                 <td>{getAdProductLabel(row.adProductType)}</td>
-                <td>{row.searchTerm ?? row.keywordText ?? "-"}</td>
+                <td>{getNormalizedRowDisplayTarget(row)}</td>
                 <td>{row.campaignName ?? "-"}</td>
                 <td>{row.adgroupName ?? "-"}</td>
                 <td>{formatWon(row.cost)}</td>

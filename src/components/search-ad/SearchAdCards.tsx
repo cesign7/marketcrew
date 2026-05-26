@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAdProductLabel, getBrandLabel, getReportTypeLabel, RULE_CATEGORY_LABELS } from "@/features/search-ad/domain/reportTypes";
+import { getNormalizedRowDisplayTarget, getRuleResultConnectedTarget, getRuleResultRawTargetId, getRuleResultSourceReportLabel, getRuleTargetTypeLabel } from "@/features/search-ad/domain/targetDisplay";
 import type { SearchAdActionLogsView, SearchAdNormalizedRow, SearchAdOperationsView, SearchAdReportJobRecord, SearchAdRuleResult, SearchAdStateRecord } from "@/features/search-ad/domain/types";
 
 export function SyncStatusStrip({ view }: { view: SearchAdOperationsView }) {
@@ -122,29 +123,47 @@ export function ReportListTable({ reports }: { reports: SearchAdReportJobRecord[
 export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
   return (
     <div className="card-list">
-      {results.map((result) => (
-        <article className="rule-card" key={result.id}>
-          <div>
-            <span className={`severity severity-${result.severity}`}>{RULE_CATEGORY_LABELS[result.category]}</span>
-            <strong>{result.targetLabel}</strong>
-          </div>
-          <p>{result.reason}</p>
-          <dl>
+      {results.map((result) => {
+        const rawTargetId = getRuleResultRawTargetId(result);
+        return (
+          <article className="rule-card" key={result.id}>
             <div>
-              <dt>브랜드</dt>
-              <dd>{getBrandLabel(result.brandKey)}</dd>
+              <span className={`severity severity-${result.severity}`}>{RULE_CATEGORY_LABELS[result.category]}</span>
+              <span className="target-chip">{getRuleTargetTypeLabel(result.targetType)}</span>
+              <strong>{result.targetLabel}</strong>
             </div>
-            <div>
-              <dt>광고유형</dt>
-              <dd>{getAdProductLabel(result.adProductType)}</dd>
-            </div>
-            <div>
-              <dt>기준 기간</dt>
-              <dd>{result.periodDays}일</dd>
-            </div>
-          </dl>
-        </article>
-      ))}
+            <p>{result.reason}</p>
+            <dl>
+              <div>
+                <dt>연결 위치</dt>
+                <dd>{getRuleResultConnectedTarget(result)}</dd>
+              </div>
+              <div>
+                <dt>브랜드</dt>
+                <dd>{getBrandLabel(result.brandKey)}</dd>
+              </div>
+              <div>
+                <dt>광고유형</dt>
+                <dd>{getAdProductLabel(result.adProductType)}</dd>
+              </div>
+              <div>
+                <dt>근거 보고서</dt>
+                <dd>{getRuleResultSourceReportLabel(result)}</dd>
+              </div>
+              <div>
+                <dt>기준 기간</dt>
+                <dd>{result.periodDays}일</dd>
+              </div>
+            </dl>
+            {rawTargetId ? (
+              <details className="technical-details">
+                <summary>원문 ID 보기</summary>
+                <code>{rawTargetId}</code>
+              </details>
+            ) : null}
+          </article>
+        );
+      })}
       {results.length === 0 ? <p className="empty-text">해당 조건에 걸린 규칙 결과가 없습니다.</p> : null}
     </div>
   );
@@ -218,7 +237,7 @@ export function SearchTermTable({ rows }: { rows: SearchAdNormalizedRow[] }) {
             const roas = row.cost > 0 ? (row.salesAmount / row.cost) * 100 : null;
             return (
               <tr key={row.id}>
-                <td>{row.searchTerm ?? row.keywordText ?? "이름 없음"}</td>
+                <td>{getNormalizedRowDisplayTarget(row)}</td>
                 <td>{getBrandLabel(row.brandKey)}</td>
                 <td>{getAdProductLabel(row.adProductType)}</td>
                 <td>{row.campaignName ?? "-"}</td>

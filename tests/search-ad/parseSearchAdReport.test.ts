@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { REPORT_COLUMN_SCHEMAS } from "@/features/search-ad/domain/reportColumnSchemas";
-import { parseSearchAdReport } from "@/features/search-ad/domain/parseSearchAdReport";
+import { normalizeRawRow, parseSearchAdReport } from "@/features/search-ad/domain/parseSearchAdReport";
 
 describe("parseSearchAdReport", () => {
   it("헤더 없는 TSV를 reportTp 컬럼 순서표로 해석한다", () => {
@@ -34,6 +34,73 @@ describe("parseSearchAdReport", () => {
         sourceDate: "2026-05-25",
       }),
     ).toThrow("SEARCH_AD_REPORT_PARSE_FAILED:EXPKEYWORD");
+  });
+
+  it("타게팅 보고서 ID를 검색어로 대체하지 않는다", () => {
+    const row = normalizeRawRow(
+      "CRITERION",
+      {
+        id: "row-criterion",
+        reportFileId: "file-criterion",
+        rowNumber: 1,
+        brandKey: "stickersee",
+        adProductType: "powerlink",
+        mappingStatus: "mapped",
+        rawRow: {
+          criterionId: "grp-a001-02-000000029331497~GNF",
+          adgroupName: "M_감사/생일/답례 스티커",
+          device: "P",
+          impressions: 1038,
+          clicks: 60,
+          cost: 64745,
+        },
+      },
+      "2026-05-25",
+    );
+
+    expect(row).toMatchObject({
+      reportType: "CRITERION",
+      criterionId: "grp-a001-02-000000029331497~GNF",
+      searchTerm: undefined,
+      keywordText: undefined,
+    });
+  });
+
+  it("광고 ID를 검색어로 대체하지 않는다", () => {
+    const row = normalizeRawRow(
+      "AD",
+      {
+        id: "row-ad",
+        reportFileId: "file-ad",
+        rowNumber: 1,
+        brandKey: "stickersee",
+        adProductType: "shopping_search",
+        mappingStatus: "mapped",
+        rawRow: {
+          campaignId: "cmp-a001-02-000000005825928",
+          adgroupId: "grp-a001-02-000000029331497",
+          keywordId: "-",
+          adId: "nad-a001-02-000000203421541",
+          campaignName: "스티커씨_쇼핑검색",
+          adgroupName: "M_감사/생일/답례 스티커",
+          impressions: 450,
+          clicks: 34,
+          cost: 40288,
+          averagePosition: 2,
+          status: "ELIGIBLE",
+        },
+      },
+      "2026-05-25",
+    );
+
+    expect(row).toMatchObject({
+      reportType: "AD",
+      adProductType: "shopping_search",
+      keywordId: undefined,
+      adId: "nad-a001-02-000000203421541",
+      searchTerm: undefined,
+      keywordText: undefined,
+    });
   });
 
   it("실제 확인된 reportTp별 컬럼 수를 고정한다", () => {
