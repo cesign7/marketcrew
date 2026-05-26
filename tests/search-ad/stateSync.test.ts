@@ -44,13 +44,31 @@ describe("syncSearchAdState", () => {
     mocks.listSearchAdKeywords.mockImplementation(async (adgroupId: string) => [
       { nccKeywordId: `kw-${adgroupId}`, nccAdgroupId: adgroupId, keyword: "감사스티커" },
     ]);
-    mocks.listSearchAdAds.mockImplementation(async (adgroupId: string) => [
-      {
-        nccAdId: `nad-${adgroupId}`,
-        nccAdgroupId: adgroupId,
-        ad: { headline: "감사 스티커", pc: { final: "https://stickersee.example/pc" }, mobile: { final: "https://stickersee.example/m" } },
-      },
-    ]);
+    mocks.listSearchAdAds.mockImplementation(async (adgroupId: string) => {
+      if (adgroupId === "grp-2") {
+        return [
+          {
+            nccAdId: `nad-${adgroupId}`,
+            nccAdgroupId: adgroupId,
+            type: "SHOPPING_PRODUCT_AD",
+            ad: { productName: null },
+            referenceData: {
+              productTitle: "생일 스티커",
+              mallProductUrl: "https://smartstore.example/products/1",
+              mallProdMblUrl: "https://m.smartstore.example/products/1",
+            },
+          },
+        ];
+      }
+
+      return [
+        {
+          nccAdId: `nad-${adgroupId}`,
+          nccAdgroupId: adgroupId,
+          ad: { headline: "감사 스티커", pc: { final: "https://stickersee.example/pc" }, mobile: { final: "https://stickersee.example/m" } },
+        },
+      ];
+    });
     mocks.saveSearchAdStateSnapshots.mockResolvedValue({ collectedAt: "2026-05-26T04:10:00.000Z", saved: 7 });
 
     const result = await syncSearchAdState();
@@ -72,6 +90,14 @@ describe("syncSearchAdState", () => {
           name: "감사 스티커",
           pcFinalUrl: "https://stickersee.example/pc",
           mobileFinalUrl: "https://stickersee.example/m",
+        }),
+        expect.objectContaining({
+          targetType: "ad",
+          providerId: "nad-grp-2",
+          parentProviderId: "grp-2",
+          name: "생일 스티커",
+          pcFinalUrl: "https://smartstore.example/products/1",
+          mobileFinalUrl: "https://m.smartstore.example/products/1",
         }),
       ]),
     );

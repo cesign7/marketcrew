@@ -162,12 +162,13 @@ export function getRuleResultTargetDetailLabel(result: SearchAdRuleResult) {
 }
 
 export function getRuleResultCreativeLabel(result: SearchAdRuleResult) {
-  return (
+  const label =
     stringFromEvidence(result.evidencePacket.adHeadline) ??
     stringFromEvidence(result.evidencePacket.adTitle) ??
     stringFromEvidence(result.evidencePacket.adDescription) ??
-    stringFromEvidence(result.evidencePacket.creativeLabel)
-  );
+    stringFromEvidence(result.evidencePacket.creativeLabel);
+
+  return isTechnicalTargetIdentifier(label) ? undefined : label;
 }
 
 export function getRuleResultLandingLabel(result: SearchAdRuleResult) {

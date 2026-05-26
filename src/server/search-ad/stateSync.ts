@@ -163,17 +163,29 @@ async function listAdsForAdgroups(adgroupIds: string[]) {
 
 function readAdName(source: unknown) {
   const ad = readRecord(source, "ad");
-  return readString(source, "name") ?? readString(source, "headline") ?? readString(ad, "headline") ?? readString(ad, "description") ?? readString(source, "nccAdId");
+  const referenceData = readRecord(source, "referenceData");
+  return (
+    readString(source, "name") ??
+    readString(source, "headline") ??
+    readString(ad, "headline") ??
+    readString(ad, "productName") ??
+    readString(ad, "description") ??
+    readString(referenceData, "productTitle") ??
+    readString(referenceData, "productName")
+  );
 }
 
 function readLandingUrl(source: unknown, device: "pc" | "mobile") {
   const ad = readRecord(source, "ad");
+  const referenceData = readRecord(source, "referenceData");
   const devicePayload = readRecord(ad, device) ?? readRecord(source, device);
   const capitalized = device === "pc" ? "Pc" : "Mobile";
+  const productUrlKey = device === "pc" ? "mallProductUrl" : "mallProdMblUrl";
 
   return (
     readString(devicePayload, "final") ??
     readString(devicePayload, "finalUrl") ??
+    readString(referenceData, productUrlKey) ??
     readString(source, `${device}FinalUrl`) ??
     readString(source, `final${capitalized}Url`) ??
     readString(source, "finalUrl")

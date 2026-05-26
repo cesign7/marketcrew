@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getRuleResultCreativeLabel,
   getRuleResultDisplayTargetLabel,
   getRuleResultDisplayTargetTypeLabel,
   getRuleResultPeriodLabel,
@@ -73,6 +74,26 @@ describe("rule result target display", () => {
     });
 
     expect(getRuleResultPeriodLabel(result)).toBe("수집 기준일 2026-05-25 · 실제 1일치 / 규칙 30일");
+  });
+
+  it("소재명이 ID뿐이면 화면 소재명으로 쓰지 않는다", () => {
+    const result = ruleResult({
+      evidencePacket: {
+        adHeadline: "nad-a001-02-000000203421541",
+      },
+    });
+
+    expect(getRuleResultCreativeLabel(result)).toBeUndefined();
+  });
+
+  it("실제 소재명은 화면에 보여준다", () => {
+    const result = ruleResult({
+      evidencePacket: {
+        adHeadline: "생일 스티커",
+      },
+    });
+
+    expect(getRuleResultCreativeLabel(result)).toBe("생일 스티커");
   });
 
   it("실제 검색어는 그대로 보여준다", () => {
