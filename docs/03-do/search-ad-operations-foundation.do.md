@@ -121,6 +121,24 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 - 운영 Railway API에서 Search Ad 상태 동기화를 실행해 캠페인 6개, 광고그룹 56개, 키워드 2,879개, 총 2,941개 스냅샷 저장을 확인했다.
 - 운영 보고서 동기화 API는 200으로 응답했다.
 
+### follow-up 보고서 백필 작업기
+
+- `/api/search-ad/reports/backfill`을 추가했다.
+- `/settings` 안에 보고서 복구 섹션을 추가해 오늘 기준 받을 수 있는 전체 범위에서 남은 보고서만 이어받을 수 있게 했다.
+- 화면 기본 동작은 전체 보고서 10종, 최대 과거일~전일, `skipSaved=true`다. 이미 DB에 저장된 날짜/보고서 조합은 다시 다운로드하지 않는다.
+- 보관 기간은 네이버 `stat-reports` 기준으로 `AD`/`EXPKEYWORD`/`AD_CONVERSION`/`ADEXTENSION`/`CRITERION`/`CRITERION_CONVERSION` 365일, `AD_DETAIL`/`SHOPPINGKEYWORD_DETAIL` 180일, `AD_CONVERSION_DETAIL`/`SHOPPINGKEYWORD_CONVERSION_DETAIL` 45일이다.
+- 남은 보고서 확인 요청:
+
+```json
+{
+  "dryRun": true,
+  "skipSaved": true,
+  "maxDates": 92
+}
+```
+
+- 실제 저장은 화면의 `전체 저장 / 이어받기` 버튼으로 실행한다. 누락 보고서 생성은 `createMissing=true`, 다운로드/저장은 `dryRun=false`일 때만 일어나며, 화면 실행 제한은 `maxDates=92`, `maxCreates=120`, `maxDownloads=60`이다.
+
 ---
 
 ## Verification
@@ -128,7 +146,7 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 | Check | Result |
 |-------|--------|
 | `npm run typecheck` | 통과 |
-| `npm test -- --run` | 통과, 6 files / 12 tests |
+| `npm test -- --run` | 통과, 13 files / 37 tests |
 | `npm run build` | 통과 |
 | `npm audit --omit=dev` | 0 vulnerabilities |
 | `git diff --check` | 통과 |

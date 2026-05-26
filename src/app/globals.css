@@ -86,6 +86,11 @@ table {
   opacity: 0.5;
 }
 
+.secondary-button {
+  background: #eef4f6;
+  color: var(--brand-strong);
+}
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -289,7 +294,7 @@ table {
 }
 
 .summary-grid.compact {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
 .summary-card,
@@ -626,6 +631,127 @@ table {
   margin: 0;
 }
 
+.backfill-controls {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.backfill-range-card {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.backfill-range-card div {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+}
+
+.backfill-range-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.backfill-range-card strong {
+  font-size: 16px;
+}
+
+.backfill-range-card p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.backfill-date-controls {
+  grid-template-columns: repeat(2, minmax(0, 220px));
+}
+
+.backfill-controls label,
+.backfill-report-types label {
+  display: grid;
+  gap: 6px;
+}
+
+.backfill-controls span,
+.backfill-report-types span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.backfill-controls input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  min-height: 40px;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.backfill-report-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-top: 12px;
+}
+
+.backfill-report-types label {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 10px;
+}
+
+.backfill-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.backfill-fast-row {
+  align-items: center;
+  background: #f4faf8;
+  border-radius: 8px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding: 14px;
+}
+
+.backfill-fast-row strong {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 5px;
+}
+
+.backfill-fast-row p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.backfill-details {
+  margin-top: 14px;
+}
+
+.backfill-details summary {
+  color: var(--brand-strong);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .login-shell {
   align-items: center;
   display: grid;
@@ -696,6 +822,8 @@ table {
   }
 
   .grid,
+  .backfill-controls,
+  .backfill-range-card,
   .summary-grid,
   .summary-grid.compact,
   .settings-grid,
@@ -704,8 +832,14 @@ table {
   }
 
   .section-heading,
+  .backfill-fast-row,
   .workspace-header {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .backfill-fast-row .primary-button {
+    justify-content: center;
+    width: 100%;
   }
 }

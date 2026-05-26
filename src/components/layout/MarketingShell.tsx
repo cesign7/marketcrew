@@ -23,6 +23,10 @@ const NAV_ITEMS = [
   { href: "/settings", label: "설정" },
 ];
 
+export function getMarketingNavItems() {
+  return NAV_ITEMS;
+}
+
 export function MarketingShell({ activePath, children, description, filters, title }: MarketingShellProps) {
   return (
     <main className="app-shell">

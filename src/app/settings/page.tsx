@@ -1,4 +1,5 @@
 import { MarketingShell } from "@/components/layout/MarketingShell";
+import { ReportBackfillPanel } from "@/components/search-ad/ReportBackfillPanel";
 import { DEFAULT_SEARCH_AD_FILTERS } from "@/features/search-ad/domain/sampleData";
 import { loadSearchAdOperationsView } from "@/features/search-ad/loadSearchAdViews";
 
@@ -8,7 +9,7 @@ export default async function SettingsPage() {
   const view = await loadSearchAdOperationsView(DEFAULT_SEARCH_AD_FILTERS);
 
   return (
-    <MarketingShell activePath="/settings" description="검색광고 연결과 실행 권한 상태를 확인합니다." filters={DEFAULT_SEARCH_AD_FILTERS} title="설정">
+    <MarketingShell activePath="/settings" description="검색광고 연결, 실행 권한, 보고서 복구를 관리합니다." filters={DEFAULT_SEARCH_AD_FILTERS} title="설정">
       <section className="page-stack">
         <div className="content-panel">
           <div className="section-heading">
@@ -33,6 +34,7 @@ export default async function SettingsPage() {
             </article>
           </div>
         </div>
+        <ReportBackfillPanel />
       </section>
     </MarketingShell>
   );

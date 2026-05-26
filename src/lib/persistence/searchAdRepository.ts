@@ -835,6 +835,25 @@ export async function saveDownloadedReport(input: {
   return { reportId, fileId };
 }
 
+export async function listSavedSearchAdReportKeys(): Promise<Array<{ reportType: SearchAdReportType; statDate: string }>> {
+  if (!hasDatabaseUrl()) {
+    return [];
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<{ report_type: SearchAdReportType; stat_date: string }>(`
+    SELECT DISTINCT j.report_type, to_char(j.stat_date, 'YYYY-MM-DD') AS stat_date
+    FROM search_ad_report_jobs j
+    JOIN search_ad_report_files f ON f.report_job_id = j.id
+    ORDER BY stat_date ASC, j.report_type ASC
+  `);
+
+  return result.rows.map((row) => ({
+    reportType: row.report_type,
+    statDate: row.stat_date,
+  }));
+}
+
 async function getLatestStateBrandLookup(): Promise<StateBrandLookup> {
   const lookup: StateBrandLookup = {
     campaigns: new Map(),
