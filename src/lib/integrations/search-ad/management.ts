@@ -7,6 +7,7 @@ export type NaverCampaign = {
   userLock?: boolean;
   status?: string;
   statusReason?: string;
+  [key: string]: unknown;
 };
 
 export type NaverAdgroup = {
@@ -17,6 +18,7 @@ export type NaverAdgroup = {
   userLock?: boolean;
   status?: string;
   statusReason?: string;
+  [key: string]: unknown;
 };
 
 export type NaverKeyword = {
@@ -47,6 +49,27 @@ export function listSearchAdCampaigns() {
 
 export function listSearchAdAdgroups() {
   return searchAdFetch<NaverAdgroup[]>("/ncc/adgroups");
+}
+
+export async function getSearchAdAdgroup(adgroupId: string) {
+  const rows = await searchAdFetch<NaverAdgroup[]>(`/ncc/adgroups?ids=${encodeURIComponent(adgroupId)}`);
+  const adgroup = rows.find((row) => row.nccAdgroupId === adgroupId) ?? rows[0];
+  if (!adgroup) {
+    throw new Error("SEARCH_AD_ADGROUP_NOT_FOUND");
+  }
+
+  return adgroup;
+}
+
+export async function updateSearchAdAdgroupUserLock(adgroupId: string, userLock: boolean) {
+  const current = await getSearchAdAdgroup(adgroupId);
+  return searchAdFetch<NaverAdgroup>(`/ncc/adgroups/${encodeURIComponent(adgroupId)}?fields=userLock`, {
+    method: "PUT",
+    body: JSON.stringify({
+      ...current,
+      userLock,
+    }),
+  });
 }
 
 export function listSearchAdKeywords(adgroupId?: string) {

@@ -14,6 +14,7 @@ import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
 import { isSearchTermReport } from "@/features/search-ad/domain/targetDisplay";
 import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport";
 import { buildSearchAdRuleResults } from "@/features/search-ad/domain/ruleEngine";
+import { updateSearchAdAdgroupUserLock } from "@/lib/integrations/search-ad/management";
 import type {
   AdProductType,
   BrandKey,
@@ -590,13 +591,19 @@ export async function applySearchAdActionPreview(previewId: string): Promise<Sea
     }
 
     const writeGateOpen = isSearchAdWriteEnabled();
+    const target = hasDatabaseUrl() ? await getLatestActionTarget(preview.targetType, preview.targetId) : undefined;
+    const targetLabel = target?.name ?? preview.targetLabel;
     const log: SearchAdActionLog = {
       id: `log-${preview.id}-${Date.now()}`,
       previewId: preview.id,
-      targetLabel: preview.targetLabel,
+      targetLabel,
       actionLabel: preview.requestedAction === "turn_on" ? "켜기 요청" : "끄기 요청",
-      status: writeGateOpen ? "failed" : "blocked",
-      reason: writeGateOpen ? "실제 provider write 경로는 아직 연결하지 않았습니다." : "실제 변경 권한이 닫혀 있어 네이버 광고에는 반영하지 않았습니다.",
+      status: writeGateOpen ? "applied" : "blocked",
+      reason: writeGateOpen
+        ? preview.requestedAction === "turn_on"
+          ? "네이버 검색광고 광고그룹을 켰습니다."
+          : "네이버 검색광고 광고그룹을 껐습니다."
+        : "실제 변경 권한이 닫혀 있어 네이버 광고에는 반영하지 않았습니다.",
       createdAt: new Date().toISOString(),
     };
 
@@ -605,15 +612,70 @@ export async function applySearchAdActionPreview(previewId: string): Promise<Sea
     }
 
     await ensureSearchAdSchema();
-    await query(
-      `
-        INSERT INTO search_ad_action_logs (id, preview_id, status, provider_request, provider_response, error_message, actor, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      `,
-      [log.id, log.previewId, log.status, null, null, log.reason, "owner", log.createdAt],
-    );
 
-    return log;
+    if (!writeGateOpen) {
+      await insertSearchAdActionLog(log, null, null, log.reason);
+      return log;
+    }
+
+    if (preview.targetType !== "adgroup") {
+      const failedLog = {
+        ...log,
+        status: "failed" as const,
+        reason: "캠페인 실제 변경은 아직 연결하지 않았습니다. 광고그룹 단위부터 변경할 수 있습니다.",
+      };
+      await insertSearchAdActionLog(failedLog, null, null, failedLog.reason);
+      return failedLog;
+    }
+
+    try {
+      const updated = await updateSearchAdAdgroupUserLock(preview.targetId, preview.afterState.userLock);
+      await saveSearchAdStateSnapshots([
+        {
+          targetType: "adgroup",
+          providerId: updated.nccAdgroupId ?? preview.targetId,
+          parentProviderId: updated.nccCampaignId ?? target?.parentProviderId,
+          brandKey: target?.brandKey,
+          adProductType: target?.adProductType,
+          name: updated.name ?? targetLabel,
+          userLock: updated.userLock ?? preview.afterState.userLock,
+          status: updated.status,
+          statusReason: updated.statusReason,
+          bidAmount: numberFromProviderPayload(updated.bidAmt),
+          dailyBudget: numberFromProviderPayload(updated.dailyBudget),
+          rawPayload: updated,
+        },
+      ]);
+      await insertSearchAdActionLog(
+        log,
+        {
+          targetType: preview.targetType,
+          targetId: preview.targetId,
+          userLock: preview.afterState.userLock,
+        },
+        updated,
+        null,
+      );
+      return log;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "네이버 검색광고 상태 변경 요청에 실패했습니다.";
+      const failedLog = {
+        ...log,
+        status: "failed" as const,
+        reason: message,
+      };
+      await insertSearchAdActionLog(
+        failedLog,
+        {
+          targetType: preview.targetType,
+          targetId: preview.targetId,
+          userLock: preview.afterState.userLock,
+        },
+        null,
+        message,
+      );
+      return failedLog;
+    }
   } catch (error) {
     if (canUseSampleFallback()) {
       const fallbackPreview = createSampleActionLogsView().previews.find((preview) => preview.id === previewId);
@@ -634,6 +696,43 @@ export async function applySearchAdActionPreview(previewId: string): Promise<Sea
 
     throw error;
   }
+}
+
+async function insertSearchAdActionLog(
+  log: SearchAdActionLog,
+  providerRequest: Record<string, unknown> | null,
+  providerResponse: Record<string, unknown> | null,
+  errorMessage: string | null,
+) {
+  await query(
+    `
+      INSERT INTO search_ad_action_logs (id, preview_id, status, provider_request, provider_response, error_message, actor, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `,
+    [
+      log.id,
+      log.previewId,
+      log.status,
+      providerRequest ? JSON.stringify(providerRequest) : null,
+      providerResponse ? JSON.stringify(providerResponse) : null,
+      errorMessage,
+      "owner",
+      log.createdAt,
+    ],
+  );
+}
+
+function numberFromProviderPayload(value: unknown) {
+  if (typeof value === "number") {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim().length > 0) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
 }
 
 export async function saveDownloadedReport(input: {

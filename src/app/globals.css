@@ -370,6 +370,104 @@ table {
   font-weight: 800;
 }
 
+.table-sort-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-weight: 800;
+  gap: 6px;
+  padding: 0;
+  text-align: left;
+}
+
+.state-name-cell {
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state-toggle-cell {
+  display: grid;
+  gap: 5px;
+  min-width: 150px;
+}
+
+.state-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 8px;
+  padding: 0;
+  width: max-content;
+}
+
+.state-toggle:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.state-toggle-track {
+  align-items: center;
+  background: #cbd5e1;
+  border-radius: 999px;
+  display: inline-flex;
+  height: 22px;
+  padding: 2px;
+  transition: background 140ms ease;
+  width: 42px;
+}
+
+.state-toggle-track span {
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgb(16 24 40 / 20%);
+  display: block;
+  height: 18px;
+  transform: translateX(0);
+  transition: transform 140ms ease;
+  width: 18px;
+}
+
+.state-toggle.is-on .state-toggle-track {
+  background: var(--good);
+}
+
+.state-toggle.is-on .state-toggle-track span {
+  transform: translateX(20px);
+}
+
+.state-toggle strong {
+  font-size: 13px;
+}
+
+.state-caption,
+.state-message {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  white-space: normal;
+}
+
+.state-message.is-success {
+  color: var(--good);
+}
+
+.state-message.is-warning {
+  color: var(--warn);
+}
+
+.state-message.is-error {
+  color: var(--danger);
+}
+
 .table-link {
   color: var(--brand-strong);
   font-weight: 800;
