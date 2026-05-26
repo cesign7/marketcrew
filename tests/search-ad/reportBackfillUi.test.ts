@@ -26,9 +26,9 @@ describe("report backfill UI helpers", () => {
     expect(body).toMatchObject({
       dryRun: true,
       fromDate: "2025-05-26",
-      maxCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun,
-      maxDates: 92,
-      maxDownloads: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxDownloadsPerRun,
+      maxCreates: 3650,
+      maxDates: 365,
+      maxDownloads: 3650,
       maxHourlyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerHour,
       rateLimitBackoffMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.rateLimitBackoffMs,
       requestDelayMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs,
@@ -67,18 +67,18 @@ describe("report backfill UI helpers", () => {
     ).toBe("마켓크루 다운로드 안전 상한에 도달해 다음 자동 배치에서 이어서 저장합니다.");
   });
 
-  it("안전 기준 안내는 하루 제한 없이 시간 경과 후 자동 이어받기를 설명한다", () => {
+  it("안전 기준 안내는 마켓크루 건수 상한 대신 긴 요청 간격을 설명한다", () => {
     const description = getBackfillSafetyDescription({
-      maxCreates: 40,
-      maxHourlyCreates: 80,
+      maxCreates: 3650,
+      maxHourlyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerHour,
     });
 
-    expect(description).toContain("한 번 40건, 시간당 80건 이하");
-    expect(description).toContain("준비가 끝나거나 대기 시간이 지나면 서버가 자동으로 이어서 확인합니다.");
+    expect(description).toContain("40건/시간당 80건 상한은 쓰지 않고");
+    expect(description).toContain("요청 사이 긴 대기 시간");
     expect(description).not.toContain("하루");
   });
 
-  it("긴 기간은 빠른 복구 배치로 나눠 처리한다", () => {
+  it("긴 기간도 전체 날짜를 한 번에 계획한다", () => {
     expect(
       getQuickBackfillLimits({
         fromDate: "2026-01-01",
@@ -86,13 +86,13 @@ describe("report backfill UI helpers", () => {
         toDate: "2026-04-30",
       }),
     ).toMatchObject({
-      maxCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun,
-      maxDates: 92,
-      maxDownloads: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxDownloadsPerRun,
+      maxCreates: 1200,
+      maxDates: 120,
+      maxDownloads: 1200,
       maxHourlyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerHour,
       requestDelayMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs,
       selectedDates: 120,
-      truncatedDates: 28,
+      truncatedDates: 0,
     });
     expect(
       getQuickBackfillLimits({

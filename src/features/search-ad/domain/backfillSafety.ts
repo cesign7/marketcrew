@@ -1,9 +1,9 @@
 export const SEARCH_AD_BACKFILL_SAFETY_LIMITS = {
-  maxCreatesPerRun: 40,
-  maxDownloadsPerRun: 40,
-  maxCreatesPerHour: 80,
-  requestDelayMs: 750,
-  rateLimitBackoffMs: 5 * 60 * 1000,
+  maxCreatesPerRun: 10_000,
+  maxDownloadsPerRun: 10_000,
+  maxCreatesPerHour: 100_000,
+  requestDelayMs: 3_000,
+  rateLimitBackoffMs: 10 * 60 * 1000,
 } as const;
 
 export type SearchAdBackfillSafetyInput = {

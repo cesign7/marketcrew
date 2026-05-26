@@ -50,8 +50,8 @@ export async function startSearchAdReportBackfillJob(input: BackgroundBackfillIn
     const normalizedInput = normalizeBackgroundInput(input);
     const latestRun = await getLatestSearchAdBackfillRun();
     if (latestRun && isResumableRun(latestRun)) {
-      const resumedRun = (await markSearchAdBackfillRunRunning(latestRun.id)) ?? latestRun;
-      queueBackfillRun(latestRun.id, normalizeBackgroundInput(latestRun.inputJson as BackgroundBackfillInput));
+      const resumedRun = (await markSearchAdBackfillRunRunning(latestRun.id, normalizedInput as Record<string, unknown>)) ?? latestRun;
+      queueBackfillRun(latestRun.id, normalizedInput);
       return { data: { run: resumedRun }, ok: true };
     }
 
@@ -225,9 +225,9 @@ export function getNextDelayMs(result: SearchAdBackfillRunSuccess, safetyWindow:
     return 60_000;
   }
   if (summary.created > 0 || summary.pending > 0) {
-    return 30_000;
+    return 60_000;
   }
-  return 2_000;
+  return 5_000;
 }
 
 function hasDeferredDownloads(summary: SearchAdBackfillRunSuccess["data"]["summary"]) {

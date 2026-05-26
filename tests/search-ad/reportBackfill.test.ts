@@ -125,7 +125,7 @@ describe("runSearchAdReportBackfill", () => {
     });
   });
 
-  it("네이버 호출 안전 상한과 요청 간 대기 시간을 적용한다", async () => {
+  it("요청 간 대기 시간을 적용하고 명시한 생성 계획을 유지한다", async () => {
     const createJob = vi
       .fn()
       .mockResolvedValueOnce({ reportJobId: "job-ad-1", reportTp: "AD", statDt: "20260524", status: "REGIST" })
@@ -160,7 +160,7 @@ describe("runSearchAdReportBackfill", () => {
     }
     expect(result.data.summary).toMatchObject({
       created: 2,
-      createLimit: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun,
+      createLimit: 999,
       requestDelayMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs,
     });
     expect(result.data.summary).not.toHaveProperty("maxDailyCreates");

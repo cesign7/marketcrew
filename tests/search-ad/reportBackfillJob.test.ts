@@ -28,7 +28,7 @@ describe("search ad report backfill background scheduler", () => {
     expect(getProgressMessage(result, safetyWindow, buildSafetyLimits())).toContain("다운로드 배치를 바로 이어갑니다");
   });
 
-  it("저장 가능한 보고서가 없고 생성 상한만 찼으면 다음 시간대까지 기다린다", () => {
+  it("저장 가능한 보고서가 없고 생성 또는 준비 중 보고서가 있으면 길게 기다린다", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-26T07:48:44.000Z"));
 
@@ -44,8 +44,8 @@ describe("search ad report backfill background scheduler", () => {
       hourStartedAt: "2026-05-26T07:40:03.916Z",
     };
 
-    expect(getNextDelayMs(result, safetyWindow, buildSafetyLimits())).toBeGreaterThan(40 * 60_000);
-    expect(getProgressMessage(result, safetyWindow, buildSafetyLimits())).toContain("시간당 생성 안전 상한");
+    expect(getNextDelayMs(result, safetyWindow, buildSafetyLimits())).toBe(60_000);
+    expect(getProgressMessage(result, safetyWindow, buildSafetyLimits())).toContain("네이버가 보고서를 생성");
   });
 });
 

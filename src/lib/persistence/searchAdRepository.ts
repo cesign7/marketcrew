@@ -1019,7 +1019,7 @@ export async function getLatestSearchAdBackfillRun(): Promise<SearchAdBackfillRu
   return result.rows[0] ? mapBackfillRunRow(result.rows[0]) : undefined;
 }
 
-export async function markSearchAdBackfillRunRunning(id: string): Promise<SearchAdBackfillRunRecord | undefined> {
+export async function markSearchAdBackfillRunRunning(id: string, inputJson?: Record<string, unknown>): Promise<SearchAdBackfillRunRecord | undefined> {
   if (!hasDatabaseUrl()) {
     return undefined;
   }
@@ -1028,11 +1028,15 @@ export async function markSearchAdBackfillRunRunning(id: string): Promise<Search
   const result = await query<BackfillRunRow>(
     `
       UPDATE search_ad_backfill_runs
-      SET status = 'running', started_at = COALESCE(started_at, now()), updated_at = now()
+      SET
+        status = 'running',
+        input_json = COALESCE($2::jsonb, input_json),
+        started_at = COALESCE(started_at, now()),
+        updated_at = now()
       WHERE id = $1
       RETURNING id, status, input_json, result_json, error_message, created_at, started_at, completed_at, updated_at
     `,
-    [id],
+    [id, inputJson ? JSON.stringify(inputJson) : null],
   );
 
   return result.rows[0] ? mapBackfillRunRow(result.rows[0]) : undefined;

@@ -74,7 +74,6 @@ type BackfillJobResponse =
       ok: false;
     };
 
-const FAST_BACKFILL_MAX_DATES = 92;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ACTIVE_WAITING_JOB_MS = 90_000;
 
@@ -123,7 +122,7 @@ export function buildBackgroundBackfillRequestBody(input: BackfillRequestInput) 
 
 export function getQuickBackfillLimits(input: { fromDate: string; reportTypes: SearchAdReportType[]; toDate: string }) {
   const selectedDates = countBackfillDates(input.fromDate, input.toDate);
-  const maxDates = selectedDates > 0 ? Math.min(selectedDates, FAST_BACKFILL_MAX_DATES) : 1;
+  const maxDates = selectedDates > 0 ? selectedDates : 1;
   const batchItems = Math.max(1, maxDates * Math.max(1, input.reportTypes.length));
   return {
     batchItems,
@@ -277,10 +276,9 @@ export function ReportBackfillPanel() {
         </div>
         <div className="backfill-fast-row">
           <div>
-            <strong>서버 자동 복구: 최대 {quickLimits.maxDates.toLocaleString("ko-KR")}일씩 반복 처리</strong>
+            <strong>서버 자동 복구: 전체 기간을 긴 간격으로 이어받기</strong>
             <p>
-              한 번 시작하면 DB에 작업 기록을 남기고, 준비 완료 보고서 저장과 누락 보고서 생성 요청을 서버가 자동으로 이어갑니다.
-              {quickLimits.truncatedDates > 0 ? ` 긴 기간도 남은 날짜부터 계속 이어받습니다.` : ""}
+              한 번 시작하면 남은 전체 기간을 계획하고, 요청 간 대기 시간을 길게 둔 채 준비 완료 보고서 저장과 누락 보고서 생성 요청을 이어갑니다.
             </p>
           </div>
           <button className="primary-button" disabled={Boolean(loadingMode) || Boolean(activeJob) || quickLimits.selectedDates === 0} onClick={() => runBackfill("recover-all")} type="button">
@@ -524,9 +522,7 @@ export function getBackfillResultMessage(item: Pick<BackfillResult, "message" | 
 }
 
 export function getBackfillSafetyDescription(limits: Pick<ReturnType<typeof getQuickBackfillLimits>, "maxCreates" | "maxHourlyCreates">) {
-  return `생성 요청은 한 번 ${limits.maxCreates.toLocaleString("ko-KR")}건, 시간당 ${limits.maxHourlyCreates.toLocaleString(
-    "ko-KR",
-  )}건 이하로 자동 조절합니다. 준비가 끝나거나 대기 시간이 지나면 서버가 자동으로 이어서 확인합니다.`;
+  return `마켓크루의 40건/시간당 80건 상한은 쓰지 않고, 전체 남은 보고서를 요청 사이 긴 대기 시간으로 이어받습니다. 네이버가 속도 제한을 보내면 자동으로 충분히 대기합니다.`;
 }
 
 function countBackfillDates(fromDate: string, toDate: string) {
