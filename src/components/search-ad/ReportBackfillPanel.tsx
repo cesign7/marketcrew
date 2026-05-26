@@ -339,7 +339,7 @@ export function ReportBackfillPanel() {
                       <td>{getReportTypeLabel(item.reportType)}</td>
                       <td>{getBackfillStatusLabel(item.status)}</td>
                       <td>{item.providerReportJobId ?? "-"}</td>
-                      <td>{item.message ?? getProviderStatusLabel(item.providerStatus) ?? "-"}</td>
+                      <td>{getBackfillResultMessage(item)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -507,6 +507,14 @@ export function createFullBackfillFormState(todayKst?: string): BackfillFormStat
     reportTypes: ALL_SEARCH_AD_REPORT_TYPES,
     toDate: todayKst ? getDateOffsetFromKstDate(todayKst, -1) : getKstDateOffset(-1),
   };
+}
+
+export function getBackfillResultMessage(item: Pick<BackfillResult, "message" | "providerStatus" | "status">) {
+  if (item.status === "download_skipped" && item.message?.includes("maxDownloads 제한")) {
+    return "마켓크루 다운로드 안전 상한에 도달해 다음 자동 배치에서 이어서 저장합니다.";
+  }
+
+  return item.message ?? getProviderStatusLabel(item.providerStatus) ?? "-";
 }
 
 function countBackfillDates(fromDate: string, toDate: string) {

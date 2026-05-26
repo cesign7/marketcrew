@@ -4,6 +4,7 @@ import {
   buildBackfillRequestBody,
   buildBackgroundBackfillRequestBody,
   createFullBackfillFormState,
+  getBackfillResultMessage,
   getBackfillStatusLabel,
   getQuickBackfillLimits,
 } from "@/components/search-ad/ReportBackfillPanel";
@@ -55,6 +56,15 @@ describe("report backfill UI helpers", () => {
     expect(getBackfillStatusLabel("downloadable")).toBe("저장 가능");
     expect(getBackfillStatusLabel("missing")).toBe("생성 필요");
     expect(getBackfillStatusLabel("rate_limited")).toBe("속도 제한");
+  });
+
+  it("이전 작업에 저장된 maxDownloads 문구도 화면에서는 다음 배치 안내로 보정한다", () => {
+    expect(
+      getBackfillResultMessage({
+        message: "maxDownloads 제한으로 이번 실행에서는 다운로드하지 않았습니다.",
+        status: "download_skipped",
+      }),
+    ).toBe("마켓크루 다운로드 안전 상한에 도달해 다음 자동 배치에서 이어서 저장합니다.");
   });
 
   it("긴 기간은 빠른 복구 배치로 나눠 처리한다", () => {
