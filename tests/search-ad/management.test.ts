@@ -48,4 +48,37 @@ describe("search ad management API", () => {
     });
     expect(updated.userLock).toBe(true);
   });
+
+  it("캠페인 켜기/끄기도 현재 캠페인을 읽은 뒤 userLock만 갱신 요청한다", async () => {
+    const { updateSearchAdCampaignUserLock } = await import("@/lib/integrations/search-ad/management");
+    mocks.searchAdFetch
+      .mockResolvedValueOnce([
+        {
+          nccCampaignId: "cmp-a001",
+          name: "스티커씨_파워링크",
+          campaignTp: "WEB_SITE",
+          userLock: false,
+        },
+      ])
+      .mockResolvedValueOnce({
+        nccCampaignId: "cmp-a001",
+        name: "스티커씨_파워링크",
+        campaignTp: "WEB_SITE",
+        userLock: true,
+      });
+
+    const updated = await updateSearchAdCampaignUserLock("cmp-a001", true);
+
+    expect(mocks.searchAdFetch).toHaveBeenNthCalledWith(1, "/ncc/campaigns?ids=cmp-a001");
+    expect(mocks.searchAdFetch).toHaveBeenNthCalledWith(2, "/ncc/campaigns/cmp-a001?fields=userLock", {
+      method: "PUT",
+      body: JSON.stringify({
+        nccCampaignId: "cmp-a001",
+        name: "스티커씨_파워링크",
+        campaignTp: "WEB_SITE",
+        userLock: true,
+      }),
+    });
+    expect(updated.userLock).toBe(true);
+  });
 });

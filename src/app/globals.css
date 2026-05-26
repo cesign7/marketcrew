@@ -478,6 +478,18 @@ table {
   font-weight: 800;
 }
 
+.rule-card-title {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.rule-card-title:hover {
+  color: var(--brand-strong);
+  text-decoration: underline;
+}
+
 .card-list {
   display: grid;
   gap: 12px;
@@ -525,6 +537,68 @@ table {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.detail-grid {
+  display: grid;
+  gap: 10px 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 16px 0 0;
+}
+
+.detail-grid div {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.detail-grid dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.detail-grid dd {
+  margin: 3px 0 0;
+}
+
+.text-break {
+  overflow-wrap: anywhere;
+}
+
+.action-target-card {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.action-target-card span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.action-target-card strong {
+  font-size: 17px;
+}
+
+.action-target-card p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.action-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.action-preview-card {
+  margin-top: 12px;
 }
 
 .target-chip {
@@ -851,6 +925,7 @@ table {
   .grid,
   .backfill-controls,
   .backfill-range-card,
+  .detail-grid,
   .summary-grid,
   .summary-grid.compact,
   .settings-grid,

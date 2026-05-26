@@ -2,7 +2,9 @@ import { randomUUID } from "node:crypto";
 import { hasDatabaseUrl, query } from "./postgres";
 import {
   DEFAULT_SEARCH_AD_FILTERS,
+  SAMPLE_NORMALIZED_ROWS,
   SAMPLE_RULE_CRITERIA,
+  SAMPLE_RULE_RESULTS,
   createSampleActionLogsView,
   createSampleActionPreview,
   createSampleOperationsView,
@@ -12,10 +14,10 @@ import {
   createSampleStateView,
 } from "@/features/search-ad/domain/sampleData";
 import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
-import { isSearchTermReport } from "@/features/search-ad/domain/targetDisplay";
+import { getRuleResultActionTarget, isSearchTermReport } from "@/features/search-ad/domain/targetDisplay";
 import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport";
 import { buildSearchAdPeriodRuleResults } from "@/features/search-ad/domain/ruleEngine";
-import { updateSearchAdAdgroupUserLock } from "@/lib/integrations/search-ad/management";
+import { updateSearchAdAdgroupUserLock, updateSearchAdCampaignUserLock } from "@/lib/integrations/search-ad/management";
 import type {
   AdProductType,
   BrandKey,
@@ -33,6 +35,7 @@ import type {
   SearchAdReportStatus,
   SearchAdReportType,
   SearchAdRuleCriteria,
+  SearchAdRuleResultDetailView,
   SearchAdRuleResult,
   SearchAdSearchTermsView,
   SearchAdStateRecord,
@@ -57,6 +60,22 @@ type ReportJobRow = {
     salesAmount?: number | string;
   } | null;
   mapped_brands: BrandKey[] | null;
+};
+
+type RuleResultRow = {
+  id: string;
+  brand_key: BrandKey;
+  ad_product_type: AdProductType;
+  category: SearchAdRuleResult["category"];
+  target_type: SearchAdRuleResult["targetType"];
+  target_id: string | null;
+  target_label: string;
+  severity: SearchAdRuleResult["severity"];
+  period_days: number;
+  reason: string;
+  metrics: Record<string, number | string | null>;
+  evidence_packet: Record<string, unknown>;
+  created_at: string | Date;
 };
 
 type StateSnapshotInput = {
@@ -245,6 +264,33 @@ export async function getSearchAdReportDetailView(id: string): Promise<SearchAdR
   } catch (error) {
     if (canUseSampleFallback()) {
       return createSampleReportDetailView(id);
+    }
+
+    throw error;
+  }
+}
+
+export async function getSearchAdRuleResultDetailView(id: string): Promise<SearchAdRuleResultDetailView | undefined> {
+  if (!hasDatabaseUrl()) {
+    return createSampleRuleResultDetailView(id);
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const result = await getSearchAdRuleResultById(id);
+    if (!result) {
+      return undefined;
+    }
+
+    const relatedRows = await listNormalizedRowsByIds(getRuleResultSourceRowIds(result));
+    return {
+      result,
+      relatedRows,
+      actionTarget: getRuleResultActionTarget(result),
+    };
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return createSampleRuleResultDetailView(id);
     }
 
     throw error;
@@ -620,6 +666,7 @@ export async function applySearchAdActionPreview(previewId: string): Promise<Sea
     const writeGateOpen = isSearchAdWriteEnabled();
     const target = hasDatabaseUrl() ? await getLatestActionTarget(preview.targetType, preview.targetId) : undefined;
     const targetLabel = target?.name ?? preview.targetLabel;
+    const targetTypeLabel = preview.targetType === "campaign" ? "캠페인" : "광고그룹";
     const log: SearchAdActionLog = {
       id: `log-${preview.id}-${Date.now()}`,
       previewId: preview.id,
@@ -628,8 +675,8 @@ export async function applySearchAdActionPreview(previewId: string): Promise<Sea
       status: writeGateOpen ? "applied" : "blocked",
       reason: writeGateOpen
         ? preview.requestedAction === "turn_on"
-          ? "네이버 검색광고 광고그룹을 켰습니다."
-          : "네이버 검색광고 광고그룹을 껐습니다."
+          ? `네이버 검색광고 ${targetTypeLabel}을 켰습니다.`
+          : `네이버 검색광고 ${targetTypeLabel}을 껐습니다.`
         : "실제 변경 권한이 닫혀 있어 네이버 광고에는 반영하지 않았습니다.",
       createdAt: new Date().toISOString(),
     };
@@ -645,14 +692,52 @@ export async function applySearchAdActionPreview(previewId: string): Promise<Sea
       return log;
     }
 
-    if (preview.targetType !== "adgroup") {
-      const failedLog = {
-        ...log,
-        status: "failed" as const,
-        reason: "캠페인 실제 변경은 아직 연결하지 않았습니다. 광고그룹 단위부터 변경할 수 있습니다.",
-      };
-      await insertSearchAdActionLog(failedLog, null, null, failedLog.reason);
-      return failedLog;
+    if (preview.targetType === "campaign") {
+      try {
+        const updated = await updateSearchAdCampaignUserLock(preview.targetId, preview.afterState.userLock);
+        await saveSearchAdStateSnapshots([
+          {
+            targetType: "campaign",
+            providerId: updated.nccCampaignId ?? preview.targetId,
+            brandKey: target?.brandKey,
+            adProductType: target?.adProductType,
+            name: updated.name ?? targetLabel,
+            userLock: updated.userLock ?? preview.afterState.userLock,
+            status: updated.status,
+            statusReason: updated.statusReason,
+            rawPayload: updated,
+          },
+        ]);
+        await insertSearchAdActionLog(
+          log,
+          {
+            targetType: preview.targetType,
+            targetId: preview.targetId,
+            userLock: preview.afterState.userLock,
+          },
+          updated,
+          null,
+        );
+        return log;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "네이버 검색광고 상태 변경 요청에 실패했습니다.";
+        const failedLog = {
+          ...log,
+          status: "failed" as const,
+          reason: message,
+        };
+        await insertSearchAdActionLog(
+          failedLog,
+          {
+            targetType: preview.targetType,
+            targetId: preview.targetId,
+            userLock: preview.afterState.userLock,
+          },
+          null,
+          message,
+        );
+        return failedLog;
+      }
     }
 
     try {
@@ -1469,21 +1554,7 @@ async function listSearchAdRuleResultsFromDb(filters: SearchAdFilters, limit: nu
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
-  const result = await query<{
-    id: string;
-    brand_key: BrandKey;
-    ad_product_type: AdProductType;
-    category: SearchAdRuleResult["category"];
-    target_type: SearchAdRuleResult["targetType"];
-    target_id: string | null;
-    target_label: string;
-    severity: SearchAdRuleResult["severity"];
-    period_days: number;
-    reason: string;
-    metrics: Record<string, number | string | null>;
-    evidence_packet: Record<string, unknown>;
-    created_at: string | Date;
-  }>(
+  const result = await query<RuleResultRow>(
     `
       SELECT id, brand_key, ad_product_type, category, target_type, target_id, target_label, severity, period_days, reason, metrics, evidence_packet, created_at
       FROM search_ad_rule_results
@@ -1494,21 +1565,20 @@ async function listSearchAdRuleResultsFromDb(filters: SearchAdFilters, limit: nu
     values,
   );
 
-  return result.rows.map((row) => ({
-    id: row.id,
-    brandKey: row.brand_key,
-    adProductType: row.ad_product_type,
-    category: row.category,
-    targetType: row.target_type,
-    targetId: row.target_id ?? undefined,
-    targetLabel: row.target_label,
-    severity: row.severity,
-    periodDays: row.period_days,
-    reason: row.reason,
-    metrics: row.metrics,
-    evidencePacket: row.evidence_packet,
-    createdAt: toIso(row.created_at),
-  }));
+  return result.rows.map(mapRuleResultRow);
+}
+
+async function getSearchAdRuleResultById(id: string): Promise<SearchAdRuleResult | undefined> {
+  const result = await query<RuleResultRow>(
+    `
+      SELECT id, brand_key, ad_product_type, category, target_type, target_id, target_label, severity, period_days, reason, metrics, evidence_packet, created_at
+      FROM search_ad_rule_results
+      WHERE id = $1
+    `,
+    [id],
+  );
+
+  return result.rows[0] ? mapRuleResultRow(result.rows[0]) : undefined;
 }
 
 async function listLatestStateSnapshots(targetType: SearchAdTargetType, filters: SearchAdFilters): Promise<SearchAdStateRecord[]> {
@@ -1695,6 +1765,49 @@ async function listNormalizedRowsByFilters(filters: SearchAdFilters, limit: numb
   return result.rows.map(mapNormalizedRow);
 }
 
+async function listNormalizedRowsByIds(ids: string[]): Promise<SearchAdNormalizedRow[]> {
+  if (ids.length === 0) {
+    return [];
+  }
+
+  const result = await query<{
+    id: string;
+    report_row_id: string;
+    report_type: SearchAdReportType;
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    campaign_id: string | null;
+    campaign_name: string | null;
+    adgroup_id: string | null;
+    adgroup_name: string | null;
+    keyword_id: string | null;
+    keyword_text: string | null;
+    search_term: string | null;
+    ad_id: string | null;
+    criterion_id: string | null;
+    extension_id: string | null;
+    media_id: string | null;
+    device: string | null;
+    impressions: string;
+    clicks: string;
+    cost: string;
+    conversions: string;
+    sales_amount: string;
+    source_date: string | Date;
+  }>(
+    `
+      SELECT *
+      FROM search_ad_report_normalized_rows
+      WHERE id = ANY($1::text[])
+      ORDER BY source_date DESC, cost DESC, clicks DESC
+      LIMIT 100
+    `,
+    [ids],
+  );
+
+  return result.rows.map(mapNormalizedRow);
+}
+
 async function listNormalizedDataCoverage(): Promise<Map<string, DataCoverageRecord>> {
   const result = await query<{
     brand_key: BrandKey;
@@ -1797,6 +1910,44 @@ function formatDataCoverageLabel(coverage: DataCoverageRecord, periodDays: numbe
 
 function evidenceString(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function getRuleResultSourceRowIds(result: SearchAdRuleResult) {
+  const sourceRowIds = result.evidencePacket.sourceRowIds;
+  if (Array.isArray(sourceRowIds)) {
+    return sourceRowIds.filter((value): value is string => typeof value === "string" && value.length > 0).slice(0, 100);
+  }
+
+  const normalizedRowId = evidenceString(result.evidencePacket.normalizedRowId);
+  if (normalizedRowId) {
+    return [normalizedRowId];
+  }
+
+  const rowId = evidenceString(result.evidencePacket.rowId);
+  return rowId ? [rowId] : [];
+}
+
+function createSampleRuleResultDetailView(id: string): SearchAdRuleResultDetailView | undefined {
+  const result = SAMPLE_RULE_RESULTS.find((item) => item.id === id);
+  if (!result) {
+    return undefined;
+  }
+
+  const sourceIds = new Set(getRuleResultSourceRowIds(result));
+  const relatedRows = SAMPLE_NORMALIZED_ROWS.filter(
+    (row) =>
+      sourceIds.has(row.id) ||
+      sourceIds.has(row.reportRowId) ||
+      row.searchTerm === result.targetLabel ||
+      row.keywordText === result.targetLabel ||
+      row.adgroupName === result.targetLabel,
+  );
+
+  return {
+    result,
+    relatedRows,
+    actionTarget: getRuleResultActionTarget(result),
+  };
 }
 
 async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActionLogsView> {
@@ -2042,6 +2193,24 @@ function mapReportJobRow(row: ReportJobRow): SearchAdReportJobRecord {
       lowEfficiencyCount: 0,
       goodPerformanceCount: 0,
     },
+  };
+}
+
+function mapRuleResultRow(row: RuleResultRow): SearchAdRuleResult {
+  return {
+    id: row.id,
+    brandKey: row.brand_key,
+    adProductType: row.ad_product_type,
+    category: row.category,
+    targetType: row.target_type,
+    targetId: row.target_id ?? undefined,
+    targetLabel: row.target_label,
+    severity: row.severity,
+    periodDays: row.period_days,
+    reason: row.reason,
+    metrics: row.metrics,
+    evidencePacket: row.evidence_packet,
+    createdAt: toIso(row.created_at),
   };
 }
 

@@ -6,6 +6,7 @@ import {
   getRuleResultConnectedTarget,
   getRuleResultDisplayTargetLabel,
   getRuleResultDisplayTargetTypeLabel,
+  getRuleResultDetailHref,
   getRuleResultLandingLabel,
   getRuleResultPeriodLabel,
   getRuleResultRawTargetId,
@@ -147,7 +148,9 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
             <div>
               <span className={`severity severity-${result.severity}`}>{RULE_CATEGORY_LABELS[result.category]}</span>
               <span className="target-chip">{targetTypeLabel}</span>
-              <strong>{targetLabel}</strong>
+              <Link className="rule-card-title" href={getRuleResultDetailHref(result)}>
+                {targetLabel}
+              </Link>
             </div>
             <p>{result.reason}</p>
             <dl>

@@ -14,7 +14,7 @@ export default async function ActionLogsPage() {
         <div className="content-panel">
           <div className="section-heading">
             <h2>실행 이력</h2>
-            <p>ON/OFF 미리보기와 차단/실패/반영 이력을 분리해서 남깁니다.</p>
+            <p>켜짐/꺼짐 미리보기와 차단/실패/반영 이력을 분리해서 남깁니다.</p>
           </div>
           <ActionLogsPanel view={view} />
         </div>

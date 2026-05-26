@@ -1,5 +1,5 @@
 import { MarketingShell } from "@/components/layout/MarketingShell";
-import { StateRecordTable } from "@/components/search-ad/SearchAdCards";
+import { SearchAdStateTable } from "@/components/search-ad/SearchAdStateTable";
 import { loadSearchAdStateView, parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
 
 type CampaignsPageProps = {
@@ -13,9 +13,15 @@ export default async function CampaignsPage({ searchParams }: CampaignsPageProps
   const view = await loadSearchAdStateView(filters);
 
   return (
-    <MarketingShell activePath="/campaigns" description="캠페인 단위 ON/OFF 상태와 최근 성과를 확인합니다." filters={filters} title="캠페인">
+    <MarketingShell activePath="/campaigns" description="캠페인 단위 켜짐/꺼짐 상태와 최근 성과를 확인합니다." filters={filters} title="캠페인">
       <section className="page-stack">
-        <StateRecordTable description="네이버 Search Ad 캠페인 스냅샷 기준입니다. 켜짐은 userLock=false, 꺼짐은 userLock=true입니다." records={view.campaigns} title="캠페인 상태" />
+        <SearchAdStateTable
+          description="기본 정렬은 브랜드, 광고유형, 이름 오름차순입니다. 상태 토글은 실행 미리보기와 변경 권한 확인을 통과한 뒤 네이버 캠페인에 반영합니다."
+          records={view.campaigns}
+          targetType="campaign"
+          title="캠페인 상태"
+          writeEnabled={view.syncStatus.searchAdWriteEnabled}
+        />
       </section>
     </MarketingShell>
   );

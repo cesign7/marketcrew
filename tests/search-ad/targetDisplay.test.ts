@@ -3,6 +3,7 @@ import {
   getRuleResultCreativeLabel,
   getRuleResultDisplayTargetLabel,
   getRuleResultDisplayTargetTypeLabel,
+  getRuleResultDetailHref,
   getRuleResultPeriodLabel,
   getRuleResultRawTargetId,
   getRuleResultTargetDetailLabel,
@@ -107,6 +108,14 @@ describe("rule result target display", () => {
 
     expect(getRuleResultDisplayTargetTypeLabel(result)).toBe("검색어");
     expect(getRuleResultDisplayTargetLabel(result)).toBe("초대장디자인");
+  });
+
+  it("규칙 결과 상세 링크를 만든다", () => {
+    const result = ruleResult({
+      id: "rule-low 스티커/테스트",
+    });
+
+    expect(getRuleResultDetailHref(result)).toBe("/rule-results/rule-low%20%EC%8A%A4%ED%8B%B0%EC%BB%A4%2F%ED%85%8C%EC%8A%A4%ED%8A%B8");
   });
 });
 

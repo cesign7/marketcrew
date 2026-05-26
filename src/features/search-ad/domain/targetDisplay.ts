@@ -1,4 +1,4 @@
-import type { SearchAdNormalizedRow, SearchAdReportType, SearchAdRuleResult } from "./types";
+import type { SearchAdNormalizedRow, SearchAdReportType, SearchAdRuleActionTarget, SearchAdRuleResult } from "./types";
 
 export type SearchAdRuleTargetDescriptor = {
   targetType: SearchAdRuleResult["targetType"];
@@ -181,6 +181,35 @@ export function getRuleResultLandingLabel(result: SearchAdRuleResult) {
   }
 
   return pcUrl ?? mobileUrl ?? finalUrl;
+}
+
+export function getRuleResultDetailHref(result: SearchAdRuleResult) {
+  return `/rule-results/${encodeURIComponent(result.id)}`;
+}
+
+export function getRuleResultActionTarget(result: SearchAdRuleResult): SearchAdRuleActionTarget | undefined {
+  const adgroupId = stringFromEvidence(result.evidencePacket.adgroupId) ?? (result.targetType === "adgroup" ? result.targetId : undefined);
+  if (adgroupId) {
+    return {
+      targetType: "adgroup",
+      targetId: adgroupId,
+      targetLabel:
+        stringFromEvidence(result.evidencePacket.adgroupName) ??
+        stringFromEvidence(result.evidencePacket.connectedTargetLabel) ??
+        getRuleResultDisplayTargetLabel(result),
+    };
+  }
+
+  const campaignId = stringFromEvidence(result.evidencePacket.campaignId) ?? (result.targetType === "campaign" ? result.targetId : undefined);
+  if (campaignId) {
+    return {
+      targetType: "campaign",
+      targetId: campaignId,
+      targetLabel: stringFromEvidence(result.evidencePacket.campaignName) ?? getRuleResultDisplayTargetLabel(result),
+    };
+  }
+
+  return undefined;
 }
 
 export function getNormalizedRowDisplayTarget(row: SearchAdNormalizedRow) {

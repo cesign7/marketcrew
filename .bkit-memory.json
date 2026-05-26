@@ -2,16 +2,16 @@
   "project": "marketcrew",
   "currentFeature": "search-ad-operations-foundation",
   "phase": "do",
-  "updatedAt": "2026-05-26T16:47:08+09:00",
+  "updatedAt": "2026-05-26T17:24:00+09:00",
   "features": {
     "search-ad-operations-foundation": {
       "phase": "do",
       "planPath": "docs/01-plan/features/search-ad-operations-foundation.plan.md",
       "designPath": "docs/02-design/features/search-ad-operations-foundation.design.md",
       "doPath": "docs/03-do/search-ad-operations-foundation.do.md",
-      "summary": "검색광고 운영 기반 module-1~8 Do 구현과 운영 배포 검증을 완료했다. 캠페인/광고그룹/키워드 상태 수집 API와 스냅샷 화면, 검색어 성과 화면, 규칙 엔진과 기준 화면, 실행 미리보기/write gate API, 실행 이력 화면을 추가했다. 이후 백필 작업기와 백필 기반 기간 판단층을 추가해 규칙 결과가 기준 기간 안의 같은 대상 성과를 합산하고, 실제 수집 일수와 판단 상태를 카드에 표시한다.",
+      "summary": "검색광고 운영 기반 module-1~8 Do 구현과 운영 배포 검증을 완료했다. 캠페인/광고그룹/키워드 상태 수집 API와 스냅샷 화면, 검색어 성과 화면, 규칙 엔진과 기준 화면, 실행 미리보기/write gate API, 실행 이력 화면을 추가했다. 이후 백필 작업기와 백필 기반 기간 판단층을 추가해 규칙 결과가 기준 기간 안의 같은 대상 성과를 합산하고, 실제 수집 일수와 판단 상태를 카드에 표시한다. 규칙 결과 상세 화면과 API를 추가해 규칙 카드에서 근거 행, 연결 위치, 캠페인/광고그룹 실행 미리보기까지 바로 확인한다.",
       "matchRate": 100,
-      "next": "다음 단계는 백필이 완료된 뒤 /api/search-ad/rules/rebuild를 실행해 실제 7일/30일 판단 카드가 정상 판단으로 바뀌는지 운영 사이트에서 확인하고, 이후 $pdca check search-ad-operations-foundation으로 설계 대비 누락과 화면 흐름을 점검한다."
+      "next": "다음 단계는 운영 배포 후 /api/search-ad/rules/rebuild를 실행해 규칙 결과 상세 API가 실제 근거 행과 실행 대상을 반환하는지 확인하고, 이후 $pdca check search-ad-operations-foundation으로 설계 대비 누락과 화면 흐름을 점검한다."
     },
     "marketcrew-reboot-preserve-connections": {
       "phase": "reboot-baseline",

@@ -47,6 +47,27 @@ export function listSearchAdCampaigns() {
   return searchAdFetch<NaverCampaign[]>("/ncc/campaigns");
 }
 
+export async function getSearchAdCampaign(campaignId: string) {
+  const rows = await searchAdFetch<NaverCampaign[]>(`/ncc/campaigns?ids=${encodeURIComponent(campaignId)}`);
+  const campaign = rows.find((row) => row.nccCampaignId === campaignId) ?? rows[0];
+  if (!campaign) {
+    throw new Error("SEARCH_AD_CAMPAIGN_NOT_FOUND");
+  }
+
+  return campaign;
+}
+
+export async function updateSearchAdCampaignUserLock(campaignId: string, userLock: boolean) {
+  const current = await getSearchAdCampaign(campaignId);
+  return searchAdFetch<NaverCampaign>(`/ncc/campaigns/${encodeURIComponent(campaignId)}?fields=userLock`, {
+    method: "PUT",
+    body: JSON.stringify({
+      ...current,
+      userLock,
+    }),
+  });
+}
+
 export function listSearchAdAdgroups() {
   return searchAdFetch<NaverAdgroup[]>("/ncc/adgroups");
 }

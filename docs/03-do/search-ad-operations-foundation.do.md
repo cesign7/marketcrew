@@ -111,7 +111,7 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 - `/api/search-ad/action-preview`, `/api/search-ad/action-apply`, `/api/search-ad/action-logs`를 추가했다.
 - 캠페인/광고그룹 끄기·켜기 요청은 먼저 영향 요약, 하위 영향 수, 최근 비용/클릭/전환을 미리보기로 남긴다.
 - write gate가 닫혀 있으면 apply API는 `blocked` 로그를 남기고 423으로 응답한다.
-- 실제 provider write 경로는 아직 연결하지 않았다.
+- write gate가 열린 환경에서만 네이버 캠페인/광고그룹 `userLock` 변경 API를 호출하고, 반영 결과를 상태 스냅샷과 실행 로그에 남긴다.
 
 ### module-8 운영 검증
 
@@ -147,6 +147,15 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 - 화면 카드에는 `판단 기준`과 별도로 `판단 상태`를 표시한다. 예: `임시 판단 · 수집 1/30일`, `일부 기간 판단 · 수집 2/30일`, `정상 판단 · 수집 30/30일`.
 - `/api/search-ad/rules/rebuild`는 최대 100,000개의 정규화 행을 읽어 백필 후 기간 합산 결과를 재생성한다. 대규모 장기 운영 단계에서는 DB 집계 테이블 또는 materialized summary로 한 번 더 최적화한다.
 
+### follow-up 규칙 결과 상세와 실행 대상 연결
+
+- 규칙 결과 카드에서 `/rule-results/[id]` 상세 화면으로 이동하게 했다.
+- `/api/search-ad/rule-results/[id]`는 규칙 결과, 규칙을 만든 정규화 보고서 행, 실행 가능한 캠페인/광고그룹 대상을 함께 반환한다.
+- 규칙 결과 근거에는 `campaignId`, `adgroupId`, `keywordId`, `sourceRowIds`를 남겨 화면에서 원문 ID 대신 연결 위치와 실제 조치 대상을 보여준다.
+- 상세 화면은 비용, 클릭, 전환, 매출, CPA, ROAS, 판단 기준, 소재, 랜딩, 원문 ID 접힘 영역, 근거 성과 행을 한 화면에서 확인한다.
+- 상세 화면의 실행 미리보기는 외부 광고를 바로 바꾸지 않고 `/api/search-ad/action-preview`에 미리보기만 저장한다.
+- 캠페인 상태 화면도 광고그룹과 같은 토글 테이블을 사용하게 했고, 캠페인 `userLock` 변경 경로를 write gate 뒤 provider write로 연결했다.
+
 ---
 
 ## Verification
@@ -154,7 +163,7 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 | Check | Result |
 |-------|--------|
 | `npm run typecheck` | 통과 |
-| `npm test -- --run` | 통과, 13 files / 37 tests |
+| `npm test -- --run` | 통과, 17 files / 52 tests |
 | `npm run build` | 통과 |
 | `npm audit --omit=dev` | 0 vulnerabilities |
 | `git diff --check` | 통과 |
@@ -172,6 +181,7 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 | `POST /api/search-ad/action-preview` | 200 |
 | `POST /api/search-ad/action-apply` | 423, write gate blocked |
 | `POST /api/search-ad/rules/rebuild` | 200 |
+| `GET /api/search-ad/rule-results/[id]` | 200 |
 | `npm run smoke:prod` | 통과, Railway API 상태/Vercel bridge/대표 로그인 보호 |
 | `vercel inspect https://marketcrew-jpwd1xfk0-aipressos-projects.vercel.app` | Ready, `marketcrew.app` alias 연결 |
 | `railway status` | `marketcrew-api` Online, `https://api.marketcrew.app` |

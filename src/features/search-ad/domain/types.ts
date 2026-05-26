@@ -125,6 +125,18 @@ export type SearchAdRuleResult = {
   createdAt: string;
 };
 
+export type SearchAdRuleActionTarget = {
+  targetType: "campaign" | "adgroup";
+  targetId: string;
+  targetLabel: string;
+};
+
+export type SearchAdRuleResultDetailView = {
+  result: SearchAdRuleResult;
+  relatedRows: SearchAdNormalizedRow[];
+  actionTarget?: SearchAdRuleActionTarget;
+};
+
 export type SearchAdStateRecord = {
   id: string;
   targetType: SearchAdTargetType;
