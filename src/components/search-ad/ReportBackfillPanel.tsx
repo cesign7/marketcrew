@@ -350,6 +350,7 @@ function BackfillSummaryCards({ summary }: { summary: SearchAdBackfillSummary })
   const cards = [
     { helper: "이번 실행 대상", label: "남은 보고서", value: summary.planned },
     { helper: "다시 받지 않음", label: "이미 저장", value: summary.alreadySaved },
+    { helper: "네이버에 생성 요청함", label: "생성 요청", value: summary.created },
     { helper: "네이버 생성 요청 필요", label: "생성 필요", value: summary.missing },
     { helper: "네이버 준비 완료", label: "저장 가능", value: summary.downloadable },
     { helper: "아직 생성 중", label: "준비 중", value: summary.pending },
