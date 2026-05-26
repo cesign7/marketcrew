@@ -1,0 +1,14 @@
+{
+  "project": "marketcrew",
+  "currentFeature": "marketcrew-reboot-preserve-connections",
+  "phase": "reboot-baseline",
+  "updatedAt": "2026-05-26T10:40:00+09:00",
+  "features": {
+    "marketcrew-reboot-preserve-connections": {
+      "phase": "reboot-baseline",
+      "summary": "기존 MarketCrew MVP 코드와 운영 DB workflow 데이터를 초기화하고, GitHub/Vercel/Railway/domain/env 연결을 보존한 재시작 기준선이다.",
+      "matchRate": 0,
+      "next": "새 제품 방향은 별도 PDCA plan/design부터 다시 작성한다. 외부 provider write는 계속 차단한다."
+    }
+  }
+}
