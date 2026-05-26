@@ -40,6 +40,7 @@ export type SearchAdBackfillDependencies = {
   downloadReport: (downloadUrl: string) => Promise<{ text: string }>;
   listJobs: () => Promise<SearchAdReportJob[]>;
   listSavedReportKeys: () => Promise<SearchAdBackfillSavedReportKey[]>;
+  onProgress?: (snapshot: SearchAdBackfillProgressSnapshot) => Promise<void>;
   rebuildRules: () => Promise<{ saved: number }>;
   saveReport: typeof saveDownloadedReport;
   wait?: (ms: number) => Promise<void>;
@@ -50,6 +51,7 @@ export type SearchAdBackfillRunInput = SearchAdBackfillPlanInput &
   createMissing?: boolean;
   dependencies?: SearchAdBackfillDependencies;
   dryRun?: boolean;
+  onProgress?: (snapshot: SearchAdBackfillProgressSnapshot) => Promise<void>;
   skipSaved?: boolean;
 };
 
@@ -86,6 +88,12 @@ export type SearchAdBackfillSummary = {
   requestDelayMs: number;
   ruleResults: number;
   skippedDownloads: number;
+};
+
+export type SearchAdBackfillProgressSnapshot = {
+  plan: SearchAdBackfillPlan & { alreadySaved?: number };
+  results: SearchAdBackfillItemResult[];
+  summary: SearchAdBackfillSummary;
 };
 
 export type SearchAdBackfillRunSuccess = {
@@ -184,6 +192,7 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
     ruleResults: 0,
     skippedDownloads: 0,
   };
+  const emitProgress = createProgressEmitter(input.onProgress ?? dependencies.onProgress, plan, results, summary);
 
   for (const item of plan.items) {
     const existing = jobByKey.get(backfillKey(item.reportType, item.statDate));
@@ -198,6 +207,7 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
             providerStatus: created.status,
             status: "created",
           });
+          await emitProgress();
           await wait(safetyLimits.requestDelayMs);
         } catch (error) {
           if (isRateLimitError(error)) {
@@ -207,6 +217,7 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
               message: "네이버 API 호출 속도 제한(429)이 감지되어 이번 배치를 멈추고 자동 대기합니다.",
               status: "rate_limited",
             });
+            await emitProgress(true);
             break;
           }
 
@@ -216,6 +227,7 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
             message: error instanceof Error ? error.message : "알 수 없는 오류",
             status: "failed",
           });
+          await emitProgress();
         }
         continue;
       }
@@ -289,6 +301,7 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
         providerStatus: existing.status,
         status: "downloaded",
       });
+      await emitProgress();
       await wait(safetyLimits.requestDelayMs);
     } catch (error) {
       if (isRateLimitError(error)) {
@@ -301,6 +314,7 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
           providerStatus: existing.status,
           status: "rate_limited",
         });
+        await emitProgress(true);
         break;
       }
 
@@ -313,6 +327,7 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
         providerStatus: existing.status,
         status: "failed",
       });
+      await emitProgress();
     }
   }
 
@@ -320,6 +335,7 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
     const ruleRebuild = await dependencies.rebuildRules();
     summary.ruleResults = ruleRebuild.saved;
   }
+  await emitProgress(true);
 
   return {
     data: {
@@ -328,6 +344,30 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
       summary,
     },
     ok: true,
+  };
+}
+
+function createProgressEmitter(
+  onProgress: SearchAdBackfillDependencies["onProgress"],
+  plan: SearchAdBackfillProgressSnapshot["plan"],
+  results: SearchAdBackfillItemResult[],
+  summary: SearchAdBackfillSummary,
+) {
+  let lastEmittedCount = 0;
+  return async (force = false) => {
+    if (!onProgress) {
+      return;
+    }
+    const progressedCount = summary.created + summary.downloaded + summary.failed + summary.rateLimited;
+    if (!force && progressedCount - lastEmittedCount < 10) {
+      return;
+    }
+    lastEmittedCount = progressedCount;
+    await onProgress({
+      plan,
+      results: [...results],
+      summary: { ...summary },
+    });
   };
 }
 

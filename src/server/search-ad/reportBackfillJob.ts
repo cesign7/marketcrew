@@ -9,9 +9,15 @@ import {
   updateSearchAdBackfillRunProgress,
   type SearchAdBackfillRunRecord,
 } from "@/lib/persistence/searchAdRepository";
-import { runSearchAdReportBackfill, type SearchAdBackfillRunFailure, type SearchAdBackfillRunInput, type SearchAdBackfillRunSuccess } from "./reportBackfill";
+import {
+  runSearchAdReportBackfill,
+  type SearchAdBackfillProgressSnapshot,
+  type SearchAdBackfillRunFailure,
+  type SearchAdBackfillRunInput,
+  type SearchAdBackfillRunSuccess,
+} from "./reportBackfill";
 
-type BackgroundBackfillInput = Omit<SearchAdBackfillRunInput, "dependencies">;
+type BackgroundBackfillInput = Omit<SearchAdBackfillRunInput, "dependencies" | "onProgress">;
 
 export type SearchAdBackfillJobResult =
   | {
@@ -91,13 +97,23 @@ async function runBackgroundBackfill(runId: string, input: BackgroundBackfillInp
     for (let cycle = 1; cycle <= MAX_BACKGROUND_CYCLES; cycle += 1) {
       await markSearchAdBackfillRunRunning(runId);
       const safetyLimits = resolveSearchAdBackfillSafetyLimits(input);
-      safetyWindow = refreshSafetyWindow(safetyWindow);
+      const cycleSafetyWindow = refreshSafetyWindow(safetyWindow);
+      safetyWindow = cycleSafetyWindow;
       const result = await runSearchAdReportBackfill({
         ...input,
         createMissing: true,
         dryRun: false,
-        maxCreates: getAllowedCreatesForCycle(safetyWindow, safetyLimits),
+        maxCreates: getAllowedCreatesForCycle(cycleSafetyWindow, safetyLimits),
         maxDownloads: safetyLimits.maxDownloads,
+        onProgress: async (snapshot) => {
+          const progressResult = toProgressResult(snapshot);
+          const progressSafetyWindow = addCreatedReportsToSafetyWindow(cycleSafetyWindow, snapshot.summary.created);
+          latestResult = attachJobMeta(progressResult, cycle, {
+            message: getProgressMessage(progressResult, progressSafetyWindow, safetyLimits),
+            safety: progressSafetyWindow,
+          });
+          await updateSearchAdBackfillRunProgress(runId, latestResult as unknown as Record<string, unknown>, "running");
+        },
         skipSaved: true,
       });
 
@@ -183,6 +199,17 @@ function attachJobMeta(
       ...meta,
       updatedAt: new Date().toISOString(),
     },
+  };
+}
+
+function toProgressResult(snapshot: SearchAdBackfillProgressSnapshot): SearchAdBackfillRunSuccess {
+  return {
+    data: {
+      plan: snapshot.plan,
+      results: snapshot.results,
+      summary: snapshot.summary,
+    },
+    ok: true,
   };
 }
 

@@ -168,6 +168,53 @@ describe("runSearchAdReportBackfill", () => {
     expect(wait).toHaveBeenCalledWith(SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs);
   });
 
+  it("긴 백필 중에도 진행 요약을 중간 저장할 수 있게 콜백을 호출한다", async () => {
+    const createJob = vi.fn();
+    for (let index = 0; index < 12; index += 1) {
+      createJob.mockResolvedValueOnce({ reportJobId: `job-ad-${index + 1}`, reportTp: "AD", statDt: `202605${String(index + 1).padStart(2, "0")}`, status: "REGIST" });
+    }
+    const onProgress = vi.fn().mockResolvedValue(undefined);
+
+    const result = await runSearchAdReportBackfill({
+      createMissing: true,
+      dependencies: {
+        createJob,
+        credentialsReady: () => true,
+        databaseReady: () => true,
+        downloadReport: vi.fn(),
+        listJobs: async () => [],
+        listSavedReportKeys: async () => [],
+        rebuildRules: async () => ({ saved: 0 }),
+        saveReport: vi.fn(),
+        wait: vi.fn(),
+      },
+      dryRun: false,
+      fromDate: "2026-05-01",
+      maxCreates: 12,
+      onProgress,
+      reportTypes: ["AD"],
+      requestDelayMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs,
+      toDate: "2026-05-12",
+      todayKst: "2026-05-26",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.message);
+    }
+    expect(onProgress).toHaveBeenCalled();
+    expect(onProgress).toHaveBeenCalledWith(
+      expect.objectContaining({
+        summary: expect.objectContaining({ created: 10 }),
+      }),
+    );
+    expect(onProgress).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        summary: expect.objectContaining({ created: 12 }),
+      }),
+    );
+  });
+
   it("429 속도 제한은 남은 생성 요청을 멈추고 백오프 정보를 남긴다", async () => {
     const rateLimitError = new Error("HTTP 429 Too Many Requests");
     Object.assign(rateLimitError, { status: 429 });
