@@ -1,9 +1,16 @@
 {
   "project": "marketcrew2",
-  "currentFeature": "ai-marketing-character-ops",
-  "phase": "completed",
-      "updatedAt": "2026-05-23T18:40:00+09:00",
+  "currentFeature": "marketcrew-reboot-preserve-connections",
+  "phase": "plan",
+  "updatedAt": "2026-05-26T10:30:00+09:00",
   "features": {
+    "marketcrew-reboot-preserve-connections": {
+      "phase": "plan",
+      "planPath": "docs/01-plan/features/marketcrew-reboot-preserve-connections.plan.md",
+      "summary": "MarketCrew를 새로 만들기 위해 코드, 운영 DB workflow 데이터, API/Web 구현 기준선을 초기화하되 GitHub 저장소 연결, Vercel/Railway 프로젝트와 도메인, provider/API env key는 보존하는 reboot 계획이다. 실제 초기화는 backup branch/tag, env key inventory, DB reset preview를 확인한 뒤 사용자가 정확한 확인 문구를 보낼 때만 진행한다.",
+      "matchRate": 0,
+      "next": "실제 삭제/force push/DB wipe 전 확인 문구 `마켓크루 전체 초기화 승인`이 필요하다. 확인 전에는 inventory, 플랜 작성, 백업 전략 수립, smoke 확인만 진행한다."
+    },
     "ai-marketing-character-ops": {
       "phase": "completed",
       "planPath": "docs/01-plan/features/ai-marketing-character-ops.plan.md",
