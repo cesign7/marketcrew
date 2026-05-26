@@ -101,7 +101,6 @@ export function buildBackfillRequestBody(input: BackfillRequestInput) {
     dryRun: input.mode === "preview",
     fromDate: input.fromDate,
     maxCreates: limits.maxCreates,
-    maxDailyCreates: limits.maxDailyCreates,
     maxDates: limits.maxDates,
     maxDownloads: limits.maxDownloads,
     maxHourlyCreates: limits.maxHourlyCreates,
@@ -129,7 +128,6 @@ export function getQuickBackfillLimits(input: { fromDate: string; reportTypes: S
   return {
     batchItems,
     maxCreates: Math.min(batchItems, SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun),
-    maxDailyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerDay,
     maxDates,
     maxDownloads: Math.min(batchItems, SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxDownloadsPerRun),
     maxHourlyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerHour,
@@ -294,10 +292,7 @@ export function ReportBackfillPanel() {
           <strong>
             요청 사이 {formatSeconds(quickLimits.requestDelayMs)} 대기, 속도 제한 시 {formatMinutes(quickLimits.rateLimitBackoffMs)} 대기
           </strong>
-          <p>
-            생성 요청은 한 번 {quickLimits.maxCreates.toLocaleString("ko-KR")}건, 시간당 {quickLimits.maxHourlyCreates.toLocaleString("ko-KR")}건, 하루{" "}
-            {quickLimits.maxDailyCreates.toLocaleString("ko-KR")}건 이하로 자동 조절합니다.
-          </p>
+          <p>{getBackfillSafetyDescription(quickLimits)}</p>
         </div>
         <div className="backfill-actions">
           <button className="button secondary-button" disabled={Boolean(loadingMode) || quickLimits.selectedDates === 0} onClick={() => runBackfill("preview")} type="button">
@@ -515,6 +510,12 @@ export function getBackfillResultMessage(item: Pick<BackfillResult, "message" | 
   }
 
   return item.message ?? getProviderStatusLabel(item.providerStatus) ?? "-";
+}
+
+export function getBackfillSafetyDescription(limits: Pick<ReturnType<typeof getQuickBackfillLimits>, "maxCreates" | "maxHourlyCreates">) {
+  return `생성 요청은 한 번 ${limits.maxCreates.toLocaleString("ko-KR")}건, 시간당 ${limits.maxHourlyCreates.toLocaleString(
+    "ko-KR",
+  )}건 이하로 자동 조절합니다. 준비가 끝나거나 대기 시간이 지나면 서버가 자동으로 이어서 확인합니다.`;
 }
 
 function countBackfillDates(fromDate: string, toDate: string) {

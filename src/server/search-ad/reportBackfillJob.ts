@@ -39,12 +39,9 @@ type StoredBackfillResult = (SearchAdBackfillRunSuccess | SearchAdBackfillRunFai
 const activeRuns = new Set<string>();
 const MAX_BACKGROUND_CYCLES = 240;
 const HOUR_MS = 60 * 60 * 1000;
-const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 type BackfillSafetyWindow = {
   createdThisHour: number;
-  createdToday: number;
-  dayKey: string;
   hourStartedAt: string;
 };
 
@@ -158,7 +155,6 @@ function normalizeBackgroundInput(input: BackgroundBackfillInput): BackgroundBac
     dryRun: false,
     fromDate: input.fromDate,
     maxCreates: safetyLimits.maxCreates,
-    maxDailyCreates: safetyLimits.maxDailyCreates,
     maxDates: input.maxDates,
     maxDownloads: safetyLimits.maxDownloads,
     maxHourlyCreates: safetyLimits.maxHourlyCreates,
@@ -195,14 +191,11 @@ function getProgressMessage(result: SearchAdBackfillRunSuccess, safetyWindow: Ba
   if (summary.rateLimited > 0) {
     return "네이버 호출 속도 제한 신호가 있어 자동으로 충분히 대기합니다.";
   }
-  if (safetyWindow.createdToday >= safetyLimits.maxDailyCreates) {
-    return "일일 생성 안전 상한에 도달해 다음 날짜에 남은 보고서를 이어받습니다.";
-  }
   if (safetyWindow.createdThisHour >= safetyLimits.maxHourlyCreates) {
     return "시간당 생성 안전 상한에 도달해 다음 시간대에 남은 보고서를 이어받습니다.";
   }
   if (summary.created > 0 || summary.pending > 0) {
-    return "네이버가 보고서를 생성하는 동안 자동으로 다시 확인합니다.";
+    return "네이버가 보고서를 생성하는 동안 자동으로 다시 확인하고, 준비가 끝나면 저장을 이어갑니다.";
   }
   if (summary.downloaded > 0 || summary.skippedDownloads > 0) {
     return "저장한 보고서를 건너뛰고 다음 남은 구간으로 이어갑니다.";
@@ -237,15 +230,11 @@ function getAllowedCreatesForCycle(safetyWindow: BackfillSafetyWindow, safetyLim
     Math.min(
       safetyLimits.maxCreates,
       safetyLimits.maxHourlyCreates - safetyWindow.createdThisHour,
-      safetyLimits.maxDailyCreates - safetyWindow.createdToday,
     ),
   );
 }
 
 function getSafetyWindowDelayMs(safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
-  if (safetyWindow.createdToday >= safetyLimits.maxDailyCreates) {
-    return msUntilNextKstDay();
-  }
   if (safetyWindow.createdThisHour >= safetyLimits.maxHourlyCreates) {
     return Math.max(60_000, Date.parse(safetyWindow.hourStartedAt) + HOUR_MS - Date.now());
   }
@@ -256,25 +245,19 @@ function addCreatedReportsToSafetyWindow(safetyWindow: BackfillSafetyWindow, cre
   return {
     ...safetyWindow,
     createdThisHour: safetyWindow.createdThisHour + created,
-    createdToday: safetyWindow.createdToday + created,
   };
 }
 
 function refreshSafetyWindow(input?: BackfillSafetyWindow): BackfillSafetyWindow {
   const now = Date.now();
-  const currentDayKey = getKstDayKey(new Date(now));
   const current = input ?? {
     createdThisHour: 0,
-    createdToday: 0,
-    dayKey: currentDayKey,
     hourStartedAt: new Date(now).toISOString(),
   };
   const hourStartedAt = Date.parse(current.hourStartedAt);
 
   return {
     createdThisHour: Number.isFinite(hourStartedAt) && now - hourStartedAt < HOUR_MS ? current.createdThisHour : 0,
-    createdToday: current.dayKey === currentDayKey ? current.createdToday : 0,
-    dayKey: currentDayKey,
     hourStartedAt: Number.isFinite(hourStartedAt) && now - hourStartedAt < HOUR_MS ? current.hourStartedAt : new Date(now).toISOString(),
   };
 }
@@ -289,36 +272,18 @@ function readSafetyWindow(resultJson?: Record<string, unknown>): BackfillSafetyW
     return undefined;
   }
   const window = safety as Partial<BackfillSafetyWindow>;
-  if (typeof window.hourStartedAt !== "string" || typeof window.dayKey !== "string") {
+  if (typeof window.hourStartedAt !== "string") {
     return undefined;
   }
 
   return {
     createdThisHour: toNonNegativeInteger(window.createdThisHour),
-    createdToday: toNonNegativeInteger(window.createdToday),
-    dayKey: window.dayKey,
     hourStartedAt: window.hourStartedAt,
   };
 }
 
 function toNonNegativeInteger(value: unknown) {
   return Number.isInteger(value) && Number(value) >= 0 ? Number(value) : 0;
-}
-
-function getKstDayKey(date: Date) {
-  return new Intl.DateTimeFormat("en-CA", {
-    day: "2-digit",
-    month: "2-digit",
-    timeZone: "Asia/Seoul",
-    year: "numeric",
-  }).format(date);
-}
-
-function msUntilNextKstDay() {
-  const now = Date.now();
-  const kstNow = new Date(now + KST_OFFSET_MS);
-  kstNow.setUTCHours(24, 0, 0, 0);
-  return Math.max(60_000, kstNow.getTime() - KST_OFFSET_MS - now);
 }
 
 function sleep(ms: number) {

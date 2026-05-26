@@ -163,6 +163,7 @@ describe("runSearchAdReportBackfill", () => {
       createLimit: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun,
       requestDelayMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs,
     });
+    expect(result.data.summary).not.toHaveProperty("maxDailyCreates");
     expect(wait).toHaveBeenCalledTimes(2);
     expect(wait).toHaveBeenCalledWith(SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs);
   });

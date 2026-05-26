@@ -35,7 +35,6 @@ export async function POST(request: Request) {
     dryRun?: boolean;
     fromDate?: string;
     maxCreates?: number;
-    maxDailyCreates?: number;
     maxDates?: number;
     maxDownloads?: number;
     maxHourlyCreates?: number;
@@ -53,7 +52,6 @@ export async function POST(request: Request) {
       dryRun: body.dryRun ?? true,
       fromDate: body.fromDate,
       maxCreates: positiveInteger(body.maxCreates),
-      maxDailyCreates: positiveInteger(body.maxDailyCreates),
       maxDates: positiveInteger(body.maxDates),
       maxDownloads: positiveInteger(body.maxDownloads),
       maxHourlyCreates: positiveInteger(body.maxHourlyCreates),

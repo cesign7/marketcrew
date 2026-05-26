@@ -5,6 +5,7 @@ import {
   buildBackgroundBackfillRequestBody,
   createFullBackfillFormState,
   getBackfillResultMessage,
+  getBackfillSafetyDescription,
   getBackfillStatusLabel,
   getQuickBackfillLimits,
 } from "@/components/search-ad/ReportBackfillPanel";
@@ -18,16 +19,14 @@ describe("report backfill UI helpers", () => {
     expect(form.fromDate).toBe("2025-05-26");
     expect(form.toDate).toBe("2026-05-25");
     expect(form.reportTypes).toHaveLength(10);
-    expect(
-      buildBackfillRequestBody({
-        ...form,
-        mode: "preview",
-      }),
-    ).toMatchObject({
+    const body = buildBackfillRequestBody({
+      ...form,
+      mode: "preview",
+    });
+    expect(body).toMatchObject({
       dryRun: true,
       fromDate: "2025-05-26",
       maxCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun,
-      maxDailyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerDay,
       maxDates: 92,
       maxDownloads: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxDownloadsPerRun,
       maxHourlyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerHour,
@@ -36,6 +35,7 @@ describe("report backfill UI helpers", () => {
       skipSaved: true,
       toDate: "2026-05-25",
     });
+    expect(body).not.toHaveProperty("maxDailyCreates");
   });
 
   it("전체 저장 요청은 누락 생성과 저장 건너뛰기 기준을 함께 보낸다", () => {
@@ -67,6 +67,17 @@ describe("report backfill UI helpers", () => {
     ).toBe("마켓크루 다운로드 안전 상한에 도달해 다음 자동 배치에서 이어서 저장합니다.");
   });
 
+  it("안전 기준 안내는 하루 제한 없이 시간 경과 후 자동 이어받기를 설명한다", () => {
+    const description = getBackfillSafetyDescription({
+      maxCreates: 40,
+      maxHourlyCreates: 80,
+    });
+
+    expect(description).toContain("한 번 40건, 시간당 80건 이하");
+    expect(description).toContain("준비가 끝나거나 대기 시간이 지나면 서버가 자동으로 이어서 확인합니다.");
+    expect(description).not.toContain("하루");
+  });
+
   it("긴 기간은 빠른 복구 배치로 나눠 처리한다", () => {
     expect(
       getQuickBackfillLimits({
@@ -76,7 +87,6 @@ describe("report backfill UI helpers", () => {
       }),
     ).toMatchObject({
       maxCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun,
-      maxDailyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerDay,
       maxDates: 92,
       maxDownloads: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxDownloadsPerRun,
       maxHourlyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerHour,
@@ -84,6 +94,13 @@ describe("report backfill UI helpers", () => {
       selectedDates: 120,
       truncatedDates: 28,
     });
+    expect(
+      getQuickBackfillLimits({
+        fromDate: "2026-01-01",
+        reportTypes: createFullBackfillFormState("2026-05-26").reportTypes,
+        toDate: "2026-04-30",
+      }),
+    ).not.toHaveProperty("maxDailyCreates");
   });
 
   it("보고서 복구는 설정 안에서만 관리하고 왼쪽 메뉴에는 노출하지 않는다", () => {

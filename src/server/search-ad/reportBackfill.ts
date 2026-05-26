@@ -75,7 +75,6 @@ export type SearchAdBackfillSummary = {
   downloadable: number;
   downloaded: number;
   failed: number;
-  maxDailyCreates: number;
   maxDownloads: number;
   maxHourlyCreates: number;
   missing: number;
@@ -173,7 +172,6 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
     downloadable: 0,
     downloaded: 0,
     failed: 0,
-    maxDailyCreates: safetyLimits.maxDailyCreates,
     maxDownloads,
     maxHourlyCreates: safetyLimits.maxHourlyCreates,
     missing: 0,
