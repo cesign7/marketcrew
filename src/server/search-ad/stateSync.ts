@@ -24,7 +24,7 @@ export async function syncSearchAdState() {
 
   const campaigns = await listSearchAdCampaigns();
   const adgroups = await listSearchAdAdgroups();
-  const keywords = await listSearchAdKeywords();
+  const keywords = await listKeywordsForAdgroups(adgroups.map((adgroup) => adgroup.nccAdgroupId));
   const campaignMeta = new Map<string, { brandKey?: BrandKey; adProductType?: AdProductType }>();
   const adgroupMeta = new Map<string, { brandKey?: BrandKey; adProductType?: AdProductType }>();
 
@@ -105,4 +105,25 @@ function readNumber(source: unknown, key: string) {
   const value = (source as Record<string, unknown>)[key];
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : null;
+}
+
+async function listKeywordsForAdgroups(adgroupIds: string[]) {
+  const uniqueAdgroupIds = [...new Set(adgroupIds.filter(Boolean))];
+  const chunks = chunk(uniqueAdgroupIds, 5);
+  const keywords = [];
+
+  for (const ids of chunks) {
+    const rows = await Promise.all(ids.map((adgroupId) => listSearchAdKeywords(adgroupId)));
+    keywords.push(...rows.flat());
+  }
+
+  return keywords;
+}
+
+function chunk<T>(items: T[], size: number) {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
 }
