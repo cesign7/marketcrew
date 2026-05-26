@@ -103,8 +103,8 @@ export const REPORT_COLUMN_SCHEMAS: Record<SearchAdReportType, SearchAdReportCol
     { key: "device", label: "기기", description: "PC 또는 모바일 구분" },
     { key: "clicks", label: "클릭수", description: "검색어 기준 클릭 수", numeric: true },
     { key: "averagePosition", label: "평균 노출 순위", description: "평균 노출 위치", numeric: true },
-    { key: "cost", label: "비용", description: "검색어 기준 광고비", numeric: true },
     { key: "conversions", label: "전환수", description: "보고서에서 제공되는 경우의 전환 수", numeric: true },
+    { key: "cost", label: "비용", description: "검색어 기준 광고비", numeric: true },
     { key: "salesAmount", label: "전환매출", description: "보고서에서 제공되는 경우의 전환 매출", numeric: true },
   ],
   SHOPPINGKEYWORD_DETAIL: [

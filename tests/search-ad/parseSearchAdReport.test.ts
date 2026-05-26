@@ -5,8 +5,8 @@ import { parseSearchAdReport } from "@/features/search-ad/domain/parseSearchAdRe
 describe("parseSearchAdReport", () => {
   it("헤더 없는 TSV를 reportTp 컬럼 순서표로 해석한다", () => {
     const rawText = [
-      "20260525\t123888\tcmp-m002-01-000000039451167\tgrp-m001-01-000001408384958\t커피프린트 소량 종이컵 제작\t27758\tP\t42\t3\t38200\t0\t0",
-      "20260525\t123888\tcmp-a001-02-000000005825928\tgrp-a001-02-000000029331497\t스티커씨 생일 답례 스티커\t8753\tM\t18\t2\t12000\t2\t66000",
+      "20260525\t123888\tcmp-m002-01-000000039451167\tgrp-m001-01-000001408384958\t커피프린트 소량 종이컵 제작\t27758\tP\t42\t3\t0\t38200\t0",
+      "20260525\t123888\tcmp-a001-02-000000005825928\tgrp-a001-02-000000029331497\t스티커씨 생일 답례 스티커\t8753\tM\t18\t2\t2\t12000\t66000",
     ].join("\n");
 
     const result = parseSearchAdReport("EXPKEYWORD", rawText, {
