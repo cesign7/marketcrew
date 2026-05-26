@@ -102,12 +102,31 @@ export function getRuleTargetTypeLabel(targetType: SearchAdRuleResult["targetTyp
   return RULE_TARGET_TYPE_LABELS[targetType] ?? "점검 대상";
 }
 
+export function getRuleResultDisplayTargetTypeLabel(result: SearchAdRuleResult) {
+  const inferredType = inferTechnicalTargetType(result.targetLabel) ?? inferTechnicalTargetType(result.targetId);
+  if (inferredType) {
+    return getRuleTargetTypeLabel(inferredType);
+  }
+
+  return stringFromEvidence(result.evidencePacket.targetTypeLabel) ?? getRuleTargetTypeLabel(result.targetType);
+}
+
+export function getRuleResultDisplayTargetLabel(result: SearchAdRuleResult) {
+  if (!isTechnicalTargetIdentifier(result.targetLabel)) {
+    return result.targetLabel;
+  }
+
+  const connectedTarget = getRuleResultConnectedTarget(result);
+  const typeLabel = getRuleResultDisplayTargetTypeLabel(result);
+  return connectedTarget === "-" ? typeLabel : `${connectedTarget} ${typeLabel}`;
+}
+
 export function getRuleResultConnectedTarget(result: SearchAdRuleResult) {
   return stringFromEvidence(result.evidencePacket.connectedTargetLabel) ?? stringFromEvidence(result.evidencePacket.adgroupName) ?? stringFromEvidence(result.evidencePacket.campaignName) ?? "-";
 }
 
 export function getRuleResultRawTargetId(result: SearchAdRuleResult) {
-  return stringFromEvidence(result.evidencePacket.rawTargetId) ?? result.targetId;
+  return stringFromEvidence(result.evidencePacket.rawTargetId) ?? (isTechnicalTargetIdentifier(result.targetLabel) ? result.targetLabel : undefined) ?? result.targetId;
 }
 
 export function getRuleResultSourceReportLabel(result: SearchAdRuleResult) {
@@ -145,4 +164,36 @@ function identifierLike(value: string | undefined, prefix: string) {
 
 function stringFromEvidence(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function inferTechnicalTargetType(value: string | undefined): SearchAdRuleResult["targetType"] | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if (/^nad-[a-z0-9-]+$/i.test(value)) {
+    return "ad";
+  }
+
+  if (/^grp-[a-z0-9-]+~[a-z0-9]+$/i.test(value)) {
+    return "criterion";
+  }
+
+  if (/^nkw-[a-z0-9-]+$/i.test(value)) {
+    return "keyword";
+  }
+
+  if (/^grp-[a-z0-9-]+$/i.test(value)) {
+    return "adgroup";
+  }
+
+  if (/^cmp-[a-z0-9-]+$/i.test(value)) {
+    return "campaign";
+  }
+
+  return undefined;
+}
+
+function isTechnicalTargetIdentifier(value: string | undefined) {
+  return Boolean(inferTechnicalTargetType(value));
 }

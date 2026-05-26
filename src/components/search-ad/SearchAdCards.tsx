@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { getAdProductLabel, getBrandLabel, getReportTypeLabel, RULE_CATEGORY_LABELS } from "@/features/search-ad/domain/reportTypes";
-import { getNormalizedRowDisplayTarget, getRuleResultConnectedTarget, getRuleResultRawTargetId, getRuleResultSourceReportLabel, getRuleTargetTypeLabel } from "@/features/search-ad/domain/targetDisplay";
+import {
+  getNormalizedRowDisplayTarget,
+  getRuleResultConnectedTarget,
+  getRuleResultDisplayTargetLabel,
+  getRuleResultDisplayTargetTypeLabel,
+  getRuleResultRawTargetId,
+  getRuleResultSourceReportLabel,
+} from "@/features/search-ad/domain/targetDisplay";
 import type { SearchAdActionLogsView, SearchAdNormalizedRow, SearchAdOperationsView, SearchAdReportJobRecord, SearchAdRuleResult, SearchAdStateRecord } from "@/features/search-ad/domain/types";
 
 export function SyncStatusStrip({ view }: { view: SearchAdOperationsView }) {
@@ -125,12 +132,14 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
     <div className="card-list">
       {results.map((result) => {
         const rawTargetId = getRuleResultRawTargetId(result);
+        const targetLabel = getRuleResultDisplayTargetLabel(result);
+        const targetTypeLabel = getRuleResultDisplayTargetTypeLabel(result);
         return (
           <article className="rule-card" key={result.id}>
             <div>
               <span className={`severity severity-${result.severity}`}>{RULE_CATEGORY_LABELS[result.category]}</span>
-              <span className="target-chip">{getRuleTargetTypeLabel(result.targetType)}</span>
-              <strong>{result.targetLabel}</strong>
+              <span className="target-chip">{targetTypeLabel}</span>
+              <strong>{targetLabel}</strong>
             </div>
             <p>{result.reason}</p>
             <dl>
