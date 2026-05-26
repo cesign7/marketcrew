@@ -81,6 +81,57 @@ describe("buildSearchAdPeriodRuleResults", () => {
 
     expect(results).toHaveLength(0);
   });
+
+  it("한글 검색어가 다른데 ID 정규화 결과가 같아도 서로 다른 규칙 결과로 남긴다", () => {
+    const noClickCriteria: SearchAdRuleCriteria[] = [
+      {
+        ...criteria[0],
+        adProductType: "shopping_search",
+        minImpressions: 100,
+        minClicks: 10,
+        minCost: 10000,
+      },
+    ];
+
+    const results = buildSearchAdPeriodRuleResults(
+      [
+        row({
+          id: "row-horse",
+          adProductType: "shopping_search",
+          reportType: "SHOPPINGKEYWORD_DETAIL",
+          campaignId: "cmp-shopping",
+          adgroupId: "grp-shopping",
+          searchTerm: "말띠해",
+          keywordText: "말띠해",
+          device: "P",
+          mediaId: "612593",
+          impressions: 120,
+          clicks: 0,
+          cost: 0,
+        }),
+        row({
+          id: "row-year",
+          adProductType: "shopping_search",
+          reportType: "SHOPPINGKEYWORD_DETAIL",
+          campaignId: "cmp-shopping",
+          adgroupId: "grp-shopping",
+          searchTerm: "병오년",
+          keywordText: "병오년",
+          device: "P",
+          mediaId: "612593",
+          impressions: 130,
+          clicks: 0,
+          cost: 0,
+        }),
+      ],
+      noClickCriteria,
+      "2026-05-26T08:00:00+09:00",
+    );
+
+    expect(results).toHaveLength(2);
+    expect(new Set(results.map((result) => result.id)).size).toBe(2);
+    expect(results.map((result) => result.targetLabel).sort()).toEqual(["말띠해", "병오년"]);
+  });
 });
 
 function row(overrides: Partial<SearchAdNormalizedRow>): SearchAdNormalizedRow {

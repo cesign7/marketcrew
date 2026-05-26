@@ -206,7 +206,19 @@ export function buildSearchAdPeriodRuleResults(rows: SearchAdNormalizedRow[], cr
 }
 
 function ruleId(prefix: string, rowId: string) {
-  return `rule-${prefix}-${rowId}`.replace(/[^a-zA-Z0-9_-]/g, "-");
+  const rawId = `rule-${prefix}-${rowId}`;
+  const readableId = rawId.replace(/[^\p{L}\p{N}_-]/gu, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+  return `${readableId}-${stableHash(rawId)}`;
+}
+
+function stableHash(value: string) {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+
+  return (hash >>> 0).toString(36);
 }
 
 function targetReasonSubject(targetType: SearchAdRuleResult["targetType"]) {
