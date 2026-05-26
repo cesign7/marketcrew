@@ -42,7 +42,12 @@ type StoredBackfillResult = (SearchAdBackfillRunSuccess | SearchAdBackfillRunFai
   };
 };
 
-const activeRuns = new Set<string>();
+type ActiveRunState = {
+  token: symbol;
+  touchedAt: number;
+};
+
+const activeRuns = new Map<string, ActiveRunState>();
 const MAX_BACKGROUND_CYCLES = 240;
 const HOUR_MS = 60 * 60 * 1000;
 export const BACKFILL_RUNNING_STALE_MS = 2 * 60 * 1000;
@@ -94,16 +99,20 @@ function queueBackfillRun(runId: string, input: BackgroundBackfillInput) {
 }
 
 async function runBackgroundBackfill(runId: string, input: BackgroundBackfillInput) {
-  if (activeRuns.has(runId)) {
+  const runToken = claimActiveRun(runId);
+  if (!runToken) {
     return;
   }
 
-  activeRuns.add(runId);
   let latestResult: StoredBackfillResult | undefined;
   let safetyWindow = readSafetyWindow((await getSearchAdBackfillRun(runId))?.resultJson);
 
   try {
     for (let cycle = 1; cycle <= MAX_BACKGROUND_CYCLES; cycle += 1) {
+      if (!isCurrentActiveRun(runId, runToken)) {
+        return;
+      }
+      touchActiveRun(runId, runToken);
       await markSearchAdBackfillRunRunning(runId);
       const safetyLimits = resolveSearchAdBackfillSafetyLimits(input);
       const cycleSafetyWindow = refreshSafetyWindow(safetyWindow);
@@ -115,6 +124,10 @@ async function runBackgroundBackfill(runId: string, input: BackgroundBackfillInp
         maxCreates: getAllowedCreatesForCycle(cycleSafetyWindow, safetyLimits),
         maxDownloads: safetyLimits.maxDownloads,
         onProgress: async (snapshot) => {
+          if (!isCurrentActiveRun(runId, runToken)) {
+            return;
+          }
+          touchActiveRun(runId, runToken);
           const progressResult = toProgressResult(snapshot);
           const progressSafetyWindow = addCreatedReportsToSafetyWindow(cycleSafetyWindow, snapshot.summary.created);
           latestResult = attachJobMeta(progressResult, cycle, {
@@ -126,6 +139,10 @@ async function runBackgroundBackfill(runId: string, input: BackgroundBackfillInp
         skipSaved: true,
       });
 
+      if (!isCurrentActiveRun(runId, runToken)) {
+        return;
+      }
+      touchActiveRun(runId, runToken);
       if (!result.ok) {
         latestResult = attachJobMeta(result, cycle, { safety: safetyWindow });
         await failSearchAdBackfillRun(runId, result.message, latestResult as unknown as Record<string, unknown>);
@@ -147,6 +164,7 @@ async function runBackgroundBackfill(runId: string, input: BackgroundBackfillInp
         safety: safetyWindow,
       });
       await updateSearchAdBackfillRunProgress(runId, latestResult as unknown as Record<string, unknown>, "waiting");
+      touchActiveRun(runId, runToken);
       await sleep(delayMs);
     }
 
@@ -169,7 +187,9 @@ async function runBackgroundBackfill(runId: string, input: BackgroundBackfillInp
       latestResult as unknown as Record<string, unknown> | undefined,
     );
   } finally {
-    activeRuns.delete(runId);
+    if (isCurrentActiveRun(runId, runToken)) {
+      activeRuns.delete(runId);
+    }
   }
 }
 
@@ -197,7 +217,7 @@ function isResumableRun(run: SearchAdBackfillRunRecord) {
 }
 
 export function shouldAutoResumeBackfillRun(run: SearchAdBackfillRunRecord, now = Date.now()) {
-  if (!isResumableRun(run) || activeRuns.has(run.id)) {
+  if (!isResumableRun(run) || isActiveRunFresh(run.id, now)) {
     return false;
   }
 
@@ -214,6 +234,31 @@ export function shouldAutoResumeBackfillRun(run: SearchAdBackfillRunRecord, now 
 
   const updatedAt = Date.parse(run.updatedAt);
   return Number.isFinite(updatedAt) && now - updatedAt >= BACKFILL_RUNNING_STALE_MS;
+}
+
+function claimActiveRun(runId: string, now = Date.now()) {
+  if (isActiveRunFresh(runId, now)) {
+    return undefined;
+  }
+
+  const token = Symbol(runId);
+  activeRuns.set(runId, { token, touchedAt: now });
+  return token;
+}
+
+function isActiveRunFresh(runId: string, now = Date.now()) {
+  const activeRun = activeRuns.get(runId);
+  return Boolean(activeRun && now - activeRun.touchedAt < BACKFILL_RUNNING_STALE_MS);
+}
+
+function isCurrentActiveRun(runId: string, token: symbol) {
+  return activeRuns.get(runId)?.token === token;
+}
+
+function touchActiveRun(runId: string, token: symbol, now = Date.now()) {
+  if (isCurrentActiveRun(runId, token)) {
+    activeRuns.set(runId, { token, touchedAt: now });
+  }
 }
 
 function attachJobMeta(
