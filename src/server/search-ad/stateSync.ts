@@ -1,6 +1,6 @@
 import { inferAdProductType, inferBrandKey } from "@/features/search-ad/domain/stateMapping";
 import { getSearchAdCredentials } from "@/lib/integrations/search-ad/client";
-import { listSearchAdAdgroups, listSearchAdCampaigns, listSearchAdKeywords } from "@/lib/integrations/search-ad/management";
+import { listSearchAdAdgroups, listSearchAdAds, listSearchAdCampaigns, listSearchAdKeywords } from "@/lib/integrations/search-ad/management";
 import { hasDatabaseUrl } from "@/lib/persistence/postgres";
 import { saveSearchAdStateSnapshots } from "@/lib/persistence/searchAdRepository";
 import type { AdProductType, BrandKey, SearchAdTargetType } from "@/features/search-ad/domain/types";
@@ -25,6 +25,7 @@ export async function syncSearchAdState() {
   const campaigns = await listSearchAdCampaigns();
   const adgroups = await listSearchAdAdgroups();
   const keywords = await listKeywordsForAdgroups(adgroups.map((adgroup) => adgroup.nccAdgroupId));
+  const ads = await listAdsForAdgroups(adgroups.map((adgroup) => adgroup.nccAdgroupId));
   const campaignMeta = new Map<string, { brandKey?: BrandKey; adProductType?: AdProductType }>();
   const adgroupMeta = new Map<string, { brandKey?: BrandKey; adProductType?: AdProductType }>();
 
@@ -83,7 +84,25 @@ export async function syncSearchAdState() {
     };
   });
 
-  const saved = await saveSearchAdStateSnapshots([...campaignSnapshots, ...adgroupSnapshots, ...keywordSnapshots]);
+  const adSnapshots = ads.map((ad) => {
+    const parent = ad.nccAdgroupId ? adgroupMeta.get(ad.nccAdgroupId) : undefined;
+    return {
+      targetType: "ad" as const,
+      providerId: ad.nccAdId,
+      parentProviderId: ad.nccAdgroupId,
+      brandKey: parent?.brandKey ?? inferBrandKey(readAdName(ad)),
+      adProductType: parent?.adProductType ?? inferAdProductType(readAdName(ad), readString(ad, "type") ?? readString(ad, "adType")),
+      name: readAdName(ad) ?? ad.nccAdId,
+      userLock: ad.userLock ?? null,
+      status: ad.status ?? ad.inspectStatus,
+      statusReason: ad.statusReason,
+      pcFinalUrl: readLandingUrl(ad, "pc"),
+      mobileFinalUrl: readLandingUrl(ad, "mobile"),
+      rawPayload: ad as unknown as Record<string, unknown>,
+    };
+  });
+
+  const saved = await saveSearchAdStateSnapshots([...campaignSnapshots, ...adgroupSnapshots, ...keywordSnapshots, ...adSnapshots]);
 
   return {
     ok: true as const,
@@ -92,6 +111,7 @@ export async function syncSearchAdState() {
       campaigns: campaignSnapshots.length,
       adgroups: adgroupSnapshots.length,
       keywords: keywordSnapshots.length,
+      ads: adSnapshots.length,
       saved: saved.saved,
     },
   };
@@ -118,6 +138,64 @@ async function listKeywordsForAdgroups(adgroupIds: string[]) {
   }
 
   return keywords;
+}
+
+async function listAdsForAdgroups(adgroupIds: string[]) {
+  const uniqueAdgroupIds = [...new Set(adgroupIds.filter(Boolean))];
+  const chunks = chunk(uniqueAdgroupIds, 5);
+  const ads = [];
+
+  for (const ids of chunks) {
+    const rows = await Promise.all(
+      ids.map(async (adgroupId) => {
+        try {
+          return await listSearchAdAds(adgroupId);
+        } catch {
+          return [];
+        }
+      }),
+    );
+    ads.push(...rows.flat());
+  }
+
+  return ads;
+}
+
+function readAdName(source: unknown) {
+  const ad = readRecord(source, "ad");
+  return readString(source, "name") ?? readString(source, "headline") ?? readString(ad, "headline") ?? readString(ad, "description") ?? readString(source, "nccAdId");
+}
+
+function readLandingUrl(source: unknown, device: "pc" | "mobile") {
+  const ad = readRecord(source, "ad");
+  const devicePayload = readRecord(ad, device) ?? readRecord(source, device);
+  const capitalized = device === "pc" ? "Pc" : "Mobile";
+
+  return (
+    readString(devicePayload, "final") ??
+    readString(devicePayload, "finalUrl") ??
+    readString(source, `${device}FinalUrl`) ??
+    readString(source, `final${capitalized}Url`) ??
+    readString(source, "finalUrl")
+  );
+}
+
+function readRecord(source: unknown, key: string) {
+  if (!source || typeof source !== "object") {
+    return undefined;
+  }
+
+  const value = (source as Record<string, unknown>)[key];
+  return value && typeof value === "object" ? (value as Record<string, unknown>) : undefined;
+}
+
+function readString(source: unknown, key: string) {
+  if (!source || typeof source !== "object") {
+    return undefined;
+  }
+
+  const value = (source as Record<string, unknown>)[key];
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 function chunk<T>(items: T[], size: number) {

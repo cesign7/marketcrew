@@ -58,7 +58,7 @@ type ReportJobRow = {
 };
 
 type StateSnapshotInput = {
-  targetType: SearchAdTargetType;
+  targetType: SearchAdTargetType | "ad";
   providerId: string;
   parentProviderId?: string;
   brandKey?: BrandKey;
@@ -69,6 +69,8 @@ type StateSnapshotInput = {
   statusReason?: string;
   bidAmount?: number | null;
   dailyBudget?: number | null;
+  pcFinalUrl?: string | null;
+  mobileFinalUrl?: string | null;
   rawPayload: Record<string, unknown>;
 };
 
@@ -82,6 +84,23 @@ type StateBrandLookup = {
   campaigns: Map<string, StateBrandLookupValue>;
   adgroups: Map<string, StateBrandLookupValue>;
   keywords: Map<string, StateBrandLookupValue>;
+  ads: Map<string, StateBrandLookupValue & { pcFinalUrl?: string; mobileFinalUrl?: string; adgroupId?: string }>;
+};
+
+type DataCoverageRecord = {
+  brandKey: BrandKey;
+  adProductType: AdProductType;
+  startDate: string;
+  endDate: string;
+  actualDays: number;
+};
+
+type AdCreativeLookupValue = {
+  name?: string;
+  pcFinalUrl?: string;
+  mobileFinalUrl?: string;
+  status?: string;
+  statusReason?: string;
 };
 
 export async function getSearchAdOperationsView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdOperationsView> {
@@ -383,6 +402,36 @@ export async function saveSearchAdStateSnapshots(input: StateSnapshotInput[]) {
       continue;
     }
 
+    if (item.targetType === "ad") {
+      await query(
+        `
+          INSERT INTO search_ad_ad_snapshots (
+            id, provider_ad_id, provider_adgroup_id, brand_key, ad_product_type, name, ad_type,
+            user_lock, status, status_reason, pc_final_url, mobile_final_url, raw_payload, collected_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          ON CONFLICT (id) DO NOTHING
+        `,
+        [
+          snapshotId(item.targetType, item.providerId, collectedAt),
+          item.providerId,
+          item.parentProviderId ?? null,
+          item.brandKey ?? null,
+          item.adProductType ?? null,
+          item.name,
+          String(item.rawPayload.type ?? item.rawPayload.adType ?? item.rawPayload.adTp ?? ""),
+          item.userLock ?? null,
+          item.status ?? null,
+          item.statusReason ?? null,
+          item.pcFinalUrl ?? null,
+          item.mobileFinalUrl ?? null,
+          JSON.stringify(item.rawPayload),
+          collectedAt,
+        ],
+      );
+      continue;
+    }
+
     await query(
       `
         INSERT INTO search_ad_keyword_snapshots (
@@ -421,7 +470,9 @@ export async function rebuildAndSaveSearchAdRuleResults() {
     await ensureSearchAdSchema();
     const rows = await listNormalizedRowsByFilters(DEFAULT_SEARCH_AD_FILTERS, 2000);
     const criteria = await listSearchAdRuleCriteria();
-    const results = buildSearchAdRuleResults(rows, criteria);
+    const dataCoverage = await listNormalizedDataCoverage();
+    const adLookup = await listLatestAdCreativeLookup();
+    const results = enrichRuleResultsWithEvidenceContext(buildSearchAdRuleResults(rows, criteria), dataCoverage, adLookup);
 
     await query("DELETE FROM search_ad_rule_results");
     for (const result of results) {
@@ -690,6 +741,7 @@ async function getLatestStateBrandLookup(): Promise<StateBrandLookup> {
     campaigns: new Map(),
     adgroups: new Map(),
     keywords: new Map(),
+    ads: new Map(),
   };
 
   const campaigns = await query<{
@@ -746,6 +798,31 @@ async function getLatestStateBrandLookup(): Promise<StateBrandLookup> {
     });
   }
 
+  const ads = await query<{
+    provider_ad_id: string;
+    provider_adgroup_id: string | null;
+    brand_key: BrandKey | null;
+    ad_product_type: AdProductType | null;
+    name: string | null;
+    pc_final_url: string | null;
+    mobile_final_url: string | null;
+  }>(`
+    SELECT DISTINCT ON (provider_ad_id)
+      provider_ad_id, provider_adgroup_id, brand_key, ad_product_type, name, pc_final_url, mobile_final_url
+    FROM search_ad_ad_snapshots
+    ORDER BY provider_ad_id, collected_at DESC
+  `);
+  for (const row of ads.rows) {
+    lookup.ads.set(row.provider_ad_id, {
+      brandKey: row.brand_key ?? undefined,
+      adProductType: row.ad_product_type ?? undefined,
+      name: row.name ?? undefined,
+      pcFinalUrl: row.pc_final_url ?? undefined,
+      mobileFinalUrl: row.mobile_final_url ?? undefined,
+      adgroupId: row.provider_adgroup_id ?? undefined,
+    });
+  }
+
   return lookup;
 }
 
@@ -753,10 +830,12 @@ function hydrateReportRowWithState(row: SearchAdRawReportRow, lookup: StateBrand
   const campaignId = reportStringValue(row.rawRow.campaignId);
   const adgroupId = reportStringValue(row.rawRow.adgroupId) ?? reportOwnerId(row.rawRow.criterionId);
   const keywordId = reportStringValue(row.rawRow.keywordId);
+  const adId = reportStringValue(row.rawRow.adId) ?? reportStringValue(row.rawRow.nccAdId);
+  const adMatch = adId ? lookup.ads.get(adId) : undefined;
   const keywordMatch = keywordId ? lookup.keywords.get(keywordId) : undefined;
-  const adgroupMatch = adgroupId ? lookup.adgroups.get(adgroupId) : undefined;
+  const adgroupMatch = adgroupId ? lookup.adgroups.get(adgroupId) : adMatch?.adgroupId ? lookup.adgroups.get(adMatch.adgroupId) : undefined;
   const campaignMatch = campaignId ? lookup.campaigns.get(campaignId) : undefined;
-  const match = keywordMatch ?? adgroupMatch ?? campaignMatch;
+  const match = keywordMatch ?? adMatch ?? adgroupMatch ?? campaignMatch;
   const brandKey = row.brandKey ?? match?.brandKey;
   const adProductType = match?.adProductType ?? row.adProductType;
   const rawRow = {
@@ -764,6 +843,9 @@ function hydrateReportRowWithState(row: SearchAdRawReportRow, lookup: StateBrand
     ...(campaignMatch?.name && !row.rawRow.campaignName ? { campaignName: campaignMatch.name } : {}),
     ...(adgroupMatch?.name && !row.rawRow.adgroupName ? { adgroupName: adgroupMatch.name } : {}),
     ...(keywordMatch?.name && !row.rawRow.keywordText ? { keywordText: keywordMatch.name } : {}),
+    ...(adMatch?.name && !row.rawRow.adName ? { adName: adMatch.name } : {}),
+    ...(adMatch?.pcFinalUrl && !row.rawRow.pcFinalUrl ? { pcFinalUrl: adMatch.pcFinalUrl } : {}),
+    ...(adMatch?.mobileFinalUrl && !row.rawRow.mobileFinalUrl ? { mobileFinalUrl: adMatch.mobileFinalUrl } : {}),
   };
 
   return {
@@ -931,6 +1013,24 @@ export async function ensureSearchAdSchema() {
       UNIQUE (provider_keyword_id, collected_at)
     );
 
+    CREATE TABLE IF NOT EXISTS search_ad_ad_snapshots (
+      id TEXT PRIMARY KEY,
+      provider_ad_id TEXT NOT NULL,
+      provider_adgroup_id TEXT,
+      brand_key TEXT CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      name TEXT NOT NULL,
+      ad_type TEXT,
+      user_lock BOOLEAN,
+      status TEXT,
+      status_reason TEXT,
+      pc_final_url TEXT,
+      mobile_final_url TEXT,
+      raw_payload JSONB NOT NULL,
+      collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (provider_ad_id, collected_at)
+    );
+
     CREATE TABLE IF NOT EXISTS search_ad_rule_criteria (
       id TEXT PRIMARY KEY,
       brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),
@@ -999,6 +1099,9 @@ export async function ensureSearchAdSchema() {
 
     CREATE INDEX IF NOT EXISTS search_ad_adgroup_latest_idx
       ON search_ad_adgroup_snapshots (provider_adgroup_id, collected_at DESC);
+
+    CREATE INDEX IF NOT EXISTS search_ad_ad_latest_idx
+      ON search_ad_ad_snapshots (provider_ad_id, collected_at DESC);
   `);
 
   await query(`
@@ -1295,6 +1398,110 @@ async function listNormalizedRowsByFilters(filters: SearchAdFilters, limit: numb
   return result.rows.map(mapNormalizedRow);
 }
 
+async function listNormalizedDataCoverage(): Promise<Map<string, DataCoverageRecord>> {
+  const result = await query<{
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    start_date: string | Date;
+    end_date: string | Date;
+    actual_days: string;
+  }>(`
+    SELECT
+      brand_key,
+      ad_product_type,
+      MIN(source_date) AS start_date,
+      MAX(source_date) AS end_date,
+      COUNT(DISTINCT source_date)::text AS actual_days
+    FROM search_ad_report_normalized_rows
+    GROUP BY brand_key, ad_product_type
+  `);
+
+  return new Map(
+    result.rows.map((row) => [
+      coverageKey(row.brand_key, row.ad_product_type),
+      {
+        brandKey: row.brand_key,
+        adProductType: row.ad_product_type,
+        startDate: toDate(row.start_date),
+        endDate: toDate(row.end_date),
+        actualDays: Number(row.actual_days),
+      },
+    ]),
+  );
+}
+
+async function listLatestAdCreativeLookup(): Promise<Map<string, AdCreativeLookupValue>> {
+  const result = await query<{
+    provider_ad_id: string;
+    name: string | null;
+    pc_final_url: string | null;
+    mobile_final_url: string | null;
+    status: string | null;
+    status_reason: string | null;
+  }>(`
+    SELECT DISTINCT ON (provider_ad_id)
+      provider_ad_id, name, pc_final_url, mobile_final_url, status, status_reason
+    FROM search_ad_ad_snapshots
+    ORDER BY provider_ad_id, collected_at DESC
+  `);
+
+  return new Map(
+    result.rows.map((row) => [
+      row.provider_ad_id,
+      {
+        name: row.name ?? undefined,
+        pcFinalUrl: row.pc_final_url ?? undefined,
+        mobileFinalUrl: row.mobile_final_url ?? undefined,
+        status: row.status ?? undefined,
+        statusReason: row.status_reason ?? undefined,
+      },
+    ]),
+  );
+}
+
+function enrichRuleResultsWithEvidenceContext(
+  results: SearchAdRuleResult[],
+  coverageByScope: Map<string, DataCoverageRecord>,
+  adCreativeById: Map<string, AdCreativeLookupValue>,
+): SearchAdRuleResult[] {
+  return results.map((result) => {
+    const coverage = coverageByScope.get(coverageKey(result.brandKey, result.adProductType));
+    const adId = evidenceString(result.evidencePacket.adId) ?? (result.targetType === "ad" ? result.targetId : undefined);
+    const adCreative = adId ? adCreativeById.get(adId) : undefined;
+
+    return {
+      ...result,
+      evidencePacket: {
+        ...result.evidencePacket,
+        criteriaPeriodDays: result.periodDays,
+        actualDataDays: coverage?.actualDays ?? null,
+        dataWindowStart: coverage?.startDate ?? null,
+        dataWindowEnd: coverage?.endDate ?? null,
+        dataCoverageLabel: coverage ? formatDataCoverageLabel(coverage, result.periodDays) : null,
+        adHeadline: adCreative?.name ?? null,
+        pcFinalUrl: adCreative?.pcFinalUrl ?? null,
+        mobileFinalUrl: adCreative?.mobileFinalUrl ?? null,
+        adStatus: adCreative?.status ?? null,
+        adStatusReason: adCreative?.statusReason ?? null,
+      },
+    };
+  });
+}
+
+function coverageKey(brandKey: BrandKey, adProductType: AdProductType) {
+  return `${brandKey}:${adProductType}`;
+}
+
+function formatDataCoverageLabel(coverage: DataCoverageRecord, periodDays: number) {
+  const actualDaysLabel = `실제 ${coverage.actualDays.toLocaleString("ko-KR")}일치`;
+  const dateLabel = coverage.startDate === coverage.endDate ? `수집 기준일 ${coverage.endDate}` : `수집 ${coverage.startDate}~${coverage.endDate}`;
+  return `${dateLabel} · ${actualDaysLabel} / 규칙 ${periodDays}일`;
+}
+
+function evidenceString(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
 async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActionLogsView> {
   const previews = await query<{
     id: string;
@@ -1440,7 +1647,8 @@ async function getSyncStatusFromDb() {
       GREATEST(
         COALESCE((SELECT MAX(collected_at) FROM search_ad_campaign_snapshots), 'epoch'::timestamptz),
         COALESCE((SELECT MAX(collected_at) FROM search_ad_adgroup_snapshots), 'epoch'::timestamptz),
-        COALESCE((SELECT MAX(collected_at) FROM search_ad_keyword_snapshots), 'epoch'::timestamptz)
+        COALESCE((SELECT MAX(collected_at) FROM search_ad_keyword_snapshots), 'epoch'::timestamptz),
+        COALESCE((SELECT MAX(collected_at) FROM search_ad_ad_snapshots), 'epoch'::timestamptz)
       ) AS last_state_sync_at
   `);
   const lastStateSyncAt = result.rows[0]?.last_state_sync_at;
@@ -1614,7 +1822,7 @@ function isSearchAdWriteEnabled() {
   return process.env.SEARCH_AD_WRITE_ENABLED === "1" || process.env.NAVER_SEARCH_AD_WRITE_ENABLED === "1";
 }
 
-function snapshotId(targetType: SearchAdTargetType, providerId: string, collectedAt: string) {
+function snapshotId(targetType: SearchAdTargetType | "ad", providerId: string, collectedAt: string) {
   return `${targetType}-${providerId}-${collectedAt}`.replace(/[^a-zA-Z0-9_-]/g, "-");
 }
 

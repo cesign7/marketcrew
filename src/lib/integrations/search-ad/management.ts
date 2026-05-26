@@ -28,6 +28,19 @@ export type NaverKeyword = {
   statusReason?: string;
 };
 
+export type NaverAd = {
+  nccAdId: string;
+  nccAdgroupId?: string;
+  type?: string;
+  adType?: string;
+  userLock?: boolean;
+  status?: string;
+  statusReason?: string;
+  inspectStatus?: string;
+  ad?: Record<string, unknown>;
+  [key: string]: unknown;
+};
+
 export function listSearchAdCampaigns() {
   return searchAdFetch<NaverCampaign[]>("/ncc/campaigns");
 }
@@ -39,4 +52,9 @@ export function listSearchAdAdgroups() {
 export function listSearchAdKeywords(adgroupId?: string) {
   const query = adgroupId ? `?nccAdgroupId=${encodeURIComponent(adgroupId)}` : "";
   return searchAdFetch<NaverKeyword[]>(`/ncc/keywords${query}`);
+}
+
+export function listSearchAdAds(adgroupId?: string) {
+  const query = adgroupId ? `?nccAdgroupId=${encodeURIComponent(adgroupId)}` : "";
+  return searchAdFetch<NaverAd[]>(`/ncc/ads${query}`);
 }

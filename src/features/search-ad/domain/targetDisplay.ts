@@ -8,6 +8,7 @@ export type SearchAdRuleTargetDescriptor = {
   connectedTargetLabel: string;
   rawTargetId?: string;
   rawTargetCode?: string;
+  targetDetailLabel?: string;
 };
 
 const RULE_TARGET_TYPE_LABELS: Record<SearchAdRuleResult["targetType"], string> = {
@@ -29,11 +30,12 @@ export function describeSearchAdRuleTarget(row: SearchAdNormalizedRow): SearchAd
     return {
       targetType: "criterion",
       targetId: criterionId ?? row.adgroupId ?? row.campaignId ?? row.id,
-      targetLabel: `${connectedTargetLabel} 타게팅`,
+      targetLabel: criterion?.label ? `${connectedTargetLabel} ${criterion.label} 타게팅` : `${connectedTargetLabel} 타게팅`,
       targetTypeLabel: getRuleTargetTypeLabel("criterion"),
       connectedTargetLabel,
       rawTargetId: criterionId,
       rawTargetCode: criterion?.code,
+      targetDetailLabel: criterion?.label,
     };
   }
 
@@ -118,7 +120,9 @@ export function getRuleResultDisplayTargetLabel(result: SearchAdRuleResult) {
 
   const connectedTarget = getRuleResultConnectedTarget(result);
   const typeLabel = getRuleResultDisplayTargetTypeLabel(result);
-  return connectedTarget === "-" ? typeLabel : `${connectedTarget} ${typeLabel}`;
+  const detailLabel = getRuleResultTargetDetailLabel(result);
+  const suffix = detailLabel ? `${detailLabel} ${typeLabel}` : typeLabel;
+  return connectedTarget === "-" ? suffix : `${connectedTarget} ${suffix}`;
 }
 
 export function getRuleResultConnectedTarget(result: SearchAdRuleResult) {
@@ -131,6 +135,51 @@ export function getRuleResultRawTargetId(result: SearchAdRuleResult) {
 
 export function getRuleResultSourceReportLabel(result: SearchAdRuleResult) {
   return stringFromEvidence(result.evidencePacket.reportTypeLabel) ?? stringFromEvidence(result.evidencePacket.reportType) ?? "보고서";
+}
+
+export function getRuleResultPeriodLabel(result: SearchAdRuleResult) {
+  const label = stringFromEvidence(result.evidencePacket.dataCoverageLabel);
+  if (label) {
+    return label;
+  }
+
+  const sourceDate = stringFromEvidence(result.evidencePacket.sourceDate);
+  if (sourceDate) {
+    return `수집 기준일 ${sourceDate} · 실제 1일치 / 규칙 ${result.periodDays}일`;
+  }
+
+  return `규칙 ${result.periodDays}일`;
+}
+
+export function getRuleResultTargetDetailLabel(result: SearchAdRuleResult) {
+  const evidenceLabel = stringFromEvidence(result.evidencePacket.targetDetailLabel);
+  if (evidenceLabel) {
+    return evidenceLabel;
+  }
+
+  const rawTargetCode = stringFromEvidence(result.evidencePacket.rawTargetCode) ?? rawCodeFromTechnicalId(getRuleResultRawTargetId(result));
+  return translateTargetCode(rawTargetCode);
+}
+
+export function getRuleResultCreativeLabel(result: SearchAdRuleResult) {
+  return (
+    stringFromEvidence(result.evidencePacket.adHeadline) ??
+    stringFromEvidence(result.evidencePacket.adTitle) ??
+    stringFromEvidence(result.evidencePacket.adDescription) ??
+    stringFromEvidence(result.evidencePacket.creativeLabel)
+  );
+}
+
+export function getRuleResultLandingLabel(result: SearchAdRuleResult) {
+  const pcUrl = stringFromEvidence(result.evidencePacket.pcFinalUrl) ?? stringFromEvidence(result.evidencePacket.finalPcUrl);
+  const mobileUrl = stringFromEvidence(result.evidencePacket.mobileFinalUrl) ?? stringFromEvidence(result.evidencePacket.finalMobileUrl);
+  const finalUrl = stringFromEvidence(result.evidencePacket.finalUrl);
+
+  if (pcUrl && mobileUrl && pcUrl !== mobileUrl) {
+    return `PC ${pcUrl} / 모바일 ${mobileUrl}`;
+  }
+
+  return pcUrl ?? mobileUrl ?? finalUrl;
 }
 
 export function getNormalizedRowDisplayTarget(row: SearchAdNormalizedRow) {
@@ -155,7 +204,7 @@ function splitCriterionId(value: string | undefined) {
   }
 
   const [ownerId, code] = value.split("~");
-  return ownerId && code ? { ownerId, code } : undefined;
+  return ownerId && code ? { ownerId, code, label: translateTargetCode(code) } : undefined;
 }
 
 function identifierLike(value: string | undefined, prefix: string) {
@@ -197,3 +246,55 @@ function inferTechnicalTargetType(value: string | undefined): SearchAdRuleResult
 function isTechnicalTargetIdentifier(value: string | undefined) {
   return Boolean(inferTechnicalTargetType(value));
 }
+
+function rawCodeFromTechnicalId(value: string | undefined) {
+  return value?.includes("~") ? value.split("~")[1] : undefined;
+}
+
+function translateTargetCode(code: string | undefined) {
+  if (!code) {
+    return undefined;
+  }
+
+  const upper = code.toUpperCase();
+  if (upper === "GNF") {
+    return "여성";
+  }
+  if (upper === "GNM") {
+    return "남성";
+  }
+  if (upper === "GNU") {
+    return "성별 미상";
+  }
+  if (upper === "AGXXXX") {
+    return "연령 미상";
+  }
+  if (upper === "AD0099") {
+    return "연령 전체";
+  }
+
+  const ageMatch = upper.match(/^AG(\d{2})(\d{2})$/);
+  if (ageMatch) {
+    return `${Number(ageMatch[1])}~${Number(ageMatch[2])}세`;
+  }
+
+  const scheduleMatch = upper.match(/^SD([A-Z]{3})(\d{2})(\d{2})$/);
+  if (scheduleMatch) {
+    const dayLabel = DAY_LABELS[scheduleMatch[1]];
+    if (dayLabel) {
+      return `${dayLabel} ${Number(scheduleMatch[2])}:00~${Number(scheduleMatch[3])}:00`;
+    }
+  }
+
+  return undefined;
+}
+
+const DAY_LABELS: Record<string, string> = {
+  MON: "월요일",
+  TUE: "화요일",
+  WED: "수요일",
+  THU: "목요일",
+  FRI: "금요일",
+  SAT: "토요일",
+  SUN: "일요일",
+};

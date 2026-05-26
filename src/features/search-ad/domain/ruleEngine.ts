@@ -46,6 +46,7 @@ export function buildSearchAdRuleResults(rows: SearchAdNormalizedRow[], criteria
       connectedTargetLabel: target.connectedTargetLabel,
       rawTargetId: target.rawTargetId ?? null,
       rawTargetCode: target.rawTargetCode ?? null,
+      targetDetailLabel: target.targetDetailLabel ?? null,
     };
 
     if (row.impressions >= criteria.minImpressions && row.clicks === 0) {

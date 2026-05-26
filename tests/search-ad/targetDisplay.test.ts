@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getRuleResultDisplayTargetLabel, getRuleResultDisplayTargetTypeLabel, getRuleResultRawTargetId } from "@/features/search-ad/domain/targetDisplay";
+import {
+  getRuleResultDisplayTargetLabel,
+  getRuleResultDisplayTargetTypeLabel,
+  getRuleResultPeriodLabel,
+  getRuleResultRawTargetId,
+  getRuleResultTargetDetailLabel,
+} from "@/features/search-ad/domain/targetDisplay";
 import type { SearchAdRuleResult } from "@/features/search-ad/domain/types";
 
 describe("rule result target display", () => {
@@ -27,8 +33,46 @@ describe("rule result target display", () => {
     });
 
     expect(getRuleResultDisplayTargetTypeLabel(result)).toBe("타게팅");
-    expect(getRuleResultDisplayTargetLabel(result)).toBe("M_감사/생일/답례 스티커 타게팅");
+    expect(getRuleResultDisplayTargetLabel(result)).toBe("M_감사/생일/답례 스티커 여성 타게팅");
+    expect(getRuleResultTargetDetailLabel(result)).toBe("여성");
     expect(getRuleResultRawTargetId(result)).toBe("grp-a001-02-000000029331497~GNF");
+  });
+
+  it("타게팅 코드의 연령과 시간대를 한글로 보여준다", () => {
+    const ageResult = ruleResult({
+      targetLabel: "grp-a001-02-000000029331497~AG3539",
+      evidencePacket: { adgroupName: "M_감사/생일/답례 스티커" },
+    });
+    const scheduleResult = ruleResult({
+      targetLabel: "grp-m001-01-000001408384958~SDMON0820",
+      evidencePacket: { adgroupName: "30_초대장" },
+    });
+
+    expect(getRuleResultTargetDetailLabel(ageResult)).toBe("35~39세");
+    expect(getRuleResultDisplayTargetLabel(ageResult)).toBe("M_감사/생일/답례 스티커 35~39세 타게팅");
+    expect(getRuleResultTargetDetailLabel(scheduleResult)).toBe("월요일 8:00~20:00");
+  });
+
+  it("실제 수집 기간과 규칙 기간을 함께 보여준다", () => {
+    const result = ruleResult({
+      periodDays: 30,
+      evidencePacket: {
+        dataCoverageLabel: "수집 기준일 2026-05-25 · 실제 1일치 / 규칙 30일",
+      },
+    });
+
+    expect(getRuleResultPeriodLabel(result)).toBe("수집 기준일 2026-05-25 · 실제 1일치 / 규칙 30일");
+  });
+
+  it("수집 기간이 저장되지 않은 기존 결과는 원천 기준일로 보완한다", () => {
+    const result = ruleResult({
+      periodDays: 30,
+      evidencePacket: {
+        sourceDate: "2026-05-25",
+      },
+    });
+
+    expect(getRuleResultPeriodLabel(result)).toBe("수집 기준일 2026-05-25 · 실제 1일치 / 규칙 30일");
   });
 
   it("실제 검색어는 그대로 보여준다", () => {

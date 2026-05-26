@@ -417,6 +417,13 @@ table {
   margin: 0;
 }
 
+.rule-card .text-clip {
+  max-width: min(560px, 100%);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .target-chip {
   background: #eef4ff;
   border-radius: 999px;

@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   listSearchAdCampaigns: vi.fn(),
   listSearchAdAdgroups: vi.fn(),
   listSearchAdKeywords: vi.fn(),
+  listSearchAdAds: vi.fn(),
   saveSearchAdStateSnapshots: vi.fn(),
 }));
 
@@ -18,6 +19,7 @@ vi.mock("@/lib/integrations/search-ad/management", () => ({
   listSearchAdCampaigns: mocks.listSearchAdCampaigns,
   listSearchAdAdgroups: mocks.listSearchAdAdgroups,
   listSearchAdKeywords: mocks.listSearchAdKeywords,
+  listSearchAdAds: mocks.listSearchAdAds,
 }));
 
 vi.mock("@/lib/persistence/postgres", () => ({
@@ -42,7 +44,14 @@ describe("syncSearchAdState", () => {
     mocks.listSearchAdKeywords.mockImplementation(async (adgroupId: string) => [
       { nccKeywordId: `kw-${adgroupId}`, nccAdgroupId: adgroupId, keyword: "감사스티커" },
     ]);
-    mocks.saveSearchAdStateSnapshots.mockResolvedValue({ collectedAt: "2026-05-26T04:10:00.000Z", saved: 5 });
+    mocks.listSearchAdAds.mockImplementation(async (adgroupId: string) => [
+      {
+        nccAdId: `nad-${adgroupId}`,
+        nccAdgroupId: adgroupId,
+        ad: { headline: "감사 스티커", pc: { final: "https://stickersee.example/pc" }, mobile: { final: "https://stickersee.example/m" } },
+      },
+    ]);
+    mocks.saveSearchAdStateSnapshots.mockResolvedValue({ collectedAt: "2026-05-26T04:10:00.000Z", saved: 7 });
 
     const result = await syncSearchAdState();
 
@@ -50,10 +59,20 @@ describe("syncSearchAdState", () => {
     expect(mocks.listSearchAdKeywords).toHaveBeenCalledWith("grp-1");
     expect(mocks.listSearchAdKeywords).toHaveBeenCalledWith("grp-2");
     expect(mocks.listSearchAdKeywords).not.toHaveBeenCalledWith();
+    expect(mocks.listSearchAdAds).toHaveBeenCalledWith("grp-1");
+    expect(mocks.listSearchAdAds).toHaveBeenCalledWith("grp-2");
     expect(mocks.saveSearchAdStateSnapshots).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({ targetType: "keyword", providerId: "kw-grp-1", parentProviderId: "grp-1" }),
         expect.objectContaining({ targetType: "keyword", providerId: "kw-grp-2", parentProviderId: "grp-2" }),
+        expect.objectContaining({
+          targetType: "ad",
+          providerId: "nad-grp-1",
+          parentProviderId: "grp-1",
+          name: "감사 스티커",
+          pcFinalUrl: "https://stickersee.example/pc",
+          mobileFinalUrl: "https://stickersee.example/m",
+        }),
       ]),
     );
   });

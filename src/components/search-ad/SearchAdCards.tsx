@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { getAdProductLabel, getBrandLabel, getReportTypeLabel, RULE_CATEGORY_LABELS } from "@/features/search-ad/domain/reportTypes";
 import {
+  getRuleResultCreativeLabel,
   getNormalizedRowDisplayTarget,
   getRuleResultConnectedTarget,
   getRuleResultDisplayTargetLabel,
   getRuleResultDisplayTargetTypeLabel,
+  getRuleResultLandingLabel,
+  getRuleResultPeriodLabel,
   getRuleResultRawTargetId,
   getRuleResultSourceReportLabel,
+  getRuleResultTargetDetailLabel,
 } from "@/features/search-ad/domain/targetDisplay";
 import type { SearchAdActionLogsView, SearchAdNormalizedRow, SearchAdOperationsView, SearchAdReportJobRecord, SearchAdRuleResult, SearchAdStateRecord } from "@/features/search-ad/domain/types";
 
@@ -134,6 +138,9 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const rawTargetId = getRuleResultRawTargetId(result);
         const targetLabel = getRuleResultDisplayTargetLabel(result);
         const targetTypeLabel = getRuleResultDisplayTargetTypeLabel(result);
+        const targetDetailLabel = getRuleResultTargetDetailLabel(result);
+        const creativeLabel = getRuleResultCreativeLabel(result);
+        const landingLabel = getRuleResultLandingLabel(result);
         return (
           <article className="rule-card" key={result.id}>
             <div>
@@ -160,9 +167,29 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
                 <dd>{getRuleResultSourceReportLabel(result)}</dd>
               </div>
               <div>
-                <dt>기준 기간</dt>
-                <dd>{result.periodDays}일</dd>
+                <dt>판단 기준</dt>
+                <dd>{getRuleResultPeriodLabel(result)}</dd>
               </div>
+              {targetDetailLabel ? (
+                <div>
+                  <dt>세부 대상</dt>
+                  <dd>{targetDetailLabel}</dd>
+                </div>
+              ) : null}
+              {creativeLabel ? (
+                <div>
+                  <dt>소재</dt>
+                  <dd>{creativeLabel}</dd>
+                </div>
+              ) : null}
+              {landingLabel ? (
+                <div>
+                  <dt>랜딩</dt>
+                  <dd className="text-clip" title={landingLabel}>
+                    {landingLabel}
+                  </dd>
+                </div>
+              ) : null}
             </dl>
             {rawTargetId ? (
               <details className="technical-details">
