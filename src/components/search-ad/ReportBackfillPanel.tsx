@@ -137,7 +137,11 @@ export function getQuickBackfillLimits(input: { fromDate: string; reportTypes: S
   };
 }
 
-export function getBackfillStatusLabel(status: SearchAdBackfillResultStatus) {
+export function getBackfillStatusLabel(status: SearchAdBackfillResultStatus, providerStatus?: string) {
+  if (status === "pending" && providerStatus === "NONE") {
+    return "파일 없음";
+  }
+
   return STATUS_LABELS[status];
 }
 
@@ -330,7 +334,7 @@ export function ReportBackfillPanel() {
                     <tr key={`${item.reportType}-${item.statDate}-${item.providerReportJobId ?? item.status}`}>
                       <td>{item.statDate}</td>
                       <td>{getReportTypeLabel(item.reportType)}</td>
-                      <td>{getBackfillStatusLabel(item.status)}</td>
+                      <td>{getBackfillStatusLabel(item.status, item.providerStatus)}</td>
                       <td>{item.providerReportJobId ?? "-"}</td>
                       <td>{getBackfillResultMessage(item)}</td>
                     </tr>
@@ -380,7 +384,7 @@ function getProviderStatusLabel(status?: string) {
     AGGREGATING: "집계 중",
     BUILT: "네이버 준비 완료",
     ERROR: "네이버 생성 실패",
-    NONE: "대기",
+    NONE: "네이버 파일 없음",
     REGIST: "등록됨",
     RUNNING: "생성 중",
     WAITING: "대기 중",
@@ -517,6 +521,9 @@ export function createFullBackfillFormState(todayKst?: string): BackfillFormStat
 export function getBackfillResultMessage(item: Pick<BackfillResult, "message" | "providerStatus" | "status">) {
   if (item.status === "download_skipped" && item.message?.includes("maxDownloads 제한")) {
     return "마켓크루 다운로드 안전 상한에 도달해 다음 자동 배치에서 이어서 저장합니다.";
+  }
+  if (item.status === "pending" && item.providerStatus === "NONE") {
+    return "네이버가 다운로드 파일을 제공하지 않아 저장할 원본이 없습니다.";
   }
 
   return item.message ?? getProviderStatusLabel(item.providerStatus) ?? "-";

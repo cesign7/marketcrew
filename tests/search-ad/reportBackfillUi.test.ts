@@ -55,6 +55,7 @@ describe("report backfill UI helpers", () => {
     expect(getBackfillStatusLabel("download_skipped")).toBe("다음 배치 대기");
     expect(getBackfillStatusLabel("downloadable")).toBe("저장 가능");
     expect(getBackfillStatusLabel("missing")).toBe("생성 필요");
+    expect(getBackfillStatusLabel("pending", "NONE")).toBe("파일 없음");
     expect(getBackfillStatusLabel("rate_limited")).toBe("속도 제한");
   });
 
@@ -65,6 +66,15 @@ describe("report backfill UI helpers", () => {
         status: "download_skipped",
       }),
     ).toBe("마켓크루 다운로드 안전 상한에 도달해 다음 자동 배치에서 이어서 저장합니다.");
+  });
+
+  it("네이버가 파일 없음 상태를 반환한 보고서는 계속 대기처럼 보이지 않게 설명한다", () => {
+    expect(
+      getBackfillResultMessage({
+        providerStatus: "NONE",
+        status: "pending",
+      }),
+    ).toBe("네이버가 다운로드 파일을 제공하지 않아 저장할 원본이 없습니다.");
   });
 
   it("안전 기준 안내는 마켓크루 건수 상한 대신 긴 요청 간격을 설명한다", () => {
