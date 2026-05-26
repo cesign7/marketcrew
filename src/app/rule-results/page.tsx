@@ -18,7 +18,7 @@ export default async function RuleResultsPage({ searchParams }: RuleResultsPageP
         <div className="content-panel">
           <div className="section-heading">
             <h2>규칙 결과</h2>
-            <p>LLM 판단 전 단계에서 재현 가능한 숫자 규칙만 표시합니다.</p>
+            <p>LLM 판단 전 단계에서 재현 가능한 숫자 규칙과 실제 수집 일수를 함께 표시합니다.</p>
           </div>
           <RuleResultList results={view.recentRuleResults} />
         </div>

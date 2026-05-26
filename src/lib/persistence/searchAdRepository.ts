@@ -14,7 +14,7 @@ import {
 import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
 import { isSearchTermReport } from "@/features/search-ad/domain/targetDisplay";
 import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport";
-import { buildSearchAdRuleResults } from "@/features/search-ad/domain/ruleEngine";
+import { buildSearchAdPeriodRuleResults } from "@/features/search-ad/domain/ruleEngine";
 import { updateSearchAdAdgroupUserLock } from "@/lib/integrations/search-ad/management";
 import type {
   AdProductType,
@@ -496,11 +496,11 @@ export async function rebuildAndSaveSearchAdRuleResults() {
 
   try {
     await ensureSearchAdSchema();
-    const rows = await listNormalizedRowsByFilters(DEFAULT_SEARCH_AD_FILTERS, 2000);
+    const rows = await listNormalizedRowsByFilters(DEFAULT_SEARCH_AD_FILTERS, 100000);
     const criteria = await listSearchAdRuleCriteria();
     const dataCoverage = await listNormalizedDataCoverage();
     const adLookup = await listLatestAdCreativeLookup();
-    const results = enrichRuleResultsWithEvidenceContext(buildSearchAdRuleResults(rows, criteria), dataCoverage, adLookup);
+    const results = enrichRuleResultsWithEvidenceContext(buildSearchAdPeriodRuleResults(rows, criteria), dataCoverage, adLookup);
 
     await query("DELETE FROM search_ad_rule_results");
     for (const result of results) {
@@ -1771,10 +1771,10 @@ function enrichRuleResultsWithEvidenceContext(
       evidencePacket: {
         ...result.evidencePacket,
         criteriaPeriodDays: result.periodDays,
-        actualDataDays: coverage?.actualDays ?? null,
-        dataWindowStart: coverage?.startDate ?? null,
-        dataWindowEnd: coverage?.endDate ?? null,
-        dataCoverageLabel: coverage ? formatDataCoverageLabel(coverage, result.periodDays) : null,
+        actualDataDays: result.evidencePacket.actualDataDays ?? coverage?.actualDays ?? null,
+        dataWindowStart: result.evidencePacket.dataWindowStart ?? coverage?.startDate ?? null,
+        dataWindowEnd: result.evidencePacket.dataWindowEnd ?? coverage?.endDate ?? null,
+        dataCoverageLabel: result.evidencePacket.dataCoverageLabel ?? (coverage ? formatDataCoverageLabel(coverage, result.periodDays) : null),
         adHeadline: adCreative?.name ?? null,
         pcFinalUrl: adCreative?.pcFinalUrl ?? null,
         mobileFinalUrl: adCreative?.mobileFinalUrl ?? null,

@@ -18,9 +18,9 @@ export default async function RulesPage() {
           </div>
           <div className="settings-grid">
             <article>
-              <span>최근 30일 기준</span>
+              <span>기준 기간 합산</span>
               <strong>기본 판단</strong>
-              <p>최소 노출, 클릭, 비용을 넘은 검색어만 저효율/우수 후보로 봅니다.</p>
+              <p>30일 규칙은 기준 기간 안의 같은 대상을 합산하고, 실제 수집 일수는 결과 카드에 함께 표시합니다.</p>
             </article>
             <article>
               <span>최근 7일 급등</span>

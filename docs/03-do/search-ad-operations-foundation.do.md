@@ -139,6 +139,14 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 
 - 실제 저장은 화면의 `전체 저장 / 이어받기` 버튼으로 실행한다. 누락 보고서 생성은 `createMissing=true`, 다운로드/저장은 `dryRun=false`일 때만 일어나며, 화면 실행 제한은 `maxDates=92`, `maxCreates=120`, `maxDownloads=60`이다.
 
+### follow-up 백필 기반 기간 판단
+
+- 백필된 보고서가 늘어난 뒤 규칙 결과가 하루치 행을 그대로 30일 판단처럼 보이지 않도록 `buildSearchAdPeriodRuleResults`를 추가했다.
+- 규칙 재생성은 브랜드/광고유형별 기준 기간 안의 같은 검색어·소재·타게팅·광고그룹 성과를 합산한 뒤 저효율, 클릭 없음, 높은 CPA, 낮은 ROAS, 우수 후보를 계산한다.
+- 결과 근거에는 `actualDataDays`, `criteriaPeriodDays`, `dataWindowStart`, `dataWindowEnd`, `ruleWindowStart`, `ruleWindowEnd`, `coverageStatus`, `coverageWarningLabel`, `sourceRowIds`를 남긴다.
+- 화면 카드에는 `판단 기준`과 별도로 `판단 상태`를 표시한다. 예: `임시 판단 · 수집 1/30일`, `일부 기간 판단 · 수집 2/30일`, `정상 판단 · 수집 30/30일`.
+- `/api/search-ad/rules/rebuild`는 최대 100,000개의 정규화 행을 읽어 백필 후 기간 합산 결과를 재생성한다. 대규모 장기 운영 단계에서는 DB 집계 테이블 또는 materialized summary로 한 번 더 최적화한다.
+
 ---
 
 ## Verification

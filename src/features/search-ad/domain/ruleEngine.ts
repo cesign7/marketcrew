@@ -152,6 +152,56 @@ export function buildSearchAdRuleResults(rows: SearchAdNormalizedRow[], criteria
   return results;
 }
 
+export function buildSearchAdPeriodRuleResults(rows: SearchAdNormalizedRow[], criteriaList: SearchAdRuleCriteria[], now = RULE_RUN_AT): SearchAdRuleResult[] {
+  const enabledCriteria = criteriaList.filter((item) => item.enabled);
+  const results: SearchAdRuleResult[] = [];
+
+  for (const criteria of enabledCriteria) {
+    const scopedRows = rows.filter((row) => row.brandKey === criteria.brandKey && row.adProductType === criteria.adProductType);
+    const endDate = latestSourceDate(scopedRows);
+    if (!endDate) {
+      continue;
+    }
+
+    const startDate = addDays(endDate, -(criteria.periodDays - 1));
+    const windowRows = scopedRows.filter((row) => row.sourceDate >= startDate && row.sourceDate <= endDate);
+    const actualDataDays = countDistinct(windowRows.map((row) => row.sourceDate));
+    const collectedStartDate = earliestSourceDate(windowRows) ?? endDate;
+    const coverageStatus = getCoverageStatus(actualDataDays, criteria.periodDays);
+    const coverageWarningLabel = getCoverageWarningLabel(coverageStatus);
+    const dataCoverageLabel = formatCoverageLabel(collectedStartDate, endDate, actualDataDays, criteria.periodDays);
+    const groupedRows = groupPeriodRows(windowRows, criteria.periodDays);
+
+    for (const groupRows of groupedRows.values()) {
+      const aggregatedRow = aggregatePeriodRows(groupRows, criteria.periodDays, endDate);
+      const [result] = buildSearchAdRuleResults([aggregatedRow], [criteria], now);
+      if (!result) {
+        continue;
+      }
+
+      results.push({
+        ...result,
+        reason: withCoverageWarning(result.reason, coverageStatus, coverageWarningLabel, actualDataDays, criteria.periodDays),
+        evidencePacket: {
+          ...result.evidencePacket,
+          criteriaPeriodDays: criteria.periodDays,
+          actualDataDays,
+          dataWindowStart: collectedStartDate,
+          dataWindowEnd: endDate,
+          ruleWindowStart: startDate,
+          ruleWindowEnd: endDate,
+          dataCoverageLabel,
+          coverageStatus,
+          coverageWarningLabel,
+          sourceRowIds: groupRows.map((row) => row.id).slice(0, 30),
+        },
+      });
+    }
+  }
+
+  return results;
+}
+
 function ruleId(prefix: string, rowId: string) {
   return `rule-${prefix}-${rowId}`.replace(/[^a-zA-Z0-9_-]/g, "-");
 }
@@ -195,4 +245,123 @@ function formatWon(value: number) {
 
 function formatPercent(value: number) {
   return `${Math.round(value * 10) / 10}%`;
+}
+
+function groupPeriodRows(rows: SearchAdNormalizedRow[], periodDays: number) {
+  const groups = new Map<string, SearchAdNormalizedRow[]>();
+  for (const row of rows) {
+    const key = periodGroupKey(row, periodDays);
+    const group = groups.get(key);
+    if (group) {
+      group.push(row);
+    } else {
+      groups.set(key, [row]);
+    }
+  }
+
+  return groups;
+}
+
+function periodGroupKey(row: SearchAdNormalizedRow, periodDays: number) {
+  const target = describeSearchAdRuleTarget(row);
+  return [
+    periodDays,
+    row.brandKey,
+    row.adProductType,
+    row.reportType,
+    row.campaignId ?? row.campaignName ?? "",
+    row.adgroupId ?? row.adgroupName ?? "",
+    target.targetType,
+    target.targetId ?? target.targetLabel,
+    row.device ?? "",
+    row.mediaId ?? "",
+  ].join("|");
+}
+
+function aggregatePeriodRows(rows: SearchAdNormalizedRow[], periodDays: number, endDate: string): SearchAdNormalizedRow {
+  const sortedRows = [...rows].sort((a, b) => b.sourceDate.localeCompare(a.sourceDate) || b.cost - a.cost || b.clicks - a.clicks);
+  const base = sortedRows[0] ?? rows[0];
+
+  return {
+    ...base,
+    id: ruleId(`period-${periodDays}`, periodGroupKey(base, periodDays)),
+    reportRowId: `period-${periodDays}-${base.reportRowId}`,
+    impressions: sum(rows, "impressions"),
+    clicks: sum(rows, "clicks"),
+    cost: sum(rows, "cost"),
+    conversions: sum(rows, "conversions"),
+    salesAmount: sum(rows, "salesAmount"),
+    sourceDate: endDate,
+  };
+}
+
+function sum(rows: SearchAdNormalizedRow[], key: "impressions" | "clicks" | "cost" | "conversions" | "salesAmount") {
+  return rows.reduce((total, row) => total + row[key], 0);
+}
+
+function latestSourceDate(rows: SearchAdNormalizedRow[]) {
+  return rows.reduce<string | undefined>((latest, row) => {
+    if (!latest || row.sourceDate > latest) {
+      return row.sourceDate;
+    }
+
+    return latest;
+  }, undefined);
+}
+
+function earliestSourceDate(rows: SearchAdNormalizedRow[]) {
+  return rows.reduce<string | undefined>((earliest, row) => {
+    if (!earliest || row.sourceDate < earliest) {
+      return row.sourceDate;
+    }
+
+    return earliest;
+  }, undefined);
+}
+
+function addDays(dateText: string, days: number) {
+  const date = new Date(`${dateText}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function countDistinct(values: string[]) {
+  return new Set(values).size;
+}
+
+function getCoverageStatus(actualDays: number, requiredDays: number) {
+  if (actualDays >= requiredDays) {
+    return "complete";
+  }
+
+  if (actualDays > 1) {
+    return "partial";
+  }
+
+  return "insufficient";
+}
+
+function getCoverageWarningLabel(status: ReturnType<typeof getCoverageStatus>) {
+  if (status === "complete") {
+    return "정상 판단";
+  }
+
+  if (status === "partial") {
+    return "일부 기간 판단";
+  }
+
+  return "임시 판단";
+}
+
+function formatCoverageLabel(startDate: string, endDate: string, actualDays: number, periodDays: number) {
+  const dateLabel = startDate === endDate ? `수집 기준일 ${endDate}` : `수집 ${startDate}~${endDate}`;
+  return `${dateLabel} · 실제 ${actualDays.toLocaleString("ko-KR")}일치 / 규칙 ${periodDays}일`;
+}
+
+function withCoverageWarning(reason: string, status: ReturnType<typeof getCoverageStatus>, label: string, actualDays: number, periodDays: number) {
+  if (status === "complete") {
+    return reason;
+  }
+
+  return `${label}: 실제 ${actualDays.toLocaleString("ko-KR")}일치만 수집되어 규칙 ${periodDays}일 기준으로는 보수적으로 봐야 합니다. ${reason}`;
 }

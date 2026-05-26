@@ -141,6 +141,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const targetDetailLabel = getRuleResultTargetDetailLabel(result);
         const creativeLabel = getRuleResultCreativeLabel(result);
         const landingLabel = getRuleResultLandingLabel(result);
+        const coverageLabel = getCoverageDecisionLabel(result);
         return (
           <article className="rule-card" key={result.id}>
             <div>
@@ -170,6 +171,12 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
                 <dt>판단 기준</dt>
                 <dd>{getRuleResultPeriodLabel(result)}</dd>
               </div>
+              {coverageLabel ? (
+                <div>
+                  <dt>판단 상태</dt>
+                  <dd>{coverageLabel}</dd>
+                </div>
+              ) : null}
               {targetDetailLabel ? (
                 <div>
                   <dt>세부 대상</dt>
@@ -384,4 +391,27 @@ function formatLockState(value: boolean | null) {
   }
 
   return "확인 필요";
+}
+
+function getCoverageDecisionLabel(result: SearchAdRuleResult) {
+  const warningLabel = stringFromEvidence(result.evidencePacket.coverageWarningLabel);
+  const actualDays = numberFromEvidence(result.evidencePacket.actualDataDays);
+  const criteriaDays = numberFromEvidence(result.evidencePacket.criteriaPeriodDays) ?? result.periodDays;
+  if (!warningLabel) {
+    return undefined;
+  }
+
+  if (actualDays === undefined) {
+    return warningLabel;
+  }
+
+  return `${warningLabel} · 수집 ${actualDays.toLocaleString("ko-KR")}/${criteriaDays.toLocaleString("ko-KR")}일`;
+}
+
+function stringFromEvidence(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function numberFromEvidence(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
