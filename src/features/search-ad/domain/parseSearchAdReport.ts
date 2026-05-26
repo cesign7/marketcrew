@@ -68,7 +68,13 @@ export function parseSearchAdReport(reportType: SearchAdReportType, rawText: str
 
 export function normalizeRawRow(reportType: SearchAdReportType, row: SearchAdRawReportRow & { brandKey: BrandKey }, sourceDate: string): SearchAdNormalizedRow {
   const raw = row.rawRow;
-  const fallbackLabel = stringValue(raw.targetName) ?? stringValue(raw.searchTerm) ?? stringValue(raw.keywordText) ?? stringValue(raw.productName);
+  const fallbackLabel =
+    stringValue(raw.targetName) ??
+    stringValue(raw.searchTerm) ??
+    stringValue(raw.keywordText) ??
+    stringValue(raw.productName) ??
+    stringValue(raw.adId) ??
+    stringValue(raw.criterionId);
 
   return {
     id: `${row.id}-normalized`,

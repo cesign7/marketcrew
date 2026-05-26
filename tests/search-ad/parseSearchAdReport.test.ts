@@ -5,8 +5,8 @@ import { parseSearchAdReport } from "@/features/search-ad/domain/parseSearchAdRe
 describe("parseSearchAdReport", () => {
   it("헤더 없는 TSV를 reportTp 컬럼 순서표로 해석한다", () => {
     const rawText = [
-      "커피프린트_파워링크\t봉투/포장 인쇄\t종이컵인쇄\t소량 종이컵 제작\t1,800\t42\t38,200\t0\t0\t2.3\t909\tPC",
-      "스티커씨_파워링크\t감사 스티커\t답례스티커\t생일 답례 스티커\t900\t18\t12,000\t2\t66,000\t2.0\t667\tMOBILE",
+      "20260525\t123888\tcmp-m002-01-000000039451167\tgrp-m001-01-000001408384958\t커피프린트 소량 종이컵 제작\t27758\tP\t42\t3\t38200\t0\t0",
+      "20260525\t123888\tcmp-a001-02-000000005825928\tgrp-a001-02-000000029331497\t스티커씨 생일 답례 스티커\t8753\tM\t18\t2\t12000\t2\t66000",
     ].join("\n");
 
     const result = parseSearchAdReport("EXPKEYWORD", rawText, {
@@ -17,12 +17,13 @@ describe("parseSearchAdReport", () => {
     expect(result.rows).toHaveLength(2);
     expect(result.rows[0]?.brandKey).toBe("coffeeprint");
     expect(result.rows[0]?.rawRow.clicks).toBe(42);
+    expect(result.rows[0]?.rawRow.cost).toBe(38200);
     expect(result.normalizedRows[0]).toMatchObject({
       adProductType: "powerlink",
       brandKey: "coffeeprint",
       clicks: 42,
       cost: 38200,
-      searchTerm: "소량 종이컵 제작",
+      searchTerm: "커피프린트 소량 종이컵 제작",
     });
   });
 

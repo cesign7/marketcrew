@@ -11,6 +11,7 @@ import {
   createSampleStateView,
 } from "@/features/search-ad/domain/sampleData";
 import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
+import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport";
 import { buildSearchAdRuleResults } from "@/features/search-ad/domain/ruleEngine";
 import type {
   AdProductType,
@@ -68,6 +69,18 @@ type StateSnapshotInput = {
   bidAmount?: number | null;
   dailyBudget?: number | null;
   rawPayload: Record<string, unknown>;
+};
+
+type StateBrandLookupValue = {
+  brandKey?: BrandKey;
+  adProductType?: AdProductType;
+  name?: string;
+};
+
+type StateBrandLookup = {
+  campaigns: Map<string, StateBrandLookupValue>;
+  adgroups: Map<string, StateBrandLookupValue>;
+  keywords: Map<string, StateBrandLookupValue>;
 };
 
 export async function getSearchAdOperationsView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdOperationsView> {
@@ -588,6 +601,11 @@ export async function saveDownloadedReport(input: {
   await ensureSearchAdSchema();
   const reportId = `report-${input.providerReportJobId}`;
   const fileId = `${reportId}-${input.checksum.slice(0, 12)}`;
+  const stateLookup = await getLatestStateBrandLookup();
+  const rawRows = input.rawRows.map((row) => hydrateReportRowWithState(row, stateLookup));
+  const normalizedRows = rawRows
+    .filter((row): row is SearchAdRawReportRow & { brandKey: BrandKey } => Boolean(row.brandKey))
+    .map((row) => normalizeRawRow(input.reportType, row, input.statDate));
 
   await query(
     `
@@ -607,13 +625,13 @@ export async function saveDownloadedReport(input: {
       ON CONFLICT (report_job_id, checksum)
       DO UPDATE SET raw_text = EXCLUDED.raw_text, parser_version = EXCLUDED.parser_version, row_count = EXCLUDED.row_count
     `,
-    [fileId, reportId, input.rawText, input.checksum, "text/tab-separated-values; charset=utf-8", input.parserVersion, input.rawRows.length],
+    [fileId, reportId, input.rawText, input.checksum, "text/tab-separated-values; charset=utf-8", input.parserVersion, rawRows.length],
   );
 
   await query("DELETE FROM search_ad_report_normalized_rows WHERE report_row_id IN (SELECT id FROM search_ad_report_rows WHERE report_file_id = $1)", [fileId]);
   await query("DELETE FROM search_ad_report_rows WHERE report_file_id = $1", [fileId]);
 
-  for (const row of input.rawRows) {
+  for (const row of rawRows) {
     await query(
       `
         INSERT INTO search_ad_report_rows (id, report_file_id, row_number, raw_row, brand_key, ad_product_type, mapping_status)
@@ -623,7 +641,7 @@ export async function saveDownloadedReport(input: {
     );
   }
 
-  for (const row of input.normalizedRows) {
+  for (const row of normalizedRows) {
     await query(
       `
         INSERT INTO search_ad_report_normalized_rows (
@@ -656,6 +674,109 @@ export async function saveDownloadedReport(input: {
   }
 
   return { reportId, fileId };
+}
+
+async function getLatestStateBrandLookup(): Promise<StateBrandLookup> {
+  const lookup: StateBrandLookup = {
+    campaigns: new Map(),
+    adgroups: new Map(),
+    keywords: new Map(),
+  };
+
+  const campaigns = await query<{
+    provider_campaign_id: string;
+    brand_key: BrandKey | null;
+    ad_product_type: AdProductType | null;
+    name: string | null;
+  }>(`
+    SELECT DISTINCT ON (provider_campaign_id) provider_campaign_id, brand_key, ad_product_type, name
+    FROM search_ad_campaign_snapshots
+    ORDER BY provider_campaign_id, collected_at DESC
+  `);
+  for (const row of campaigns.rows) {
+    lookup.campaigns.set(row.provider_campaign_id, {
+      brandKey: row.brand_key ?? undefined,
+      adProductType: row.ad_product_type ?? undefined,
+      name: row.name ?? undefined,
+    });
+  }
+
+  const adgroups = await query<{
+    provider_adgroup_id: string;
+    brand_key: BrandKey | null;
+    ad_product_type: AdProductType | null;
+    name: string | null;
+  }>(`
+    SELECT DISTINCT ON (provider_adgroup_id) provider_adgroup_id, brand_key, ad_product_type, name
+    FROM search_ad_adgroup_snapshots
+    ORDER BY provider_adgroup_id, collected_at DESC
+  `);
+  for (const row of adgroups.rows) {
+    lookup.adgroups.set(row.provider_adgroup_id, {
+      brandKey: row.brand_key ?? undefined,
+      adProductType: row.ad_product_type ?? undefined,
+      name: row.name ?? undefined,
+    });
+  }
+
+  const keywords = await query<{
+    provider_keyword_id: string;
+    brand_key: BrandKey | null;
+    ad_product_type: AdProductType | null;
+    keyword_text: string | null;
+  }>(`
+    SELECT DISTINCT ON (provider_keyword_id) provider_keyword_id, brand_key, ad_product_type, keyword_text
+    FROM search_ad_keyword_snapshots
+    ORDER BY provider_keyword_id, collected_at DESC
+  `);
+  for (const row of keywords.rows) {
+    lookup.keywords.set(row.provider_keyword_id, {
+      brandKey: row.brand_key ?? undefined,
+      adProductType: row.ad_product_type ?? undefined,
+      name: row.keyword_text ?? undefined,
+    });
+  }
+
+  return lookup;
+}
+
+function hydrateReportRowWithState(row: SearchAdRawReportRow, lookup: StateBrandLookup): SearchAdRawReportRow {
+  const campaignId = reportStringValue(row.rawRow.campaignId);
+  const adgroupId = reportStringValue(row.rawRow.adgroupId) ?? reportOwnerId(row.rawRow.criterionId);
+  const keywordId = reportStringValue(row.rawRow.keywordId);
+  const keywordMatch = keywordId ? lookup.keywords.get(keywordId) : undefined;
+  const adgroupMatch = adgroupId ? lookup.adgroups.get(adgroupId) : undefined;
+  const campaignMatch = campaignId ? lookup.campaigns.get(campaignId) : undefined;
+  const match = keywordMatch ?? adgroupMatch ?? campaignMatch;
+  const brandKey = row.brandKey ?? match?.brandKey;
+  const adProductType = row.adProductType ?? match?.adProductType;
+  const rawRow = {
+    ...row.rawRow,
+    ...(campaignMatch?.name && !row.rawRow.campaignName ? { campaignName: campaignMatch.name } : {}),
+    ...(adgroupMatch?.name && !row.rawRow.adgroupName ? { adgroupName: adgroupMatch.name } : {}),
+    ...(keywordMatch?.name && !row.rawRow.keywordText ? { keywordText: keywordMatch.name } : {}),
+  };
+
+  return {
+    ...row,
+    rawRow,
+    brandKey,
+    adProductType,
+    mappingStatus: brandKey ? "mapped" : row.mappingStatus,
+  };
+}
+
+function reportOwnerId(value: unknown) {
+  const text = reportStringValue(value);
+  return text?.split("~")[0] || undefined;
+}
+
+function reportStringValue(value: unknown) {
+  if (typeof value !== "string" || value.length === 0 || value === "-") {
+    return undefined;
+  }
+
+  return value;
 }
 
 export async function ensureSearchAdSchema() {
