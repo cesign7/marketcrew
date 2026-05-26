@@ -37,7 +37,7 @@ export async function syncBuiltSearchAdReports(input: ReportSyncInput) {
       job.status === "BUILT" &&
       isSearchAdReportType(reportType) &&
       reportTypes.includes(reportType) &&
-      normalizeStatDate(job.statDt) === input.statDate &&
+      normalizeSearchAdReportStatDate(job.statDt) === input.statDate &&
       Boolean(job.downloadUrl)
     );
   });
@@ -94,7 +94,19 @@ export async function syncBuiltSearchAdReports(input: ReportSyncInput) {
   };
 }
 
-function normalizeStatDate(value: string) {
+export function normalizeSearchAdReportStatDate(value: string) {
+  if (value.includes("T")) {
+    const date = new Date(value);
+    if (!Number.isNaN(date.getTime())) {
+      return new Intl.DateTimeFormat("en-CA", {
+        day: "2-digit",
+        month: "2-digit",
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+      }).format(date);
+    }
+  }
+
   const digits = value.replace(/\D/g, "");
   if (digits.length === 8) {
     return `${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`;
