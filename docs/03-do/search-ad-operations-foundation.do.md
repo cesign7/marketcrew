@@ -11,7 +11,7 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 
 # search-ad-operations-foundation Do
 
-> **Summary**: 검색광고 운영 기반의 전체 Do 범위로 SaaS 앱 셸, DB/저장소, Search Ad read-only 클라이언트, 보고서 파서/보관함, 상태 수집, 규칙 엔진, 실행 미리보기/write gate, 로컬 검증을 구현했다.
+> **Summary**: 검색광고 운영 기반의 전체 Do 범위로 SaaS 앱 셸, DB/저장소, Search Ad read-only 클라이언트, 보고서 파서/보관함, 상태 수집, 규칙 엔진, 실행 미리보기/write gate, 운영 배포 검증을 구현했다.
 
 ---
 
@@ -38,7 +38,7 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 | 상태 수집과 캠페인/광고그룹 화면 | `module-5` | 완료 |
 | 규칙 엔진과 성과 기준 | `module-6` | 완료 |
 | 실행 미리보기와 write gate | `module-7` | 완료 |
-| 운영 검증과 배포 | `module-8` | 로컬 검증 완료, 운영 반영 대기 |
+| 운영 검증과 배포 | `module-8` | 완료 |
 
 ---
 
@@ -116,7 +116,10 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 ### module-8 운영 검증
 
 - 로컬 타입 검사, 테스트, 빌드, 보안 감사, route/API smoke를 통과했다.
-- GitHub push와 Vercel/Railway 운영 반영은 별도 Git 단계에서 진행한다.
+- GitHub `main`에 커밋을 올렸고 Vercel production alias `marketcrew.app`, Railway `api.marketcrew.app` 배포 상태를 확인했다.
+- 운영 보호 라우트는 로그인 전 307로 `/login`에 연결되고, 보호 API는 인증 없이 401을 반환한다.
+- 운영 Railway API에서 Search Ad 상태 동기화를 실행해 캠페인 6개, 광고그룹 56개, 키워드 2,879개, 총 2,941개 스냅샷 저장을 확인했다.
+- 운영 보고서 동기화 API는 200으로 응답했다.
 
 ---
 
@@ -125,7 +128,7 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 | Check | Result |
 |-------|--------|
 | `npm run typecheck` | 통과 |
-| `npm test -- --run` | 통과, 5 files / 11 tests |
+| `npm test -- --run` | 통과, 6 files / 12 tests |
 | `npm run build` | 통과 |
 | `npm audit --omit=dev` | 0 vulnerabilities |
 | `git diff --check` | 통과 |
@@ -143,15 +146,19 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 | `POST /api/search-ad/action-preview` | 200 |
 | `POST /api/search-ad/action-apply` | 423, write gate blocked |
 | `POST /api/search-ad/rules/rebuild` | 200 |
+| `npm run smoke:prod` | 통과, Railway API 상태/Vercel bridge/대표 로그인 보호 |
+| `vercel inspect https://marketcrew-jpwd1xfk0-aipressos-projects.vercel.app` | Ready, `marketcrew.app` alias 연결 |
+| `railway status` | `marketcrew-api` Online, `https://api.marketcrew.app` |
+| `POST https://api.marketcrew.app/api/search-ad/state/sync` | 200, 캠페인 6개/광고그룹 56개/키워드 2,879개/저장 2,941개 |
+| `POST https://api.marketcrew.app/api/search-ad/reports/sync` | 200 |
 
 ---
 
 ## Remaining Work
 
-1. GitHub push 후 Vercel/Railway 자동 배포를 확인한다.
-2. 운영 사이트 `marketcrew.app`와 API `api.marketcrew.app`에서 smoke를 진행한다.
-3. 다음 PDCA Check에서 실제 네이버 API 보고서/상태 수집을 운영 DB에 수행하고 누락된 매핑 기준을 보강한다.
+1. 다음 PDCA Check에서 설계 대비 누락, 화면 흐름, 운영 API 응답 형태를 점검한다.
+2. 운영 데이터가 쌓이면 브랜드/광고유형 매핑 누락 케이스와 규칙 기준값을 보정한다.
 
 ## MVP Progress
 
-1차 MVP 대비 진행율은 **90%**다. 8개 구현 모듈의 로컬 구현과 검증은 완료했고, 운영 배포와 실제 Search Ad 데이터 수집 확인이 남아 있다.
+1차 MVP 대비 진행율은 **100%**다. module-1~8 구현, 로컬 검증, GitHub push, Vercel/Railway 배포, 운영 Search Ad 상태/보고서 동기화 확인까지 완료했다.
