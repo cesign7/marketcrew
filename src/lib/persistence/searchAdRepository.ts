@@ -1804,6 +1804,7 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
     id: string;
     target_type: "campaign" | "adgroup";
     target_id: string;
+    target_name: string | null;
     requested_action: SearchAdRequestedAction;
     before_state: SearchAdActionPreview["beforeState"];
     after_state: SearchAdActionPreview["afterState"];
@@ -1812,9 +1813,39 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
     created_at: string | Date;
   }>(
     `
-      SELECT id, target_type, target_id, requested_action, before_state, after_state, impact_summary, write_gate_open, created_at
-      FROM search_ad_action_previews
-      ORDER BY created_at DESC
+      WITH latest_campaigns AS (
+        SELECT DISTINCT ON (provider_campaign_id)
+          provider_campaign_id, name
+        FROM search_ad_campaign_snapshots
+        ORDER BY provider_campaign_id, collected_at DESC
+      ),
+      latest_adgroups AS (
+        SELECT DISTINCT ON (provider_adgroup_id)
+          provider_adgroup_id, name
+        FROM search_ad_adgroup_snapshots
+        ORDER BY provider_adgroup_id, collected_at DESC
+      )
+      SELECT
+        p.id,
+        p.target_type,
+        p.target_id,
+        COALESCE(
+          CASE
+            WHEN p.target_type = 'campaign' THEN c.name
+            WHEN p.target_type = 'adgroup' THEN a.name
+          END,
+          p.target_id
+        ) AS target_name,
+        p.requested_action,
+        p.before_state,
+        p.after_state,
+        p.impact_summary,
+        p.write_gate_open,
+        p.created_at
+      FROM search_ad_action_previews p
+      LEFT JOIN latest_campaigns c ON p.target_type = 'campaign' AND c.provider_campaign_id = p.target_id
+      LEFT JOIN latest_adgroups a ON p.target_type = 'adgroup' AND a.provider_adgroup_id = p.target_id
+      ORDER BY p.created_at DESC
       LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
     `,
   );
@@ -1826,12 +1857,41 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
     error_message: string | null;
     created_at: string | Date;
     target_id: string;
+    target_name: string | null;
     requested_action: SearchAdRequestedAction;
   }>(
     `
-      SELECT l.id, l.preview_id, l.status, l.error_message, l.created_at, p.target_id, p.requested_action
+      WITH latest_campaigns AS (
+        SELECT DISTINCT ON (provider_campaign_id)
+          provider_campaign_id, name
+        FROM search_ad_campaign_snapshots
+        ORDER BY provider_campaign_id, collected_at DESC
+      ),
+      latest_adgroups AS (
+        SELECT DISTINCT ON (provider_adgroup_id)
+          provider_adgroup_id, name
+        FROM search_ad_adgroup_snapshots
+        ORDER BY provider_adgroup_id, collected_at DESC
+      )
+      SELECT
+        l.id,
+        l.preview_id,
+        l.status,
+        l.error_message,
+        l.created_at,
+        p.target_id,
+        COALESCE(
+          CASE
+            WHEN p.target_type = 'campaign' THEN c.name
+            WHEN p.target_type = 'adgroup' THEN a.name
+          END,
+          p.target_id
+        ) AS target_name,
+        p.requested_action
       FROM search_ad_action_logs l
       JOIN search_ad_action_previews p ON p.id = l.preview_id
+      LEFT JOIN latest_campaigns c ON p.target_type = 'campaign' AND c.provider_campaign_id = p.target_id
+      LEFT JOIN latest_adgroups a ON p.target_type = 'adgroup' AND a.provider_adgroup_id = p.target_id
       ORDER BY l.created_at DESC
       LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
     `,
@@ -1842,7 +1902,7 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
       id: row.id,
       targetType: row.target_type,
       targetId: row.target_id,
-      targetLabel: row.target_id,
+      targetLabel: row.target_name ?? row.target_id,
       requestedAction: row.requested_action,
       beforeState: row.before_state,
       afterState: row.after_state,
@@ -1853,7 +1913,7 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
     logs: logs.rows.map((row) => ({
       id: row.id,
       previewId: row.preview_id,
-      targetLabel: row.target_id,
+      targetLabel: row.target_name ?? row.target_id,
       actionLabel: row.requested_action === "turn_on" ? "켜기 요청" : "끄기 요청",
       status: row.status,
       reason: row.error_message ?? "",
