@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
 import { ALL_SEARCH_AD_REPORT_TYPES, SEARCH_AD_MAX_REPORT_RETENTION_DAYS } from "@/features/search-ad/domain/reportRetention";
 import type { SearchAdReportType } from "@/features/search-ad/domain/types";
@@ -48,10 +48,36 @@ type BackfillResponse =
       ok: false;
     };
 
+type BackfillJobStatus = "queued" | "running" | "waiting" | "completed" | "failed";
+
+type BackfillJobRun = {
+  completedAt?: string;
+  createdAt: string;
+  errorMessage?: string;
+  id: string;
+  resultJson?: Record<string, unknown>;
+  status: BackfillJobStatus;
+  updatedAt: string;
+};
+
+type BackfillJobResponse =
+  | {
+      data: {
+        run: BackfillJobRun | null;
+      };
+      ok: true;
+    }
+  | {
+      code?: string;
+      message?: string;
+      ok: false;
+    };
+
 const FAST_BACKFILL_MAX_DATES = 92;
 const FAST_BACKFILL_MAX_CREATES = 120;
 const FAST_BACKFILL_MAX_DOWNLOADS = 60;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const ACTIVE_WAITING_JOB_MS = 90_000;
 
 export const BACKFILL_REPORT_TYPE_OPTIONS: Array<{ label: string; value: SearchAdReportType }> = ALL_SEARCH_AD_REPORT_TYPES.map((value) => ({
   label: getReportTypeLabel(value),
@@ -83,6 +109,15 @@ export function buildBackfillRequestBody(input: BackfillRequestInput) {
   };
 }
 
+export function buildBackgroundBackfillRequestBody(input: BackfillRequestInput) {
+  return {
+    ...buildBackfillRequestBody(input),
+    background: true,
+    createMissing: true,
+    dryRun: false,
+  };
+}
+
 export function getQuickBackfillLimits(input: { fromDate: string; reportTypes: SearchAdReportType[]; toDate: string }) {
   const selectedDates = countBackfillDates(input.fromDate, input.toDate);
   const maxDates = selectedDates > 0 ? Math.min(selectedDates, FAST_BACKFILL_MAX_DATES) : 1;
@@ -104,11 +139,62 @@ export function getBackfillStatusLabel(status: SearchAdBackfillResultStatus) {
 export function ReportBackfillPanel() {
   const [form] = useState<BackfillFormState>(() => createFullBackfillFormState());
   const [loadingMode, setLoadingMode] = useState<BackfillMode | null>(null);
+  const [jobRun, setJobRun] = useState<BackfillJobRun | null>(null);
   const [response, setResponse] = useState<BackfillResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const requestSequence = useRef(0);
   const quickLimits = useMemo(() => getQuickBackfillLimits(form), [form]);
-  const visibleResults = useMemo(() => (response?.ok ? response.data.results.slice(0, 240) : []), [response]);
+  const jobResponse = useMemo(() => getBackfillResponseFromRun(jobRun), [jobRun]);
+  const displayResponse = jobResponse ?? response;
+  const activeJob = jobRun && isActiveBackfillJob(jobRun);
+  const visibleResults = useMemo(() => (displayResponse?.ok ? displayResponse.data.results.slice(0, 240) : []), [displayResponse]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLatestRun() {
+      try {
+        const result = await fetch("/api/search-ad/reports/backfill", { cache: "no-store" });
+        const json = (await result.json()) as BackfillJobResponse;
+        if (!cancelled && json.ok) {
+          setJobRun(json.data.run);
+        }
+      } catch {
+        // 최신 작업 확인은 보조 정보라서 화면 전체 오류로 올리지 않습니다.
+      }
+    }
+
+    void loadLatestRun();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!jobRun || !isActiveBackfillJob(jobRun)) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const timer = window.setInterval(async () => {
+      try {
+        const result = await fetch(`/api/search-ad/reports/backfill?runId=${encodeURIComponent(jobRun.id)}`, { cache: "no-store" });
+        const json = (await result.json()) as BackfillJobResponse;
+        if (!cancelled && json.ok) {
+          setJobRun(json.data.run);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("진행상황을 잠시 확인하지 못했습니다. 서버 작업은 계속 진행될 수 있습니다.");
+        }
+      }
+    }, 5_000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [jobRun?.id, jobRun?.status]);
 
   async function runBackfill(mode: BackfillMode) {
     const requestId = requestSequence.current + 1;
@@ -116,6 +202,25 @@ export function ReportBackfillPanel() {
     setLoadingMode(mode);
     setError(null);
     try {
+      if (mode === "recover-all") {
+        const result = await fetch("/api/search-ad/reports/backfill", {
+          body: JSON.stringify(buildBackgroundBackfillRequestBody({ ...form, mode })),
+          headers: { "content-type": "application/json" },
+          method: "POST",
+        });
+        const json = (await result.json()) as BackfillJobResponse;
+        if (requestId !== requestSequence.current) {
+          return;
+        }
+        if (!json.ok) {
+          setError(json.message || "보고서 복구 작업을 시작하지 못했습니다.");
+          return;
+        }
+        setJobRun(json.data.run);
+        setResponse(null);
+        return;
+      }
+
       const result = await fetch("/api/search-ad/reports/backfill", {
         body: JSON.stringify(buildBackfillRequestBody({ ...form, mode })),
         headers: { "content-type": "application/json" },
@@ -166,14 +271,14 @@ export function ReportBackfillPanel() {
         </div>
         <div className="backfill-fast-row">
           <div>
-            <strong>이번 실행: 최대 {quickLimits.maxDates.toLocaleString("ko-KR")}일 구간 처리</strong>
+            <strong>서버 자동 복구: 최대 {quickLimits.maxDates.toLocaleString("ko-KR")}일씩 반복 처리</strong>
             <p>
-              준비 완료 보고서는 최대 {quickLimits.maxDownloads.toLocaleString("ko-KR")}건 저장하고, 누락 보고서는 최대 {quickLimits.maxCreates.toLocaleString("ko-KR")}건 생성 요청합니다.
-              {quickLimits.truncatedDates > 0 ? ` 전체 기간은 길어서 다음 실행으로 이어받습니다.` : ""}
+              한 번 시작하면 DB에 작업 기록을 남기고, 준비 완료 보고서 저장과 누락 보고서 생성 요청을 서버가 자동으로 이어갑니다.
+              {quickLimits.truncatedDates > 0 ? ` 긴 기간도 남은 날짜부터 계속 이어받습니다.` : ""}
             </p>
           </div>
-          <button className="primary-button" disabled={Boolean(loadingMode) || quickLimits.selectedDates === 0} onClick={() => runBackfill("recover-all")} type="button">
-            {loadingMode === "recover-all" ? "저장 중" : "전체 저장 / 이어받기"}
+          <button className="primary-button" disabled={Boolean(loadingMode) || Boolean(activeJob) || quickLimits.selectedDates === 0} onClick={() => runBackfill("recover-all")} type="button">
+            {loadingMode === "recover-all" ? "작업 시작 중" : activeJob ? "서버에서 복구 중" : "전체 저장 / 이어받기"}
           </button>
         </div>
         <div className="backfill-actions">
@@ -182,18 +287,19 @@ export function ReportBackfillPanel() {
           </button>
         </div>
         {error ? <p className="state-message is-error">{error}</p> : null}
-        {response?.ok ? <p className="state-message is-success">{getBackfillNextStep(response.data.summary)}</p> : null}
+        {jobRun ? <p className={`state-message ${getBackfillJobMessageClass(jobRun)}`}>{getBackfillJobMessage(jobRun)}</p> : null}
+        {displayResponse?.ok && !activeJob ? <p className="state-message is-success">{getBackfillNextStep(displayResponse.data.summary)}</p> : null}
       </section>
 
-      {response?.ok ? (
+      {displayResponse?.ok ? (
         <>
-          <BackfillSummaryCards summary={response.data.summary} />
+          <BackfillSummaryCards summary={displayResponse.data.summary} />
           <section className="content-panel">
             <div className="section-heading">
               <div>
                 <h2>보고서 상태</h2>
                 <p>
-                  {response.data.plan.fromDate}부터 {response.data.plan.toDate}까지 남은 {response.data.plan.totalItems.toLocaleString("ko-KR")}건을 확인했습니다.
+                  {displayResponse.data.plan.fromDate}부터 {displayResponse.data.plan.toDate}까지 남은 {displayResponse.data.plan.totalItems.toLocaleString("ko-KR")}건을 확인했습니다.
                 </p>
               </div>
             </div>
@@ -221,7 +327,7 @@ export function ReportBackfillPanel() {
                 </tbody>
               </table>
             </div>
-            {response.data.results.length > visibleResults.length ? <p className="empty-text">표시는 최근 {visibleResults.length.toLocaleString("ko-KR")}건까지만 보여줍니다.</p> : null}
+            {displayResponse.data.results.length > visibleResults.length ? <p className="empty-text">표시는 최근 {visibleResults.length.toLocaleString("ko-KR")}건까지만 보여줍니다.</p> : null}
           </section>
         </>
       ) : null}
@@ -293,6 +399,83 @@ function getBackfillNextStep(summary: SearchAdBackfillSummary) {
     return "네이버가 보고서를 생성 중입니다. 잠시 뒤 계획을 다시 확인하세요.";
   }
   return "선택한 범위에서 추가로 처리할 보고서가 없습니다.";
+}
+
+function getBackfillResponseFromRun(run: BackfillJobRun | null): BackfillResponse | null {
+  const result = run?.resultJson;
+  if (!isBackfillResponse(result)) {
+    return null;
+  }
+
+  return result;
+}
+
+function isBackfillResponse(value: unknown): value is BackfillResponse {
+  if (!value || typeof value !== "object" || !("ok" in value)) {
+    return false;
+  }
+
+  const ok = (value as { ok?: unknown }).ok;
+  return ok === true || ok === false;
+}
+
+function isActiveBackfillJob(run: BackfillJobRun) {
+  if (run.status === "queued" || run.status === "running") {
+    return true;
+  }
+  if (run.status !== "waiting") {
+    return false;
+  }
+
+  return Date.now() - Date.parse(run.updatedAt) < ACTIVE_WAITING_JOB_MS;
+}
+
+function getBackfillJobMessage(run: BackfillJobRun) {
+  const response = getBackfillResponseFromRun(run);
+  const jobMeta = getBackfillJobMeta(run);
+  if (run.status === "failed") {
+    return run.errorMessage ?? (response && !response.ok ? response.message : undefined) ?? "보고서 복구 작업이 실패했습니다.";
+  }
+  if (run.status === "completed") {
+    return "전체 복구 작업이 끝났습니다. 이미 저장된 보고서는 중복 저장하지 않았습니다.";
+  }
+  if (jobMeta?.message) {
+    return `${getBackfillJobStatusLabel(run.status)}: ${jobMeta.message}`;
+  }
+  if (run.status === "waiting") {
+    return "자동 대기 중: 대기가 오래 이어지면 다시 전체 저장 / 이어받기로 남은 보고서부터 계속할 수 있습니다.";
+  }
+  return `${getBackfillJobStatusLabel(run.status)}: 화면을 닫아도 서버가 남은 보고서를 계속 처리합니다.`;
+}
+
+function getBackfillJobMessageClass(run: BackfillJobRun) {
+  if (run.status === "failed") {
+    return "is-error";
+  }
+  if (run.status === "completed") {
+    return "is-success";
+  }
+  return "is-warning";
+}
+
+function getBackfillJobMeta(run: BackfillJobRun) {
+  const job = run.resultJson?.job;
+  if (!job || typeof job !== "object") {
+    return null;
+  }
+
+  return job as { message?: string; nextAttemptAt?: string; updatedAt?: string };
+}
+
+function getBackfillJobStatusLabel(status: BackfillJobStatus) {
+  const labels: Record<BackfillJobStatus, string> = {
+    completed: "완료",
+    failed: "실패",
+    queued: "대기 중",
+    running: "실행 중",
+    waiting: "자동 대기 중",
+  };
+  return labels[status];
 }
 
 export function createFullBackfillFormState(todayKst?: string): BackfillFormState {

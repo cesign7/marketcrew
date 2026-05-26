@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { hasDatabaseUrl, query } from "./postgres";
 import {
   DEFAULT_SEARCH_AD_FILTERS,
@@ -94,6 +95,32 @@ type DataCoverageRecord = {
   startDate: string;
   endDate: string;
   actualDays: number;
+};
+
+export type SearchAdBackfillRunStatus = "queued" | "running" | "waiting" | "completed" | "failed";
+
+export type SearchAdBackfillRunRecord = {
+  completedAt?: string;
+  createdAt: string;
+  errorMessage?: string;
+  id: string;
+  inputJson: Record<string, unknown>;
+  resultJson?: Record<string, unknown>;
+  startedAt?: string;
+  status: SearchAdBackfillRunStatus;
+  updatedAt: string;
+};
+
+type BackfillRunRow = {
+  completed_at: string | Date | null;
+  created_at: string | Date;
+  error_message: string | null;
+  id: string;
+  input_json: Record<string, unknown>;
+  result_json: Record<string, unknown> | null;
+  started_at: string | Date | null;
+  status: SearchAdBackfillRunStatus;
+  updated_at: string | Date;
 };
 
 type AdCreativeLookupValue = {
@@ -854,6 +881,143 @@ export async function listSavedSearchAdReportKeys(): Promise<Array<{ reportType:
   }));
 }
 
+export async function createSearchAdBackfillRun(inputJson: Record<string, unknown>): Promise<SearchAdBackfillRunRecord> {
+  if (!hasDatabaseUrl()) {
+    throw new Error("SEARCH_AD_DATABASE_MISSING");
+  }
+
+  await ensureSearchAdSchema();
+  const id = `search-ad-backfill-${randomUUID()}`;
+  const result = await query<BackfillRunRow>(
+    `
+      INSERT INTO search_ad_backfill_runs (id, status, input_json)
+      VALUES ($1, 'queued', $2::jsonb)
+      RETURNING id, status, input_json, result_json, error_message, created_at, started_at, completed_at, updated_at
+    `,
+    [id, JSON.stringify(inputJson)],
+  );
+
+  return mapBackfillRunRow(result.rows[0]);
+}
+
+export async function getSearchAdBackfillRun(id: string): Promise<SearchAdBackfillRunRecord | undefined> {
+  if (!hasDatabaseUrl()) {
+    return undefined;
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<BackfillRunRow>(
+    `
+      SELECT id, status, input_json, result_json, error_message, created_at, started_at, completed_at, updated_at
+      FROM search_ad_backfill_runs
+      WHERE id = $1
+    `,
+    [id],
+  );
+
+  return result.rows[0] ? mapBackfillRunRow(result.rows[0]) : undefined;
+}
+
+export async function getLatestSearchAdBackfillRun(): Promise<SearchAdBackfillRunRecord | undefined> {
+  if (!hasDatabaseUrl()) {
+    return undefined;
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<BackfillRunRow>(`
+    SELECT id, status, input_json, result_json, error_message, created_at, started_at, completed_at, updated_at
+    FROM search_ad_backfill_runs
+    ORDER BY updated_at DESC
+    LIMIT 1
+  `);
+
+  return result.rows[0] ? mapBackfillRunRow(result.rows[0]) : undefined;
+}
+
+export async function markSearchAdBackfillRunRunning(id: string): Promise<SearchAdBackfillRunRecord | undefined> {
+  if (!hasDatabaseUrl()) {
+    return undefined;
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<BackfillRunRow>(
+    `
+      UPDATE search_ad_backfill_runs
+      SET status = 'running', started_at = COALESCE(started_at, now()), updated_at = now()
+      WHERE id = $1
+      RETURNING id, status, input_json, result_json, error_message, created_at, started_at, completed_at, updated_at
+    `,
+    [id],
+  );
+
+  return result.rows[0] ? mapBackfillRunRow(result.rows[0]) : undefined;
+}
+
+export async function updateSearchAdBackfillRunProgress(
+  id: string,
+  resultJson: Record<string, unknown>,
+  status: Extract<SearchAdBackfillRunStatus, "running" | "waiting"> = "running",
+): Promise<SearchAdBackfillRunRecord | undefined> {
+  if (!hasDatabaseUrl()) {
+    return undefined;
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<BackfillRunRow>(
+    `
+      UPDATE search_ad_backfill_runs
+      SET status = $2, result_json = $3::jsonb, updated_at = now()
+      WHERE id = $1
+      RETURNING id, status, input_json, result_json, error_message, created_at, started_at, completed_at, updated_at
+    `,
+    [id, status, JSON.stringify(resultJson)],
+  );
+
+  return result.rows[0] ? mapBackfillRunRow(result.rows[0]) : undefined;
+}
+
+export async function completeSearchAdBackfillRun(id: string, resultJson: Record<string, unknown>): Promise<SearchAdBackfillRunRecord | undefined> {
+  if (!hasDatabaseUrl()) {
+    return undefined;
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<BackfillRunRow>(
+    `
+      UPDATE search_ad_backfill_runs
+      SET status = 'completed', result_json = $2::jsonb, completed_at = now(), updated_at = now()
+      WHERE id = $1
+      RETURNING id, status, input_json, result_json, error_message, created_at, started_at, completed_at, updated_at
+    `,
+    [id, JSON.stringify(resultJson)],
+  );
+
+  return result.rows[0] ? mapBackfillRunRow(result.rows[0]) : undefined;
+}
+
+export async function failSearchAdBackfillRun(
+  id: string,
+  errorMessage: string,
+  resultJson?: Record<string, unknown>,
+): Promise<SearchAdBackfillRunRecord | undefined> {
+  if (!hasDatabaseUrl()) {
+    return undefined;
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<BackfillRunRow>(
+    `
+      UPDATE search_ad_backfill_runs
+      SET status = 'failed', error_message = $2, result_json = COALESCE($3::jsonb, result_json), completed_at = now(), updated_at = now()
+      WHERE id = $1
+      RETURNING id, status, input_json, result_json, error_message, created_at, started_at, completed_at, updated_at
+    `,
+    [id, errorMessage, resultJson ? JSON.stringify(resultJson) : null],
+  );
+
+  return result.rows[0] ? mapBackfillRunRow(result.rows[0]) : undefined;
+}
+
 async function getLatestStateBrandLookup(): Promise<StateBrandLookup> {
   const lookup: StateBrandLookup = {
     campaigns: new Map(),
@@ -1082,6 +1246,18 @@ export async function ensureSearchAdSchema() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 
+    CREATE TABLE IF NOT EXISTS search_ad_backfill_runs (
+      id TEXT PRIMARY KEY,
+      status TEXT NOT NULL CHECK (status IN ('queued', 'running', 'waiting', 'completed', 'failed')),
+      input_json JSONB NOT NULL,
+      result_json JSONB,
+      error_message TEXT,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      started_at TIMESTAMPTZ,
+      completed_at TIMESTAMPTZ,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
     CREATE TABLE IF NOT EXISTS search_ad_campaign_snapshots (
       id TEXT PRIMARY KEY,
       provider_campaign_id TEXT NOT NULL,
@@ -1208,6 +1384,9 @@ export async function ensureSearchAdSchema() {
 
     CREATE INDEX IF NOT EXISTS search_ad_normalized_brand_type_date_idx
       ON search_ad_report_normalized_rows (brand_key, ad_product_type, source_date DESC);
+
+    CREATE INDEX IF NOT EXISTS search_ad_backfill_runs_updated_idx
+      ON search_ad_backfill_runs (updated_at DESC);
 
     CREATE INDEX IF NOT EXISTS search_ad_rule_results_brand_category_idx
       ON search_ad_rule_results (brand_key, ad_product_type, category, created_at DESC);
@@ -1803,6 +1982,20 @@ function mapReportJobRow(row: ReportJobRow): SearchAdReportJobRecord {
       lowEfficiencyCount: 0,
       goodPerformanceCount: 0,
     },
+  };
+}
+
+function mapBackfillRunRow(row: BackfillRunRow): SearchAdBackfillRunRecord {
+  return {
+    completedAt: row.completed_at ? toIso(row.completed_at) : undefined,
+    createdAt: toIso(row.created_at),
+    errorMessage: row.error_message ?? undefined,
+    id: row.id,
+    inputJson: row.input_json,
+    resultJson: row.result_json ?? undefined,
+    startedAt: row.started_at ? toIso(row.started_at) : undefined,
+    status: row.status,
+    updatedAt: toIso(row.updated_at),
   };
 }
 

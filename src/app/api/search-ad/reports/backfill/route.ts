@@ -3,8 +3,25 @@ import { isSearchAdReportType } from "@/features/search-ad/domain/reportTypes";
 import type { SearchAdReportType } from "@/features/search-ad/domain/types";
 import { proxyRequestToBackend } from "@/lib/backend/proxy";
 import { runSearchAdReportBackfill } from "@/server/search-ad/reportBackfill";
+import { getSearchAdReportBackfillJob, startSearchAdReportBackfillJob } from "@/server/search-ad/reportBackfillJob";
 
 export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true, timeoutMs: 10_000 });
+  if (proxied) {
+    return proxied;
+  }
+
+  try {
+    const url = new URL(request.url);
+    const result = await getSearchAdReportBackfillJob(url.searchParams.get("runId") ?? undefined);
+    return NextResponse.json(result);
+  } catch (error) {
+    const message = getBackfillErrorMessage(error);
+    return NextResponse.json({ ok: false, code: "SEARCH_AD_BACKFILL_STATUS_FAILED", message }, { status: 500 });
+  }
+}
 
 export async function POST(request: Request) {
   const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true, timeoutMs: 120_000 });
@@ -13,6 +30,7 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as {
+    background?: boolean;
     createMissing?: boolean;
     dryRun?: boolean;
     fromDate?: string;
@@ -25,16 +43,26 @@ export async function POST(request: Request) {
   };
 
   try {
-    const result = await runSearchAdReportBackfill({
+    const reportTypes = body.reportTypes?.filter(isSearchAdReportType) as SearchAdReportType[] | undefined;
+    const input = {
       createMissing: body.createMissing === true,
       dryRun: body.dryRun ?? true,
       fromDate: body.fromDate,
       maxCreates: positiveInteger(body.maxCreates),
       maxDates: positiveInteger(body.maxDates),
       maxDownloads: positiveInteger(body.maxDownloads),
-      reportTypes: body.reportTypes?.filter(isSearchAdReportType) as SearchAdReportType[] | undefined,
+      reportTypes,
       skipSaved: body.skipSaved === true,
       toDate: body.toDate,
+    };
+
+    if (body.background === true) {
+      const result = await startSearchAdReportBackfillJob(input);
+      return NextResponse.json(result, { status: result.ok ? 202 : 500 });
+    }
+
+    const result = await runSearchAdReportBackfill({
+      ...input,
     });
 
     if (!result.ok) {

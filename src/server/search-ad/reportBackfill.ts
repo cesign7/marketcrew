@@ -83,7 +83,7 @@ export type SearchAdBackfillSummary = {
   skippedDownloads: number;
 };
 
-type SearchAdBackfillRunSuccess = {
+export type SearchAdBackfillRunSuccess = {
   data: {
     plan: SearchAdBackfillPlan;
     results: SearchAdBackfillItemResult[];
@@ -92,7 +92,7 @@ type SearchAdBackfillRunSuccess = {
   ok: true;
 };
 
-type SearchAdBackfillRunFailure = {
+export type SearchAdBackfillRunFailure = {
   code: "SEARCH_AD_CREDENTIALS_MISSING" | "SEARCH_AD_DATABASE_MISSING";
   message: string;
   ok: false;

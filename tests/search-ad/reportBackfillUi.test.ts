@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { BACKFILL_REPORT_TYPE_OPTIONS, buildBackfillRequestBody, createFullBackfillFormState, getBackfillStatusLabel, getQuickBackfillLimits } from "@/components/search-ad/ReportBackfillPanel";
+import {
+  BACKFILL_REPORT_TYPE_OPTIONS,
+  buildBackfillRequestBody,
+  buildBackgroundBackfillRequestBody,
+  createFullBackfillFormState,
+  getBackfillStatusLabel,
+  getQuickBackfillLimits,
+} from "@/components/search-ad/ReportBackfillPanel";
 import { getMarketingNavItems } from "@/components/layout/MarketingShell";
 
 describe("report backfill UI helpers", () => {
@@ -27,13 +34,13 @@ describe("report backfill UI helpers", () => {
 
   it("전체 저장 요청은 누락 생성과 저장 건너뛰기 기준을 함께 보낸다", () => {
     expect(
-      buildBackfillRequestBody({
+      buildBackgroundBackfillRequestBody({
         fromDate: "2026-05-19",
         mode: "recover-all",
         reportTypes: ["AD"],
         toDate: "2026-05-25",
       }),
-    ).toMatchObject({ createMissing: true, dryRun: false, skipSaved: true });
+    ).toMatchObject({ background: true, createMissing: true, dryRun: false, skipSaved: true });
   });
 
   it("화면에는 대표가 읽을 수 있는 보고서 이름과 상태명이 노출된다", () => {
