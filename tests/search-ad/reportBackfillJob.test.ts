@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SEARCH_AD_BACKFILL_SAFETY_LIMITS } from "@/features/search-ad/domain/backfillSafety";
-import { getNextDelayMs, getProgressMessage } from "@/server/search-ad/reportBackfillJob";
+import { getNextDelayMs, getProgressMessage, shouldAutoResumeBackfillRun } from "@/server/search-ad/reportBackfillJob";
 import type { SearchAdBackfillRunSuccess } from "@/server/search-ad/reportBackfill";
+import type { SearchAdBackfillRunRecord } from "@/lib/persistence/searchAdRepository";
 
 describe("search ad report backfill background scheduler", () => {
   afterEach(() => {
@@ -46,6 +47,40 @@ describe("search ad report backfill background scheduler", () => {
 
     expect(getNextDelayMs(result, safetyWindow, buildSafetyLimits())).toBe(60_000);
     expect(getProgressMessage(result, safetyWindow, buildSafetyLimits())).toContain("네이버가 보고서를 생성");
+  });
+
+  it("배포 재시작 뒤 오래 갱신되지 않은 running 작업은 조회 시 자동 재개 대상이 된다", () => {
+    const now = Date.parse("2026-05-26T13:00:00.000Z");
+
+    expect(
+      shouldAutoResumeBackfillRun(
+        buildRun({
+          status: "running",
+          updatedAt: "2026-05-26T12:55:00.000Z",
+        }),
+        now,
+      ),
+    ).toBe(true);
+    expect(
+      shouldAutoResumeBackfillRun(
+        buildRun({
+          status: "running",
+          updatedAt: "2026-05-26T12:59:30.000Z",
+        }),
+        now,
+      ),
+    ).toBe(false);
+  });
+
+  it("대기 작업은 다음 시도 시간이 지난 뒤에만 자동 재개한다", () => {
+    const run = buildRun({
+      resultJson: { job: { nextAttemptAt: "2026-05-26T13:01:00.000Z" } },
+      status: "waiting",
+      updatedAt: "2026-05-26T12:55:00.000Z",
+    });
+
+    expect(shouldAutoResumeBackfillRun(run, Date.parse("2026-05-26T13:00:30.000Z"))).toBe(false);
+    expect(shouldAutoResumeBackfillRun(run, Date.parse("2026-05-26T13:01:00.000Z"))).toBe(true);
   });
 });
 
@@ -93,5 +128,25 @@ function buildBackfillResult(summary: Partial<SearchAdBackfillRunSuccess["data"]
       },
     },
     ok: true,
+  };
+}
+
+function buildRun(overrides: Partial<SearchAdBackfillRunRecord>): SearchAdBackfillRunRecord {
+  return {
+    completedAt: undefined,
+    createdAt: "2026-05-26T12:50:00.000Z",
+    errorMessage: undefined,
+    id: "search-ad-backfill-test",
+    inputJson: {
+      createMissing: true,
+      dryRun: false,
+      reportTypes: ["AD"],
+      skipSaved: true,
+    },
+    resultJson: undefined,
+    startedAt: "2026-05-26T12:50:00.000Z",
+    status: "running",
+    updatedAt: "2026-05-26T12:55:00.000Z",
+    ...overrides,
   };
 }

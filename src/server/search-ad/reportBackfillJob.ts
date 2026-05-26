@@ -45,6 +45,7 @@ type StoredBackfillResult = (SearchAdBackfillRunSuccess | SearchAdBackfillRunFai
 const activeRuns = new Set<string>();
 const MAX_BACKGROUND_CYCLES = 240;
 const HOUR_MS = 60 * 60 * 1000;
+export const BACKFILL_RUNNING_STALE_MS = 2 * 60 * 1000;
 
 type BackfillSafetyWindow = {
   createdThisHour: number;
@@ -75,6 +76,13 @@ export async function startSearchAdReportBackfillJob(input: BackgroundBackfillIn
 
 export async function getSearchAdReportBackfillJob(runId?: string): Promise<{ data: { run: SearchAdBackfillRunRecord | null }; ok: true }> {
   const run = runId ? await getSearchAdBackfillRun(runId) : await getLatestSearchAdBackfillRun();
+  if (run && shouldAutoResumeBackfillRun(run)) {
+    const input = normalizeBackgroundInput(run.inputJson as BackgroundBackfillInput);
+    const resumedRun = (await markSearchAdBackfillRunRunning(run.id, input as Record<string, unknown>)) ?? run;
+    queueBackfillRun(run.id, input);
+    return { data: { run: resumedRun }, ok: true };
+  }
+
   return { data: { run: run ?? null }, ok: true };
 }
 
@@ -185,6 +193,26 @@ function normalizeBackgroundInput(input: BackgroundBackfillInput): BackgroundBac
 
 function isResumableRun(run: SearchAdBackfillRunRecord) {
   return run.status === "queued" || run.status === "running" || run.status === "waiting";
+}
+
+export function shouldAutoResumeBackfillRun(run: SearchAdBackfillRunRecord, now = Date.now()) {
+  if (!isResumableRun(run) || activeRuns.has(run.id)) {
+    return false;
+  }
+
+  if (run.status === "queued") {
+    return true;
+  }
+
+  if (run.status === "waiting") {
+    const nextAttemptAt = readNextAttemptAt(run.resultJson);
+    if (nextAttemptAt !== undefined) {
+      return nextAttemptAt <= now;
+    }
+  }
+
+  const updatedAt = Date.parse(run.updatedAt);
+  return Number.isFinite(updatedAt) && now - updatedAt >= BACKFILL_RUNNING_STALE_MS;
 }
 
 function attachJobMeta(
@@ -317,6 +345,19 @@ function readSafetyWindow(resultJson?: Record<string, unknown>): BackfillSafetyW
     createdThisHour: toNonNegativeInteger(window.createdThisHour),
     hourStartedAt: window.hourStartedAt,
   };
+}
+
+function readNextAttemptAt(resultJson?: Record<string, unknown>) {
+  const job = resultJson?.job;
+  if (!job || typeof job !== "object") {
+    return undefined;
+  }
+  const raw = (job as { nextAttemptAt?: unknown }).nextAttemptAt;
+  if (typeof raw !== "string") {
+    return undefined;
+  }
+  const timestamp = Date.parse(raw);
+  return Number.isFinite(timestamp) ? timestamp : undefined;
 }
 
 function toNonNegativeInteger(value: unknown) {
