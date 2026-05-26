@@ -46,6 +46,7 @@ const activeRuns = new Set<string>();
 const MAX_BACKGROUND_CYCLES = 240;
 const HOUR_MS = 60 * 60 * 1000;
 export const BACKFILL_RUNNING_STALE_MS = 2 * 60 * 1000;
+export const SEARCH_AD_REPORT_CREATE_RECHECK_BATCH = 80;
 
 type BackfillSafetyWindow = {
   createdThisHour: number;
@@ -289,12 +290,13 @@ function hasDeferredDownloads(summary: SearchAdBackfillRunSuccess["data"]["summa
   return summary.maxDownloads > 0 && summary.skippedDownloads > 0;
 }
 
-function getAllowedCreatesForCycle(safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
+export function getAllowedCreatesForCycle(safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
   return Math.max(
     0,
     Math.min(
       safetyLimits.maxCreates,
       safetyLimits.maxHourlyCreates - safetyWindow.createdThisHour,
+      SEARCH_AD_REPORT_CREATE_RECHECK_BATCH,
     ),
   );
 }

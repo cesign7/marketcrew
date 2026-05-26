@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SEARCH_AD_BACKFILL_SAFETY_LIMITS } from "@/features/search-ad/domain/backfillSafety";
-import { getNextDelayMs, getProgressMessage, shouldAutoResumeBackfillRun } from "@/server/search-ad/reportBackfillJob";
+import { getAllowedCreatesForCycle, getNextDelayMs, getProgressMessage, shouldAutoResumeBackfillRun } from "@/server/search-ad/reportBackfillJob";
 import type { SearchAdBackfillRunSuccess } from "@/server/search-ad/reportBackfill";
 import type { SearchAdBackfillRunRecord } from "@/lib/persistence/searchAdRepository";
 
@@ -81,6 +81,16 @@ describe("search ad report backfill background scheduler", () => {
 
     expect(shouldAutoResumeBackfillRun(run, Date.parse("2026-05-26T13:00:30.000Z"))).toBe(false);
     expect(shouldAutoResumeBackfillRun(run, Date.parse("2026-05-26T13:01:00.000Z"))).toBe(true);
+  });
+
+  it("전체 백필은 계속 진행하되 한 사이클 생성량은 보고서 목록 재조회 범위보다 작게 끊는다", () => {
+    const safetyWindow = {
+      createdThisHour: 0,
+      hourStartedAt: "2026-05-26T13:00:00.000Z",
+    };
+
+    expect(getAllowedCreatesForCycle(safetyWindow, buildSafetyLimits())).toBe(80);
+    expect(getAllowedCreatesForCycle(safetyWindow, { ...buildSafetyLimits(), maxCreates: 30 })).toBe(30);
   });
 });
 
