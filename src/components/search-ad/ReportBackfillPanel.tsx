@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SEARCH_AD_BACKFILL_SAFETY_LIMITS } from "@/features/search-ad/domain/backfillSafety";
 import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
 import { ALL_SEARCH_AD_REPORT_TYPES, SEARCH_AD_MAX_REPORT_RETENTION_DAYS } from "@/features/search-ad/domain/reportRetention";
 import type { SearchAdReportType } from "@/features/search-ad/domain/types";
@@ -74,8 +75,6 @@ type BackfillJobResponse =
     };
 
 const FAST_BACKFILL_MAX_DATES = 92;
-const FAST_BACKFILL_MAX_CREATES = 120;
-const FAST_BACKFILL_MAX_DOWNLOADS = 60;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const ACTIVE_WAITING_JOB_MS = 90_000;
 
@@ -92,6 +91,7 @@ const STATUS_LABELS: Record<SearchAdBackfillResultStatus, string> = {
   failed: "실패",
   missing: "생성 필요",
   pending: "준비 중",
+  rate_limited: "속도 제한",
 };
 
 export function buildBackfillRequestBody(input: BackfillRequestInput) {
@@ -101,9 +101,13 @@ export function buildBackfillRequestBody(input: BackfillRequestInput) {
     dryRun: input.mode === "preview",
     fromDate: input.fromDate,
     maxCreates: limits.maxCreates,
+    maxDailyCreates: limits.maxDailyCreates,
     maxDates: limits.maxDates,
     maxDownloads: limits.maxDownloads,
+    maxHourlyCreates: limits.maxHourlyCreates,
+    rateLimitBackoffMs: limits.rateLimitBackoffMs,
     reportTypes: input.reportTypes,
+    requestDelayMs: limits.requestDelayMs,
     skipSaved: true,
     toDate: input.toDate,
   };
@@ -124,9 +128,13 @@ export function getQuickBackfillLimits(input: { fromDate: string; reportTypes: S
   const batchItems = Math.max(1, maxDates * Math.max(1, input.reportTypes.length));
   return {
     batchItems,
-    maxCreates: Math.min(batchItems, FAST_BACKFILL_MAX_CREATES),
+    maxCreates: Math.min(batchItems, SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun),
+    maxDailyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerDay,
     maxDates,
-    maxDownloads: Math.min(batchItems, FAST_BACKFILL_MAX_DOWNLOADS),
+    maxDownloads: Math.min(batchItems, SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxDownloadsPerRun),
+    maxHourlyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerHour,
+    rateLimitBackoffMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.rateLimitBackoffMs,
+    requestDelayMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs,
     selectedDates,
     truncatedDates: Math.max(0, selectedDates - maxDates),
   };
@@ -281,6 +289,16 @@ export function ReportBackfillPanel() {
             {loadingMode === "recover-all" ? "작업 시작 중" : activeJob ? "서버에서 복구 중" : "전체 저장 / 이어받기"}
           </button>
         </div>
+        <div className="backfill-safety-card" aria-label="네이버 API 안전 기준">
+          <span>네이버 API 안전 기준</span>
+          <strong>
+            요청 사이 {formatSeconds(quickLimits.requestDelayMs)} 대기, 속도 제한 시 {formatMinutes(quickLimits.rateLimitBackoffMs)} 대기
+          </strong>
+          <p>
+            생성 요청은 한 번 {quickLimits.maxCreates.toLocaleString("ko-KR")}건, 시간당 {quickLimits.maxHourlyCreates.toLocaleString("ko-KR")}건, 하루{" "}
+            {quickLimits.maxDailyCreates.toLocaleString("ko-KR")}건 이하로 자동 조절합니다.
+          </p>
+        </div>
         <div className="backfill-actions">
           <button className="button secondary-button" disabled={Boolean(loadingMode) || quickLimits.selectedDates === 0} onClick={() => runBackfill("preview")} type="button">
             {loadingMode === "preview" ? "확인 중" : "남은 보고서 확인"}
@@ -427,6 +445,11 @@ function isActiveBackfillJob(run: BackfillJobRun) {
     return false;
   }
 
+  const nextAttemptAt = getBackfillJobMeta(run)?.nextAttemptAt;
+  if (nextAttemptAt && Date.parse(nextAttemptAt) > Date.now()) {
+    return true;
+  }
+
   return Date.now() - Date.parse(run.updatedAt) < ACTIVE_WAITING_JOB_MS;
 }
 
@@ -493,6 +516,14 @@ function countBackfillDates(fromDate: string, toDate: string) {
     return 0;
   }
   return Math.floor((to.getTime() - from.getTime()) / DAY_MS) + 1;
+}
+
+function formatSeconds(ms: number) {
+  return `${(ms / 1000).toLocaleString("ko-KR", { maximumFractionDigits: 2 })}초`;
+}
+
+function formatMinutes(ms: number) {
+  return `${Math.ceil(ms / 60_000).toLocaleString("ko-KR")}분`;
 }
 
 function parseDateOnly(value: string) {

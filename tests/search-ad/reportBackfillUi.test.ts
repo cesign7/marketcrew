@@ -8,6 +8,7 @@ import {
   getQuickBackfillLimits,
 } from "@/components/search-ad/ReportBackfillPanel";
 import { getMarketingNavItems } from "@/components/layout/MarketingShell";
+import { SEARCH_AD_BACKFILL_SAFETY_LIMITS } from "@/features/search-ad/domain/backfillSafety";
 
 describe("report backfill UI helpers", () => {
   it("전체 확인 요청은 오늘 기준 최대 범위와 전체 보고서 dry run 계획으로 만든다", () => {
@@ -24,9 +25,13 @@ describe("report backfill UI helpers", () => {
     ).toMatchObject({
       dryRun: true,
       fromDate: "2025-05-26",
-      maxCreates: 120,
+      maxCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun,
+      maxDailyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerDay,
       maxDates: 92,
-      maxDownloads: 60,
+      maxDownloads: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxDownloadsPerRun,
+      maxHourlyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerHour,
+      rateLimitBackoffMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.rateLimitBackoffMs,
+      requestDelayMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs,
       skipSaved: true,
       toDate: "2026-05-25",
     });
@@ -48,6 +53,7 @@ describe("report backfill UI helpers", () => {
     expect(BACKFILL_REPORT_TYPE_OPTIONS.map((option) => option.label)).toContain("쇼핑검색 검색어 상세 보고서");
     expect(getBackfillStatusLabel("downloadable")).toBe("저장 가능");
     expect(getBackfillStatusLabel("missing")).toBe("생성 필요");
+    expect(getBackfillStatusLabel("rate_limited")).toBe("속도 제한");
   });
 
   it("긴 기간은 빠른 복구 배치로 나눠 처리한다", () => {
@@ -58,9 +64,12 @@ describe("report backfill UI helpers", () => {
         toDate: "2026-04-30",
       }),
     ).toMatchObject({
-      maxCreates: 120,
+      maxCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun,
+      maxDailyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerDay,
       maxDates: 92,
-      maxDownloads: 60,
+      maxDownloads: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxDownloadsPerRun,
+      maxHourlyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerHour,
+      requestDelayMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs,
       selectedDates: 120,
       truncatedDates: 28,
     });

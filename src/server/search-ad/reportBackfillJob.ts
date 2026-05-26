@@ -1,3 +1,4 @@
+import { resolveSearchAdBackfillSafetyLimits, type SearchAdBackfillSafetyLimits } from "@/features/search-ad/domain/backfillSafety";
 import {
   completeSearchAdBackfillRun,
   createSearchAdBackfillRun,
@@ -30,12 +31,22 @@ type StoredBackfillResult = (SearchAdBackfillRunSuccess | SearchAdBackfillRunFai
     cycle: number;
     message?: string;
     nextAttemptAt?: string;
+    safety?: BackfillSafetyWindow;
     updatedAt: string;
   };
 };
 
 const activeRuns = new Set<string>();
 const MAX_BACKGROUND_CYCLES = 240;
+const HOUR_MS = 60 * 60 * 1000;
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+type BackfillSafetyWindow = {
+  createdThisHour: number;
+  createdToday: number;
+  dayKey: string;
+  hourStartedAt: string;
+};
 
 export async function startSearchAdReportBackfillJob(input: BackgroundBackfillInput): Promise<SearchAdBackfillJobResult> {
   try {
@@ -77,32 +88,41 @@ async function runBackgroundBackfill(runId: string, input: BackgroundBackfillInp
 
   activeRuns.add(runId);
   let latestResult: StoredBackfillResult | undefined;
+  let safetyWindow = readSafetyWindow((await getSearchAdBackfillRun(runId))?.resultJson);
 
   try {
     for (let cycle = 1; cycle <= MAX_BACKGROUND_CYCLES; cycle += 1) {
       await markSearchAdBackfillRunRunning(runId);
+      const safetyLimits = resolveSearchAdBackfillSafetyLimits(input);
+      safetyWindow = refreshSafetyWindow(safetyWindow);
       const result = await runSearchAdReportBackfill({
         ...input,
         createMissing: true,
         dryRun: false,
+        maxCreates: getAllowedCreatesForCycle(safetyWindow, safetyLimits),
+        maxDownloads: safetyLimits.maxDownloads,
         skipSaved: true,
       });
-      latestResult = attachJobMeta(result, cycle);
 
       if (!result.ok) {
+        latestResult = attachJobMeta(result, cycle, { safety: safetyWindow });
         await failSearchAdBackfillRun(runId, result.message, latestResult as unknown as Record<string, unknown>);
         return;
       }
+
+      safetyWindow = addCreatedReportsToSafetyWindow(safetyWindow, result.data.summary.created);
+      latestResult = attachJobMeta(result, cycle, { safety: safetyWindow });
 
       if (result.data.summary.planned === 0) {
         await completeSearchAdBackfillRun(runId, latestResult as unknown as Record<string, unknown>);
         return;
       }
 
-      const delayMs = getNextDelayMs(result);
+      const delayMs = getNextDelayMs(result, safetyWindow, safetyLimits);
       latestResult = attachJobMeta(result, cycle, {
-        message: getProgressMessage(result),
+        message: getProgressMessage(result, safetyWindow, safetyLimits),
         nextAttemptAt: new Date(Date.now() + delayMs).toISOString(),
+        safety: safetyWindow,
       });
       await updateSearchAdBackfillRunProgress(runId, latestResult as unknown as Record<string, unknown>, "waiting");
       await sleep(delayMs);
@@ -132,14 +152,19 @@ async function runBackgroundBackfill(runId: string, input: BackgroundBackfillInp
 }
 
 function normalizeBackgroundInput(input: BackgroundBackfillInput): BackgroundBackfillInput {
+  const safetyLimits = resolveSearchAdBackfillSafetyLimits(input);
   return {
     createMissing: true,
     dryRun: false,
     fromDate: input.fromDate,
-    maxCreates: input.maxCreates,
+    maxCreates: safetyLimits.maxCreates,
+    maxDailyCreates: safetyLimits.maxDailyCreates,
     maxDates: input.maxDates,
-    maxDownloads: input.maxDownloads,
+    maxDownloads: safetyLimits.maxDownloads,
+    maxHourlyCreates: safetyLimits.maxHourlyCreates,
+    rateLimitBackoffMs: safetyLimits.rateLimitBackoffMs,
     reportTypes: input.reportTypes,
+    requestDelayMs: safetyLimits.requestDelayMs,
     skipSaved: true,
     toDate: input.toDate,
     todayKst: input.todayKst,
@@ -153,7 +178,7 @@ function isResumableRun(run: SearchAdBackfillRunRecord) {
 function attachJobMeta(
   result: SearchAdBackfillRunSuccess | SearchAdBackfillRunFailure,
   cycle: number,
-  meta: { message?: string; nextAttemptAt?: string } = {},
+  meta: { message?: string; nextAttemptAt?: string; safety?: BackfillSafetyWindow } = {},
 ): StoredBackfillResult {
   return {
     ...result,
@@ -165,8 +190,17 @@ function attachJobMeta(
   };
 }
 
-function getProgressMessage(result: SearchAdBackfillRunSuccess) {
+function getProgressMessage(result: SearchAdBackfillRunSuccess, safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
   const { summary } = result.data;
+  if (summary.rateLimited > 0) {
+    return "네이버 호출 속도 제한 신호가 있어 자동으로 충분히 대기합니다.";
+  }
+  if (safetyWindow.createdToday >= safetyLimits.maxDailyCreates) {
+    return "일일 생성 안전 상한에 도달해 다음 날짜에 남은 보고서를 이어받습니다.";
+  }
+  if (safetyWindow.createdThisHour >= safetyLimits.maxHourlyCreates) {
+    return "시간당 생성 안전 상한에 도달해 다음 시간대에 남은 보고서를 이어받습니다.";
+  }
   if (summary.created > 0 || summary.pending > 0) {
     return "네이버가 보고서를 생성하는 동안 자동으로 다시 확인합니다.";
   }
@@ -179,8 +213,15 @@ function getProgressMessage(result: SearchAdBackfillRunSuccess) {
   return "남은 보고서를 계속 확인합니다.";
 }
 
-function getNextDelayMs(result: SearchAdBackfillRunSuccess) {
+function getNextDelayMs(result: SearchAdBackfillRunSuccess, safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
   const { summary } = result.data;
+  if (summary.rateLimited > 0) {
+    return summary.rateLimitBackoffMs;
+  }
+  const safetyDelayMs = getSafetyWindowDelayMs(safetyWindow, safetyLimits);
+  if (safetyDelayMs > 0) {
+    return safetyDelayMs;
+  }
   if (summary.failed > 0 && summary.created === 0 && summary.downloaded === 0) {
     return 60_000;
   }
@@ -188,6 +229,96 @@ function getNextDelayMs(result: SearchAdBackfillRunSuccess) {
     return 30_000;
   }
   return 2_000;
+}
+
+function getAllowedCreatesForCycle(safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
+  return Math.max(
+    0,
+    Math.min(
+      safetyLimits.maxCreates,
+      safetyLimits.maxHourlyCreates - safetyWindow.createdThisHour,
+      safetyLimits.maxDailyCreates - safetyWindow.createdToday,
+    ),
+  );
+}
+
+function getSafetyWindowDelayMs(safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
+  if (safetyWindow.createdToday >= safetyLimits.maxDailyCreates) {
+    return msUntilNextKstDay();
+  }
+  if (safetyWindow.createdThisHour >= safetyLimits.maxHourlyCreates) {
+    return Math.max(60_000, Date.parse(safetyWindow.hourStartedAt) + HOUR_MS - Date.now());
+  }
+  return 0;
+}
+
+function addCreatedReportsToSafetyWindow(safetyWindow: BackfillSafetyWindow, created: number) {
+  return {
+    ...safetyWindow,
+    createdThisHour: safetyWindow.createdThisHour + created,
+    createdToday: safetyWindow.createdToday + created,
+  };
+}
+
+function refreshSafetyWindow(input?: BackfillSafetyWindow): BackfillSafetyWindow {
+  const now = Date.now();
+  const currentDayKey = getKstDayKey(new Date(now));
+  const current = input ?? {
+    createdThisHour: 0,
+    createdToday: 0,
+    dayKey: currentDayKey,
+    hourStartedAt: new Date(now).toISOString(),
+  };
+  const hourStartedAt = Date.parse(current.hourStartedAt);
+
+  return {
+    createdThisHour: Number.isFinite(hourStartedAt) && now - hourStartedAt < HOUR_MS ? current.createdThisHour : 0,
+    createdToday: current.dayKey === currentDayKey ? current.createdToday : 0,
+    dayKey: currentDayKey,
+    hourStartedAt: Number.isFinite(hourStartedAt) && now - hourStartedAt < HOUR_MS ? current.hourStartedAt : new Date(now).toISOString(),
+  };
+}
+
+function readSafetyWindow(resultJson?: Record<string, unknown>): BackfillSafetyWindow | undefined {
+  const job = resultJson?.job;
+  if (!job || typeof job !== "object") {
+    return undefined;
+  }
+  const safety = (job as { safety?: unknown }).safety;
+  if (!safety || typeof safety !== "object") {
+    return undefined;
+  }
+  const window = safety as Partial<BackfillSafetyWindow>;
+  if (typeof window.hourStartedAt !== "string" || typeof window.dayKey !== "string") {
+    return undefined;
+  }
+
+  return {
+    createdThisHour: toNonNegativeInteger(window.createdThisHour),
+    createdToday: toNonNegativeInteger(window.createdToday),
+    dayKey: window.dayKey,
+    hourStartedAt: window.hourStartedAt,
+  };
+}
+
+function toNonNegativeInteger(value: unknown) {
+  return Number.isInteger(value) && Number(value) >= 0 ? Number(value) : 0;
+}
+
+function getKstDayKey(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    month: "2-digit",
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+  }).format(date);
+}
+
+function msUntilNextKstDay() {
+  const now = Date.now();
+  const kstNow = new Date(now + KST_OFFSET_MS);
+  kstNow.setUTCHours(24, 0, 0, 0);
+  return Math.max(60_000, kstNow.getTime() - KST_OFFSET_MS - now);
 }
 
 function sleep(ms: number) {

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { SEARCH_AD_BACKFILL_SAFETY_LIMITS } from "@/features/search-ad/domain/backfillSafety";
 import { buildSearchAdReportBackfillPlan, runSearchAdReportBackfill } from "@/server/search-ad/reportBackfill";
 
 describe("buildSearchAdReportBackfillPlan", () => {
@@ -122,5 +123,91 @@ describe("runSearchAdReportBackfill", () => {
       missing: 2,
       planned: 2,
     });
+  });
+
+  it("네이버 호출 안전 상한과 요청 간 대기 시간을 적용한다", async () => {
+    const createJob = vi
+      .fn()
+      .mockResolvedValueOnce({ reportJobId: "job-ad-1", reportTp: "AD", statDt: "20260524", status: "REGIST" })
+      .mockResolvedValueOnce({ reportJobId: "job-ad-2", reportTp: "AD", statDt: "20260525", status: "REGIST" });
+    const wait = vi.fn().mockResolvedValue(undefined);
+
+    const result = await runSearchAdReportBackfill({
+      createMissing: true,
+      dependencies: {
+        createJob,
+        credentialsReady: () => true,
+        databaseReady: () => true,
+        downloadReport: vi.fn(),
+        listJobs: async () => [],
+        listSavedReportKeys: async () => [],
+        rebuildRules: async () => ({ saved: 0 }),
+        saveReport: vi.fn(),
+        wait,
+      },
+      dryRun: false,
+      fromDate: "2026-05-24",
+      maxCreates: 999,
+      reportTypes: ["AD"],
+      requestDelayMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs,
+      toDate: "2026-05-25",
+      todayKst: "2026-05-26",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.message);
+    }
+    expect(result.data.summary).toMatchObject({
+      created: 2,
+      createLimit: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerRun,
+      requestDelayMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs,
+    });
+    expect(wait).toHaveBeenCalledTimes(2);
+    expect(wait).toHaveBeenCalledWith(SEARCH_AD_BACKFILL_SAFETY_LIMITS.requestDelayMs);
+  });
+
+  it("429 속도 제한은 남은 생성 요청을 멈추고 백오프 정보를 남긴다", async () => {
+    const rateLimitError = new Error("HTTP 429 Too Many Requests");
+    Object.assign(rateLimitError, { status: 429 });
+    const createJob = vi.fn().mockRejectedValueOnce(rateLimitError);
+
+    const result = await runSearchAdReportBackfill({
+      createMissing: true,
+      dependencies: {
+        createJob,
+        credentialsReady: () => true,
+        databaseReady: () => true,
+        downloadReport: vi.fn(),
+        listJobs: async () => [],
+        listSavedReportKeys: async () => [],
+        rebuildRules: async () => ({ saved: 0 }),
+        saveReport: vi.fn(),
+        wait: vi.fn(),
+      },
+      dryRun: false,
+      fromDate: "2026-05-24",
+      reportTypes: ["AD"],
+      toDate: "2026-05-25",
+      todayKst: "2026-05-26",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.message);
+    }
+    expect(createJob).toHaveBeenCalledTimes(1);
+    expect(result.data.summary).toMatchObject({
+      created: 0,
+      failed: 0,
+      rateLimitBackoffMs: SEARCH_AD_BACKFILL_SAFETY_LIMITS.rateLimitBackoffMs,
+      rateLimited: 1,
+    });
+    expect(result.data.results).toContainEqual(
+      expect.objectContaining({
+        message: "네이버 API 호출 속도 제한(429)이 감지되어 이번 배치를 멈추고 자동 대기합니다.",
+        status: "rate_limited",
+      }),
+    );
   });
 });

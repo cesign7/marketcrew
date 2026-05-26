@@ -1,4 +1,5 @@
 import { parseSearchAdReport } from "@/features/search-ad/domain/parseSearchAdReport";
+import { resolveSearchAdBackfillSafetyLimits, type SearchAdBackfillSafetyInput } from "@/features/search-ad/domain/backfillSafety";
 import { DEFAULT_SEARCH_AD_BACKFILL_REPORT_TYPES, SEARCH_AD_REPORT_RETENTION_DAYS } from "@/features/search-ad/domain/reportRetention";
 import type { SearchAdReportStatus, SearchAdReportType } from "@/features/search-ad/domain/types";
 import { downloadSearchAdReport, listSearchAdReportJobs, createSearchAdReportJob, type SearchAdReportJob } from "@/lib/integrations/search-ad/reports";
@@ -41,18 +42,18 @@ export type SearchAdBackfillDependencies = {
   listSavedReportKeys: () => Promise<SearchAdBackfillSavedReportKey[]>;
   rebuildRules: () => Promise<{ saved: number }>;
   saveReport: typeof saveDownloadedReport;
+  wait?: (ms: number) => Promise<void>;
 };
 
-export type SearchAdBackfillRunInput = SearchAdBackfillPlanInput & {
+export type SearchAdBackfillRunInput = SearchAdBackfillPlanInput &
+  SearchAdBackfillSafetyInput & {
   createMissing?: boolean;
   dependencies?: SearchAdBackfillDependencies;
   dryRun?: boolean;
-  maxCreates?: number;
-  maxDownloads?: number;
   skipSaved?: boolean;
 };
 
-export type SearchAdBackfillResultStatus = "created" | "download_skipped" | "downloadable" | "downloaded" | "failed" | "missing" | "pending";
+export type SearchAdBackfillResultStatus = "created" | "download_skipped" | "downloadable" | "downloaded" | "failed" | "missing" | "pending" | "rate_limited";
 
 export type SearchAdBackfillSavedReportKey = {
   reportType: SearchAdReportType;
@@ -74,11 +75,16 @@ export type SearchAdBackfillSummary = {
   downloadable: number;
   downloaded: number;
   failed: number;
+  maxDailyCreates: number;
   maxDownloads: number;
+  maxHourlyCreates: number;
   missing: number;
   parsed: number;
   pending: number;
   planned: number;
+  rateLimitBackoffMs: number;
+  rateLimited: number;
+  requestDelayMs: number;
   ruleResults: number;
   skippedDownloads: number;
 };
@@ -152,8 +158,10 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
   const dryRun = input.dryRun ?? true;
   const createMissing = input.createMissing ?? false;
   const skipSaved = input.skipSaved ?? false;
-  const maxCreates = input.maxCreates ?? 50;
-  const maxDownloads = input.maxDownloads ?? 20;
+  const safetyLimits = resolveSearchAdBackfillSafetyLimits(input);
+  const wait = dependencies.wait ?? sleep;
+  const maxCreates = safetyLimits.maxCreates;
+  const maxDownloads = safetyLimits.maxDownloads;
   const plan = await buildRunnableBackfillPlan(input, dependencies, skipSaved);
   const existingJobs = await dependencies.listJobs();
   const jobByKey = buildJobLookup(existingJobs);
@@ -165,11 +173,16 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
     downloadable: 0,
     downloaded: 0,
     failed: 0,
+    maxDailyCreates: safetyLimits.maxDailyCreates,
     maxDownloads,
+    maxHourlyCreates: safetyLimits.maxHourlyCreates,
     missing: 0,
     parsed: 0,
     pending: 0,
     planned: plan.totalItems,
+    rateLimitBackoffMs: safetyLimits.rateLimitBackoffMs,
+    rateLimited: 0,
+    requestDelayMs: safetyLimits.requestDelayMs,
     ruleResults: 0,
     skippedDownloads: 0,
   };
@@ -187,7 +200,18 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
             providerStatus: created.status,
             status: "created",
           });
+          await wait(safetyLimits.requestDelayMs);
         } catch (error) {
+          if (isRateLimitError(error)) {
+            summary.rateLimited += 1;
+            results.push({
+              ...item,
+              message: "네이버 API 호출 속도 제한(429)이 감지되어 이번 배치를 멈추고 자동 대기합니다.",
+              status: "rate_limited",
+            });
+            break;
+          }
+
           summary.failed += 1;
           results.push({
             ...item,
@@ -267,7 +291,21 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
         providerStatus: existing.status,
         status: "downloaded",
       });
+      await wait(safetyLimits.requestDelayMs);
     } catch (error) {
+      if (isRateLimitError(error)) {
+        summary.rateLimited += 1;
+        results.push({
+          ...item,
+          downloadUrl: existing.downloadUrl,
+          message: "네이버 API 호출 속도 제한(429)이 감지되어 이번 배치를 멈추고 자동 대기합니다.",
+          providerReportJobId: String(existing.reportJobId),
+          providerStatus: existing.status,
+          status: "rate_limited",
+        });
+        break;
+      }
+
       summary.failed += 1;
       results.push({
         ...item,
@@ -306,6 +344,34 @@ function defaultBackfillDependencies(): SearchAdBackfillDependencies {
     saveReport: saveDownloadedReport,
     listSavedReportKeys: listSavedSearchAdReportKeys,
   };
+}
+
+function isRateLimitError(error: unknown) {
+  const candidate = error as {
+    code?: unknown;
+    message?: unknown;
+    response?: { status?: unknown };
+    status?: unknown;
+    statusCode?: unknown;
+  };
+  const status = Number(candidate.status ?? candidate.statusCode ?? candidate.response?.status);
+  if (status === 429) {
+    return true;
+  }
+
+  const code = typeof candidate.code === "string" ? candidate.code : undefined;
+  if (code === "429" || code === "TOO_MANY_REQUESTS") {
+    return true;
+  }
+
+  const message = typeof candidate.message === "string" ? candidate.message : "";
+  return message.includes("429") || /too many requests/i.test(message);
+}
+
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 async function buildRunnableBackfillPlan(input: SearchAdBackfillRunInput, dependencies: SearchAdBackfillDependencies, skipSaved: boolean) {

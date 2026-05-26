@@ -35,9 +35,13 @@ export async function POST(request: Request) {
     dryRun?: boolean;
     fromDate?: string;
     maxCreates?: number;
+    maxDailyCreates?: number;
     maxDates?: number;
     maxDownloads?: number;
+    maxHourlyCreates?: number;
+    rateLimitBackoffMs?: number;
     reportTypes?: string[];
+    requestDelayMs?: number;
     skipSaved?: boolean;
     toDate?: string;
   };
@@ -49,9 +53,13 @@ export async function POST(request: Request) {
       dryRun: body.dryRun ?? true,
       fromDate: body.fromDate,
       maxCreates: positiveInteger(body.maxCreates),
+      maxDailyCreates: positiveInteger(body.maxDailyCreates),
       maxDates: positiveInteger(body.maxDates),
       maxDownloads: positiveInteger(body.maxDownloads),
+      maxHourlyCreates: positiveInteger(body.maxHourlyCreates),
+      rateLimitBackoffMs: positiveInteger(body.rateLimitBackoffMs),
       reportTypes,
+      requestDelayMs: positiveInteger(body.requestDelayMs),
       skipSaved: body.skipSaved === true,
       toDate: body.toDate,
     };

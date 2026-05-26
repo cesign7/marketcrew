@@ -741,6 +741,33 @@ table {
   margin: 0;
 }
 
+.backfill-safety-card {
+  background: #fff8ed;
+  border: 1px solid #f5d6a4;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.backfill-safety-card span {
+  color: #9a5a11;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.backfill-safety-card strong {
+  color: #3d2b12;
+  font-size: 15px;
+}
+
+.backfill-safety-card p {
+  color: #78511d;
+  font-size: 13px;
+  margin: 0;
+}
+
 .backfill-details {
   margin-top: 14px;
 }
