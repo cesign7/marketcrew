@@ -457,6 +457,9 @@ function getBackfillJobMessage(run: BackfillJobRun) {
   if (run.status === "completed") {
     return "전체 복구 작업이 끝났습니다. 이미 저장된 보고서는 중복 저장하지 않았습니다.";
   }
+  if (isWaitingBackfillJobPastAttempt(run)) {
+    return "자동 대기 시간이 지났지만 서버 작업이 재개되지 않았습니다. 전체 저장 / 이어받기를 누르면 남은 보고서부터 다시 시작합니다.";
+  }
   if (jobMeta?.message) {
     return `${getBackfillJobStatusLabel(run.status)}: ${jobMeta.message}`;
   }
@@ -494,6 +497,14 @@ function getBackfillJobStatusLabel(status: BackfillJobStatus) {
     waiting: "자동 대기 중",
   };
   return labels[status];
+}
+
+function isWaitingBackfillJobPastAttempt(run: BackfillJobRun) {
+  if (run.status !== "waiting") {
+    return false;
+  }
+  const nextAttemptAt = getBackfillJobMeta(run)?.nextAttemptAt;
+  return Boolean(nextAttemptAt && Date.parse(nextAttemptAt) <= Date.now());
 }
 
 export function createFullBackfillFormState(todayKst?: string): BackfillFormState {

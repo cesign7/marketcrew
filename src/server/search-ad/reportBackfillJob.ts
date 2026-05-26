@@ -186,10 +186,13 @@ function attachJobMeta(
   };
 }
 
-function getProgressMessage(result: SearchAdBackfillRunSuccess, safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
+export function getProgressMessage(result: SearchAdBackfillRunSuccess, safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
   const { summary } = result.data;
   if (summary.rateLimited > 0) {
     return "네이버 호출 속도 제한 신호가 있어 자동으로 충분히 대기합니다.";
+  }
+  if (hasDeferredDownloads(summary)) {
+    return "저장 가능한 보고서가 남아 다운로드 배치를 바로 이어갑니다. 새 보고서 생성만 시간당 상한에 맞춰 대기합니다.";
   }
   if (safetyWindow.createdThisHour >= safetyLimits.maxHourlyCreates) {
     return "시간당 생성 안전 상한에 도달해 다음 시간대에 남은 보고서를 이어받습니다.";
@@ -206,10 +209,13 @@ function getProgressMessage(result: SearchAdBackfillRunSuccess, safetyWindow: Ba
   return "남은 보고서를 계속 확인합니다.";
 }
 
-function getNextDelayMs(result: SearchAdBackfillRunSuccess, safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
+export function getNextDelayMs(result: SearchAdBackfillRunSuccess, safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
   const { summary } = result.data;
   if (summary.rateLimited > 0) {
     return summary.rateLimitBackoffMs;
+  }
+  if (hasDeferredDownloads(summary)) {
+    return 2_000;
   }
   const safetyDelayMs = getSafetyWindowDelayMs(safetyWindow, safetyLimits);
   if (safetyDelayMs > 0) {
@@ -222,6 +228,10 @@ function getNextDelayMs(result: SearchAdBackfillRunSuccess, safetyWindow: Backfi
     return 30_000;
   }
   return 2_000;
+}
+
+function hasDeferredDownloads(summary: SearchAdBackfillRunSuccess["data"]["summary"]) {
+  return summary.maxDownloads > 0 && summary.skippedDownloads > 0;
 }
 
 function getAllowedCreatesForCycle(safetyWindow: BackfillSafetyWindow, safetyLimits: SearchAdBackfillSafetyLimits) {
