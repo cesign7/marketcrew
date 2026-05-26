@@ -210,4 +210,47 @@ describe("runSearchAdReportBackfill", () => {
       }),
     );
   });
+
+  it("다운로드 안전 상한에 걸린 보고서는 네이버 제한이 아닌 다음 배치 대기로 설명한다", async () => {
+    const downloadReport = vi.fn();
+
+    const result = await runSearchAdReportBackfill({
+      dependencies: {
+        createJob: vi.fn(),
+        credentialsReady: () => true,
+        databaseReady: () => true,
+        downloadReport,
+        listJobs: async () => [
+          {
+            downloadUrl: "/report-download?authtoken=a",
+            reportJobId: "job-ad",
+            reportTp: "AD",
+            statDt: "20260525",
+            status: "BUILT",
+          },
+        ],
+        listSavedReportKeys: async () => [],
+        rebuildRules: async () => ({ saved: 0 }),
+        saveReport: vi.fn(),
+      },
+      dryRun: false,
+      fromDate: "2026-05-25",
+      maxDownloads: 0,
+      reportTypes: ["AD"],
+      toDate: "2026-05-25",
+      todayKst: "2026-05-26",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.message);
+    }
+    expect(downloadReport).not.toHaveBeenCalled();
+    expect(result.data.results).toContainEqual(
+      expect.objectContaining({
+        message: "마켓크루 다운로드 안전 상한에 도달해 다음 자동 배치에서 이어서 저장합니다.",
+        status: "download_skipped",
+      }),
+    );
+  });
 });

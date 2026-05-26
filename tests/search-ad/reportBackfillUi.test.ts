@@ -51,6 +51,7 @@ describe("report backfill UI helpers", () => {
   it("화면에는 대표가 읽을 수 있는 보고서 이름과 상태명이 노출된다", () => {
     expect(BACKFILL_REPORT_TYPE_OPTIONS).toHaveLength(10);
     expect(BACKFILL_REPORT_TYPE_OPTIONS.map((option) => option.label)).toContain("쇼핑검색 검색어 상세 보고서");
+    expect(getBackfillStatusLabel("download_skipped")).toBe("다음 배치 대기");
     expect(getBackfillStatusLabel("downloadable")).toBe("저장 가능");
     expect(getBackfillStatusLabel("missing")).toBe("생성 필요");
     expect(getBackfillStatusLabel("rate_limited")).toBe("속도 제한");

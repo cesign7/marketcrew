@@ -85,7 +85,7 @@ export const BACKFILL_REPORT_TYPE_OPTIONS: Array<{ label: string; value: SearchA
 
 const STATUS_LABELS: Record<SearchAdBackfillResultStatus, string> = {
   created: "생성 요청",
-  download_skipped: "이번 배치 제외",
+  download_skipped: "다음 배치 대기",
   downloadable: "저장 가능",
   downloaded: "저장 완료",
   failed: "실패",

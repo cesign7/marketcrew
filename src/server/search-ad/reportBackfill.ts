@@ -255,7 +255,7 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
       results.push({
         ...item,
         downloadUrl: existing.downloadUrl,
-        message: "maxDownloads 제한으로 이번 실행에서는 다운로드하지 않았습니다.",
+        message: "마켓크루 다운로드 안전 상한에 도달해 다음 자동 배치에서 이어서 저장합니다.",
         providerReportJobId: String(existing.reportJobId),
         providerStatus: existing.status,
         status: "download_skipped",
