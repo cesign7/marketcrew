@@ -1,0 +1,1463 @@
+import { hasDatabaseUrl, query } from "./postgres";
+import {
+  DEFAULT_SEARCH_AD_FILTERS,
+  SAMPLE_RULE_CRITERIA,
+  createSampleActionLogsView,
+  createSampleActionPreview,
+  createSampleOperationsView,
+  createSampleReportArchiveView,
+  createSampleReportDetailView,
+  createSampleSearchTermsView,
+  createSampleStateView,
+} from "@/features/search-ad/domain/sampleData";
+import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
+import { buildSearchAdRuleResults } from "@/features/search-ad/domain/ruleEngine";
+import type {
+  AdProductType,
+  BrandKey,
+  SearchAdFilters,
+  SearchAdActionLog,
+  SearchAdActionLogsView,
+  SearchAdActionPreview,
+  SearchAdRequestedAction,
+  SearchAdNormalizedRow,
+  SearchAdOperationsView,
+  SearchAdRawReportRow,
+  SearchAdReportArchiveView,
+  SearchAdReportDetailView,
+  SearchAdReportJobRecord,
+  SearchAdReportStatus,
+  SearchAdReportType,
+  SearchAdRuleCriteria,
+  SearchAdRuleResult,
+  SearchAdSearchTermsView,
+  SearchAdStateRecord,
+  SearchAdStateView,
+  SearchAdTargetType,
+} from "@/features/search-ad/domain/types";
+
+type ReportJobRow = {
+  id: string;
+  provider_report_job_id: string;
+  report_type: SearchAdReportType;
+  stat_date: string | Date;
+  status: SearchAdReportStatus;
+  download_url: string | null;
+  synced_at: string | Date | null;
+  row_count: number | null;
+  summary: {
+    impressions?: number | string;
+    clicks?: number | string;
+    cost?: number | string;
+    conversions?: number | string;
+    salesAmount?: number | string;
+  } | null;
+  mapped_brands: BrandKey[] | null;
+};
+
+type StateSnapshotInput = {
+  targetType: SearchAdTargetType;
+  providerId: string;
+  parentProviderId?: string;
+  brandKey?: BrandKey;
+  adProductType?: AdProductType;
+  name: string;
+  userLock?: boolean | null;
+  status?: string;
+  statusReason?: string;
+  bidAmount?: number | null;
+  dailyBudget?: number | null;
+  rawPayload: Record<string, unknown>;
+};
+
+export async function getSearchAdOperationsView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdOperationsView> {
+  if (!hasDatabaseUrl()) {
+    return createSampleOperationsView(filters);
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const reports = await listSearchAdReportsFromDb(filters, 5);
+    const rules = await listSearchAdRuleResultsFromDb(filters, 10);
+    const actionLogs = await listSearchAdActionLogsFromDb(5);
+    const totalCost = reports.reduce((sum, report) => sum + report.summary.cost, 0);
+    const sync = await getSyncStatusFromDb();
+
+    return {
+      filters,
+      syncStatus: {
+        ...sync,
+        repositoryMode: "db",
+      },
+      summaryCards: [
+        { key: "reports", label: "보고서", value: `${reports.length}건`, helper: "수집된 네이버 보고서" },
+        { key: "low", label: "저효율 후보", value: `${rules.filter((rule) => rule.category === "low_efficiency").length}건`, helper: "규칙에 걸린 점검 대상" },
+        { key: "good", label: "우수 후보", value: `${rules.filter((rule) => rule.category === "good_performance").length}건`, helper: "확장 검토 후보" },
+        { key: "cost", label: "최근 비용", value: `${Math.round(totalCost).toLocaleString("ko-KR")}원`, helper: "보고서 기준 비용 합계" },
+      ],
+      brandSummaries: (["coffeeprint", "stickersee"] as BrandKey[]).map((brandKey) => {
+        const brandReports = reports.filter((report) => report.mappedBrands.includes(brandKey));
+        const brandRules = rules.filter((rule) => rule.brandKey === brandKey);
+        return {
+          brandKey,
+          brandLabel: brandKey === "coffeeprint" ? "커피프린트" : "스티커씨",
+          reportCount: brandReports.length,
+          lowEfficiencyCount: brandRules.filter((rule) => rule.category === "low_efficiency").length,
+          goodPerformanceCount: brandRules.filter((rule) => rule.category === "good_performance").length,
+          recentCost: brandReports.reduce((sum, report) => sum + report.summary.cost, 0),
+        };
+      }),
+      recentRuleResults: rules,
+      recentReports: reports,
+      pendingActions: actionLogs.previews.map((preview) => ({
+        id: preview.id,
+        targetLabel: preview.targetLabel,
+        actionLabel: preview.requestedAction === "turn_on" ? "켜기 미리보기" : "끄기 미리보기",
+        statusLabel: preview.writeGateOpen ? "실행 가능" : "실제 변경 차단",
+      })),
+    };
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return createSampleOperationsView(filters);
+    }
+
+    throw error;
+  }
+}
+
+export async function getSearchAdReportArchiveView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdReportArchiveView> {
+  if (!hasDatabaseUrl()) {
+    return createSampleReportArchiveView(filters);
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    return {
+      filters,
+      reports: await listSearchAdReportsFromDb(filters, 100),
+      syncStatus: {
+        ...(await getSyncStatusFromDb()),
+        repositoryMode: "db",
+      },
+    };
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return createSampleReportArchiveView(filters);
+    }
+
+    throw error;
+  }
+}
+
+export async function getSearchAdReportDetailView(id: string): Promise<SearchAdReportDetailView | undefined> {
+  if (!hasDatabaseUrl()) {
+    return createSampleReportDetailView(id);
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const reports = await listSearchAdReportsFromDb(DEFAULT_SEARCH_AD_FILTERS, 200);
+    const report = reports.find((item) => item.id === id || item.providerReportJobId === id);
+    if (!report) {
+      return undefined;
+    }
+
+    const easyRows = await listNormalizedRowsForReport(report.id);
+    const rawPreviewRows = await listRawRowsForReport(report.id);
+    const ruleResults = await listSearchAdRuleResultsFromDb(DEFAULT_SEARCH_AD_FILTERS, 100);
+    const cpa = report.summary.conversions > 0 ? report.summary.cost / report.summary.conversions : null;
+    const roas = report.summary.cost > 0 ? (report.summary.salesAmount / report.summary.cost) * 100 : null;
+
+    return {
+      report,
+      summary: {
+        ...report.summary,
+        cpa,
+        roas,
+      },
+      easyRows,
+      rawPreviewRows,
+      columnDescriptions: [],
+      problemCandidates: ruleResults.filter((rule) => rule.evidencePacket.reportId === report.id && rule.category !== "good_performance"),
+      goodCandidates: ruleResults.filter((rule) => rule.evidencePacket.reportId === report.id && rule.category === "good_performance"),
+    };
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return createSampleReportDetailView(id);
+    }
+
+    throw error;
+  }
+}
+
+export async function listSearchAdRuleCriteria(): Promise<SearchAdRuleCriteria[]> {
+  if (!hasDatabaseUrl()) {
+    return SAMPLE_RULE_CRITERIA;
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const result = await query<{
+    id: string;
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    period_days: number;
+    min_impressions: string;
+    min_clicks: string;
+    min_cost: string;
+    target_cpa: string | null;
+    target_roas: string | null;
+    enabled: boolean;
+  }>(`
+    SELECT id, brand_key, ad_product_type, period_days, min_impressions, min_clicks, min_cost, target_cpa, target_roas, enabled
+    FROM search_ad_rule_criteria
+    ORDER BY brand_key, ad_product_type
+  `);
+
+    if (result.rows.length === 0) {
+      return SAMPLE_RULE_CRITERIA;
+    }
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      brandKey: row.brand_key,
+      adProductType: row.ad_product_type,
+      periodDays: row.period_days,
+      minImpressions: Number(row.min_impressions),
+      minClicks: Number(row.min_clicks),
+      minCost: Number(row.min_cost),
+      targetCpa: row.target_cpa === null ? null : Number(row.target_cpa),
+      targetRoas: row.target_roas === null ? null : Number(row.target_roas),
+      enabled: row.enabled,
+    }));
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return SAMPLE_RULE_CRITERIA;
+    }
+
+    throw error;
+  }
+}
+
+export async function getSearchAdStateView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdStateView> {
+  if (!hasDatabaseUrl()) {
+    return createSampleStateView(filters);
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    return {
+      filters,
+      syncStatus: {
+        ...(await getSyncStatusFromDb()),
+        repositoryMode: "db",
+      },
+      campaigns: await listLatestStateSnapshots("campaign", filters),
+      adgroups: await listLatestStateSnapshots("adgroup", filters),
+      keywords: await listLatestStateSnapshots("keyword", filters),
+    };
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return createSampleStateView(filters);
+    }
+
+    throw error;
+  }
+}
+
+export async function getSearchAdSearchTermsView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdSearchTermsView> {
+  if (!hasDatabaseUrl()) {
+    return createSampleSearchTermsView(filters);
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    return {
+      filters,
+      rows: await listNormalizedRowsByFilters(filters, 500),
+      ruleResults: await listSearchAdRuleResultsFromDb(filters, 500),
+    };
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return createSampleSearchTermsView(filters);
+    }
+
+    throw error;
+  }
+}
+
+export async function getSearchAdActionLogsView(): Promise<SearchAdActionLogsView> {
+  if (!hasDatabaseUrl()) {
+    return createSampleActionLogsView();
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    return listSearchAdActionLogsFromDb(100);
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return createSampleActionLogsView();
+    }
+
+    throw error;
+  }
+}
+
+export async function saveSearchAdStateSnapshots(input: StateSnapshotInput[]) {
+  if (!hasDatabaseUrl()) {
+    throw new Error("SEARCH_AD_DATABASE_MISSING");
+  }
+
+  await ensureSearchAdSchema();
+  const collectedAt = new Date().toISOString();
+  for (const item of input) {
+    if (item.targetType === "campaign") {
+      await query(
+        `
+          INSERT INTO search_ad_campaign_snapshots (
+            id, provider_campaign_id, brand_key, ad_product_type, name, campaign_type, user_lock, status, status_reason, raw_payload, collected_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          ON CONFLICT (id) DO NOTHING
+        `,
+        [
+          snapshotId(item.targetType, item.providerId, collectedAt),
+          item.providerId,
+          item.brandKey ?? null,
+          item.adProductType ?? null,
+          item.name,
+          String(item.rawPayload.campaignTp ?? item.rawPayload.campaignType ?? ""),
+          item.userLock ?? null,
+          item.status ?? null,
+          item.statusReason ?? null,
+          JSON.stringify(item.rawPayload),
+          collectedAt,
+        ],
+      );
+      continue;
+    }
+
+    if (item.targetType === "adgroup") {
+      await query(
+        `
+          INSERT INTO search_ad_adgroup_snapshots (
+            id, provider_adgroup_id, provider_campaign_id, brand_key, ad_product_type, name, adgroup_type,
+            user_lock, status, status_reason, bid_amount, daily_budget, raw_payload, collected_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          ON CONFLICT (id) DO NOTHING
+        `,
+        [
+          snapshotId(item.targetType, item.providerId, collectedAt),
+          item.providerId,
+          item.parentProviderId ?? null,
+          item.brandKey ?? null,
+          item.adProductType ?? null,
+          item.name,
+          String(item.rawPayload.adgroupType ?? item.rawPayload.adgroupTp ?? ""),
+          item.userLock ?? null,
+          item.status ?? null,
+          item.statusReason ?? null,
+          item.bidAmount ?? null,
+          item.dailyBudget ?? null,
+          JSON.stringify(item.rawPayload),
+          collectedAt,
+        ],
+      );
+      continue;
+    }
+
+    await query(
+      `
+        INSERT INTO search_ad_keyword_snapshots (
+          id, provider_keyword_id, provider_adgroup_id, brand_key, ad_product_type, keyword_text,
+          user_lock, status, status_reason, bid_amount, raw_payload, collected_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ON CONFLICT (id) DO NOTHING
+      `,
+      [
+        snapshotId(item.targetType, item.providerId, collectedAt),
+        item.providerId,
+        item.parentProviderId ?? null,
+        item.brandKey ?? null,
+        item.adProductType ?? null,
+        item.name,
+        item.userLock ?? null,
+        item.status ?? null,
+        item.statusReason ?? null,
+        item.bidAmount ?? null,
+        JSON.stringify(item.rawPayload),
+        collectedAt,
+      ],
+    );
+  }
+
+  return { collectedAt, saved: input.length };
+}
+
+export async function rebuildAndSaveSearchAdRuleResults() {
+  if (!hasDatabaseUrl()) {
+    return { saved: 0, results: createSampleSearchTermsView(DEFAULT_SEARCH_AD_FILTERS).ruleResults };
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const rows = await listNormalizedRowsByFilters(DEFAULT_SEARCH_AD_FILTERS, 2000);
+    const criteria = await listSearchAdRuleCriteria();
+    const results = buildSearchAdRuleResults(rows, criteria);
+
+    await query("DELETE FROM search_ad_rule_results");
+    for (const result of results) {
+      await query(
+        `
+          INSERT INTO search_ad_rule_results (
+            id, brand_key, ad_product_type, category, target_type, target_id, target_label, severity,
+            period_days, reason, metrics, evidence_packet, created_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        `,
+        [
+          result.id,
+          result.brandKey,
+          result.adProductType,
+          result.category,
+          result.targetType,
+          result.targetId ?? null,
+          result.targetLabel,
+          result.severity,
+          result.periodDays,
+          result.reason,
+          JSON.stringify(result.metrics),
+          JSON.stringify(result.evidencePacket),
+          result.createdAt,
+        ],
+      );
+    }
+
+    return { saved: results.length, results };
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return { saved: 0, results: createSampleSearchTermsView(DEFAULT_SEARCH_AD_FILTERS).ruleResults };
+    }
+
+    throw error;
+  }
+}
+
+export async function createSearchAdActionPreview(input: {
+  targetType: "campaign" | "adgroup";
+  targetId: string;
+  requestedAction: SearchAdRequestedAction;
+}): Promise<SearchAdActionPreview | undefined> {
+  if (!hasDatabaseUrl()) {
+    return createSampleActionPreview(input.targetType, input.targetId, input.requestedAction);
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const target = await getLatestActionTarget(input.targetType, input.targetId);
+    if (!target) {
+      return undefined;
+    }
+
+    const impact = await getActionImpact(input.targetType, target);
+    const preview: SearchAdActionPreview = {
+      id: `preview-${input.targetType}-${target.providerId}-${input.requestedAction}-${Date.now()}`,
+      targetType: input.targetType,
+      targetId: target.providerId,
+      targetLabel: target.name,
+      requestedAction: input.requestedAction,
+      beforeState: {
+        userLock: target.userLock,
+        status: target.status,
+        statusReason: target.statusReason,
+      },
+      afterState: {
+        userLock: input.requestedAction === "turn_off",
+      },
+      impactSummary: {
+        expectedEffect: input.requestedAction === "turn_off" ? "선택한 운영 단위의 광고 노출을 중지합니다." : "선택한 운영 단위의 광고 노출을 다시 허용합니다.",
+        affectedChildren: impact.affectedChildren,
+        recentCost: impact.recentCost,
+        recentClicks: impact.recentClicks,
+        recentConversions: impact.recentConversions,
+      },
+      writeGateOpen: isSearchAdWriteEnabled(),
+      createdAt: new Date().toISOString(),
+    };
+
+    await query(
+      `
+        INSERT INTO search_ad_action_previews (id, target_type, target_id, requested_action, before_state, after_state, impact_summary, write_gate_open, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `,
+      [
+        preview.id,
+        preview.targetType,
+        preview.targetId,
+        preview.requestedAction,
+        JSON.stringify(preview.beforeState),
+        JSON.stringify(preview.afterState),
+        JSON.stringify(preview.impactSummary),
+        preview.writeGateOpen,
+        preview.createdAt,
+      ],
+    );
+
+    return preview;
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return createSampleActionPreview(input.targetType, input.targetId, input.requestedAction);
+    }
+
+    throw error;
+  }
+}
+
+export async function applySearchAdActionPreview(previewId: string): Promise<SearchAdActionLog> {
+  try {
+    const preview = await getSearchAdActionPreviewById(previewId);
+    if (!preview) {
+      throw new Error("SEARCH_AD_ACTION_PREVIEW_NOT_FOUND");
+    }
+
+    const writeGateOpen = isSearchAdWriteEnabled();
+    const log: SearchAdActionLog = {
+      id: `log-${preview.id}-${Date.now()}`,
+      previewId: preview.id,
+      targetLabel: preview.targetLabel,
+      actionLabel: preview.requestedAction === "turn_on" ? "켜기 요청" : "끄기 요청",
+      status: writeGateOpen ? "failed" : "blocked",
+      reason: writeGateOpen ? "실제 provider write 경로는 아직 연결하지 않았습니다." : "실제 변경 권한이 닫혀 있어 네이버 광고에는 반영하지 않았습니다.",
+      createdAt: new Date().toISOString(),
+    };
+
+    if (!hasDatabaseUrl()) {
+      return log;
+    }
+
+    await ensureSearchAdSchema();
+    await query(
+      `
+        INSERT INTO search_ad_action_logs (id, preview_id, status, provider_request, provider_response, error_message, actor, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `,
+      [log.id, log.previewId, log.status, null, null, log.reason, "owner", log.createdAt],
+    );
+
+    return log;
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      const fallbackPreview = createSampleActionLogsView().previews.find((preview) => preview.id === previewId);
+      if (!fallbackPreview) {
+        throw error;
+      }
+
+      return {
+        id: `log-${fallbackPreview.id}-${Date.now()}`,
+        previewId: fallbackPreview.id,
+        targetLabel: fallbackPreview.targetLabel,
+        actionLabel: fallbackPreview.requestedAction === "turn_on" ? "켜기 요청" : "끄기 요청",
+        status: "blocked",
+        reason: "실제 변경 권한이 닫혀 있어 네이버 광고에는 반영하지 않았습니다.",
+        createdAt: new Date().toISOString(),
+      };
+    }
+
+    throw error;
+  }
+}
+
+export async function saveDownloadedReport(input: {
+  providerReportJobId: string;
+  reportType: SearchAdReportType;
+  statDate: string;
+  status: SearchAdReportStatus;
+  downloadUrl?: string;
+  rawText: string;
+  checksum: string;
+  parserVersion: string;
+  rawRows: SearchAdRawReportRow[];
+  normalizedRows: SearchAdNormalizedRow[];
+}) {
+  if (!hasDatabaseUrl()) {
+    throw new Error("SEARCH_AD_DATABASE_MISSING");
+  }
+
+  await ensureSearchAdSchema();
+  const reportId = `report-${input.providerReportJobId}`;
+  const fileId = `${reportId}-${input.checksum.slice(0, 12)}`;
+
+  await query(
+    `
+      INSERT INTO search_ad_report_jobs (id, provider_report_job_id, report_type, stat_date, status, download_url, synced_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, now(), now())
+      ON CONFLICT (provider_report_job_id)
+      DO UPDATE SET report_type = EXCLUDED.report_type, stat_date = EXCLUDED.stat_date, status = EXCLUDED.status,
+        download_url = EXCLUDED.download_url, synced_at = now(), updated_at = now()
+    `,
+    [reportId, input.providerReportJobId, input.reportType, input.statDate, input.status, input.downloadUrl ?? null],
+  );
+
+  await query(
+    `
+      INSERT INTO search_ad_report_files (id, report_job_id, raw_text, checksum, content_type, parser_version, row_count)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      ON CONFLICT (report_job_id, checksum)
+      DO UPDATE SET raw_text = EXCLUDED.raw_text, parser_version = EXCLUDED.parser_version, row_count = EXCLUDED.row_count
+    `,
+    [fileId, reportId, input.rawText, input.checksum, "text/tab-separated-values; charset=utf-8", input.parserVersion, input.rawRows.length],
+  );
+
+  await query("DELETE FROM search_ad_report_normalized_rows WHERE report_row_id IN (SELECT id FROM search_ad_report_rows WHERE report_file_id = $1)", [fileId]);
+  await query("DELETE FROM search_ad_report_rows WHERE report_file_id = $1", [fileId]);
+
+  for (const row of input.rawRows) {
+    await query(
+      `
+        INSERT INTO search_ad_report_rows (id, report_file_id, row_number, raw_row, brand_key, ad_product_type, mapping_status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [row.id, fileId, row.rowNumber, JSON.stringify(row.rawRow), row.brandKey ?? null, row.adProductType ?? null, row.mappingStatus],
+    );
+  }
+
+  for (const row of input.normalizedRows) {
+    await query(
+      `
+        INSERT INTO search_ad_report_normalized_rows (
+          id, report_row_id, report_type, brand_key, ad_product_type, campaign_id, campaign_name, adgroup_id, adgroup_name,
+          keyword_id, keyword_text, search_term, impressions, clicks, cost, conversions, sales_amount, source_date
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      `,
+      [
+        row.id,
+        row.reportRowId,
+        row.reportType,
+        row.brandKey,
+        row.adProductType,
+        row.campaignId ?? null,
+        row.campaignName ?? null,
+        row.adgroupId ?? null,
+        row.adgroupName ?? null,
+        row.keywordId ?? null,
+        row.keywordText ?? null,
+        row.searchTerm ?? null,
+        row.impressions,
+        row.clicks,
+        row.cost,
+        row.conversions,
+        row.salesAmount,
+        row.sourceDate,
+      ],
+    );
+  }
+
+  return { reportId, fileId };
+}
+
+export async function ensureSearchAdSchema() {
+  if (!hasDatabaseUrl()) {
+    return;
+  }
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS workflow_records (
+      collection TEXT NOT NULL,
+      id TEXT NOT NULL,
+      payload_json JSONB NOT NULL,
+      imported_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (collection, id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ad_brand_mappings (
+      id TEXT PRIMARY KEY,
+      brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT NOT NULL CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      provider_level TEXT NOT NULL CHECK (provider_level IN ('campaign', 'adgroup', 'keyword')),
+      provider_id TEXT,
+      match_type TEXT NOT NULL CHECK (match_type IN ('provider_id', 'name_prefix', 'name_contains', 'manual')),
+      match_value TEXT NOT NULL,
+      confidence TEXT NOT NULL DEFAULT 'manual',
+      enabled BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_report_jobs (
+      id TEXT PRIMARY KEY,
+      provider_report_job_id TEXT NOT NULL UNIQUE,
+      report_type TEXT NOT NULL,
+      stat_date DATE NOT NULL,
+      status TEXT NOT NULL,
+      download_url TEXT,
+      status_message TEXT,
+      synced_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_report_files (
+      id TEXT PRIMARY KEY,
+      report_job_id TEXT NOT NULL REFERENCES search_ad_report_jobs(id) ON DELETE CASCADE,
+      storage_backend TEXT NOT NULL DEFAULT 'postgres',
+      raw_text TEXT NOT NULL,
+      checksum TEXT NOT NULL,
+      content_type TEXT,
+      parser_version TEXT NOT NULL,
+      row_count INTEGER NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (report_job_id, checksum)
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_report_rows (
+      id TEXT PRIMARY KEY,
+      report_file_id TEXT NOT NULL REFERENCES search_ad_report_files(id) ON DELETE CASCADE,
+      row_number INTEGER NOT NULL,
+      raw_row JSONB NOT NULL,
+      brand_key TEXT CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      mapping_status TEXT NOT NULL DEFAULT 'unmapped',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (report_file_id, row_number)
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_report_normalized_rows (
+      id TEXT PRIMARY KEY,
+      report_row_id TEXT NOT NULL REFERENCES search_ad_report_rows(id) ON DELETE CASCADE,
+      report_type TEXT NOT NULL,
+      brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT NOT NULL CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      campaign_id TEXT,
+      campaign_name TEXT,
+      adgroup_id TEXT,
+      adgroup_name TEXT,
+      keyword_id TEXT,
+      keyword_text TEXT,
+      search_term TEXT,
+      impressions NUMERIC NOT NULL DEFAULT 0,
+      clicks NUMERIC NOT NULL DEFAULT 0,
+      cost NUMERIC NOT NULL DEFAULT 0,
+      conversions NUMERIC NOT NULL DEFAULT 0,
+      sales_amount NUMERIC NOT NULL DEFAULT 0,
+      source_date DATE NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_campaign_snapshots (
+      id TEXT PRIMARY KEY,
+      provider_campaign_id TEXT NOT NULL,
+      brand_key TEXT CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      name TEXT NOT NULL,
+      campaign_type TEXT,
+      user_lock BOOLEAN,
+      status TEXT,
+      status_reason TEXT,
+      raw_payload JSONB NOT NULL,
+      collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (provider_campaign_id, collected_at)
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_adgroup_snapshots (
+      id TEXT PRIMARY KEY,
+      provider_adgroup_id TEXT NOT NULL,
+      provider_campaign_id TEXT,
+      brand_key TEXT CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      name TEXT NOT NULL,
+      adgroup_type TEXT,
+      user_lock BOOLEAN,
+      status TEXT,
+      status_reason TEXT,
+      bid_amount NUMERIC,
+      daily_budget NUMERIC,
+      raw_payload JSONB NOT NULL,
+      collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (provider_adgroup_id, collected_at)
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_keyword_snapshots (
+      id TEXT PRIMARY KEY,
+      provider_keyword_id TEXT NOT NULL,
+      provider_adgroup_id TEXT,
+      brand_key TEXT CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      keyword_text TEXT NOT NULL,
+      user_lock BOOLEAN,
+      status TEXT,
+      status_reason TEXT,
+      bid_amount NUMERIC,
+      raw_payload JSONB NOT NULL,
+      collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (provider_keyword_id, collected_at)
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_rule_criteria (
+      id TEXT PRIMARY KEY,
+      brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT NOT NULL CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      period_days INTEGER NOT NULL,
+      min_impressions NUMERIC NOT NULL DEFAULT 100,
+      min_clicks NUMERIC NOT NULL DEFAULT 10,
+      min_cost NUMERIC NOT NULL DEFAULT 10000,
+      target_cpa NUMERIC,
+      target_roas NUMERIC,
+      enabled BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_rule_results (
+      id TEXT PRIMARY KEY,
+      brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT NOT NULL CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      category TEXT NOT NULL,
+      target_type TEXT NOT NULL,
+      target_id TEXT,
+      target_label TEXT NOT NULL,
+      severity TEXT NOT NULL,
+      period_days INTEGER NOT NULL,
+      reason TEXT NOT NULL,
+      metrics JSONB NOT NULL,
+      evidence_packet JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_action_previews (
+      id TEXT PRIMARY KEY,
+      target_type TEXT NOT NULL CHECK (target_type IN ('campaign', 'adgroup')),
+      target_id TEXT NOT NULL,
+      requested_action TEXT NOT NULL CHECK (requested_action IN ('turn_on', 'turn_off')),
+      before_state JSONB NOT NULL,
+      after_state JSONB NOT NULL,
+      impact_summary JSONB NOT NULL,
+      write_gate_open BOOLEAN NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_action_logs (
+      id TEXT PRIMARY KEY,
+      preview_id TEXT NOT NULL REFERENCES search_ad_action_previews(id),
+      status TEXT NOT NULL CHECK (status IN ('blocked', 'applied', 'failed')),
+      provider_request JSONB,
+      provider_response JSONB,
+      error_message TEXT,
+      actor TEXT NOT NULL DEFAULT 'owner',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE INDEX IF NOT EXISTS search_ad_report_jobs_stat_date_idx
+      ON search_ad_report_jobs (stat_date DESC, report_type);
+
+    CREATE INDEX IF NOT EXISTS search_ad_normalized_brand_type_date_idx
+      ON search_ad_report_normalized_rows (brand_key, ad_product_type, source_date DESC);
+
+    CREATE INDEX IF NOT EXISTS search_ad_rule_results_brand_category_idx
+      ON search_ad_rule_results (brand_key, ad_product_type, category, created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS search_ad_campaign_latest_idx
+      ON search_ad_campaign_snapshots (provider_campaign_id, collected_at DESC);
+
+    CREATE INDEX IF NOT EXISTS search_ad_adgroup_latest_idx
+      ON search_ad_adgroup_snapshots (provider_adgroup_id, collected_at DESC);
+  `);
+}
+
+async function listSearchAdReportsFromDb(filters: SearchAdFilters, limit: number): Promise<SearchAdReportJobRecord[]> {
+  const clauses: string[] = [];
+  const values: unknown[] = [];
+  if (filters.adProduct !== "all") {
+    const shopping = filters.adProduct === "shopping_search";
+    clauses.push(shopping ? "j.report_type LIKE 'SHOPPING%'" : "j.report_type NOT LIKE 'SHOPPING%'");
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+
+  const result = await query<ReportJobRow>(
+    `
+      SELECT
+        j.id,
+        j.provider_report_job_id,
+        j.report_type,
+        j.stat_date,
+        j.status,
+        j.download_url,
+        j.synced_at,
+        COALESCE(f.row_count, 0)::int AS row_count,
+        COALESCE(jsonb_agg(DISTINCT r.brand_key) FILTER (WHERE r.brand_key IS NOT NULL), '[]'::jsonb) AS mapped_brands,
+        jsonb_build_object(
+          'impressions', COALESCE(SUM(n.impressions), 0),
+          'clicks', COALESCE(SUM(n.clicks), 0),
+          'cost', COALESCE(SUM(n.cost), 0),
+          'conversions', COALESCE(SUM(n.conversions), 0),
+          'salesAmount', COALESCE(SUM(n.sales_amount), 0)
+        ) AS summary
+      FROM search_ad_report_jobs j
+      LEFT JOIN search_ad_report_files f ON f.report_job_id = j.id
+      LEFT JOIN search_ad_report_rows r ON r.report_file_id = f.id
+      LEFT JOIN search_ad_report_normalized_rows n ON n.report_row_id = r.id
+      ${where}
+      GROUP BY j.id, f.row_count
+      ORDER BY j.stat_date DESC, j.updated_at DESC
+      LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
+    `,
+    values,
+  );
+
+  return result.rows
+    .map(mapReportJobRow)
+    .filter((report) => filters.brand === "all" || report.mappedBrands.includes(filters.brand));
+}
+
+async function listSearchAdRuleResultsFromDb(filters: SearchAdFilters, limit: number): Promise<SearchAdRuleResult[]> {
+  const clauses: string[] = [];
+  const values: unknown[] = [];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`ad_product_type = $${values.length}`);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+
+  const result = await query<{
+    id: string;
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    category: SearchAdRuleResult["category"];
+    target_type: SearchAdRuleResult["targetType"];
+    target_id: string | null;
+    target_label: string;
+    severity: SearchAdRuleResult["severity"];
+    period_days: number;
+    reason: string;
+    metrics: Record<string, number | string | null>;
+    evidence_packet: Record<string, unknown>;
+    created_at: string | Date;
+  }>(
+    `
+      SELECT id, brand_key, ad_product_type, category, target_type, target_id, target_label, severity, period_days, reason, metrics, evidence_packet, created_at
+      FROM search_ad_rule_results
+      ${where}
+      ORDER BY created_at DESC
+      LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
+    `,
+    values,
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    brandKey: row.brand_key,
+    adProductType: row.ad_product_type,
+    category: row.category,
+    targetType: row.target_type,
+    targetId: row.target_id ?? undefined,
+    targetLabel: row.target_label,
+    severity: row.severity,
+    periodDays: row.period_days,
+    reason: row.reason,
+    metrics: row.metrics,
+    evidencePacket: row.evidence_packet,
+    createdAt: toIso(row.created_at),
+  }));
+}
+
+async function listLatestStateSnapshots(targetType: SearchAdTargetType, filters: SearchAdFilters): Promise<SearchAdStateRecord[]> {
+  const clauses: string[] = [];
+  const values: unknown[] = [];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`ad_product_type = $${values.length}`);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+
+  if (targetType === "campaign") {
+    const result = await query<{
+      id: string;
+      provider_campaign_id: string;
+      brand_key: BrandKey | null;
+      ad_product_type: AdProductType | null;
+      name: string;
+      user_lock: boolean | null;
+      status: string | null;
+      status_reason: string | null;
+      collected_at: string | Date;
+    }>(
+      `
+        SELECT DISTINCT ON (provider_campaign_id)
+          id, provider_campaign_id, brand_key, ad_product_type, name, user_lock, status, status_reason, collected_at
+        FROM search_ad_campaign_snapshots
+        ${where}
+        ORDER BY provider_campaign_id, collected_at DESC
+      `,
+      values,
+    );
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      targetType: "campaign",
+      providerId: row.provider_campaign_id,
+      brandKey: row.brand_key ?? undefined,
+      adProductType: row.ad_product_type ?? undefined,
+      name: row.name,
+      userLock: row.user_lock,
+      status: row.status ?? undefined,
+      statusReason: row.status_reason ?? undefined,
+      collectedAt: toIso(row.collected_at),
+    }));
+  }
+
+  if (targetType === "adgroup") {
+    const result = await query<{
+      id: string;
+      provider_adgroup_id: string;
+      provider_campaign_id: string | null;
+      brand_key: BrandKey | null;
+      ad_product_type: AdProductType | null;
+      name: string;
+      user_lock: boolean | null;
+      status: string | null;
+      status_reason: string | null;
+      bid_amount: string | null;
+      daily_budget: string | null;
+      collected_at: string | Date;
+    }>(
+      `
+        SELECT DISTINCT ON (provider_adgroup_id)
+          id, provider_adgroup_id, provider_campaign_id, brand_key, ad_product_type, name, user_lock, status, status_reason,
+          bid_amount, daily_budget, collected_at
+        FROM search_ad_adgroup_snapshots
+        ${where}
+        ORDER BY provider_adgroup_id, collected_at DESC
+      `,
+      values,
+    );
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      targetType: "adgroup",
+      providerId: row.provider_adgroup_id,
+      parentProviderId: row.provider_campaign_id ?? undefined,
+      brandKey: row.brand_key ?? undefined,
+      adProductType: row.ad_product_type ?? undefined,
+      name: row.name,
+      userLock: row.user_lock,
+      status: row.status ?? undefined,
+      statusReason: row.status_reason ?? undefined,
+      bidAmount: row.bid_amount === null ? null : Number(row.bid_amount),
+      dailyBudget: row.daily_budget === null ? null : Number(row.daily_budget),
+      collectedAt: toIso(row.collected_at),
+    }));
+  }
+
+  const result = await query<{
+    id: string;
+    provider_keyword_id: string;
+    provider_adgroup_id: string | null;
+    brand_key: BrandKey | null;
+    ad_product_type: AdProductType | null;
+    keyword_text: string;
+    user_lock: boolean | null;
+    status: string | null;
+    status_reason: string | null;
+    bid_amount: string | null;
+    collected_at: string | Date;
+  }>(
+    `
+      SELECT DISTINCT ON (provider_keyword_id)
+        id, provider_keyword_id, provider_adgroup_id, brand_key, ad_product_type, keyword_text, user_lock, status, status_reason,
+        bid_amount, collected_at
+      FROM search_ad_keyword_snapshots
+      ${where}
+      ORDER BY provider_keyword_id, collected_at DESC
+      LIMIT 500
+    `,
+    values,
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    targetType: "keyword",
+    providerId: row.provider_keyword_id,
+    parentProviderId: row.provider_adgroup_id ?? undefined,
+    brandKey: row.brand_key ?? undefined,
+    adProductType: row.ad_product_type ?? undefined,
+    name: row.keyword_text,
+    userLock: row.user_lock,
+    status: row.status ?? undefined,
+    statusReason: row.status_reason ?? undefined,
+    bidAmount: row.bid_amount === null ? null : Number(row.bid_amount),
+    collectedAt: toIso(row.collected_at),
+  }));
+}
+
+async function listNormalizedRowsByFilters(filters: SearchAdFilters, limit: number): Promise<SearchAdNormalizedRow[]> {
+  const clauses: string[] = [];
+  const values: unknown[] = [];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`ad_product_type = $${values.length}`);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+
+  const result = await query<{
+    id: string;
+    report_row_id: string;
+    report_type: SearchAdReportType;
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    campaign_id: string | null;
+    campaign_name: string | null;
+    adgroup_id: string | null;
+    adgroup_name: string | null;
+    keyword_id: string | null;
+    keyword_text: string | null;
+    search_term: string | null;
+    impressions: string;
+    clicks: string;
+    cost: string;
+    conversions: string;
+    sales_amount: string;
+    source_date: string | Date;
+  }>(
+    `
+      SELECT *
+      FROM search_ad_report_normalized_rows
+      ${where}
+      ORDER BY source_date DESC, cost DESC, clicks DESC
+      LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
+    `,
+    values,
+  );
+
+  return result.rows.map(mapNormalizedRow);
+}
+
+async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActionLogsView> {
+  const previews = await query<{
+    id: string;
+    target_type: "campaign" | "adgroup";
+    target_id: string;
+    requested_action: SearchAdRequestedAction;
+    before_state: SearchAdActionPreview["beforeState"];
+    after_state: SearchAdActionPreview["afterState"];
+    impact_summary: SearchAdActionPreview["impactSummary"];
+    write_gate_open: boolean;
+    created_at: string | Date;
+  }>(
+    `
+      SELECT id, target_type, target_id, requested_action, before_state, after_state, impact_summary, write_gate_open, created_at
+      FROM search_ad_action_previews
+      ORDER BY created_at DESC
+      LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
+    `,
+  );
+
+  const logs = await query<{
+    id: string;
+    preview_id: string;
+    status: SearchAdActionLog["status"];
+    error_message: string | null;
+    created_at: string | Date;
+    target_id: string;
+    requested_action: SearchAdRequestedAction;
+  }>(
+    `
+      SELECT l.id, l.preview_id, l.status, l.error_message, l.created_at, p.target_id, p.requested_action
+      FROM search_ad_action_logs l
+      JOIN search_ad_action_previews p ON p.id = l.preview_id
+      ORDER BY l.created_at DESC
+      LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
+    `,
+  );
+
+  return {
+    previews: previews.rows.map((row) => ({
+      id: row.id,
+      targetType: row.target_type,
+      targetId: row.target_id,
+      targetLabel: row.target_id,
+      requestedAction: row.requested_action,
+      beforeState: row.before_state,
+      afterState: row.after_state,
+      impactSummary: row.impact_summary,
+      writeGateOpen: row.write_gate_open,
+      createdAt: toIso(row.created_at),
+    })),
+    logs: logs.rows.map((row) => ({
+      id: row.id,
+      previewId: row.preview_id,
+      targetLabel: row.target_id,
+      actionLabel: row.requested_action === "turn_on" ? "켜기 요청" : "끄기 요청",
+      status: row.status,
+      reason: row.error_message ?? "",
+      createdAt: toIso(row.created_at),
+    })),
+  };
+}
+
+async function listNormalizedRowsForReport(reportId: string): Promise<SearchAdNormalizedRow[]> {
+  const result = await query<{
+    id: string;
+    report_row_id: string;
+    report_type: SearchAdReportType;
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    campaign_id: string | null;
+    campaign_name: string | null;
+    adgroup_id: string | null;
+    adgroup_name: string | null;
+    keyword_id: string | null;
+    keyword_text: string | null;
+    search_term: string | null;
+    impressions: string;
+    clicks: string;
+    cost: string;
+    conversions: string;
+    sales_amount: string;
+    source_date: string | Date;
+  }>(
+    `
+      SELECT n.*
+      FROM search_ad_report_normalized_rows n
+      JOIN search_ad_report_rows r ON r.id = n.report_row_id
+      JOIN search_ad_report_files f ON f.id = r.report_file_id
+      WHERE f.report_job_id = $1
+      ORDER BY n.cost DESC, n.clicks DESC
+      LIMIT 100
+    `,
+    [reportId],
+  );
+
+  return result.rows.map((row) => ({
+    ...mapNormalizedRow(row),
+  }));
+}
+
+async function listRawRowsForReport(reportId: string): Promise<SearchAdRawReportRow[]> {
+  const result = await query<{
+    id: string;
+    report_file_id: string;
+    row_number: number;
+    raw_row: Record<string, string | number | null>;
+    brand_key: BrandKey | null;
+    ad_product_type: AdProductType | null;
+    mapping_status: SearchAdRawReportRow["mappingStatus"];
+  }>(
+    `
+      SELECT r.id, r.report_file_id, r.row_number, r.raw_row, r.brand_key, r.ad_product_type, r.mapping_status
+      FROM search_ad_report_rows r
+      JOIN search_ad_report_files f ON f.id = r.report_file_id
+      WHERE f.report_job_id = $1
+      ORDER BY r.row_number
+      LIMIT 100
+    `,
+    [reportId],
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    reportFileId: row.report_file_id,
+    rowNumber: row.row_number,
+    rawRow: row.raw_row,
+    brandKey: row.brand_key ?? undefined,
+    adProductType: row.ad_product_type ?? undefined,
+    mappingStatus: row.mapping_status,
+  }));
+}
+
+async function getSyncStatusFromDb() {
+  const result = await query<{ last_report_sync_at: string | Date | null; last_state_sync_at: string | Date | null }>(`
+    SELECT
+      (SELECT MAX(synced_at) FROM search_ad_report_jobs) AS last_report_sync_at,
+      GREATEST(
+        COALESCE((SELECT MAX(collected_at) FROM search_ad_campaign_snapshots), 'epoch'::timestamptz),
+        COALESCE((SELECT MAX(collected_at) FROM search_ad_adgroup_snapshots), 'epoch'::timestamptz),
+        COALESCE((SELECT MAX(collected_at) FROM search_ad_keyword_snapshots), 'epoch'::timestamptz)
+      ) AS last_state_sync_at
+  `);
+  const lastStateSyncAt = result.rows[0]?.last_state_sync_at;
+
+  return {
+    lastReportSyncAt: result.rows[0]?.last_report_sync_at ? toIso(result.rows[0].last_report_sync_at) : null,
+    lastStateSyncAt: lastStateSyncAt && String(lastStateSyncAt) !== "1970-01-01T00:00:00.000Z" ? toIso(lastStateSyncAt) : null,
+    hasSearchAdCredentials: Boolean(process.env.NAVER_SEARCH_AD_ACCESS_LICENSE && process.env.NAVER_SEARCH_AD_SECRET_KEY && process.env.NAVER_SEARCH_AD_CUSTOMER_ID),
+    searchAdWriteEnabled: isSearchAdWriteEnabled(),
+  };
+}
+
+function mapReportJobRow(row: ReportJobRow): SearchAdReportJobRecord {
+  const summary = row.summary ?? {};
+  const reportType = row.report_type;
+  return {
+    id: row.id,
+    providerReportJobId: row.provider_report_job_id,
+    reportType,
+    statDate: toDate(row.stat_date),
+    status: row.status,
+    displayName: getReportTypeLabel(reportType),
+    downloadUrl: row.download_url ?? undefined,
+    syncedAt: row.synced_at ? toIso(row.synced_at) : undefined,
+    rowCount: Number(row.row_count ?? 0),
+    mappedBrands: Array.isArray(row.mapped_brands) ? row.mapped_brands : [],
+    parseStatus: Number(row.row_count ?? 0) > 0 ? "완료" : "대기",
+    summary: {
+      impressions: Number(summary.impressions ?? 0),
+      clicks: Number(summary.clicks ?? 0),
+      cost: Number(summary.cost ?? 0),
+      conversions: Number(summary.conversions ?? 0),
+      salesAmount: Number(summary.salesAmount ?? 0),
+      lowEfficiencyCount: 0,
+      goodPerformanceCount: 0,
+    },
+  };
+}
+
+function toIso(value: string | Date) {
+  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+}
+
+function toDate(value: string | Date) {
+  return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
+}
+
+function mapNormalizedRow(row: {
+  id: string;
+  report_row_id: string;
+  report_type: SearchAdReportType;
+  brand_key: BrandKey;
+  ad_product_type: AdProductType;
+  campaign_id: string | null;
+  campaign_name: string | null;
+  adgroup_id: string | null;
+  adgroup_name: string | null;
+  keyword_id: string | null;
+  keyword_text: string | null;
+  search_term: string | null;
+  impressions: string;
+  clicks: string;
+  cost: string;
+  conversions: string;
+  sales_amount: string;
+  source_date: string | Date;
+}): SearchAdNormalizedRow {
+  return {
+    id: row.id,
+    reportRowId: row.report_row_id,
+    reportType: row.report_type,
+    brandKey: row.brand_key,
+    adProductType: row.ad_product_type,
+    campaignId: row.campaign_id ?? undefined,
+    campaignName: row.campaign_name ?? undefined,
+    adgroupId: row.adgroup_id ?? undefined,
+    adgroupName: row.adgroup_name ?? undefined,
+    keywordId: row.keyword_id ?? undefined,
+    keywordText: row.keyword_text ?? undefined,
+    searchTerm: row.search_term ?? undefined,
+    impressions: Number(row.impressions),
+    clicks: Number(row.clicks),
+    cost: Number(row.cost),
+    conversions: Number(row.conversions),
+    salesAmount: Number(row.sales_amount),
+    sourceDate: toDate(row.source_date),
+  };
+}
+
+async function getLatestActionTarget(targetType: "campaign" | "adgroup", targetId: string): Promise<SearchAdStateRecord | undefined> {
+  const rows = await listLatestStateSnapshots(targetType, DEFAULT_SEARCH_AD_FILTERS);
+  return rows.find((row) => row.providerId === targetId || row.id === targetId);
+}
+
+async function getActionImpact(targetType: "campaign" | "adgroup", target: SearchAdStateRecord) {
+  const childCount =
+    targetType === "campaign"
+      ? (await listLatestStateSnapshots("adgroup", DEFAULT_SEARCH_AD_FILTERS)).filter((row) => row.parentProviderId === target.providerId).length
+      : (await listLatestStateSnapshots("keyword", DEFAULT_SEARCH_AD_FILTERS)).filter((row) => row.parentProviderId === target.providerId).length;
+  const rows = await listNormalizedRowsByFilters(DEFAULT_SEARCH_AD_FILTERS, 500);
+  const matchedRows = rows.filter((row) => {
+    if (targetType === "campaign") {
+      return row.campaignId === target.providerId || row.campaignName === target.name;
+    }
+
+    return row.adgroupId === target.providerId || row.adgroupName === target.name;
+  });
+
+  return {
+    affectedChildren: childCount,
+    recentCost: matchedRows.reduce((sum, row) => sum + row.cost, 0),
+    recentClicks: matchedRows.reduce((sum, row) => sum + row.clicks, 0),
+    recentConversions: matchedRows.reduce((sum, row) => sum + row.conversions, 0),
+  };
+}
+
+async function getSearchAdActionPreviewById(id: string): Promise<SearchAdActionPreview | undefined> {
+  if (!hasDatabaseUrl()) {
+    return createSampleActionLogsView().previews.find((preview) => preview.id === id);
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<{
+    id: string;
+    target_type: "campaign" | "adgroup";
+    target_id: string;
+    requested_action: SearchAdRequestedAction;
+    before_state: SearchAdActionPreview["beforeState"];
+    after_state: SearchAdActionPreview["afterState"];
+    impact_summary: SearchAdActionPreview["impactSummary"];
+    write_gate_open: boolean;
+    created_at: string | Date;
+  }>(
+    `
+      SELECT id, target_type, target_id, requested_action, before_state, after_state, impact_summary, write_gate_open, created_at
+      FROM search_ad_action_previews
+      WHERE id = $1
+    `,
+    [id],
+  );
+  const row = result.rows[0];
+  if (!row) {
+    return undefined;
+  }
+
+  return {
+    id: row.id,
+    targetType: row.target_type,
+    targetId: row.target_id,
+    targetLabel: row.target_id,
+    requestedAction: row.requested_action,
+    beforeState: row.before_state,
+    afterState: row.after_state,
+    impactSummary: row.impact_summary,
+    writeGateOpen: row.write_gate_open,
+    createdAt: toIso(row.created_at),
+  };
+}
+
+function isSearchAdWriteEnabled() {
+  return process.env.SEARCH_AD_WRITE_ENABLED === "1" || process.env.NAVER_SEARCH_AD_WRITE_ENABLED === "1";
+}
+
+function snapshotId(targetType: SearchAdTargetType, providerId: string, collectedAt: string) {
+  return `${targetType}-${providerId}-${collectedAt}`.replace(/[^a-zA-Z0-9_-]/g, "-");
+}
+
+function canUseSampleFallback() {
+  if (process.env.NODE_ENV !== "production") {
+    return true;
+  }
+
+  return process.env.VERCEL !== "1" && process.env.RAILWAY_SERVICE_NAME !== "marketcrew-api" && process.env.MARKETCREW_BACKEND_MODE !== "1";
+}

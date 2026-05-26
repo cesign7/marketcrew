@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MarketCrew 검색광고 운영 설계</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --paper: #ffffff;
+      --ink: #17202a;
+      --muted: #687385;
+      --line: #dde3ea;
+      --accent: #176b87;
+      --accent-strong: #0f4c5c;
+      --accent-soft: #e8f4f7;
+      --table-head: #eef4f7;
+      --code: #0f172a;
+      --code-bg: #eef2f7;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.68;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 290px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    aside {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      padding: 28px 18px;
+      border-right: 1px solid var(--line);
+      background: #fbfcfe;
+    }
+    aside h1 { margin: 0 0 6px; font-size: 19px; line-height: 1.35; }
+    aside p { margin: 0 0 20px; color: var(--muted); font-size: 13px; }
+    nav { display: grid; gap: 4px; }
+    nav a {
+      color: #334155;
+      text-decoration: none;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 13px;
+    }
+    nav a:hover { background: var(--accent-soft); color: var(--accent-strong); }
+    .toc-l1 { font-weight: 800; margin-top: 8px; }
+    .toc-l2 { padding-left: 18px; font-weight: 650; }
+    .toc-l3 { padding-left: 34px; color: var(--muted); }
+    main {
+      max-width: 1160px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 36px 40px 80px;
+    }
+    article {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 38px;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+    }
+    .metadata {
+      margin-bottom: 28px;
+      padding: 18px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .metadata h2 { margin-top: 0; font-size: 18px; border: 0; padding: 0; }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .meta-grid div { display: grid; gap: 2px; }
+    .meta-grid span { color: var(--muted); font-size: 12px; }
+    .meta-grid strong { font-size: 14px; overflow-wrap: anywhere; }
+    h1, h2, h3, h4 { line-height: 1.3; letter-spacing: 0; }
+    article > h1:first-of-type { margin-top: 0; font-size: 34px; }
+    h2 { margin-top: 42px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 25px; }
+    h3 { margin-top: 28px; font-size: 20px; }
+    h4 { margin-top: 22px; font-size: 17px; }
+    p { margin: 12px 0; }
+    blockquote {
+      margin: 18px 0;
+      padding: 14px 18px;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      border-radius: 0 8px 8px 0;
+    }
+    blockquote p { margin: 6px 0; }
+    ul, ol { padding-left: 24px; }
+    li { margin: 4px 0; }
+    .table-wrap {
+      overflow-x: auto;
+      margin: 18px 0 26px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 720px; }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 14px;
+    }
+    th:last-child, td:last-child { border-right: 0; }
+    tr:last-child td { border-bottom: 0; }
+    th { background: var(--table-head); font-weight: 800; color: #243044; }
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: var(--code-bg);
+      color: var(--code);
+      font-size: 0.92em;
+    }
+    pre {
+      overflow-x: auto;
+      padding: 16px;
+      background: #111827;
+      color: #e5e7eb;
+      border-radius: 8px;
+    }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    a { color: var(--accent-strong); }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 30px 0; }
+    @media (max-width: 900px) {
+      .layout { display: block; }
+      aside { position: relative; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+      main { padding: 20px 14px 56px; }
+      article { padding: 22px; }
+      article > h1:first-of-type { font-size: 26px; }
+      table { min-width: 620px; }
+    }
+    @media print {
+      body { background: white; }
+      .layout { display: block; }
+      aside { display: none; }
+      main { max-width: none; padding: 0; }
+      article { border: 0; box-shadow: none; padding: 0; }
+      .table-wrap { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <h1>MarketCrew 설계</h1>
+      <p>검색광고 운영 기반 디자인 문서</p>
+      <nav><a class="toc-l1" href="#search-ad-operations-foundation-design-document">search-ad-operations-foundation Design Document</a><a class="toc-l3" href="#pipeline-references">Pipeline References</a><a class="toc-l2" href="#context-anchor">Context Anchor</a><a class="toc-l2" href="#design-anchor">Design Anchor</a><a class="toc-l2" href="#1-overview">1. Overview</a><a class="toc-l3" href="#1-1-design-goals">1.1 Design Goals</a><a class="toc-l3" href="#1-2-design-principles">1.2 Design Principles</a><a class="toc-l2" href="#2-architecture-options">2. Architecture Options</a><a class="toc-l3" href="#2-0-architecture-comparison">2.0 Architecture Comparison</a><a class="toc-l3" href="#2-1-component-diagram">2.1 Component Diagram</a><a class="toc-l3" href="#2-2-data-flow">2.2 Data Flow</a><a class="toc-l3" href="#2-3-dependencies">2.3 Dependencies</a><a class="toc-l2" href="#3-data-model">3. Data Model</a><a class="toc-l3" href="#3-1-entity-definition">3.1 Entity Definition</a><a class="toc-l3" href="#3-2-entity-relationships">3.2 Entity Relationships</a><a class="toc-l3" href="#3-3-database-schema">3.3 Database Schema</a><a class="toc-l2" href="#4-api-specification">4. API Specification</a><a class="toc-l3" href="#4-1-endpoint-list">4.1 Endpoint List</a><a class="toc-l3" href="#4-2-detailed-specification">4.2 Detailed Specification</a><a class="toc-l3" href="#4-3-error-response-format">4.3 Error Response Format</a><a class="toc-l2" href="#5-ui-ux-design">5. UI/UX Design</a><a class="toc-l3" href="#5-1-screen-layout">5.1 Screen Layout</a><a class="toc-l3" href="#5-2-user-flow">5.2 User Flow</a><a class="toc-l3" href="#5-3-component-list">5.3 Component List</a><a class="toc-l3" href="#5-4-page-ui-checklist">5.4 Page UI Checklist</a><a class="toc-l2" href="#6-error-handling">6. Error Handling</a><a class="toc-l3" href="#6-1-error-code-definition">6.1 Error Code Definition</a><a class="toc-l3" href="#6-2-error-response-format">6.2 Error Response Format</a><a class="toc-l2" href="#7-security-considerations">7. Security Considerations</a><a class="toc-l2" href="#8-test-plan">8. Test Plan</a><a class="toc-l3" href="#8-1-test-scope">8.1 Test Scope</a><a class="toc-l3" href="#8-2-l1-api-test-scenarios">8.2 L1: API Test Scenarios</a><a class="toc-l3" href="#8-3-l2-ui-action-test-scenarios">8.3 L2: UI Action Test Scenarios</a><a class="toc-l3" href="#8-4-l3-e2e-scenario-test-scenarios">8.4 L3: E2E Scenario Test Scenarios</a><a class="toc-l3" href="#8-5-seed-data-requirements">8.5 Seed Data Requirements</a><a class="toc-l2" href="#9-clean-architecture">9. Clean Architecture</a><a class="toc-l3" href="#9-1-layer-structure">9.1 Layer Structure</a><a class="toc-l3" href="#9-2-dependency-rules">9.2 Dependency Rules</a><a class="toc-l3" href="#9-3-file-import-rules">9.3 File Import Rules</a><a class="toc-l3" href="#9-4-this-feature-s-layer-assignment">9.4 This Feature&#39;s Layer Assignment</a><a class="toc-l2" href="#10-coding-convention-reference">10. Coding Convention Reference</a><a class="toc-l3" href="#10-1-naming-conventions">10.1 Naming Conventions</a><a class="toc-l3" href="#10-2-import-order">10.2 Import Order</a><a class="toc-l3" href="#10-3-environment-variables">10.3 Environment Variables</a><a class="toc-l3" href="#10-4-this-feature-s-conventions">10.4 This Feature&#39;s Conventions</a><a class="toc-l2" href="#11-implementation-guide">11. Implementation Guide</a><a class="toc-l3" href="#11-1-file-structure">11.1 File Structure</a><a class="toc-l3" href="#11-2-implementation-order">11.2 Implementation Order</a><a class="toc-l3" href="#11-3-session-guide">11.3 Session Guide</a><a class="toc-l2" href="#version-history">Version History</a></nav>
+    </aside>
+    <main>
+      <article>
+        <section class="metadata"><h2>문서 정보</h2><div class="meta-grid"><div><span>feature</span><strong>search-ad-operations-foundation</strong></div><div><span>project</span><strong>marketcrew</strong></div><div><span>version</span><strong>0.0.0-reboot</strong></div><div><span>author</span><strong>Codex</strong></div><div><span>date</span><strong>2026-05-26</strong></div><div><span>status</span><strong>Draft</strong></div><div><span>planningDoc</span><strong>docs/01-plan/features/search-ad-operations-foundation.plan.md</strong></div><div><span>selectedArchitecture</span><strong>Option C - Pragmatic Balance</strong></div></div></section>
+        <h1 id="search-ad-operations-foundation-design-document">search-ad-operations-foundation Design Document</h1>
+<blockquote><p><strong>Summary</strong>: 커피프린트와 스티커씨의 네이버 파워링크·쇼핑검색광고를 보고서 기반으로 수집, 보관, 분류하고 안전하게 ON/OFF 운영할 수 있는 SaaS형 검색광고 운영 기반 설계다.</p><p></p><p><strong>Project</strong>: marketcrew</p><p><strong>Version</strong>: 0.0.0-reboot</p><p><strong>Author</strong>: Codex</p><p><strong>Date</strong>: 2026-05-26</p><p><strong>Status</strong>: Draft</p><p><strong>Planning Doc</strong>: <a href="../../01-plan/features/search-ad-operations-foundation.plan.md">search-ad-operations-foundation.plan.md</a></p></blockquote>
+<h3 id="pipeline-references">Pipeline References</h3>
+<div class="table-wrap"><table><thead><tr><th>Phase</th><th>Document</th><th>Status</th></tr></thead><tbody><tr><td>Phase 1</td><td>Schema Definition</td><td>N/A</td></tr><tr><td>Phase 2</td><td>Coding Conventions</td><td>N/A</td></tr><tr><td>Phase 3</td><td>Mockup</td><td>N/A</td></tr><tr><td>Phase 4</td><td>API Spec</td><td>This document</td><td>Draft</td></tr></tbody></table></div>
+<hr />
+<h2 id="context-anchor">Context Anchor</h2>
+<div class="table-wrap"><table><thead><tr><th>Key</th><th>Value</th></tr></thead><tbody><tr><td><strong>WHY</strong></td><td>LLM보다 먼저 네이버 보고서 원천 데이터, API 상태 조회, 규칙 기반 판단을 안정화해야 실제 운영 자동화의 기반이 생긴다.</td></tr><tr><td><strong>WHO</strong></td><td>커피프린트와 스티커씨 광고를 직접 관리하는 대표.</td></tr><tr><td><strong>RISK</strong></td><td>캠페인/광고그룹 ON/OFF는 실제 광고 노출에 영향을 주므로 미리보기, 권한, write gate, 실행 로그가 필수다.</td></tr><tr><td><strong>SUCCESS</strong></td><td>네이버 보고서가 자동 수집되고 쉬운 보고서 화면에서 이해 가능하게 표시된다. 브랜드별 파워링크·쇼핑검색광고 상태와 성과가 분리 표시되고, 규칙 엔진이 저효율/무클릭/우수 후보를 추출하며, 승인된 경우에만 캠페인/광고그룹 상태를 변경한다.</td></tr><tr><td><strong>SCOPE</strong></td><td>1) 보고서 자동 다운로드 2) 원본/정규화 저장 3) 쉬운 보고서 화면 4) API 상태 수집 5) 브랜드/광고유형 매핑 6) 성과 규칙 엔진 7) 성과 기준 확인 화면 8) SaaS UI 9) 안전한 ON/OFF 실행 10) LLM 확장 준비.</td></tr></tbody></table></div>
+<hr />
+<h2 id="design-anchor">Design Anchor</h2>
+<p>이번 단계에서는 별도 Pencil 디자인 앵커를 잠그지 않는다. <code>DESIGN.md</code>의 reboot 방향과 이 문서의 Page UI Checklist를 기준으로 구현하고, 실제 화면을 만든 뒤 필요하면 <code>docs/02-design/styles/search-ad-operations-foundation.design-anchor.md</code>를 추가한다.</p>
+<div class="table-wrap"><table><thead><tr><th>Category</th><th>Tokens</th></tr></thead><tbody><tr><td><strong>Colors</strong></td><td>기존 <code>globals.css</code>의 밝은 업무형 팔레트 유지. 강조색은 <code>--brand</code>, 위험/주의는 분리 색상 추가.</td></tr><tr><td><strong>Typography</strong></td><td>한국어 운영 화면 기준. 큰 히어로형 글자 대신 표, 카드, 필터에 맞는 작은 계층 사용.</td></tr><tr><td><strong>Spacing</strong></td><td>8px 계열 간격, 카드 radius 8px 이하.</td></tr><tr><td><strong>Tone</strong></td><td>광고 운영자가 빠르게 스캔하는 조용한 SaaS 화면.</td></tr><tr><td><strong>Layout</strong></td><td>왼쪽 메뉴, 상단 필터, 본문 표/카드/상세 패널.</td></tr></tbody></table></div>
+<hr />
+<h2 id="1-overview">1. Overview</h2>
+<h3 id="1-1-design-goals">1.1 Design Goals</h3>
+<ul><li>네이버 Search Ad 보고서를 원본 그대로 저장하고, 화면/규칙 엔진용 정규화 데이터를 별도로 만든다.</li><li>커피프린트와 스티커씨를 최상위 운영 단위로 유지하고, 두 브랜드의 판단을 섞지 않는다.</li><li>파워링크와 쇼핑검색광고를 서로 다른 광고 유형으로 분리한다.</li><li>LLM 호출 없이 규칙 엔진으로 저효율, 무클릭, 우수 후보를 먼저 추출한다.</li><li>캠페인/광고그룹 ON/OFF는 미리보기와 write gate를 통과한 뒤에만 실행한다.</li><li>Vercel 화면은 브라우저용 앱과 로그인 게이트를 담당하고, Railway API가 DB, Search Ad API, 보고서 다운로드, 규칙 계산을 담당한다.</li></ul>
+<h3 id="1-2-design-principles">1.2 Design Principles</h3>
+<ul><li><strong>보고서 우선</strong>: 전일 확정 성과, 검색어, 전환 상세는 <code>stat-reports</code> 다운로드를 기준으로 삼는다.</li><li><strong>API 보조</strong>: <code>/stats</code>와 관리 API는 현재 상태, 실행 전 영향 범위, ON/OFF 처리에 사용한다.</li><li><strong>원본 보존</strong>: 헤더 없는 탭 구분 원문을 Postgres에 보관하고, 파서 버전과 checksum을 같이 남긴다.</li><li><strong>실행 분리</strong>: 조회, 미리보기, 실제 실행 API를 분리한다.</li><li><strong>한국어 화면</strong>: 대표가 이해할 수 있는 화면 문구와 컬럼 설명을 제공한다.</li><li><strong>나중에 LLM 연결 가능</strong>: 규칙 결과를 <code>evidencePacket</code>으로 남겨 추후 LLM 설명/예외 검토에 연결한다.</li></ul>
+<hr />
+<h2 id="2-architecture-options">2. Architecture Options</h2>
+<h3 id="2-0-architecture-comparison">2.0 Architecture Comparison</h3>
+<p>| Criteria | Option A: Minimal | Option B: Clean | Option C: Pragmatic |</p>
+<p>|----------|:-:|:-:|:-:|</p>
+<p>| <strong>Approach</strong> | 기존 <code>/operations</code>와 route handler 중심으로 빠르게 붙임 | domain/application/infrastructure를 엄격 분리하고 큐/스토리지 어댑터까지 선반영 | 도메인 규칙, 수집기, 저장소, 화면을 나누되 첫 구현 파일 수를 통제 |</p>
+<p>| <strong>New Files</strong> | 약 12개 | 약 40개 | 약 27개 |</p>
+<p>| <strong>Modified Files</strong> | 약 5개 | 약 10개 | 약 8개 |</p>
+<p>| <strong>Complexity</strong> | Low | High | Medium |</p>
+<p>| <strong>Maintainability</strong> | Medium | High | High |</p>
+<p>| <strong>Effort</strong> | Low | High | Medium |</p>
+<p>| <strong>Risk</strong> | 빠르지만 파서/규칙/실행 게이트 결합 위험 | 구조는 좋지만 첫 MVP 속도 저하 | 현재 reboot 기준선에 맞는 균형 |</p>
+<p>| <strong>Recommendation</strong> | 임시 확인용 | 장기 플랫폼 재설계 | <strong>선택</strong> |</p>
+<p><strong>Selected</strong>: Option C - Pragmatic Balance</p>
+<p><strong>Rationale</strong>: 현재 저장소는 로그인, health, Railway bridge, Postgres 연결만 있는 얇은 기준선이다. 검색광고 운영은 보고서 다운로드, 파서, 정규화, 규칙 엔진, 실행 게이트가 서로 영향을 주므로 Minimal 방식은 금방 엉킬 가능성이 높다. 반대로 큐/스토리지/다계정 구조까지 먼저 분리하는 Clean Architecture는 첫 SaaS 화면을 늦춘다. 따라서 첫 구현은 명확한 경계를 갖되, Railway API 안의 동기식 수집과 Postgres 저장을 기본으로 두는 균형형 설계를 선택한다.</p>
+<h3 id="2-1-component-diagram">2.1 Component Diagram</h3>
+<pre><code class="language-text">┌──────────────────────────────────────────────────────────┐
+│ Browser                                                  │
+│ - 대표 로그인                                            │
+│ - /operations /reports /reports/[id] /rules              │
+│ - 캠페인/광고그룹/검색어/실행 이력 화면                  │
+└───────────────────────────────┬──────────────────────────┘
+                                │
+                                ▼
+┌──────────────────────────────────────────────────────────┐
+│ Vercel Web                                                │
+│ - 로그인 보호                                             │
+│ - 같은 경로의 API 요청을 Railway API로 bridge              │
+│ - 브라우저에는 DB/Search Ad secret 노출 금지               │
+└───────────────────────────────┬──────────────────────────┘
+                                │ MARKETCREW_BACKEND_API_TOKEN
+                                ▼
+┌──────────────────────────────────────────────────────────┐
+│ Railway marketcrew-api                                    │
+│ - Search Ad API client                                    │
+│ - report sync / parser / normalizer                       │
+│ - rules engine                                            │
+│ - toggle preview / guarded apply                          │
+│ - Postgres repository                                     │
+└───────────────┬──────────────────────────────┬───────────┘
+                │                              │
+                ▼                              ▼
+┌─────────────────────────────┐      ┌─────────────────────┐
+│ Naver Search Ad API          │      │ Railway Postgres     │
+│ /stat-reports                │      │ raw report text       │
+│ /report-download             │      │ raw rows / normalized │
+│ /master-reports              │      │ snapshots / logs      │
+│ /ncc/campaigns/adgroups/...  │      │ rule results          │
+│ /stats                       │      │ action previews/logs  │
+└─────────────────────────────┘      └─────────────────────┘</code></pre>
+<h3 id="2-2-data-flow">2.2 Data Flow</h3>
+<pre><code class="language-text">전일 보고서 수집
+  -&gt; GET /stat-reports 또는 POST /stat-reports
+  -&gt; BUILT 상태 확인
+  -&gt; downloadUrl path-only 서명으로 다운로드
+  -&gt; rawText/checksum 저장
+  -&gt; reportTp별 컬럼 순서표로 raw row 파싱
+  -&gt; 브랜드/광고유형 매핑
+  -&gt; normalized row 생성
+  -&gt; rules engine 실행
+  -&gt; 보고서/규칙 화면 read model 생성
+
+현재 상태 수집
+  -&gt; /ncc/campaigns, /ncc/adgroups, /ncc/keywords
+  -&gt; userLock/status/statusReason 저장
+  -&gt; master report 또는 관리 API로 구조 보완
+  -&gt; 캠페인/광고그룹 화면 read model 생성
+
+ON/OFF 실행
+  -&gt; 대표가 대상 선택
+  -&gt; toggle preview 생성
+  -&gt; before/after diff와 영향 범위 확인
+  -&gt; write gate 확인
+  -&gt; gate closed: 차단 로그만 저장
+  -&gt; gate open + 대표 확인: Search Ad update 호출
+  -&gt; action log와 provider response 저장</code></pre>
+<h3 id="2-3-dependencies">2.3 Dependencies</h3>
+<div class="table-wrap"><table><thead><tr><th>Component</th><th>Depends On</th><th>Purpose</th></tr></thead><tbody><tr><td>Vercel Web</td><td><code>src/lib/backend/proxy.ts</code></td><td>Railway API로 안전하게 위임</td></tr><tr><td>Railway API routes</td><td>Auth/session, repository, Search Ad client</td><td>수집/조회/실행 API</td></tr><tr><td>Search Ad client</td><td>HMAC signer, env vars</td><td>네이버 API 인증 요청</td></tr><tr><td>Report parser</td><td>report type schema</td><td>헤더 없는 TSV 원문 파싱</td></tr><tr><td>Normalizer</td><td>raw row, brand mapping</td><td>화면/규칙 공통 형태 생성</td></tr><tr><td>Rule engine</td><td>normalized rows, criteria</td><td>성과 분류</td></tr><tr><td>Toggle service</td><td>snapshots, env write gate</td><td>미리보기와 실행</td></tr><tr><td>UI pages</td><td>API read model</td><td>SaaS 화면 표시</td></tr></tbody></table></div>
+<hr />
+<h2 id="3-data-model">3. Data Model</h2>
+<h3 id="3-1-entity-definition">3.1 Entity Definition</h3>
+<pre><code class="language-typescript">type BrandKey = &quot;coffeeprint&quot; | &quot;stickersee&quot;;
+type AdProductType = &quot;powerlink&quot; | &quot;shopping_search&quot;;
+
+interface SearchAdReportJob {
+  id: string;
+  providerReportJobId: string;
+  reportType: SearchAdReportType;
+  statDate: string;
+  status: &quot;REGIST&quot; | &quot;RUNNING&quot; | &quot;BUILT&quot; | &quot;NONE&quot; | &quot;ERROR&quot; | &quot;WAITING&quot; | &quot;AGGREGATING&quot;;
+  downloadUrl?: string;
+  syncedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface SearchAdReportFile {
+  id: string;
+  reportJobId: string;
+  storageBackend: &quot;postgres&quot;;
+  rawText: string;
+  checksum: string;
+  contentType: string;
+  parserVersion: string;
+  rowCount: number;
+  createdAt: string;
+}
+
+interface SearchAdReportRow {
+  id: string;
+  reportFileId: string;
+  rowNumber: number;
+  rawRow: Record&lt;string, string | number | null&gt;;
+  brandKey?: BrandKey;
+  adProductType?: AdProductType;
+  mappingStatus: &quot;mapped&quot; | &quot;unmapped&quot; | &quot;ambiguous&quot;;
+}
+
+interface SearchAdNormalizedRow {
+  id: string;
+  reportRowId: string;
+  reportType: SearchAdReportType;
+  brandKey: BrandKey;
+  adProductType: AdProductType;
+  campaignId?: string;
+  adgroupId?: string;
+  keywordId?: string;
+  searchTerm?: string;
+  impressions: number;
+  clicks: number;
+  cost: number;
+  conversions: number;
+  salesAmount: number;
+  sourceDate: string;
+}
+
+interface SearchAdRuleResult {
+  id: string;
+  brandKey: BrandKey;
+  adProductType: AdProductType;
+  category: &quot;low_efficiency&quot; | &quot;high_cpa&quot; | &quot;low_roas&quot; | &quot;no_click&quot; | &quot;good_performance&quot; | &quot;needs_review&quot;;
+  targetType: &quot;campaign&quot; | &quot;adgroup&quot; | &quot;keyword&quot; | &quot;search_term&quot;;
+  targetId?: string;
+  targetLabel: string;
+  severity: &quot;low&quot; | &quot;medium&quot; | &quot;high&quot;;
+  periodDays: number;
+  reason: string;
+  metrics: Record&lt;string, number | string | null&gt;;
+  evidencePacket: Record&lt;string, unknown&gt;;
+  createdAt: string;
+}</code></pre>
+<h3 id="3-2-entity-relationships">3.2 Entity Relationships</h3>
+<pre><code class="language-text">ad_brand_mappings
+  └── maps campaign/adgroup/keyword/provider labels to brand + ad product
+
+search_ad_report_jobs 1 ──── 1 search_ad_report_files
+search_ad_report_files 1 ── N search_ad_report_rows
+search_ad_report_rows 1 ── 0..1 search_ad_report_normalized_rows
+search_ad_report_normalized_rows N ── N search_ad_rule_results through evidence references
+
+search_ad_campaign_snapshots 1 ── N search_ad_adgroup_snapshots
+search_ad_adgroup_snapshots 1 ── N search_ad_keyword_snapshots
+
+search_ad_action_previews 1 ── 0..1 search_ad_action_logs</code></pre>
+<h3 id="3-3-database-schema">3.3 Database Schema</h3>
+<p>첫 구현은 <code>db/workflow-store.sql</code>에 검색광고 전용 테이블을 추가한다. <code>workflow_records</code>는 reboot health와 임시 기록용으로 유지하지만, 검색광고 운영 데이터는 전용 테이블에 저장한다.</p>
+<pre><code class="language-sql">CREATE TABLE IF NOT EXISTS ad_brand_mappings (
+  id TEXT PRIMARY KEY,
+  brand_key TEXT NOT NULL CHECK (brand_key IN (&#39;coffeeprint&#39;, &#39;stickersee&#39;)),
+  ad_product_type TEXT NOT NULL CHECK (ad_product_type IN (&#39;powerlink&#39;, &#39;shopping_search&#39;)),
+  provider_level TEXT NOT NULL CHECK (provider_level IN (&#39;campaign&#39;, &#39;adgroup&#39;, &#39;keyword&#39;)),
+  provider_id TEXT,
+  match_type TEXT NOT NULL CHECK (match_type IN (&#39;provider_id&#39;, &#39;name_prefix&#39;, &#39;name_contains&#39;, &#39;manual&#39;)),
+  match_value TEXT NOT NULL,
+  confidence TEXT NOT NULL DEFAULT &#39;manual&#39;,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_report_jobs (
+  id TEXT PRIMARY KEY,
+  provider_report_job_id TEXT NOT NULL UNIQUE,
+  report_type TEXT NOT NULL,
+  stat_date DATE NOT NULL,
+  status TEXT NOT NULL,
+  download_url TEXT,
+  status_message TEXT,
+  synced_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_report_files (
+  id TEXT PRIMARY KEY,
+  report_job_id TEXT NOT NULL REFERENCES search_ad_report_jobs(id) ON DELETE CASCADE,
+  storage_backend TEXT NOT NULL DEFAULT &#39;postgres&#39;,
+  raw_text TEXT NOT NULL,
+  checksum TEXT NOT NULL,
+  content_type TEXT,
+  parser_version TEXT NOT NULL,
+  row_count INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (report_job_id, checksum)
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_report_rows (
+  id TEXT PRIMARY KEY,
+  report_file_id TEXT NOT NULL REFERENCES search_ad_report_files(id) ON DELETE CASCADE,
+  row_number INTEGER NOT NULL,
+  raw_row JSONB NOT NULL,
+  brand_key TEXT CHECK (brand_key IN (&#39;coffeeprint&#39;, &#39;stickersee&#39;)),
+  ad_product_type TEXT CHECK (ad_product_type IN (&#39;powerlink&#39;, &#39;shopping_search&#39;)),
+  mapping_status TEXT NOT NULL DEFAULT &#39;unmapped&#39;,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (report_file_id, row_number)
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_report_normalized_rows (
+  id TEXT PRIMARY KEY,
+  report_row_id TEXT NOT NULL REFERENCES search_ad_report_rows(id) ON DELETE CASCADE,
+  report_type TEXT NOT NULL,
+  brand_key TEXT NOT NULL CHECK (brand_key IN (&#39;coffeeprint&#39;, &#39;stickersee&#39;)),
+  ad_product_type TEXT NOT NULL CHECK (ad_product_type IN (&#39;powerlink&#39;, &#39;shopping_search&#39;)),
+  campaign_id TEXT,
+  campaign_name TEXT,
+  adgroup_id TEXT,
+  adgroup_name TEXT,
+  keyword_id TEXT,
+  keyword_text TEXT,
+  search_term TEXT,
+  impressions NUMERIC NOT NULL DEFAULT 0,
+  clicks NUMERIC NOT NULL DEFAULT 0,
+  cost NUMERIC NOT NULL DEFAULT 0,
+  conversions NUMERIC NOT NULL DEFAULT 0,
+  sales_amount NUMERIC NOT NULL DEFAULT 0,
+  source_date DATE NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_campaign_snapshots (
+  id TEXT PRIMARY KEY,
+  provider_campaign_id TEXT NOT NULL,
+  brand_key TEXT CHECK (brand_key IN (&#39;coffeeprint&#39;, &#39;stickersee&#39;)),
+  ad_product_type TEXT CHECK (ad_product_type IN (&#39;powerlink&#39;, &#39;shopping_search&#39;)),
+  name TEXT NOT NULL,
+  campaign_type TEXT,
+  user_lock BOOLEAN,
+  status TEXT,
+  status_reason TEXT,
+  raw_payload JSONB NOT NULL,
+  collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (provider_campaign_id, collected_at)
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_adgroup_snapshots (
+  id TEXT PRIMARY KEY,
+  provider_adgroup_id TEXT NOT NULL,
+  provider_campaign_id TEXT,
+  brand_key TEXT CHECK (brand_key IN (&#39;coffeeprint&#39;, &#39;stickersee&#39;)),
+  ad_product_type TEXT CHECK (ad_product_type IN (&#39;powerlink&#39;, &#39;shopping_search&#39;)),
+  name TEXT NOT NULL,
+  adgroup_type TEXT,
+  user_lock BOOLEAN,
+  status TEXT,
+  status_reason TEXT,
+  bid_amount NUMERIC,
+  daily_budget NUMERIC,
+  raw_payload JSONB NOT NULL,
+  collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (provider_adgroup_id, collected_at)
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_keyword_snapshots (
+  id TEXT PRIMARY KEY,
+  provider_keyword_id TEXT NOT NULL,
+  provider_adgroup_id TEXT,
+  brand_key TEXT CHECK (brand_key IN (&#39;coffeeprint&#39;, &#39;stickersee&#39;)),
+  ad_product_type TEXT CHECK (ad_product_type IN (&#39;powerlink&#39;, &#39;shopping_search&#39;)),
+  keyword_text TEXT NOT NULL,
+  user_lock BOOLEAN,
+  status TEXT,
+  status_reason TEXT,
+  bid_amount NUMERIC,
+  raw_payload JSONB NOT NULL,
+  collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (provider_keyword_id, collected_at)
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_rule_criteria (
+  id TEXT PRIMARY KEY,
+  brand_key TEXT NOT NULL CHECK (brand_key IN (&#39;coffeeprint&#39;, &#39;stickersee&#39;)),
+  ad_product_type TEXT NOT NULL CHECK (ad_product_type IN (&#39;powerlink&#39;, &#39;shopping_search&#39;)),
+  period_days INTEGER NOT NULL,
+  min_impressions NUMERIC NOT NULL DEFAULT 100,
+  min_clicks NUMERIC NOT NULL DEFAULT 10,
+  min_cost NUMERIC NOT NULL DEFAULT 10000,
+  target_cpa NUMERIC,
+  target_roas NUMERIC,
+  enabled BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_rule_results (
+  id TEXT PRIMARY KEY,
+  brand_key TEXT NOT NULL CHECK (brand_key IN (&#39;coffeeprint&#39;, &#39;stickersee&#39;)),
+  ad_product_type TEXT NOT NULL CHECK (ad_product_type IN (&#39;powerlink&#39;, &#39;shopping_search&#39;)),
+  category TEXT NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id TEXT,
+  target_label TEXT NOT NULL,
+  severity TEXT NOT NULL,
+  period_days INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  metrics JSONB NOT NULL,
+  evidence_packet JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_action_previews (
+  id TEXT PRIMARY KEY,
+  target_type TEXT NOT NULL CHECK (target_type IN (&#39;campaign&#39;, &#39;adgroup&#39;)),
+  target_id TEXT NOT NULL,
+  requested_action TEXT NOT NULL CHECK (requested_action IN (&#39;turn_on&#39;, &#39;turn_off&#39;)),
+  before_state JSONB NOT NULL,
+  after_state JSONB NOT NULL,
+  impact_summary JSONB NOT NULL,
+  write_gate_open BOOLEAN NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_action_logs (
+  id TEXT PRIMARY KEY,
+  preview_id TEXT NOT NULL REFERENCES search_ad_action_previews(id),
+  status TEXT NOT NULL CHECK (status IN (&#39;blocked&#39;, &#39;applied&#39;, &#39;failed&#39;)),
+  provider_request JSONB,
+  provider_response JSONB,
+  error_message TEXT,
+  actor TEXT NOT NULL DEFAULT &#39;owner&#39;,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);</code></pre>
+<p>주요 인덱스:</p>
+<pre><code class="language-sql">CREATE INDEX IF NOT EXISTS search_ad_report_jobs_stat_date_idx
+  ON search_ad_report_jobs (stat_date DESC, report_type);
+
+CREATE INDEX IF NOT EXISTS search_ad_normalized_brand_type_date_idx
+  ON search_ad_report_normalized_rows (brand_key, ad_product_type, source_date DESC);
+
+CREATE INDEX IF NOT EXISTS search_ad_rule_results_brand_category_idx
+  ON search_ad_rule_results (brand_key, ad_product_type, category, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS search_ad_campaign_latest_idx
+  ON search_ad_campaign_snapshots (provider_campaign_id, collected_at DESC);
+
+CREATE INDEX IF NOT EXISTS search_ad_adgroup_latest_idx
+  ON search_ad_adgroup_snapshots (provider_adgroup_id, collected_at DESC);</code></pre>
+<hr />
+<h2 id="4-api-specification">4. API Specification</h2>
+<h3 id="4-1-endpoint-list">4.1 Endpoint List</h3>
+<p>모든 엔드포인트는 대표 로그인 보호를 받는다. Vercel에서는 같은 path로 들어온 요청을 <code>proxyRequestToBackend</code>가 Railway API로 전달한다. Railway API runtime에서는 직접 처리한다.</p>
+<div class="table-wrap"><table><thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Auth</th></tr></thead><tbody><tr><td>GET</td><td><code>/api/search-ad/overview</code></td><td>운영 홈 read model</td><td>Required</td></tr><tr><td>POST</td><td><code>/api/search-ad/sync</code></td><td>캠페인/광고그룹/키워드 read-only 상태 수집</td><td>Required</td></tr><tr><td>GET</td><td><code>/api/search-ad/reports</code></td><td>보고서 보관함 목록</td><td>Required</td></tr><tr><td>POST</td><td><code>/api/search-ad/reports/sync</code></td><td>보고서 작업 조회/생성/다운로드/파싱</td><td>Required</td></tr><tr><td>GET</td><td><code>/api/search-ad/reports/[id]</code></td><td>보고서 상세 read model</td><td>Required</td></tr><tr><td>GET</td><td><code>/api/search-ad/rule-criteria</code></td><td>성과 기준 조회</td><td>Required</td></tr><tr><td>POST</td><td><code>/api/search-ad/rules/run</code></td><td>저장된 보고서 기준 규칙 엔진 실행</td><td>Required</td></tr><tr><td>GET</td><td><code>/api/search-ad/rule-results</code></td><td>규칙 결과 목록</td><td>Required</td></tr><tr><td>POST</td><td><code>/api/search-ad/toggle-preview</code></td><td>캠페인/광고그룹 ON/OFF 미리보기 생성</td><td>Required</td></tr><tr><td>POST</td><td><code>/api/search-ad/toggle-apply</code></td><td>write gate 통과 시 실제 ON/OFF 실행</td><td>Required</td></tr><tr><td>GET</td><td><code>/api/search-ad/action-logs</code></td><td>실행/차단/실패 이력</td><td>Required</td></tr></tbody></table></div>
+<h3 id="4-2-detailed-specification">4.2 Detailed Specification</h3>
+<h4 id="get-api-search-ad-overview"><code>GET /api/search-ad/overview</code></h4>
+<p>Query:</p>
+<div class="table-wrap"><table><thead><tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr></thead><tbody><tr><td><code>brand</code></td><td><code>all</code> \</td><td><code>coffeeprint</code> \</td><td><code>stickersee</code></td><td>No</td><td>브랜드 필터. <code>all</code>은 합산 현황만 표시한다.</td></tr><tr><td><code>adProduct</code></td><td><code>all</code> \</td><td><code>powerlink</code> \</td><td><code>shopping_search</code></td><td>No</td><td>광고 유형 필터</td></tr></tbody></table></div>
+<p>Response:</p>
+<pre><code class="language-json">{
+  &quot;ok&quot;: true,
+  &quot;data&quot;: {
+    &quot;filters&quot;: {
+      &quot;brand&quot;: &quot;all&quot;,
+      &quot;adProduct&quot;: &quot;all&quot;
+    },
+    &quot;syncStatus&quot;: {
+      &quot;lastReportSyncAt&quot;: &quot;2026-05-26T07:05:00+09:00&quot;,
+      &quot;lastStateSyncAt&quot;: &quot;2026-05-26T07:10:00+09:00&quot;,
+      &quot;hasSearchAdCredentials&quot;: true,
+      &quot;searchAdWriteEnabled&quot;: false
+    },
+    &quot;summaryCards&quot;: [
+      {
+        &quot;key&quot;: &quot;low_efficiency&quot;,
+        &quot;label&quot;: &quot;저효율 후보&quot;,
+        &quot;count&quot;: 12
+      }
+    ],
+    &quot;brandSummaries&quot;: [],
+    &quot;recentRuleResults&quot;: [],
+    &quot;recentReports&quot;: [],
+    &quot;pendingActions&quot;: []
+  }
+}</code></pre>
+<h4 id="post-api-search-ad-reports-sync"><code>POST /api/search-ad/reports/sync</code></h4>
+<p>Request:</p>
+<pre><code class="language-json">{
+  &quot;statDate&quot;: &quot;2026-05-25&quot;,
+  &quot;reportTypes&quot;: [&quot;AD&quot;, &quot;EXPKEYWORD&quot;, &quot;SHOPPINGKEYWORD_DETAIL&quot;],
+  &quot;mode&quot;: &quot;list-and-download-built&quot;
+}</code></pre>
+<p>Rules:</p>
+<ul><li><code>GET /stat-reports</code>에서 이미 생성된 <code>BUILT</code> 작업을 우선 가져온다.</li><li>필요한 보고서가 없으면 <code>POST /stat-reports</code>로 생성한다.</li><li>다운로드는 API 응답의 <code>downloadUrl</code>을 그대로 사용하고, 서명 URI는 query string 없는 <code>/report-download</code>로 만든다.</li><li>다운로드 파일은 headerless TSV로 처리한다.</li></ul>
+<p>Response:</p>
+<pre><code class="language-json">{
+  &quot;ok&quot;: true,
+  &quot;data&quot;: {
+    &quot;statDate&quot;: &quot;2026-05-25&quot;,
+    &quot;jobsSeen&quot;: 10,
+    &quot;downloaded&quot;: 8,
+    &quot;parsed&quot;: 8,
+    &quot;failed&quot;: []
+  }
+}</code></pre>
+<h4 id="get-api-search-ad-reports-id"><code>GET /api/search-ad/reports/[id]</code></h4>
+<p>Response:</p>
+<pre><code class="language-json">{
+  &quot;ok&quot;: true,
+  &quot;data&quot;: {
+    &quot;report&quot;: {
+      &quot;id&quot;: &quot;report-177442248&quot;,
+      &quot;providerReportJobId&quot;: &quot;177442248&quot;,
+      &quot;reportType&quot;: &quot;EXPKEYWORD&quot;,
+      &quot;displayName&quot;: &quot;파워링크 검색어 보고서&quot;,
+      &quot;statDate&quot;: &quot;2026-05-25&quot;,
+      &quot;rowCount&quot;: 321
+    },
+    &quot;summary&quot;: {
+      &quot;totalCost&quot;: 120000,
+      &quot;clicks&quot;: 320,
+      &quot;conversions&quot;: 7,
+      &quot;salesAmount&quot;: 450000
+    },
+    &quot;easyRows&quot;: [],
+    &quot;rawPreviewRows&quot;: [],
+    &quot;columnDescriptions&quot;: [],
+    &quot;problemCandidates&quot;: [],
+    &quot;goodCandidates&quot;: []
+  }
+}</code></pre>
+<h4 id="post-api-search-ad-toggle-preview"><code>POST /api/search-ad/toggle-preview</code></h4>
+<p>Request:</p>
+<pre><code class="language-json">{
+  &quot;targetType&quot;: &quot;adgroup&quot;,
+  &quot;targetId&quot;: &quot;grp-a001&quot;,
+  &quot;action&quot;: &quot;turn_off&quot;
+}</code></pre>
+<p>Response:</p>
+<pre><code class="language-json">{
+  &quot;ok&quot;: true,
+  &quot;data&quot;: {
+    &quot;previewId&quot;: &quot;preview-001&quot;,
+    &quot;writeGateOpen&quot;: false,
+    &quot;beforeState&quot;: {
+      &quot;userLock&quot;: false
+    },
+    &quot;afterState&quot;: {
+      &quot;userLock&quot;: true
+    },
+    &quot;impactSummary&quot;: {
+      &quot;brand&quot;: &quot;스티커씨&quot;,
+      &quot;adProduct&quot;: &quot;파워링크&quot;,
+      &quot;recentCost&quot;: 45000,
+      &quot;recentClicks&quot;: 100,
+      &quot;recentConversions&quot;: 0
+    }
+  }
+}</code></pre>
+<h4 id="post-api-search-ad-toggle-apply"><code>POST /api/search-ad/toggle-apply</code></h4>
+<p>Request:</p>
+<pre><code class="language-json">{
+  &quot;previewId&quot;: &quot;preview-001&quot;,
+  &quot;confirmText&quot;: &quot;실행&quot;
+}</code></pre>
+<p>Response when gate closed:</p>
+<pre><code class="language-json">{
+  &quot;ok&quot;: false,
+  &quot;code&quot;: &quot;SEARCH_AD_WRITE_GATE_CLOSED&quot;,
+  &quot;message&quot;: &quot;검색광고 실제 변경 권한이 닫혀 있어 실행하지 않았습니다.&quot;
+}</code></pre>
+<h3 id="4-3-error-response-format">4.3 Error Response Format</h3>
+<pre><code class="language-json">{
+  &quot;ok&quot;: false,
+  &quot;code&quot;: &quot;SEARCH_AD_REPORT_DOWNLOAD_FAILED&quot;,
+  &quot;message&quot;: &quot;네이버 보고서를 다운로드하지 못했습니다.&quot;,
+  &quot;details&quot;: {
+    &quot;reportJobId&quot;: &quot;177442248&quot;
+  }
+}</code></pre>
+<hr />
+<h2 id="5-ui-ux-design">5. UI/UX Design</h2>
+<h3 id="5-1-screen-layout">5.1 Screen Layout</h3>
+<pre><code class="language-text">┌─────────────────────────────────────────────────────────────┐
+│ 상단: 마켓크루 / 현재 브랜드 / 마지막 수집 / 로그아웃       │
+├──────────────┬──────────────────────────────────────────────┤
+│ 왼쪽 메뉴     │ 상단 필터: 브랜드 / 광고유형 / 수집 버튼     │
+│ 운영 홈       ├──────────────────────────────────────────────┤
+│ 보고서        │ 본문: 요약 카드, 표, 규칙 결과, 실행 패널     │
+│ 캠페인        │                                              │
+│ 광고그룹      │                                              │
+│ 검색어 성과   │                                              │
+│ 규칙 결과     │                                              │
+│ 성과 기준     │                                              │
+│ 실행 이력     │                                              │
+│ 설정          │                                              │
+└──────────────┴──────────────────────────────────────────────┘</code></pre>
+<h3 id="5-2-user-flow">5.2 User Flow</h3>
+<pre><code class="language-text">로그인
+  -&gt; 운영 홈에서 수집 상태 확인
+  -&gt; 보고서 수집 실행 또는 전일 보고서 확인
+  -&gt; 검색어 성과/규칙 결과 확인
+  -&gt; 캠페인/광고그룹 목록에서 대상 선택
+  -&gt; ON/OFF 미리보기
+  -&gt; write gate closed면 차단 이력 확인
+  -&gt; write gate open이면 대표 확인 후 실행
+  -&gt; 실행 이력과 다음날 보고서로 결과 확인</code></pre>
+<h3 id="5-3-component-list">5.3 Component List</h3>
+<div class="table-wrap"><table><thead><tr><th>Component</th><th>Location</th><th>Responsibility</th></tr></thead><tbody><tr><td><code>MarketingShell</code></td><td><code>src/components/layout/MarketingShell.tsx</code></td><td>왼쪽 메뉴와 상단 필터가 있는 공통 앱 프레임</td></tr><tr><td><code>SearchAdTopFilters</code></td><td><code>src/components/search-ad/SearchAdTopFilters.tsx</code></td><td>브랜드/광고유형 필터</td></tr><tr><td><code>SyncStatusStrip</code></td><td><code>src/components/search-ad/SyncStatusStrip.tsx</code></td><td>보고서/상태 수집 시간과 실패 안내</td></tr><tr><td><code>SummaryMetricCard</code></td><td><code>src/components/search-ad/SummaryMetricCard.tsx</code></td><td>운영 홈 숫자 카드</td></tr><tr><td><code>ReportArchiveTable</code></td><td><code>src/components/reports/ReportArchiveTable.tsx</code></td><td>보고서 보관함 목록</td></tr><tr><td><code>ReportSummaryPanel</code></td><td><code>src/components/reports/ReportSummaryPanel.tsx</code></td><td>보고서 상세 요약</td></tr><tr><td><code>ReportEasyTable</code></td><td><code>src/components/reports/ReportEasyTable.tsx</code></td><td>한국어 컬럼 표</td></tr><tr><td><code>RawReportPreview</code></td><td><code>src/components/reports/RawReportPreview.tsx</code></td><td>원문 행 미리보기</td></tr><tr><td><code>RuleResultCard</code></td><td><code>src/components/search-ad/RuleResultCard.tsx</code></td><td>저효율/무클릭/우수 후보 카드</td></tr><tr><td><code>CampaignStatusTable</code></td><td><code>src/components/search-ad/CampaignStatusTable.tsx</code></td><td>캠페인 상태와 ON/OFF 진입</td></tr><tr><td><code>AdgroupStatusTable</code></td><td><code>src/components/search-ad/AdgroupStatusTable.tsx</code></td><td>광고그룹 상태와 ON/OFF 진입</td></tr><tr><td><code>TogglePreviewDialog</code></td><td><code>src/components/search-ad/TogglePreviewDialog.tsx</code></td><td>변경 전/후와 영향 범위 확인</td></tr><tr><td><code>RuleCriteriaTable</code></td><td><code>src/components/search-ad/RuleCriteriaTable.tsx</code></td><td>성과 기준 화면</td></tr><tr><td><code>ActionLogTable</code></td><td><code>src/components/search-ad/ActionLogTable.tsx</code></td><td>실행/차단/실패 이력</td></tr></tbody></table></div>
+<h3 id="5-4-page-ui-checklist">5.4 Page UI Checklist</h3>
+<h4 id="operations-운영-홈"><code>/operations</code> 운영 홈</h4>
+<ul><li>[ ] 왼쪽 메뉴: 운영 홈, 보고서, 캠페인, 광고그룹, 검색어 성과, 규칙 결과, 성과 기준, 실행 이력, 설정.</li><li>[ ] 상단 필터: 브랜드 <code>전체</code>, <code>커피프린트</code>, <code>스티커씨</code>.</li><li>[ ] 상단 필터: 광고유형 <code>전체</code>, <code>파워링크</code>, <code>쇼핑검색광고</code>.</li><li>[ ] 버튼: <code>보고서 수집</code>, <code>상태 새로고침</code>.</li><li>[ ] 상태 띠: 마지막 보고서 수집 시간, 마지막 상태 수집 시간, Search Ad 연결 여부, 실제 변경 권한 상태.</li><li>[ ] 카드: 저효율 후보 수, 클릭 없는 후보 수, 우수 후보 수, 실행 대기/차단 수.</li><li>[ ] 표: 최근 보고서 5건.</li><li>[ ] 표: 최근 규칙 결과 10건.</li><li>[ ] 안내: write gate가 닫힌 경우 “실제 광고 변경은 차단됨” 표시.</li></ul>
+<h4 id="reports-보고서-보관함"><code>/reports</code> 보고서 보관함</h4>
+<ul><li>[ ] 필터: 기준일, 보고서 종류, 브랜드, 광고유형, 파싱 상태.</li><li>[ ] 버튼: <code>전일 보고서 가져오기</code>, <code>선택 보고서 다시 파싱</code>.</li><li>[ ] 표 컬럼: 기준일, 보고서 종류, 네이버 보고서 ID, 상태, 원본 보관, 파싱 상태, 행 수, 브랜드 매핑 상태, 마지막 수집.</li><li>[ ] 요약 칩: 총 비용, 클릭, 전환, 매출, 저효율 후보 수, 우수 후보 수.</li><li>[ ] 링크: 보고서 상세.</li><li>[ ] 빈 상태: 보고서 없음, API 설정 필요, 파싱 실패를 각각 다르게 표시.</li></ul>
+<h4 id="reports-id-보고서-상세"><code>/reports/[id]</code> 보고서 상세</h4>
+<ul><li>[ ] 헤더: 보고서 이름, 기준일, 네이버 보고서 ID, 상태, 행 수.</li><li>[ ] 탭: 요약, 쉽게 보기, 문제 후보, 좋은 후보, 원본 보기, 컬럼 설명.</li><li>[ ] 요약 카드: 비용, 노출, 클릭, 전환, 매출, CPA, ROAS.</li><li>[ ] 쉽게 보기 표: 한국어 컬럼명, 정렬, 브랜드/광고유형 필터.</li><li>[ ] 문제 후보 카드: 분류, 이유, 기준 기간, 주요 지표, 근거 행 링크.</li><li>[ ] 좋은 후보 카드: 확장 이유, 주요 지표, 근거 행 링크.</li><li>[ ] 원본 보기: 원문 필드명과 첫 100행 미리보기.</li><li>[ ] 컬럼 설명: 원문 필드, 한국어 이름, 계산식, 주의사항.</li></ul>
+<h4 id="campaigns-캠페인"><code>/campaigns</code> 캠페인</h4>
+<ul><li>[ ] 필터: 브랜드, 광고유형, 상태.</li><li>[ ] 표 컬럼: 캠페인명, 브랜드, 광고유형, ON/OFF, 상태 사유, 최근 비용, 최근 클릭, 최근 전환, 마지막 수집.</li><li>[ ] 버튼: 켜기/끄기 미리보기.</li><li>[ ] 배지: 매핑 필요, 수집 오래됨, 실행 차단.</li></ul>
+<h4 id="adgroups-광고그룹"><code>/adgroups</code> 광고그룹</h4>
+<ul><li>[ ] 필터: 브랜드, 광고유형, 캠페인, 상태.</li><li>[ ] 표 컬럼: 광고그룹명, 캠페인명, 브랜드, 광고유형, ON/OFF, 상태 사유, 입찰/예산 요약, 최근 성과.</li><li>[ ] 버튼: 켜기/끄기 미리보기.</li><li>[ ] 배지: 기기/시간대 기준 점검 필요.</li></ul>
+<h4 id="search-terms-검색어-성과"><code>/search-terms</code> 검색어 성과</h4>
+<ul><li>[ ] 필터: 브랜드, 광고유형, 보고서 기준일, 분류.</li><li>[ ] 표 컬럼: 검색어, 캠페인, 광고그룹, 비용, 클릭, 전환, 매출, CPA, ROAS, 분류.</li><li>[ ] 안내: 쇼핑검색광고 검색어는 클릭 1회 이상 중심으로 제공되며, 클릭 없음은 키워드/광고그룹 기준에서 판단.</li><li>[ ] 링크: 연결 보고서 상세.</li></ul>
+<h4 id="rule-results-규칙-결과"><code>/rule-results</code> 규칙 결과</h4>
+<ul><li>[ ] 탭: 저효율, 높은 CPA, 낮은 ROAS, 클릭 없음, 우수, 점검 필요.</li><li>[ ] 카드: 대상명, 분류 이유, 기준 기간, 주요 지표, 제안 상태.</li><li>[ ] 버튼: 캠페인/광고그룹 대상이면 미리보기 열기.</li><li>[ ] 링크: 근거 보고서와 원문 행.</li></ul>
+<h4 id="rules-성과-기준"><code>/rules</code> 성과 기준</h4>
+<ul><li>[ ] 표: 브랜드별 기준, 광고유형, 기간, 최소 노출, 최소 클릭, 최소 비용, 목표 CPA, 목표 ROAS.</li><li>[ ] 설명 카드: 최근 30일 기본 판단, 최근 7일 이상 감지, 시즌 윈도우, 60~90일 보조 기준.</li><li>[ ] 설명 카드: 저효율, 높은 CPA, 낮은 ROAS, 클릭 없음, 우수, 점검 필요 계산식.</li><li>[ ] 안내: 첫 버전은 조회 중심이며 기준 수정은 다음 단계에서 추가.</li></ul>
+<h4 id="action-logs-실행-이력"><code>/action-logs</code> 실행 이력</h4>
+<ul><li>[ ] 필터: 상태 <code>차단</code>, <code>실행</code>, <code>실패</code>, 브랜드, 광고유형.</li><li>[ ] 표 컬럼: 실행 시간, 대상, 요청 작업, 결과, actor, provider 응답 요약.</li><li>[ ] 상세: before/after diff, 영향 범위, 실패 원인.</li></ul>
+<hr />
+<h2 id="6-error-handling">6. Error Handling</h2>
+<h3 id="6-1-error-code-definition">6.1 Error Code Definition</h3>
+<div class="table-wrap"><table><thead><tr><th>Code</th><th>Message</th><th>Cause</th><th>Handling</th></tr></thead><tbody><tr><td><code>UNAUTHORIZED</code></td><td>로그인이 필요합니다.</td><td>세션 없음</td><td><code>/login</code>으로 이동</td></tr><tr><td><code>BACKEND_UNAVAILABLE</code></td><td>Railway 백엔드 API 응답을 받지 못했습니다.</td><td>Vercel bridge 실패</td><td>화면에 재시도 안내</td></tr><tr><td><code>SEARCH_AD_CREDENTIALS_MISSING</code></td><td>네이버 검색광고 API 설정이 필요합니다.</td><td>env 누락</td><td>설정 화면으로 안내</td></tr><tr><td><code>SEARCH_AD_REQUEST_FAILED</code></td><td>네이버 검색광고 API 요청에 실패했습니다.</td><td>API 오류, 인증 오류</td><td>provider code와 요청 path를 서버 로그와 수집 상태에 저장</td></tr><tr><td><code>SEARCH_AD_REPORT_NOT_READY</code></td><td>보고서가 아직 생성 중입니다.</td><td>status가 <code>BUILT</code> 아님</td><td>다음 poll 또는 수동 재시도</td></tr><tr><td><code>SEARCH_AD_REPORT_DOWNLOAD_FAILED</code></td><td>네이버 보고서를 다운로드하지 못했습니다.</td><td>서명, 권한, URL 문제</td><td>reportJobId와 오류 저장</td></tr><tr><td><code>SEARCH_AD_REPORT_PARSE_FAILED</code></td><td>보고서를 해석하지 못했습니다.</td><td>컬럼 수 불일치, 알 수 없는 reportTp</td><td>rawText 보존, 파싱 실패 표시</td></tr><tr><td><code>BRAND_MAPPING_REQUIRED</code></td><td>브랜드 매핑이 필요합니다.</td><td>캠페인/광고그룹이 미분류</td><td>매핑 화면으로 안내</td></tr><tr><td><code>SEARCH_AD_WRITE_GATE_CLOSED</code></td><td>검색광고 실제 변경 권한이 닫혀 있어 실행하지 않았습니다.</td><td>env gate false</td><td>차단 로그 저장</td></tr><tr><td><code>SEARCH_AD_PROVIDER_WRITE_FAILED</code></td><td>네이버 광고 상태 변경에 실패했습니다.</td><td>provider update 실패</td><td>실패 로그와 rollback 안내</td></tr></tbody></table></div>
+<h3 id="6-2-error-response-format">6.2 Error Response Format</h3>
+<pre><code class="language-json">{
+  &quot;ok&quot;: false,
+  &quot;code&quot;: &quot;SEARCH_AD_REPORT_PARSE_FAILED&quot;,
+  &quot;message&quot;: &quot;보고서를 해석하지 못했습니다.&quot;,
+  &quot;details&quot;: {
+    &quot;reportType&quot;: &quot;EXPKEYWORD&quot;,
+    &quot;expectedColumns&quot;: 12,
+    &quot;actualColumns&quot;: 11
+  }
+}</code></pre>
+<hr />
+<h2 id="7-security-considerations">7. Security Considerations</h2>
+<ul><li>[ ] 브라우저에 네이버 API key, secret, customer id, DB URL을 노출하지 않는다.</li><li>[ ] Hosted Vercel은 Railway API token 없이 backend route를 호출할 수 없다.</li><li>[ ] 모든 검색광고 API route는 대표 로그인과 backend token 보호를 통과해야 한다.</li><li>[ ] 실제 ON/OFF는 <code>SEARCH_AD_WRITE_ENABLED=1</code> 또는 <code>NAVER_SEARCH_AD_WRITE_ENABLED=1</code>일 때만 provider 호출한다.</li><li>[ ] <code>toggle-apply</code>는 <code>previewId</code>, <code>confirmText</code>, 대상 상태 재조회 또는 최신 snapshot 검증을 요구한다.</li><li>[ ] raw report text는 운영 DB에 저장하지만 화면에는 필요한 미리보기만 보여준다.</li><li>[ ] provider 오류 응답은 화면에 필요한 메시지만 노출하고, secret을 포함한 header는 저장하지 않는다.</li><li>[ ] SQL은 parameterized query로 작성한다.</li><li>[ ] 보고서 다운로드 URL은 API 응답값만 사용하고 임의 authtoken을 받지 않는다.</li><li>[ ] destructive reset과 provider write는 일반 sync와 분리된 API로 유지한다.</li></ul>
+<hr />
+<h2 id="8-test-plan">8. Test Plan</h2>
+<h3 id="8-1-test-scope">8.1 Test Scope</h3>
+<div class="table-wrap"><table><thead><tr><th>Type</th><th>Target</th><th>Tool</th><th>Phase</th></tr></thead><tbody><tr><td>L1: API Tests</td><td>Search Ad report sync, overview, reports, rules, toggle preview/apply</td><td>Vitest + route handler tests + curl smoke</td><td>Do</td></tr><tr><td>L2: UI Action Tests</td><td>운영 홈, 보고서 보관함, 보고서 상세, 성과 기준, 실행 미리보기</td><td>Playwright</td><td>Do</td></tr><tr><td>L3: E2E Scenario Tests</td><td>로그인 후 보고서 확인, 규칙 결과 확인, write gate 차단 확인</td><td>Playwright + production smoke</td><td>Do/Check</td></tr></tbody></table></div>
+<h3 id="8-2-l1-api-test-scenarios">8.2 L1: API Test Scenarios</h3>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Endpoint</th><th>Method</th><th>Test Description</th><th>Expected Status</th><th>Expected Response</th></tr></thead><tbody><tr><td>1</td><td><code>/api/search-ad/overview</code></td><td>GET</td><td>빈 DB에서도 운영 홈 read model 반환</td><td>200</td><td><code>.ok=true</code>, <code>.data.summaryCards</code> 존재</td></tr><tr><td>2</td><td><code>/api/search-ad/reports</code></td><td>GET</td><td>보고서 보관함 목록 반환</td><td>200</td><td><code>.data.reports</code> 배열</td></tr><tr><td>3</td><td><code>/api/search-ad/reports/sync</code></td><td>POST</td><td>Search Ad env 없음</td><td>503</td><td><code>SEARCH_AD_CREDENTIALS_MISSING</code></td></tr><tr><td>4</td><td><code>/api/search-ad/reports/sync</code></td><td>POST</td><td>fixture TSV 파싱</td><td>200</td><td>downloaded/parsed count 증가</td></tr><tr><td>5</td><td><code>/api/search-ad/reports/[id]</code></td><td>GET</td><td>보고서 상세 반환</td><td>200</td><td>summary, easyRows, rawPreviewRows, columnDescriptions</td></tr><tr><td>6</td><td><code>/api/search-ad/rule-criteria</code></td><td>GET</td><td>기본 성과 기준 반환</td><td>200</td><td>coffeeprint/stickersee 기준 존재</td></tr><tr><td>7</td><td><code>/api/search-ad/rules/run</code></td><td>POST</td><td>fixture row로 저효율/우수 후보 생성</td><td>200</td><td><code>.data.createdResults &gt; 0</code></td></tr><tr><td>8</td><td><code>/api/search-ad/toggle-preview</code></td><td>POST</td><td>캠페인 끄기 미리보기 생성</td><td>200</td><td>beforeState/afterState/impactSummary</td></tr><tr><td>9</td><td><code>/api/search-ad/toggle-apply</code></td><td>POST</td><td>write gate 닫힘</td><td>409</td><td><code>SEARCH_AD_WRITE_GATE_CLOSED</code>, action log blocked</td></tr><tr><td>10</td><td><code>/api/backend/health</code></td><td>GET</td><td>기존 health 유지</td><td>200/503</td><td>providerKeys.searchAd 포함</td></tr></tbody></table></div>
+<h3 id="8-3-l2-ui-action-test-scenarios">8.3 L2: UI Action Test Scenarios</h3>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Page</th><th>Action</th><th>Expected Result</th><th>Data Verification</th></tr></thead><tbody><tr><td>1</td><td><code>/operations</code></td><td>페이지 로드</td><td>왼쪽 메뉴, 상단 필터, 요약 카드 표시</td><td>empty state도 깨지지 않음</td></tr><tr><td>2</td><td><code>/operations</code></td><td>브랜드 필터 클릭</td><td>URL query 또는 화면 상태 변경</td><td>결과 목록이 브랜드 기준으로 바뀜</td></tr><tr><td>3</td><td><code>/reports</code></td><td>전일 보고서 가져오기 클릭</td><td>수집 시작 또는 env 필요 메시지</td><td>API 호출 발생</td></tr><tr><td>4</td><td><code>/reports/[id]</code></td><td>탭 전환</td><td>요약/쉽게 보기/원본/컬럼 설명 표시</td><td>같은 보고서 ID 유지</td></tr><tr><td>5</td><td><code>/rules</code></td><td>페이지 로드</td><td>기간/표본/CPA/ROAS 기준 표시</td><td>한국어 문구만 노출</td></tr><tr><td>6</td><td><code>/campaigns</code></td><td>끄기 미리보기 클릭</td><td>변경 전/후 dialog 표시</td><td>provider write는 실행되지 않음</td></tr></tbody></table></div>
+<h3 id="8-4-l3-e2e-scenario-test-scenarios">8.4 L3: E2E Scenario Test Scenarios</h3>
+<div class="table-wrap"><table><thead><tr><th>#</th><th>Scenario</th><th>Steps</th><th>Success Criteria</th></tr></thead><tbody><tr><td>1</td><td>보고서 기반 운영 확인</td><td>로그인 -&gt; 보고서 -&gt; 상세 -&gt; 규칙 결과</td><td>보고서 요약과 근거 행이 이어진다</td></tr><tr><td>2</td><td>브랜드 분리 확인</td><td>운영 홈 -&gt; 커피프린트 필터 -&gt; 스티커씨 필터</td><td>두 브랜드 결과가 서로 비교 랭킹으로 표현되지 않는다</td></tr><tr><td>3</td><td>write gate 차단 확인</td><td>캠페인 -&gt; 끄기 미리보기 -&gt; 실행</td><td>gate closed 상태에서 provider 호출 없이 차단 로그 생성</td></tr><tr><td>4</td><td>production smoke</td><td><code>npm run smoke:prod</code></td><td>app/api health와 로그인 보호 확인</td></tr></tbody></table></div>
+<h3 id="8-5-seed-data-requirements">8.5 Seed Data Requirements</h3>
+<div class="table-wrap"><table><thead><tr><th>Entity</th><th>Minimum Count</th><th>Key Fields Required</th></tr></thead><tbody><tr><td><code>ad_brand_mappings</code></td><td>4</td><td>브랜드 2개 x 광고유형 2개 기본 prefix/manual 매핑</td></tr><tr><td><code>search_ad_report_jobs</code></td><td>3</td><td><code>AD</code>, <code>EXPKEYWORD</code>, <code>SHOPPINGKEYWORD_DETAIL</code></td></tr><tr><td><code>search_ad_report_rows</code></td><td>30</td><td>비용/클릭/전환/매출이 섞인 fixture</td></tr><tr><td><code>search_ad_campaign_snapshots</code></td><td>4</td><td>ON/OFF 상태가 다른 캠페인</td></tr><tr><td><code>search_ad_adgroup_snapshots</code></td><td>8</td><td>브랜드/광고유형 매핑된 광고그룹</td></tr><tr><td><code>search_ad_rule_criteria</code></td><td>4</td><td>브랜드 2개 x 광고유형 2개</td></tr><tr><td><code>search_ad_rule_results</code></td><td>6</td><td>저효율/무클릭/우수 각각 포함</td></tr></tbody></table></div>
+<hr />
+<h2 id="9-clean-architecture">9. Clean Architecture</h2>
+<h3 id="9-1-layer-structure">9.1 Layer Structure</h3>
+<div class="table-wrap"><table><thead><tr><th>Layer</th><th>Responsibility</th><th>Location</th></tr></thead><tbody><tr><td>Presentation</td><td>Next pages, route-local components, forms, tables</td><td><code>src/app/</code>, <code>src/components/</code></td></tr><tr><td>Application</td><td>운영 화면 read model, 수집 orchestration, toggle use case</td><td><code>src/features/search-ad/</code>, <code>src/server/search-ad/</code></td></tr><tr><td>Domain</td><td>report type, parser schemas, rule criteria/result, pure rule engine</td><td><code>src/features/search-ad/domain/</code></td></tr><tr><td>Infrastructure</td><td>Naver API client, signer, Postgres repository, backend proxy</td><td><code>src/lib/integrations/search-ad/</code>, <code>src/lib/persistence/</code></td></tr></tbody></table></div>
+<h3 id="9-2-dependency-rules">9.2 Dependency Rules</h3>
+<pre><code class="language-text">Presentation -&gt; Application -&gt; Domain
+Application -&gt; Infrastructure -&gt; Domain
+Domain -&gt; no React, no fetch, no env, no DB
+Infrastructure -&gt; provider/DB details, no React page imports</code></pre>
+<h3 id="9-3-file-import-rules">9.3 File Import Rules</h3>
+<div class="table-wrap"><table><thead><tr><th>From</th><th>Can Import</th><th>Cannot Import</th></tr></thead><tbody><tr><td><code>src/app/**</code></td><td>components, feature read models, route handlers</td><td>direct <code>pg</code>, Search Ad secret client in client components</td></tr><tr><td><code>src/components/**</code></td><td>display types, small formatters</td><td>DB repository, provider client</td></tr><tr><td><code>src/features/search-ad/domain/**</code></td><td>local pure helpers and types</td><td><code>next</code>, <code>pg</code>, <code>fetch</code>, <code>process.env</code></td></tr><tr><td><code>src/server/search-ad/**</code></td><td>domain, repository, Search Ad client</td><td>React components</td></tr><tr><td><code>src/lib/integrations/search-ad/**</code></td><td>signer, provider types</td><td>presentation/application UI</td></tr><tr><td><code>src/lib/persistence/**</code></td><td><code>pg</code>, domain records</td><td>React components</td></tr></tbody></table></div>
+<h3 id="9-4-this-feature-s-layer-assignment">9.4 This Feature&#39;s Layer Assignment</h3>
+<div class="table-wrap"><table><thead><tr><th>Component</th><th>Layer</th><th>Location</th></tr></thead><tbody><tr><td>Report type schemas</td><td>Domain</td><td><code>src/features/search-ad/domain/reportColumnSchemas.ts</code></td></tr><tr><td>Parser</td><td>Domain</td><td><code>src/features/search-ad/domain/parseSearchAdReport.ts</code></td></tr><tr><td>Rule engine</td><td>Domain</td><td><code>src/features/search-ad/domain/searchAdRules.ts</code></td></tr><tr><td>Overview builder</td><td>Application</td><td><code>src/features/search-ad/buildSearchAdOperationsView.ts</code></td></tr><tr><td>Report detail builder</td><td>Application</td><td><code>src/features/search-ad/buildSearchAdReportView.ts</code></td></tr><tr><td>Report sync service</td><td>Application</td><td><code>src/server/search-ad/reportSync.ts</code></td></tr><tr><td>State sync service</td><td>Application</td><td><code>src/server/search-ad/stateSync.ts</code></td></tr><tr><td>Toggle service</td><td>Application</td><td><code>src/server/search-ad/toggleSearchAdState.ts</code></td></tr><tr><td>Search Ad client</td><td>Infrastructure</td><td><code>src/lib/integrations/search-ad/client.ts</code></td></tr><tr><td>Search Ad signer</td><td>Infrastructure</td><td><code>src/lib/integrations/search-ad/signer.ts</code></td></tr><tr><td>Repository</td><td>Infrastructure</td><td><code>src/lib/persistence/searchAdRepository.ts</code></td></tr><tr><td>Shared shell</td><td>Presentation</td><td><code>src/components/layout/MarketingShell.tsx</code></td></tr><tr><td>Report UI</td><td>Presentation</td><td><code>src/components/reports/*</code></td></tr><tr><td>Search Ad UI</td><td>Presentation</td><td><code>src/components/search-ad/*</code></td></tr></tbody></table></div>
+<hr />
+<h2 id="10-coding-convention-reference">10. Coding Convention Reference</h2>
+<h3 id="10-1-naming-conventions">10.1 Naming Conventions</h3>
+<div class="table-wrap"><table><thead><tr><th>Target</th><th>Rule</th><th>Example</th></tr></thead><tbody><tr><td>Components</td><td>PascalCase</td><td><code>ReportArchiveTable</code></td></tr><tr><td>Functions</td><td>camelCase</td><td><code>parseSearchAdReport</code></td></tr><tr><td>Constants</td><td>UPPER_SNAKE_CASE</td><td><code>SEARCH_AD_REPORT_PARSER_VERSION</code></td></tr><tr><td>Types/Interfaces</td><td>PascalCase</td><td><code>SearchAdRuleResult</code></td></tr><tr><td>Component files</td><td>PascalCase.tsx</td><td><code>CampaignStatusTable.tsx</code></td></tr><tr><td>Utility files</td><td>camelCase.ts</td><td><code>buildSearchAdOperationsView.ts</code></td></tr><tr><td>Folders</td><td>kebab-case</td><td><code>search-ad/</code></td></tr></tbody></table></div>
+<h3 id="10-2-import-order">10.2 Import Order</h3>
+<pre><code class="language-typescript">// 1. External libraries
+import { NextResponse } from &quot;next/server&quot;;
+
+// 2. Internal absolute imports
+import { buildSearchAdOperationsView } from &quot;@/features/search-ad/buildSearchAdOperationsView&quot;;
+
+// 3. Relative imports
+import { SEARCH_AD_REPORT_TYPES } from &quot;./reportTypes&quot;;
+
+// 4. Type imports
+import type { SearchAdReportType } from &quot;./types&quot;;</code></pre>
+<h3 id="10-3-environment-variables">10.3 Environment Variables</h3>
+<div class="table-wrap"><table><thead><tr><th>Variable</th><th>Scope</th><th>Purpose</th></tr></thead><tbody><tr><td><code>MARKETCREW_DATABASE_URL</code> or <code>DATABASE_URL</code></td><td>Railway API only</td><td>Postgres connection</td></tr><tr><td><code>MARKETCREW_BACKEND_API_URL</code></td><td>Vercel only</td><td>Railway API base URL</td></tr><tr><td><code>MARKETCREW_BACKEND_API_TOKEN</code></td><td>Vercel only</td><td>Vercel -&gt; Railway bridge token</td></tr><tr><td><code>MARKETCREW_API_TOKEN</code></td><td>Railway API only</td><td>Bridge token validation</td></tr><tr><td><code>NAVER_SEARCH_AD_ACCESS_LICENSE</code></td><td>Railway API only</td><td>Search Ad API key</td></tr><tr><td><code>NAVER_SEARCH_AD_SECRET_KEY</code></td><td>Railway API only</td><td>HMAC signing secret</td></tr><tr><td><code>NAVER_SEARCH_AD_CUSTOMER_ID</code></td><td>Railway API only</td><td>advertiser/customer id</td></tr><tr><td><code>SEARCH_AD_WRITE_ENABLED</code></td><td>Railway API only</td><td>Search Ad provider write gate</td></tr><tr><td><code>NAVER_SEARCH_AD_WRITE_ENABLED</code></td><td>Railway API only</td><td>Search Ad provider write gate alias</td></tr></tbody></table></div>
+<h3 id="10-4-this-feature-s-conventions">10.4 This Feature&#39;s Conventions</h3>
+<div class="table-wrap"><table><thead><tr><th>Item</th><th>Convention Applied</th></tr></thead><tbody><tr><td>Visible copy</td><td>한국어 우선. provider 고유 reportTp는 설명 문구와 함께 표시</td></tr><tr><td>Report type IDs</td><td>Naver API 값 유지: <code>AD</code>, <code>EXPKEYWORD</code>, <code>SHOPPINGKEYWORD_DETAIL</code></td></tr><tr><td>Brand keys</td><td>Internal <code>coffeeprint</code>, <code>stickersee</code>; UI <code>커피프린트</code>, <code>스티커씨</code></td></tr><tr><td>Write actions</td><td>UI <code>켜기</code>, <code>끄기</code>; internal <code>turn_on</code>, <code>turn_off</code></td></tr><tr><td>Date handling</td><td>보고서 기준일은 <code>YYYY-MM-DD</code>, 수집 시각은 ISO string</td></tr><tr><td>Tests</td><td>domain pure test 먼저, route/UI test는 seed fixture 사용</td></tr></tbody></table></div>
+<hr />
+<h2 id="11-implementation-guide">11. Implementation Guide</h2>
+<h3 id="11-1-file-structure">11.1 File Structure</h3>
+<pre><code class="language-text">src/
+  app/
+    operations/page.tsx
+    reports/page.tsx
+    reports/[id]/page.tsx
+    campaigns/page.tsx
+    adgroups/page.tsx
+    search-terms/page.tsx
+    rule-results/page.tsx
+    rules/page.tsx
+    action-logs/page.tsx
+    api/search-ad/
+      overview/route.ts
+      sync/route.ts
+      reports/route.ts
+      reports/sync/route.ts
+      reports/[id]/route.ts
+      rule-criteria/route.ts
+      rules/run/route.ts
+      rule-results/route.ts
+      toggle-preview/route.ts
+      toggle-apply/route.ts
+      action-logs/route.ts
+  components/
+    layout/MarketingShell.tsx
+    reports/
+    search-ad/
+  features/
+    search-ad/
+      buildSearchAdOperationsView.ts
+      buildSearchAdReportView.ts
+      domain/
+        types.ts
+        reportTypes.ts
+        reportColumnSchemas.ts
+        parseSearchAdReport.ts
+        normalizeSearchAdReportRows.ts
+        searchAdRules.ts
+  lib/
+    integrations/search-ad/
+      signer.ts
+      client.ts
+      reports.ts
+      management.ts
+      stats.ts
+    persistence/
+      postgres.ts
+      searchAdRepository.ts
+  server/
+    search-ad/
+      reportSync.ts
+      stateSync.ts
+      ruleRunner.ts
+      toggleSearchAdState.ts
+tests/
+  search-ad/
+    parseSearchAdReport.test.ts
+    searchAdRules.test.ts
+    reportSync.test.ts
+    toggleSearchAdState.test.ts</code></pre>
+<h3 id="11-2-implementation-order">11.2 Implementation Order</h3>
+<ol><li>[ ] 공통 앱 셸과 route skeleton 생성.</li><li>[ ] DB schema와 Postgres helper 추가.</li><li>[ ] Search Ad signer/client 구현.</li><li>[ ] report type map, column schemas, parser fixture 테스트 구현.</li><li>[ ] report sync service와 <code>/api/search-ad/reports/sync</code>.</li><li>[ ] report repository와 <code>/reports</code>, <code>/reports/[id]</code> 화면.</li><li>[ ] 캠페인/광고그룹/키워드 상태 sync와 목록 화면.</li><li>[ ] rule criteria seed와 rule engine.</li><li>[ ] <code>/rules</code>, <code>/rule-results</code>, <code>/search-terms</code> 화면.</li><li>[ ] toggle preview API와 dialog.</li><li>[ ] toggle apply API. gate closed 테스트를 먼저 통과시킨 뒤, provider write path는 env gate 뒤에 둔다.</li><li>[ ] local test/typecheck/build.</li><li>[ ] GitHub push, Vercel/Railway deploy 확인, <code>npm run smoke:prod</code>.</li></ol>
+<h3 id="11-3-session-guide">11.3 Session Guide</h3>
+<h4 id="module-map">Module Map</h4>
+<div class="table-wrap"><table><thead><tr><th>Module</th><th>Scope Key</th><th>Description</th><th>Estimated Turns</th></tr></thead><tbody><tr><td>앱 셸과 기본 화면</td><td><code>module-1</code></td><td>SaaS 좌측 메뉴, 상단 필터, 운영 홈 empty/data state</td><td>1-2</td></tr><tr><td>DB와 저장소</td><td><code>module-2</code></td><td>schema, Postgres helper, repository, seed fixture</td><td>1-2</td></tr><tr><td>Search Ad 읽기 클라이언트</td><td><code>module-3</code></td><td>HMAC signer, report list/download, management read-only</td><td>2-3</td></tr><tr><td>보고서 파서와 보관함</td><td><code>module-4</code></td><td>reportTp schema, TSV parser, reports API/UI/detail</td><td>2-3</td></tr><tr><td>상태 수집과 캠페인/광고그룹 화면</td><td><code>module-5</code></td><td>campaigns/adgroups/keywords sync, status tables</td><td>2</td></tr><tr><td>규칙 엔진과 성과 기준</td><td><code>module-6</code></td><td>criteria, 저효율/무클릭/우수 분류, <code>/rules</code>, <code>/rule-results</code></td><td>2-3</td></tr><tr><td>실행 미리보기와 write gate</td><td><code>module-7</code></td><td>toggle preview, gate closed apply, action logs</td><td>2</td></tr><tr><td>운영 검증과 배포</td><td><code>module-8</code></td><td>tests, typecheck, build, prod smoke, live check</td><td>1-2</td></tr></tbody></table></div>
+<h4 id="recommended-session-plan">Recommended Session Plan</h4>
+<div class="table-wrap"><table><thead><tr><th>Session</th><th>Phase</th><th>Scope</th><th>Turns</th></tr></thead><tbody><tr><td>Session 1</td><td>Design</td><td>전체</td><td>현재</td></tr><tr><td>Session 2</td><td>Do</td><td><code>--scope module-1,module-2</code></td><td>3-4</td></tr><tr><td>Session 3</td><td>Do</td><td><code>--scope module-3,module-4</code></td><td>4-6</td></tr><tr><td>Session 4</td><td>Do</td><td><code>--scope module-5,module-6</code></td><td>4-5</td></tr><tr><td>Session 5</td><td>Do</td><td><code>--scope module-7,module-8</code></td><td>3-4</td></tr><tr><td>Session 6</td><td>Check/QA/Report</td><td>전체</td><td>2-3</td></tr></tbody></table></div>
+<hr />
+<h2 id="version-history">Version History</h2>
+<div class="table-wrap"><table><thead><tr><th>Version</th><th>Date</th><th>Changes</th><th>Author</th></tr></thead><tbody><tr><td>0.1</td><td>2026-05-26</td><td>Initial design draft from PDCA plan</td><td>Codex</td></tr></tbody></table></div>
+      </article>
+    </main>
+  </div>
+</body>
+</html>

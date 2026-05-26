@@ -1,45 +1,53 @@
-import { LogoutButton } from "@/components/LogoutButton";
+import { MarketingShell } from "@/components/layout/MarketingShell";
+import { BrandSummaryTable, PendingActionList, ReportListTable, RuleResultList, SummaryCards, SyncStatusStrip } from "@/components/search-ad/SearchAdCards";
+import { loadSearchAdOperationsView, parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
+
+type OperationsPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 export const dynamic = "force-dynamic";
 
-export default function OperationsPage() {
+export default async function OperationsPage({ searchParams }: OperationsPageProps) {
+  const filters = parseSearchAdFilters(await searchParams);
+  const view = await loadSearchAdOperationsView(filters);
+
   return (
-    <main className="shell">
-      <header className="topbar">
-        <div className="brand">
-          <strong>마켓크루</strong>
-          <span>재시작 기준선</span>
-        </div>
-        <LogoutButton />
-      </header>
+    <MarketingShell
+      activePath="/operations"
+      description="전일 보고서와 현재 광고 상태를 기준으로 커피프린트와 스티커씨를 분리 운영합니다."
+      filters={filters}
+      title="검색광고 운영 홈"
+    >
+      <div className="page-stack">
+        <SyncStatusStrip view={view} />
+        <SummaryCards cards={view.summaryCards} />
+        <BrandSummaryTable view={view} />
 
-      <section className="panel" aria-labelledby="status-title">
-        <span className="eyebrow">운영 상태</span>
-        <h1 id="status-title">깨끗한 기준선에서 다시 시작합니다.</h1>
-        <p className="muted">
-          기존 업무 카드, 캐릭터 데스크, 결재 기록, 수집 이력, AI 판단 기록은 초기화했습니다. 연결 설정은 유지되어
-          다음 설계부터 바로 붙일 수 있습니다.
-        </p>
+        <section className="content-panel">
+          <div className="section-heading">
+            <h2>최근 보고서</h2>
+            <p>네이버 보고서 원본을 보관하고 쉽게 볼 수 있게 정리합니다.</p>
+          </div>
+          <ReportListTable reports={view.recentReports} />
+        </section>
 
-        <div className="grid">
-          <div className="metric">
-            <span>Web</span>
-            <strong>연결 유지</strong>
+        <section className="content-panel">
+          <div className="section-heading">
+            <h2>최근 규칙 결과</h2>
+            <p>LLM 없이 숫자 기준으로 먼저 잡아낸 점검 후보입니다.</p>
           </div>
-          <div className="metric">
-            <span>API</span>
-            <strong>상태 확인</strong>
-          </div>
-          <div className="metric">
-            <span>DB</span>
-            <strong>초기화 완료</strong>
-          </div>
-        </div>
+          <RuleResultList results={view.recentRuleResults} />
+        </section>
 
-        <div className="notice">
-          외부 광고, 상품, 고객 데이터 쓰기는 아직 열지 않았습니다. 새 기능은 별도 계획과 승인 뒤에 추가합니다.
-        </div>
-      </section>
-    </main>
+        <section className="content-panel">
+          <div className="section-heading">
+            <h2>실행 미리보기</h2>
+            <p>실제 광고 변경 전에 영향과 차단 상태를 먼저 확인합니다.</p>
+          </div>
+          <PendingActionList actions={view.pendingActions} />
+        </section>
+      </div>
+    </MarketingShell>
   );
 }
