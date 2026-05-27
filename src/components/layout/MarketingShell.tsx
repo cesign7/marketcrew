@@ -37,7 +37,7 @@ export function MarketingShell({ activePath, children, description, filters, tit
         </div>
         <nav className="side-nav__links">
           {NAV_ITEMS.map((item) => (
-            <Link aria-current={activePath === item.href ? "page" : undefined} className={activePath === item.href ? "is-active" : ""} href={withFilters(item.href, filters)} key={item.href}>
+            <Link aria-current={activePath === item.href ? "page" : undefined} className={activePath === item.href ? "is-active" : ""} href={withFilters(item.href, filters)} key={item.href} prefetch={false}>
               {item.label}
             </Link>
           ))}
@@ -66,22 +66,22 @@ function SearchAdTopFilters({ activePath, filters }: { activePath: string; filte
     <section className="filter-bar" aria-label="검색광고 필터">
       <div className="filter-group">
         <span>브랜드</span>
-        <Link className={filters.brand === "all" ? "is-active" : ""} href={withFilters(activePath, { ...filters, brand: "all" })}>
+        <Link className={filters.brand === "all" ? "is-active" : ""} href={withFilters(activePath, { ...filters, brand: "all" })} prefetch={false}>
           {getBrandLabel("all")}
         </Link>
         {BRANDS.map((brand) => (
-          <Link className={filters.brand === brand.key ? "is-active" : ""} href={withFilters(activePath, { ...filters, brand: brand.key })} key={brand.key}>
+          <Link className={filters.brand === brand.key ? "is-active" : ""} href={withFilters(activePath, { ...filters, brand: brand.key })} key={brand.key} prefetch={false}>
             {brand.label}
           </Link>
         ))}
       </div>
       <div className="filter-group">
         <span>광고유형</span>
-        <Link className={filters.adProduct === "all" ? "is-active" : ""} href={withFilters(activePath, { ...filters, adProduct: "all" })}>
+        <Link className={filters.adProduct === "all" ? "is-active" : ""} href={withFilters(activePath, { ...filters, adProduct: "all" })} prefetch={false}>
           {getAdProductLabel("all")}
         </Link>
         {AD_PRODUCTS.map((product) => (
-          <Link className={filters.adProduct === product.key ? "is-active" : ""} href={withFilters(activePath, { ...filters, adProduct: product.key })} key={product.key}>
+          <Link className={filters.adProduct === product.key ? "is-active" : ""} href={withFilters(activePath, { ...filters, adProduct: product.key })} key={product.key} prefetch={false}>
             {product.label}
           </Link>
         ))}
