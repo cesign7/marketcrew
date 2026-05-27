@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RULE_ACTION_INTENTS, getRuleActionIntentLabel } from "@/features/search-ad/domain/ruleActionIntents";
 import { getAdProductLabel, getBrandLabel, getReportTypeLabel, RULE_CATEGORY_LABELS } from "@/features/search-ad/domain/reportTypes";
 import {
   getRuleResultCreativeLabel,
@@ -20,7 +21,16 @@ import {
   getRuleResultDiagnosis,
   getRuleResultMetricBadges,
 } from "@/features/search-ad/domain/ruleResultPresentation";
-import type { SearchAdActionLogsView, SearchAdNormalizedRow, SearchAdOperationsView, SearchAdReportJobRecord, SearchAdRuleResult, SearchAdStateRecord } from "@/features/search-ad/domain/types";
+import type {
+  RuleActionIntentFilter,
+  SearchAdActionLogsView,
+  SearchAdNormalizedRow,
+  SearchAdOperationsView,
+  SearchAdReportJobRecord,
+  SearchAdRuleResult,
+  SearchAdRuleResultFilters,
+  SearchAdStateRecord,
+} from "@/features/search-ad/domain/types";
 
 export function SyncStatusStrip({ view }: { view: { syncStatus: SearchAdOperationsView["syncStatus"] } }) {
   return (
@@ -139,6 +149,30 @@ export function ReportListTable({ reports }: { reports: SearchAdReportJobRecord[
   );
 }
 
+export function RuleResultActionTabs({ filters }: { filters: SearchAdRuleResultFilters }) {
+  const tabs: Array<{ key: RuleActionIntentFilter; label: string }> = [
+    { key: "all", label: "전체" },
+    ...RULE_ACTION_INTENTS.map((intent) => ({ key: intent.key, label: getRuleActionIntentLabel(intent.key) })),
+  ];
+
+  return (
+    <nav className="filter-group rule-action-filter" aria-label="조치 후보별 보기">
+      <span>조치 후보</span>
+      {tabs.map((tab) => (
+        <Link
+          aria-current={filters.actionIntent === tab.key ? "page" : undefined}
+          className={filters.actionIntent === tab.key ? "is-active" : ""}
+          href={withRuleResultFilters(filters, tab.key)}
+          key={tab.key}
+          prefetch={false}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
   return (
     <div className="card-list">
@@ -237,6 +271,16 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
       {results.length === 0 ? <p className="empty-text">해당 조건에 걸린 규칙 결과가 없습니다.</p> : null}
     </div>
   );
+}
+
+function withRuleResultFilters(filters: SearchAdRuleResultFilters, actionIntent: RuleActionIntentFilter) {
+  const params = new URLSearchParams();
+  params.set("brand", filters.brand);
+  params.set("adProduct", filters.adProduct);
+  if (actionIntent !== "all") {
+    params.set("actionIntent", actionIntent);
+  }
+  return `/rule-results?${params.toString()}`;
 }
 
 export function StateRecordTable({ records, title, description }: { records: SearchAdStateRecord[]; title: string; description: string }) {

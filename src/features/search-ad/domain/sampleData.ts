@@ -1,4 +1,5 @@
 import { getReportTypeLabel } from "./reportTypes";
+import { getRuleResultActionIntentKey } from "./ruleActionIntents";
 import type {
   SearchAdFilters,
   SearchAdActionLog,
@@ -12,6 +13,7 @@ import type {
   SearchAdReportJobRecord,
   SearchAdRuleCriteria,
   SearchAdRuleResult,
+  SearchAdRuleResultFilters,
   SearchAdSearchTermsView,
   SearchAdStateRecord,
   SearchAdStateView,
@@ -20,6 +22,11 @@ import type {
 export const DEFAULT_SEARCH_AD_FILTERS: SearchAdFilters = {
   brand: "all",
   adProduct: "all",
+};
+
+export const DEFAULT_SEARCH_AD_RULE_RESULT_FILTERS: SearchAdRuleResultFilters = {
+  ...DEFAULT_SEARCH_AD_FILTERS,
+  actionIntent: "all",
 };
 
 export const SAMPLE_REPORTS: SearchAdReportJobRecord[] = [
@@ -531,11 +538,12 @@ function filterReports(reports: SearchAdReportJobRecord[], filters: SearchAdFilt
   });
 }
 
-function filterRuleResults(results: SearchAdRuleResult[], filters: SearchAdFilters) {
+function filterRuleResults(results: SearchAdRuleResult[], filters: SearchAdFilters & Partial<Pick<SearchAdRuleResultFilters, "actionIntent">>) {
   return results.filter((result) => {
     const brandMatched = filters.brand === "all" || result.brandKey === filters.brand;
     const adProductMatched = filters.adProduct === "all" || result.adProductType === filters.adProduct;
-    return brandMatched && adProductMatched;
+    const actionIntentMatched = !filters.actionIntent || filters.actionIntent === "all" || getRuleResultActionIntentKey(result) === filters.actionIntent;
+    return brandMatched && adProductMatched && actionIntentMatched;
   });
 }
 

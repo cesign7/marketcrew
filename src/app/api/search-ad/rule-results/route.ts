@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { proxyRequestToBackend } from "@/lib/backend/proxy";
 import { getSearchAdRuleResultsView } from "@/lib/persistence/searchAdRepository";
-import { parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
+import { parseSearchAdRuleResultFilters } from "@/features/search-ad/loadSearchAdViews";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +12,6 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const data = await getSearchAdRuleResultsView(parseSearchAdFilters(Object.fromEntries(url.searchParams)));
+  const data = await getSearchAdRuleResultsView(parseSearchAdRuleResultFilters(Object.fromEntries(url.searchParams)));
   return NextResponse.json({ ok: true, data });
 }

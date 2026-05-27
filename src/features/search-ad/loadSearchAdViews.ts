@@ -11,12 +11,20 @@ import {
   listSearchAdRuleCriteria,
 } from "@/lib/persistence/searchAdRepository";
 import type { AdProductFilter, BrandFilter, SearchAdActionLogsView, SearchAdFilters, SearchAdReportArchiveView, SearchAdReportDetailView, SearchAdRuleResultDetailView, SearchAdRuleResultsView, SearchAdSearchTermsView, SearchAdStateView } from "./domain/types";
-import type { SearchAdOperationsView, SearchAdRuleCriteria } from "./domain/types";
+import type { SearchAdOperationsView, SearchAdRuleCriteria, SearchAdRuleResultFilters } from "./domain/types";
+import { parseRuleActionIntentFilter } from "./domain/ruleActionIntents";
 
 export function parseSearchAdFilters(searchParams: Record<string, string | string[] | undefined>): SearchAdFilters {
   return {
     brand: parseBrandFilter(firstValue(searchParams.brand)),
     adProduct: parseAdProductFilter(firstValue(searchParams.adProduct)),
+  };
+}
+
+export function parseSearchAdRuleResultFilters(searchParams: Record<string, string | string[] | undefined>): SearchAdRuleResultFilters {
+  return {
+    ...parseSearchAdFilters(searchParams),
+    actionIntent: parseRuleActionIntentFilter(firstValue(searchParams.actionIntent)),
   };
 }
 
@@ -38,7 +46,7 @@ export async function loadSearchAdReportArchiveView(filters: SearchAdFilters): P
   return getSearchAdReportArchiveView(filters);
 }
 
-export async function loadSearchAdRuleResultsView(filters: SearchAdFilters): Promise<SearchAdRuleResultsView> {
+export async function loadSearchAdRuleResultsView(filters: SearchAdRuleResultFilters): Promise<SearchAdRuleResultsView> {
   const remote = await fetchBackendJson<SearchAdRuleResultsView>(`/api/search-ad/rule-results?${toQuery(filters)}`);
   if (remote) {
     return remote;
@@ -142,10 +150,13 @@ async function fetchBackendJson<T>(path: string): Promise<T | undefined> {
   }
 }
 
-function toQuery(filters: SearchAdFilters) {
+function toQuery(filters: SearchAdFilters & Partial<Pick<SearchAdRuleResultFilters, "actionIntent">>) {
   const params = new URLSearchParams();
   params.set("brand", filters.brand);
   params.set("adProduct", filters.adProduct);
+  if (filters.actionIntent && filters.actionIntent !== "all") {
+    params.set("actionIntent", filters.actionIntent);
+  }
   return params.toString();
 }
 

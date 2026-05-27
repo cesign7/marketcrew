@@ -196,6 +196,8 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 | `railway status` | `marketcrew-api` Online, `https://api.marketcrew.app` |
 | `POST https://api.marketcrew.app/api/search-ad/state/sync` | 200, 캠페인 6개/광고그룹 56개/키워드 2,879개/저장 2,941개 |
 | `POST https://api.marketcrew.app/api/search-ad/reports/sync` | 200 |
+| `GET /api/search-ad/rule-results?actionIntent=targeting_adjustment` | 200, 조치 후보 필터 `타게팅 조정` 적용 |
+| Playwright `/rule-results?actionIntent=targeting_adjustment` | 조치 후보 탭 10개 표시, 카드 100개, 가로 넘침 0 |
 
 ---
 

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { getPostgresPool, hasDatabaseUrl, query } from "./postgres";
 import {
   DEFAULT_SEARCH_AD_FILTERS,
+  DEFAULT_SEARCH_AD_RULE_RESULT_FILTERS,
   SAMPLE_NORMALIZED_ROWS,
   SAMPLE_RULE_CRITERIA,
   SAMPLE_RULE_RESULTS,
@@ -38,6 +39,7 @@ import type {
   SearchAdRuleCriteria,
   SearchAdRuleResultDetailView,
   SearchAdRuleResult,
+  SearchAdRuleResultFilters,
   SearchAdRuleResultsView,
   SearchAdSearchTermsView,
   SearchAdStateRecord,
@@ -234,7 +236,7 @@ export async function getSearchAdReportArchiveView(filters = DEFAULT_SEARCH_AD_F
   }
 }
 
-export async function getSearchAdRuleResultsView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdRuleResultsView> {
+export async function getSearchAdRuleResultsView(filters = DEFAULT_SEARCH_AD_RULE_RESULT_FILTERS): Promise<SearchAdRuleResultsView> {
   if (!hasDatabaseUrl()) {
     return {
       filters,
@@ -1739,7 +1741,10 @@ async function listSearchAdReportsFromDb(filters: SearchAdFilters, limit: number
   return result.rows.map(mapReportJobRow);
 }
 
-async function listSearchAdRuleResultsFromDb(filters: SearchAdFilters, limit: number): Promise<SearchAdRuleResult[]> {
+async function listSearchAdRuleResultsFromDb(
+  filters: SearchAdFilters & Partial<Pick<SearchAdRuleResultFilters, "actionIntent">>,
+  limit: number,
+): Promise<SearchAdRuleResult[]> {
   const clauses: string[] = [];
   const values: unknown[] = [];
   if (filters.brand !== "all") {
@@ -1749,6 +1754,10 @@ async function listSearchAdRuleResultsFromDb(filters: SearchAdFilters, limit: nu
   if (filters.adProduct !== "all") {
     values.push(filters.adProduct);
     clauses.push(`ad_product_type = $${values.length}`);
+  }
+  if (filters.actionIntent && filters.actionIntent !== "all") {
+    values.push(filters.actionIntent);
+    clauses.push(`evidence_packet ->> 'actionIntent' = $${values.length}`);
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 

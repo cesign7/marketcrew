@@ -252,6 +252,16 @@ table {
   color: #fff;
 }
 
+.rule-action-filter {
+  border-bottom: 1px solid var(--line);
+  margin: 4px 0 16px;
+  padding-bottom: 14px;
+}
+
+.rule-action-filter a {
+  white-space: nowrap;
+}
+
 .page-stack {
   display: grid;
   gap: 18px;

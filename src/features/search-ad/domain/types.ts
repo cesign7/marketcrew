@@ -35,6 +35,23 @@ export type SearchAdFilters = {
   adProduct: AdProductFilter;
 };
 
+export type SearchAdRuleActionIntent =
+  | "data_check"
+  | "negative_keyword"
+  | "landing_check"
+  | "bid_adjustment"
+  | "keyword_expand"
+  | "shopping_expand"
+  | "targeting_adjustment"
+  | "fit_check"
+  | "operation_check";
+
+export type RuleActionIntentFilter = "all" | SearchAdRuleActionIntent;
+
+export type SearchAdRuleResultFilters = SearchAdFilters & {
+  actionIntent: RuleActionIntentFilter;
+};
+
 export type SearchAdReportJobRecord = {
   id: string;
   providerReportJobId: string;
@@ -241,7 +258,7 @@ export type SearchAdOperationsView = {
 };
 
 export type SearchAdRuleResultsView = {
-  filters: SearchAdFilters;
+  filters: SearchAdRuleResultFilters;
   results: SearchAdRuleResult[];
 };
 
