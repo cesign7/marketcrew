@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { RULE_ACTION_INTENTS, getRuleActionIntentLabel } from "@/features/search-ad/domain/ruleActionIntents";
+import { getSearchAdReportScheduleStatus } from "@/features/search-ad/domain/reportSchedule";
 import { getAdProductLabel, getBrandLabel, getReportTypeLabel, RULE_CATEGORY_LABELS } from "@/features/search-ad/domain/reportTypes";
 import {
   getRuleResultCreativeLabel,
@@ -33,6 +34,8 @@ import type {
 } from "@/features/search-ad/domain/types";
 
 export function SyncStatusStrip({ view }: { view: { syncStatus: SearchAdOperationsView["syncStatus"] } }) {
+  const reportSchedule = view.syncStatus.reportSchedule ?? getSearchAdReportScheduleStatus();
+
   return (
     <section className="status-strip" aria-label="수집 상태">
       <div>
@@ -42,6 +45,10 @@ export function SyncStatusStrip({ view }: { view: { syncStatus: SearchAdOperatio
       <div>
         <span>상태 수집</span>
         <strong>{formatDateTime(view.syncStatus.lastStateSyncAt) ?? "대기"}</strong>
+      </div>
+      <div>
+        <span>다음 보고서</span>
+        <strong title={reportSchedule.nextRunAt}>{reportSchedule.nextRunLabel}</strong>
       </div>
       <div>
         <span>API 설정</span>

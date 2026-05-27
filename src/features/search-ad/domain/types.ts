@@ -246,6 +246,7 @@ export type SearchAdOperationsView = {
     hasSearchAdCredentials: boolean;
     searchAdWriteEnabled: boolean;
     repositoryMode: "db" | "sample";
+    reportSchedule: SearchAdReportScheduleStatus;
   };
   summaryCards: Array<{
     key: string;
@@ -269,6 +270,17 @@ export type SearchAdOperationsView = {
     actionLabel: string;
     statusLabel: string;
   }>;
+};
+
+export type SearchAdReportScheduleStatus = {
+  nextRunAt: string;
+  nextRunLabel: string;
+  nextRunPurpose: string;
+  primaryRunLabel: string;
+  reportTypeCount: number;
+  retryRunLabel: string;
+  targetStatDate: string;
+  timezone: "Asia/Seoul";
 };
 
 export type SearchAdRuleResultsView = {

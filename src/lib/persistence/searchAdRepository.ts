@@ -20,6 +20,7 @@ import { describeTargetSetting } from "@/features/search-ad/domain/targetSetting
 import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport";
 import { buildSearchAdPeriodRuleResults } from "@/features/search-ad/domain/ruleEngine";
 import { sortSearchAdRuleCriteria } from "@/features/search-ad/domain/ruleCriteriaSettings";
+import { getSearchAdReportScheduleStatus } from "@/features/search-ad/domain/reportSchedule";
 import {
   DEFAULT_SEARCH_AD_OPERATION_STRATEGIES,
   normalizeSearchAdOperationStrategyInput,
@@ -2831,6 +2832,7 @@ async function getSyncStatusFromDb() {
     lastStateSyncAt: lastStateSyncAt && String(lastStateSyncAt) !== "1970-01-01T00:00:00.000Z" ? toIso(lastStateSyncAt) : null,
     hasSearchAdCredentials: Boolean(process.env.NAVER_SEARCH_AD_ACCESS_LICENSE && process.env.NAVER_SEARCH_AD_SECRET_KEY && process.env.NAVER_SEARCH_AD_CUSTOMER_ID),
     searchAdWriteEnabled: isSearchAdWriteEnabled(),
+    reportSchedule: getSearchAdReportScheduleStatus(),
   };
 }
 

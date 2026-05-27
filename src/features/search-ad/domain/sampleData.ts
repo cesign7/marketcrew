@@ -1,4 +1,5 @@
 import { getReportTypeLabel } from "./reportTypes";
+import { getSearchAdReportScheduleStatus } from "./reportSchedule";
 import { getRuleResultActionIntentKey } from "./ruleActionIntents";
 import type {
   SearchAdFilters,
@@ -423,6 +424,7 @@ export function createSampleOperationsView(filters = DEFAULT_SEARCH_AD_FILTERS):
       hasSearchAdCredentials: false,
       searchAdWriteEnabled: false,
       repositoryMode: "sample",
+      reportSchedule: getSearchAdReportScheduleStatus(),
     },
     summaryCards: [
       { key: "reports", label: "보고서", value: `${reports.length}건`, helper: "수집 또는 샘플로 확인 가능한 보고서" },
