@@ -4,6 +4,8 @@ import { getRuleRebuildMessage } from "@/components/search-ad/RuleRebuildPanel";
 describe("rule rebuild panel helpers", () => {
   it("규칙 재계산 성공 메시지를 한글 건수로 보여준다", () => {
     expect(getRuleRebuildMessage({ ok: true, data: { saved: 1234 } }, 200)).toEqual({
+      actionHref: "/rule-results",
+      actionText: "규칙 결과 보기",
       kind: "success",
       text: "1,234건의 규칙 결과를 다시 만들었습니다.",
     });

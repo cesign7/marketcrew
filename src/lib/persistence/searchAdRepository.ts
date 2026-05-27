@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { hasDatabaseUrl, query } from "./postgres";
+import { getPostgresPool, hasDatabaseUrl, query } from "./postgres";
 import {
   DEFAULT_SEARCH_AD_FILTERS,
   SAMPLE_NORMALIZED_ROWS,
@@ -650,39 +650,13 @@ export async function rebuildAndSaveSearchAdRuleResults() {
 
   try {
     await ensureSearchAdSchema();
-    const rows = await listNormalizedRowsByFilters(DEFAULT_SEARCH_AD_FILTERS, 100000);
     const criteria = await listSearchAdRuleCriteria();
+    const rows = await listNormalizedRowsForRuleCriteria(criteria);
     const dataCoverage = await listNormalizedDataCoverage();
     const adLookup = await listLatestAdCreativeLookup();
     const results = enrichRuleResultsWithEvidenceContext(buildSearchAdPeriodRuleResults(rows, criteria), dataCoverage, adLookup);
 
-    await query("DELETE FROM search_ad_rule_results");
-    for (const result of results) {
-      await query(
-        `
-          INSERT INTO search_ad_rule_results (
-            id, brand_key, ad_product_type, category, target_type, target_id, target_label, severity,
-            period_days, reason, metrics, evidence_packet, created_at
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        `,
-        [
-          result.id,
-          result.brandKey,
-          result.adProductType,
-          result.category,
-          result.targetType,
-          result.targetId ?? null,
-          result.targetLabel,
-          result.severity,
-          result.periodDays,
-          result.reason,
-          JSON.stringify(result.metrics),
-          JSON.stringify(result.evidencePacket),
-          result.createdAt,
-        ],
-      );
-    }
+    await replaceSearchAdRuleResults(results);
 
     return { saved: results.length, results };
   } catch (error) {
@@ -1989,6 +1963,151 @@ async function listNormalizedRowsByFilters(filters: SearchAdFilters, limit: numb
   return result.rows.map(mapNormalizedRow);
 }
 
+async function listNormalizedRowsForRuleCriteria(criteriaList: SearchAdRuleCriteria[]): Promise<SearchAdNormalizedRow[]> {
+  const enabledCriteria = criteriaList.filter((item) => item.enabled);
+  if (enabledCriteria.length === 0) {
+    return [];
+  }
+
+  const latestByScope = await listLatestSourceDateByRuleScope(enabledCriteria);
+  const windows = enabledCriteria.flatMap((criteria) => {
+    const endDate = latestByScope.get(ruleCriteriaScopeKey(criteria));
+    if (!endDate) {
+      return [];
+    }
+
+    return [
+      {
+        adProductType: criteria.adProductType,
+        brandKey: criteria.brandKey,
+        endDate,
+        startDate: addDateDays(endDate, -(criteria.periodDays - 1)),
+      },
+    ];
+  });
+
+  if (windows.length === 0) {
+    return [];
+  }
+
+  const values: unknown[] = [];
+  const clauses = windows.map((window) => {
+    values.push(window.brandKey, window.adProductType, window.startDate, window.endDate);
+    const offset = values.length - 3;
+    return `(brand_key = $${offset} AND ad_product_type = $${offset + 1} AND source_date >= $${offset + 2}::date AND source_date <= $${offset + 3}::date)`;
+  });
+
+  const result = await query<{
+    id: string;
+    report_row_id: string;
+    report_type: SearchAdReportType;
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    campaign_id: string | null;
+    campaign_name: string | null;
+    adgroup_id: string | null;
+    adgroup_name: string | null;
+    keyword_id: string | null;
+    keyword_text: string | null;
+    search_term: string | null;
+    ad_id: string | null;
+    criterion_id: string | null;
+    extension_id: string | null;
+    media_id: string | null;
+    device: string | null;
+    impressions: string;
+    clicks: string;
+    cost: string;
+    conversions: string;
+    sales_amount: string;
+    source_date: string | Date;
+  }>(
+    `
+      SELECT *
+      FROM search_ad_report_normalized_rows
+      WHERE ${clauses.join(" OR ")}
+      ORDER BY source_date DESC, cost DESC, clicks DESC
+    `,
+    values,
+  );
+
+  return result.rows.map(mapNormalizedRow);
+}
+
+async function replaceSearchAdRuleResults(results: SearchAdRuleResult[]) {
+  const client = await getPostgresPool().connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("DELETE FROM search_ad_rule_results");
+
+    if (results.length > 0) {
+      const values: unknown[] = [];
+      const placeholders = results.map((result) => {
+        values.push(
+          result.id,
+          result.brandKey,
+          result.adProductType,
+          result.category,
+          result.targetType,
+          result.targetId ?? null,
+          result.targetLabel,
+          result.severity,
+          result.periodDays,
+          result.reason,
+          JSON.stringify(result.metrics),
+          JSON.stringify(result.evidencePacket),
+          result.createdAt,
+        );
+        const offset = values.length - 12;
+        return `($${offset}, $${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12})`;
+      });
+
+      await client.query(
+        `
+          INSERT INTO search_ad_rule_results (
+            id, brand_key, ad_product_type, category, target_type, target_id, target_label, severity,
+            period_days, reason, metrics, evidence_packet, created_at
+          )
+          VALUES ${placeholders.join(", ")}
+        `,
+        values,
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function listLatestSourceDateByRuleScope(criteriaList: SearchAdRuleCriteria[]): Promise<Map<string, string>> {
+  const values: unknown[] = [];
+  const clauses = criteriaList.map((criteria) => {
+    values.push(criteria.brandKey, criteria.adProductType);
+    const offset = values.length - 1;
+    return `(brand_key = $${offset} AND ad_product_type = $${offset + 1})`;
+  });
+
+  const result = await query<{
+    ad_product_type: AdProductType;
+    brand_key: BrandKey;
+    end_date: string | Date | null;
+  }>(
+    `
+      SELECT brand_key, ad_product_type, MAX(source_date) AS end_date
+      FROM search_ad_report_normalized_rows
+      WHERE ${clauses.join(" OR ")}
+      GROUP BY brand_key, ad_product_type
+    `,
+    values,
+  );
+
+  return new Map(result.rows.filter((row) => row.end_date).map((row) => [`${row.brand_key}:${row.ad_product_type}`, toDate(row.end_date as string | Date)]));
+}
+
 async function listNormalizedRowsByIds(ids: string[]): Promise<SearchAdNormalizedRow[]> {
   if (ids.length === 0) {
     return [];
@@ -2458,6 +2577,16 @@ function toIso(value: string | Date) {
 
 function toDate(value: string | Date) {
   return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
+}
+
+function addDateDays(dateText: string, days: number) {
+  const date = new Date(`${dateText}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function ruleCriteriaScopeKey(criteria: Pick<SearchAdRuleCriteria, "brandKey" | "adProductType">) {
+  return `${criteria.brandKey}:${criteria.adProductType}`;
 }
 
 function mapNormalizedRow(row: {

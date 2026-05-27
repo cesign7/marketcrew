@@ -1000,6 +1000,10 @@ table {
   margin: 0;
 }
 
+.rule-rebuild-link {
+  font-size: 13px;
+}
+
 .backfill-controls {
   display: grid;
   gap: 12px;

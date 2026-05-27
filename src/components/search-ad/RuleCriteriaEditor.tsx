@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { getAdProductLabel, getBrandLabel } from "@/features/search-ad/domain/reportTypes";
 import type { SearchAdRuleCriteria } from "@/features/search-ad/domain/types";
+import { RULE_CRITERIA_SAVED_EVENT } from "./ruleCriteriaEvents";
 
 type RuleCriteriaEditorProps = {
   criteria: SearchAdRuleCriteria[];
@@ -66,6 +67,7 @@ export function RuleCriteriaEditor({ criteria }: RuleCriteriaEditorProps) {
         throw new Error(payload.message ?? "성과 기준을 저장하지 못했습니다.");
       }
       const savedCriteria = payload.data;
+      window.dispatchEvent(new Event(RULE_CRITERIA_SAVED_EVENT));
 
       setRows((current) =>
         current.map((item) =>

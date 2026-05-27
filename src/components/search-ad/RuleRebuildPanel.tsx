@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { RULE_CRITERIA_SAVED_EVENT } from "./ruleCriteriaEvents";
 
 type RuleRebuildResponse =
   | {
@@ -21,10 +23,14 @@ type RuleRebuildResponse =
 
 type RebuildState =
   | {
+      actionHref?: string;
+      actionText?: string;
       kind: "idle";
       text: string;
     }
   | {
+      actionHref?: string;
+      actionText?: string;
       kind: "success" | "warning" | "error";
       text: string;
     };
@@ -35,6 +41,18 @@ export function RuleRebuildPanel() {
     text: "백필이 완료된 뒤 누르면 저장된 보고서를 기준으로 규칙 결과를 다시 만듭니다.",
   });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    function handleRuleCriteriaSaved() {
+      setState({
+        kind: "warning",
+        text: "성과 기준이 저장됐습니다. 규칙 결과 재계산을 눌러 새 카드에 반영하세요.",
+      });
+    }
+
+    window.addEventListener(RULE_CRITERIA_SAVED_EVENT, handleRuleCriteriaSaved);
+    return () => window.removeEventListener(RULE_CRITERIA_SAVED_EVENT, handleRuleCriteriaSaved);
+  }, []);
 
   async function rebuildRules() {
     setLoading(true);
@@ -64,6 +82,11 @@ export function RuleRebuildPanel() {
         <strong>백필 완료 후 규칙 재계산</strong>
         <p>중간 백필 데이터로 실수 재계산하지 않도록, 백필이 진행 중이면 서버에서 차단합니다.</p>
         <span className={`state-message is-${state.kind === "idle" ? "warning" : state.kind}`}>{state.text}</span>
+        {state.actionHref && state.actionText ? (
+          <Link className="table-link rule-rebuild-link" href={state.actionHref}>
+            {state.actionText}
+          </Link>
+        ) : null}
       </div>
       <button className="primary-button" disabled={loading} onClick={rebuildRules} type="button">
         {loading ? "확인 중" : "규칙 결과 재계산"}
@@ -76,6 +99,8 @@ export function getRuleRebuildMessage(payload: RuleRebuildResponse, status: numb
   if (payload.ok === true) {
     const saved = payload.data?.saved ?? 0;
     return {
+      actionHref: "/rule-results",
+      actionText: "규칙 결과 보기",
       kind: "success",
       text: `${saved.toLocaleString("ko-KR")}건의 규칙 결과를 다시 만들었습니다.`,
     };
