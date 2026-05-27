@@ -535,9 +535,72 @@ table {
   gap: 8px;
 }
 
+.rule-card-header {
+  justify-content: space-between;
+}
+
+.rule-card-title-group {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rule-card-kicker {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .rule-card p {
   color: #344054;
   margin: 0;
+}
+
+.rule-card-diagnosis {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.rule-card-action {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text) !important;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 10px 12px;
+}
+
+.metric-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.metric-pill-row.is-large {
+  margin: 0 0 16px;
+}
+
+.metric-pill {
+  align-items: baseline;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 7px;
+  padding: 7px 10px;
+}
+
+.metric-pill span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.metric-pill strong {
+  color: var(--text);
+  font-size: 13px;
 }
 
 .rule-card dl {
@@ -586,6 +649,43 @@ table {
   margin: 3px 0 0;
 }
 
+.recommendation-panel {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  margin: 0 0 16px;
+}
+
+.recommendation-panel > div {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.recommendation-panel span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.recommendation-panel strong {
+  font-size: 15px;
+}
+
+.recommendation-panel p,
+.recommendation-panel ul {
+  color: #344054;
+  font-size: 13px;
+  margin: 0;
+}
+
+.recommendation-panel ul {
+  padding-left: 18px;
+}
+
 .text-break {
   overflow-wrap: anywhere;
 }
@@ -624,6 +724,30 @@ table {
 
 .action-preview-card {
   margin-top: 12px;
+}
+
+.action-apply-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 12px;
+}
+
+.action-apply-row span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.execution-result {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
 }
 
 .target-chip {
@@ -1200,6 +1324,7 @@ table {
   .report-guide-grid,
   .rule-guide-grid,
   .rule-period-grid,
+  .recommendation-panel,
   .state-summary-grid,
   .summary-grid,
   .summary-grid.compact,

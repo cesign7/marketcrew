@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { SearchAdActionPreview, SearchAdRequestedAction, SearchAdRuleActionTarget } from "@/features/search-ad/domain/types";
+import type { SearchAdActionLog, SearchAdActionPreview, SearchAdRequestedAction, SearchAdRuleActionTarget } from "@/features/search-ad/domain/types";
 import { formatWon } from "./SearchAdCards";
 
 type ActionPreviewResponse = {
@@ -11,9 +11,16 @@ type ActionPreviewResponse = {
   message?: string;
 };
 
+type ActionApplyResponse = {
+  ok?: boolean;
+  data?: SearchAdActionLog;
+  message?: string;
+};
+
 export function RuleResultActionPanel({ actionTarget }: { actionTarget?: SearchAdRuleActionTarget }) {
+  const [appliedLog, setAppliedLog] = useState<SearchAdActionLog | undefined>();
   const [preview, setPreview] = useState<SearchAdActionPreview | undefined>();
-  const [message, setMessage] = useState<string | undefined>();
+  const [message, setMessage] = useState<{ kind: "success" | "warning" | "error"; text: string } | undefined>();
   const [isLoading, setIsLoading] = useState(false);
 
   if (!actionTarget) {
@@ -33,6 +40,7 @@ export function RuleResultActionPanel({ actionTarget }: { actionTarget?: SearchA
     }
 
     setIsLoading(true);
+    setAppliedLog(undefined);
     setMessage(undefined);
     try {
       const response = await fetch("/api/search-ad/action-preview", {
@@ -50,10 +58,41 @@ export function RuleResultActionPanel({ actionTarget }: { actionTarget?: SearchA
       }
 
       setPreview(payload.data);
-      setMessage("실행 이력에 미리보기를 저장했습니다.");
+      setMessage({ kind: "success", text: "실행 이력에 미리보기를 저장했습니다." });
     } catch (error) {
       setPreview(undefined);
-      setMessage(error instanceof Error ? error.message : "실행 미리보기 요청에 실패했습니다.");
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "실행 미리보기 요청에 실패했습니다." });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function applyPreview() {
+    if (!preview) {
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage(undefined);
+    try {
+      const response = await fetch("/api/search-ad/action-apply", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ previewId: preview.id }),
+      });
+      const payload = (await response.json()) as ActionApplyResponse;
+      if (payload.ok !== true || !payload.data) {
+        throw new Error(payload.message ?? "실행 요청을 처리하지 못했습니다.");
+      }
+
+      setAppliedLog(payload.data);
+      setMessage({
+        kind: payload.data.status === "applied" ? "success" : payload.data.status === "blocked" ? "warning" : "error",
+        text: payload.data.reason,
+      });
+    } catch (error) {
+      setAppliedLog(undefined);
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "실행 요청에 실패했습니다." });
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +109,7 @@ export function RuleResultActionPanel({ actionTarget }: { actionTarget?: SearchA
       <div className="action-target-card">
         <span>{actionTarget.targetType === "adgroup" ? "광고그룹" : "캠페인"}</span>
         <strong>{actionTarget.targetLabel}</strong>
-        <p>대표 승인 전에는 여기서 바로 외부 광고를 변경하지 않고, 실행 이력에 미리보기만 남깁니다.</p>
+        <p>미리보기로 영향을 저장한 뒤 실행 요청을 남깁니다. 실제 변경 권한이 닫혀 있으면 네이버에는 반영하지 않고 차단 이력만 남깁니다.</p>
         <div className="action-button-row">
           <button className="primary-button secondary-button" disabled={isLoading} onClick={() => requestPreview("turn_off")} type="button">
             끄기 미리보기
@@ -84,7 +123,7 @@ export function RuleResultActionPanel({ actionTarget }: { actionTarget?: SearchA
         </div>
       </div>
 
-      {message ? <p className="state-message" aria-live="polite">{message}</p> : null}
+      {message ? <p className={`state-message is-${message.kind}`} aria-live="polite">{message.text}</p> : null}
 
       {preview ? (
         <article className="rule-card action-preview-card">
@@ -111,6 +150,21 @@ export function RuleResultActionPanel({ actionTarget }: { actionTarget?: SearchA
               <dd>{preview.impactSummary.recentConversions.toLocaleString("ko-KR")}건</dd>
             </div>
           </dl>
+          <div className="action-apply-row">
+            <button className="primary-button" disabled={isLoading} onClick={applyPreview} type="button">
+              {preview.writeGateOpen ? "실행 요청" : "차단 이력 남기기"}
+            </button>
+            <span>{preview.writeGateOpen ? "실제 변경 권한이 열려 있어 네이버 반영까지 진행됩니다." : "현재는 실제 변경 권한이 닫혀 있어 안전하게 차단됩니다."}</span>
+          </div>
+          {appliedLog ? (
+            <div className="execution-result">
+              <span className={`severity severity-${appliedLog.status === "applied" ? "low" : appliedLog.status === "blocked" ? "medium" : "high"}`}>
+                {appliedLog.status === "applied" ? "반영" : appliedLog.status === "blocked" ? "차단" : "실패"}
+              </span>
+              <strong>{appliedLog.actionLabel}</strong>
+              <p>{appliedLog.reason}</p>
+            </div>
+          ) : null}
         </article>
       ) : null}
     </section>

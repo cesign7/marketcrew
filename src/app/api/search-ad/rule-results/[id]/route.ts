@@ -15,10 +15,18 @@ export async function GET(request: Request, context: RuleResultDetailRouteContex
   }
 
   const { id } = await context.params;
-  const data = await getSearchAdRuleResultDetailView(id);
+  const data = await getSearchAdRuleResultDetailView(normalizeRouteParam(id));
   if (!data) {
     return NextResponse.json({ ok: false, code: "SEARCH_AD_RULE_RESULT_NOT_FOUND", message: "규칙 결과를 찾지 못했습니다." }, { status: 404 });
   }
 
   return NextResponse.json({ ok: true, data });
+}
+
+function normalizeRouteParam(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }

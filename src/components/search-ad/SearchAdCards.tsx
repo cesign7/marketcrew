@@ -13,6 +13,7 @@ import {
   getRuleResultSourceReportLabel,
   getRuleResultTargetDetailLabel,
 } from "@/features/search-ad/domain/targetDisplay";
+import { getRuleResultDiagnosis, getRuleResultMetricBadges, getRuleResultRecommendedAction } from "@/features/search-ad/domain/ruleResultPresentation";
 import type { SearchAdActionLogsView, SearchAdNormalizedRow, SearchAdOperationsView, SearchAdReportJobRecord, SearchAdRuleResult, SearchAdStateRecord } from "@/features/search-ad/domain/types";
 
 export function SyncStatusStrip({ view }: { view: { syncStatus: SearchAdOperationsView["syncStatus"] } }) {
@@ -143,28 +144,36 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const creativeLabel = getRuleResultCreativeLabel(result);
         const landingLabel = getRuleResultLandingLabel(result);
         const coverageLabel = getCoverageDecisionLabel(result);
+        const metricBadges = getRuleResultMetricBadges(result);
         return (
           <article className="rule-card" key={result.id}>
-            <div>
-              <span className={`severity severity-${result.severity}`}>{RULE_CATEGORY_LABELS[result.category]}</span>
-              <span className="target-chip">{targetTypeLabel}</span>
-              <Link className="rule-card-title" href={getRuleResultDetailHref(result)}>
-                {targetLabel}
-              </Link>
+            <div className="rule-card-header">
+              <div className="rule-card-title-group">
+                <div className="rule-card-kicker">
+                  <span className={`severity severity-${result.severity}`}>{RULE_CATEGORY_LABELS[result.category]}</span>
+                  <span className="target-chip">{targetTypeLabel}</span>
+                  <span className="target-chip">{getBrandLabel(result.brandKey)}</span>
+                  <span className="target-chip">{getAdProductLabel(result.adProductType)}</span>
+                </div>
+                <Link className="rule-card-title" href={getRuleResultDetailHref(result)}>
+                  {targetLabel}
+                </Link>
+              </div>
             </div>
-            <p>{result.reason}</p>
+            <p className="rule-card-diagnosis">{getRuleResultDiagnosis(result)}</p>
+            <div className="metric-pill-row" aria-label="핵심 성과">
+              {metricBadges.map((badge) => (
+                <span className="metric-pill" key={`${result.id}-${badge.label}`}>
+                  <span>{badge.label}</span>
+                  <strong>{badge.value}</strong>
+                </span>
+              ))}
+            </div>
+            <p className="rule-card-action">추천 조치: {getRuleResultRecommendedAction(result)}</p>
             <dl>
               <div>
                 <dt>연결 위치</dt>
                 <dd>{getRuleResultConnectedTarget(result)}</dd>
-              </div>
-              <div>
-                <dt>브랜드</dt>
-                <dd>{getBrandLabel(result.brandKey)}</dd>
-              </div>
-              <div>
-                <dt>광고유형</dt>
-                <dd>{getAdProductLabel(result.adProductType)}</dd>
               </div>
               <div>
                 <dt>근거 보고서</dt>

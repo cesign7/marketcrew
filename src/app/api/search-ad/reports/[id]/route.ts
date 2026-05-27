@@ -15,10 +15,18 @@ export async function GET(request: Request, context: ReportDetailRouteContext) {
   }
 
   const { id } = await context.params;
-  const data = await getSearchAdReportDetailView(id);
+  const data = await getSearchAdReportDetailView(normalizeRouteParam(id));
   if (!data) {
     return NextResponse.json({ ok: false, code: "SEARCH_AD_REPORT_NOT_FOUND", message: "보고서를 찾지 못했습니다." }, { status: 404 });
   }
 
   return NextResponse.json({ ok: true, data });
+}
+
+function normalizeRouteParam(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }

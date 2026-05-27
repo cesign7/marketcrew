@@ -48,21 +48,23 @@ export async function loadSearchAdRuleResultsView(filters: SearchAdFilters): Pro
 }
 
 export async function loadSearchAdReportDetailView(id: string): Promise<SearchAdReportDetailView | undefined> {
-  const remote = await fetchBackendJson<SearchAdReportDetailView>(`/api/search-ad/reports/${encodeURIComponent(id)}`);
+  const normalizedId = normalizeRouteParam(id);
+  const remote = await fetchBackendJson<SearchAdReportDetailView>(`/api/search-ad/reports/${encodeURIComponent(normalizedId)}`);
   if (remote) {
     return remote;
   }
 
-  return getSearchAdReportDetailView(id);
+  return getSearchAdReportDetailView(normalizedId);
 }
 
 export async function loadSearchAdRuleResultDetailView(id: string): Promise<SearchAdRuleResultDetailView | undefined> {
-  const remote = await fetchBackendJson<SearchAdRuleResultDetailView>(`/api/search-ad/rule-results/${encodeURIComponent(id)}`);
+  const normalizedId = normalizeRouteParam(id);
+  const remote = await fetchBackendJson<SearchAdRuleResultDetailView>(`/api/search-ad/rule-results/${encodeURIComponent(normalizedId)}`);
   if (remote) {
     return remote;
   }
 
-  return getSearchAdRuleResultDetailView(id);
+  return getSearchAdRuleResultDetailView(normalizedId);
 }
 
 export async function loadSearchAdRuleCriteria(): Promise<SearchAdRuleCriteria[]> {
@@ -149,6 +151,14 @@ function toQuery(filters: SearchAdFilters) {
 
 function firstValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function normalizeRouteParam(value: string) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 function parseBrandFilter(value: string | undefined): BrandFilter {

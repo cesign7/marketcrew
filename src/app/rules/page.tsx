@@ -1,7 +1,7 @@
 import { MarketingShell } from "@/components/layout/MarketingShell";
 import { RuleRebuildPanel } from "@/components/search-ad/RuleRebuildPanel";
 import { getAdProductLabel, getBrandLabel } from "@/features/search-ad/domain/reportTypes";
-import { RULE_CATEGORY_GUIDES, RULE_PERIOD_GUIDE_ITEMS } from "@/features/search-ad/domain/ruleCriteriaGuides";
+import { RULE_CATEGORY_GUIDES, RULE_EXECUTION_GUIDE_ITEMS, RULE_PERIOD_GUIDE_ITEMS } from "@/features/search-ad/domain/ruleCriteriaGuides";
 import { DEFAULT_SEARCH_AD_FILTERS } from "@/features/search-ad/domain/sampleData";
 import { loadSearchAdRuleCriteria } from "@/features/search-ad/loadSearchAdViews";
 
@@ -63,8 +63,23 @@ export default async function RulesPage() {
         </div>
         <div className="content-panel">
           <div className="section-heading">
+            <h2>실행 안전장치</h2>
+            <p>규칙 결과는 바로 외부 광고를 바꾸지 않고, 미리보기와 게이트를 거쳐 실행 이력으로 남깁니다.</p>
+          </div>
+          <div className="rule-period-grid">
+            {RULE_EXECUTION_GUIDE_ITEMS.map((item) => (
+              <article key={item.title}>
+                <span>{item.title}</span>
+                <strong>{item.value}</strong>
+                <p>{item.description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="content-panel">
+          <div className="section-heading">
             <h2>브랜드별 기준</h2>
-            <p>첫 버전은 조회 중심이며, 수정 기능은 다음 단계에서 붙입니다.</p>
+            <p>브랜드와 광고유형별 최소 데이터가 쌓인 항목만 판단합니다. 기준 수정 기능은 다음 단계에서 붙입니다.</p>
           </div>
           <div className="table-wrap">
             <table>

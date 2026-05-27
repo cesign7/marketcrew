@@ -10,7 +10,14 @@ import {
   getRuleResultSourceReportLabel,
   getRuleResultTargetDetailLabel,
 } from "@/features/search-ad/domain/targetDisplay";
-import type { SearchAdRuleResult, SearchAdRuleResultDetailView } from "@/features/search-ad/domain/types";
+import {
+  getRuleResultDiagnosis,
+  getRuleResultMetricBadges,
+  getRuleResultPreApplyChecks,
+  getRuleResultRecommendedAction,
+  metricNumber,
+} from "@/features/search-ad/domain/ruleResultPresentation";
+import type { SearchAdRuleResultDetailView } from "@/features/search-ad/domain/types";
 import { formatDateTime, formatWon, SearchTermTable } from "./SearchAdCards";
 
 export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDetailView }) {
@@ -21,15 +28,42 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
   const creativeLabel = getRuleResultCreativeLabel(result);
   const landingLabel = getRuleResultLandingLabel(result);
   const rawTargetId = getRuleResultRawTargetId(result);
+  const metricBadges = getRuleResultMetricBadges(result);
+  const checks = getRuleResultPreApplyChecks(result);
 
   return (
     <section className="content-panel">
       <div className="section-heading">
         <div>
           <h2>{targetLabel}</h2>
-          <p>{result.reason}</p>
+          <p>{getRuleResultDiagnosis(result)}</p>
         </div>
         <span className={`severity severity-${result.severity}`}>{RULE_CATEGORY_LABELS[result.category]}</span>
+      </div>
+
+      <div className="metric-pill-row is-large" aria-label="핵심 성과">
+        {metricBadges.map((badge) => (
+          <span className="metric-pill" key={badge.label}>
+            <span>{badge.label}</span>
+            <strong>{badge.value}</strong>
+          </span>
+        ))}
+      </div>
+
+      <div className="recommendation-panel">
+        <div>
+          <span>추천 조치</span>
+          <strong>{getRuleResultRecommendedAction(result)}</strong>
+          <p>{result.reason}</p>
+        </div>
+        <div>
+          <span>실행 전 확인</span>
+          <ul>
+            {checks.map((check) => (
+              <li key={check}>{check}</li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       <div className="summary-grid compact">
@@ -121,20 +155,6 @@ function MetricCard({ label, value }: { label: string; value: string }) {
       <strong>{value}</strong>
     </article>
   );
-}
-
-function metricNumber(result: SearchAdRuleResult, key: string) {
-  const value = result.metrics[key];
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }
-
-  return undefined;
 }
 
 function formatMaybeWon(value: number | undefined) {

@@ -56,7 +56,7 @@ export const RULE_CATEGORY_GUIDES: SearchAdRuleCategoryGuide[] = [
     when: "필수 데이터가 비어 있거나 연결 대상이 불명확할 때",
     requiredData: "원문 보고서 행, 광고그룹/소재/검색어 연결 정보",
     firstAction: "수집 상태, 매핑 상태, 전환 추적 상태 확인",
-    caution: "자동 조정 전에 데이의 데이터 점검 대상으로 올립니다.",
+    caution: "자동 조정 전에 데이터 점검 대상으로 올립니다.",
   },
 ];
 
@@ -80,5 +80,28 @@ export const RULE_PERIOD_GUIDE_ITEMS = [
     title: "LLM 연결",
     value: "규칙 이후",
     description: "숫자 규칙으로 후보를 먼저 만들고, 나중에 LLM은 이유 설명과 조치 제안에 붙입니다.",
+  },
+];
+
+export const RULE_EXECUTION_GUIDE_ITEMS = [
+  {
+    title: "1단계",
+    value: "규칙 결과",
+    description: "저효율, 클릭 없음, 낮은 광고수익률 같은 후보를 숫자로 먼저 만듭니다.",
+  },
+  {
+    title: "2단계",
+    value: "실행 미리보기",
+    description: "캠페인이나 광고그룹을 켜고 끌 때 예상 영향과 현재 상태를 먼저 저장합니다.",
+  },
+  {
+    title: "3단계",
+    value: "실제 변경 게이트",
+    description: "서버 환경변수로 권한이 열려 있을 때만 네이버 광고에 반영하고, 닫혀 있으면 차단 이력만 남깁니다.",
+  },
+  {
+    title: "4단계",
+    value: "실행 이력",
+    description: "반영, 차단, 실패 결과를 별도로 남겨 나중에 성과와 함께 확인합니다.",
   },
 ];
