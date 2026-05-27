@@ -199,6 +199,7 @@ function KeywordCandidateActionCell({ candidate }: { candidate: SearchAdKeywordC
   const [preview, setPreview] = useState<SearchAdActionPreview | undefined>();
   const [log, setLog] = useState<SearchAdActionLog | undefined>();
   const [message, setMessage] = useState<{ kind: "success" | "warning" | "error"; text: string } | undefined>();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const canRequestAction = candidate.userLock !== true && (candidate.recommendation === "pause_candidate" || candidate.recommendation === "delete_candidate");
 
@@ -209,6 +210,7 @@ function KeywordCandidateActionCell({ candidate }: { candidate: SearchAdKeywordC
   async function requestPreview() {
     setIsLoading(true);
     setLog(undefined);
+    setConfirmOpen(false);
     setMessage(undefined);
     try {
       const nextPreview = await postJson<SearchAdActionPreview>("/api/search-ad/action-preview", {
@@ -232,6 +234,7 @@ function KeywordCandidateActionCell({ candidate }: { candidate: SearchAdKeywordC
     }
 
     setIsLoading(true);
+    setConfirmOpen(false);
     setMessage(undefined);
     try {
       const nextLog = await postJson<SearchAdActionLog>("/api/search-ad/action-apply", {
@@ -265,12 +268,26 @@ function KeywordCandidateActionCell({ candidate }: { candidate: SearchAdKeywordC
             <span>클릭 {preview.impactSummary.recentClicks.toLocaleString("ko-KR")}회</span>
             <span>전환 {preview.impactSummary.recentConversions.toLocaleString("ko-KR")}건</span>
           </div>
-          <button className="primary-button" disabled={isLoading || !!log} onClick={applyPreview} type="button">
-            {preview.writeGateOpen ? "대표 승인 실행" : "차단 이력 남기기"}
+          <button className="primary-button" disabled={isLoading || !!log} onClick={() => setConfirmOpen(true)} type="button">
+            {preview.writeGateOpen ? "대표 승인 확인" : "차단 이력 확인"}
           </button>
           <Link className="text-link" href="/action-logs">
             실행 로그
           </Link>
+          {confirmOpen ? (
+            <div className="confirm-box" role="group" aria-label="키워드 실행 최종 확인">
+              <strong>{preview.writeGateOpen ? "실제 네이버 키워드를 끕니다." : "실제 변경 없이 차단 이력만 남깁니다."}</strong>
+              <p>{preview.targetLabel} 키워드에 대한 요청입니다. 삭제 후보도 지금은 삭제하지 않고 끄기만 처리합니다.</p>
+              <div className="confirm-actions">
+                <button className="primary-button" disabled={isLoading || !!log} onClick={applyPreview} type="button">
+                  최종 실행
+                </button>
+                <button className="primary-button secondary-button" disabled={isLoading} onClick={() => setConfirmOpen(false)} type="button">
+                  취소
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
       {message ? <span className={`state-message is-${message.kind}`}>{message.text}</span> : null}

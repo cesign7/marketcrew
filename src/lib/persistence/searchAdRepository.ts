@@ -43,6 +43,7 @@ import type {
   SearchAdActionLog,
   SearchAdActionLogsView,
   SearchAdActionPreview,
+  SearchAdActionStatus,
   SearchAdRequestedAction,
   SearchAdNormalizedRow,
   SearchAdOperationsView,
@@ -1016,7 +1017,9 @@ export async function applySearchAdActionPreview(previewId: string): Promise<Sea
     const log: SearchAdActionLog = {
       id: `log-${preview.id}-${Date.now()}`,
       previewId: preview.id,
+      targetType: preview.targetType,
       targetLabel,
+      requestedAction: preview.requestedAction,
       actionLabel: preview.requestedAction === "turn_on" ? "켜기 요청" : "끄기 요청",
       status: writeGateOpen ? "applied" : "blocked",
       reason: writeGateOpen
@@ -1194,7 +1197,9 @@ export async function applySearchAdActionPreview(previewId: string): Promise<Sea
       return {
         id: `log-${fallbackPreview.id}-${Date.now()}`,
         previewId: fallbackPreview.id,
+        targetType: fallbackPreview.targetType,
         targetLabel: fallbackPreview.targetLabel,
+        requestedAction: fallbackPreview.requestedAction,
         actionLabel: fallbackPreview.requestedAction === "turn_on" ? "켜기 요청" : "끄기 요청",
         status: "blocked",
         reason: "실제 변경 권한이 닫혀 있어 네이버 광고에는 반영하지 않았습니다.",
@@ -2999,6 +3004,7 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
     status: SearchAdActionLog["status"];
     error_message: string | null;
     created_at: string | Date;
+    target_type: SearchAdTargetType;
     target_id: string;
     target_name: string | null;
     requested_action: SearchAdRequestedAction;
@@ -3028,6 +3034,7 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
         l.status,
         l.error_message,
         l.created_at,
+        p.target_type,
         p.target_id,
         COALESCE(
           CASE
@@ -3064,10 +3071,12 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
     logs: logs.rows.map((row) => ({
       id: row.id,
       previewId: row.preview_id,
+      targetType: row.target_type,
       targetLabel: row.target_name ?? row.target_id,
+      requestedAction: row.requested_action,
       actionLabel: row.requested_action === "turn_on" ? "켜기 요청" : "끄기 요청",
       status: row.status,
-      reason: row.error_message ?? "",
+      reason: getActionLogReason(row.status, row.target_type, row.requested_action, row.error_message),
       createdAt: toIso(row.created_at),
     })),
   };
@@ -3301,8 +3310,132 @@ function mapNormalizedRow(row: {
 }
 
 async function getLatestActionTarget(targetType: SearchAdTargetType, targetId: string): Promise<SearchAdStateRecord | undefined> {
-  const rows = await listLatestStateSnapshots(targetType, DEFAULT_SEARCH_AD_FILTERS);
-  return rows.find((row) => row.providerId === targetId || row.id === targetId);
+  if (targetType === "campaign") {
+    const result = await query<{
+      id: string;
+      provider_campaign_id: string;
+      brand_key: BrandKey | null;
+      ad_product_type: AdProductType | null;
+      name: string;
+      user_lock: boolean | null;
+      status: string | null;
+      status_reason: string | null;
+      collected_at: string | Date;
+    }>(
+      `
+        SELECT DISTINCT ON (provider_campaign_id)
+          id, provider_campaign_id, brand_key, ad_product_type, name, user_lock, status, status_reason, collected_at
+        FROM search_ad_campaign_snapshots
+        WHERE provider_campaign_id = $1 OR id = $1
+        ORDER BY provider_campaign_id, collected_at DESC
+        LIMIT 1
+      `,
+      [targetId],
+    );
+    const row = result.rows[0];
+    return row
+      ? {
+          id: row.id,
+          targetType: "campaign",
+          providerId: row.provider_campaign_id,
+          brandKey: row.brand_key ?? undefined,
+          adProductType: row.ad_product_type ?? undefined,
+          name: row.name,
+          userLock: row.user_lock,
+          status: row.status ?? undefined,
+          statusReason: row.status_reason ?? undefined,
+          collectedAt: toIso(row.collected_at),
+        }
+      : undefined;
+  }
+
+  if (targetType === "adgroup") {
+    const result = await query<{
+      id: string;
+      provider_adgroup_id: string;
+      provider_campaign_id: string | null;
+      brand_key: BrandKey | null;
+      ad_product_type: AdProductType | null;
+      name: string;
+      user_lock: boolean | null;
+      status: string | null;
+      status_reason: string | null;
+      bid_amount: string | null;
+      daily_budget: string | null;
+      collected_at: string | Date;
+    }>(
+      `
+        SELECT DISTINCT ON (provider_adgroup_id)
+          id, provider_adgroup_id, provider_campaign_id, brand_key, ad_product_type, name, user_lock, status, status_reason,
+          bid_amount, daily_budget, collected_at
+        FROM search_ad_adgroup_snapshots
+        WHERE provider_adgroup_id = $1 OR id = $1
+        ORDER BY provider_adgroup_id, collected_at DESC
+        LIMIT 1
+      `,
+      [targetId],
+    );
+    const row = result.rows[0];
+    return row
+      ? {
+          id: row.id,
+          targetType: "adgroup",
+          providerId: row.provider_adgroup_id,
+          parentProviderId: row.provider_campaign_id ?? undefined,
+          brandKey: row.brand_key ?? undefined,
+          adProductType: row.ad_product_type ?? undefined,
+          name: row.name,
+          userLock: row.user_lock,
+          status: row.status ?? undefined,
+          statusReason: row.status_reason ?? undefined,
+          bidAmount: row.bid_amount === null ? null : Number(row.bid_amount),
+          dailyBudget: row.daily_budget === null ? null : Number(row.daily_budget),
+          collectedAt: toIso(row.collected_at),
+        }
+      : undefined;
+  }
+
+  const result = await query<{
+    id: string;
+    provider_keyword_id: string;
+    provider_adgroup_id: string | null;
+    brand_key: BrandKey | null;
+    ad_product_type: AdProductType | null;
+    keyword_text: string;
+    user_lock: boolean | null;
+    status: string | null;
+    status_reason: string | null;
+    bid_amount: string | null;
+    collected_at: string | Date;
+  }>(
+    `
+      SELECT DISTINCT ON (provider_keyword_id)
+        id, provider_keyword_id, provider_adgroup_id, brand_key, ad_product_type, keyword_text, user_lock, status, status_reason,
+        bid_amount, collected_at
+      FROM search_ad_keyword_snapshots
+      WHERE provider_keyword_id = $1 OR id = $1
+      ORDER BY provider_keyword_id, collected_at DESC
+      LIMIT 1
+    `,
+    [targetId],
+  );
+  const row = result.rows[0];
+  return row
+    ? {
+        id: row.id,
+        targetType: "keyword",
+        providerId: row.provider_keyword_id,
+        parentProviderId: row.provider_adgroup_id ?? undefined,
+        brandKey: row.brand_key ?? undefined,
+        adProductType: row.ad_product_type ?? undefined,
+        name: row.keyword_text,
+        userLock: row.user_lock,
+        status: row.status ?? undefined,
+        statusReason: row.status_reason ?? undefined,
+        bidAmount: row.bid_amount === null ? null : Number(row.bid_amount),
+        collectedAt: toIso(row.collected_at),
+      }
+    : undefined;
 }
 
 async function getActionImpact(targetType: SearchAdTargetType, target: SearchAdStateRecord) {
@@ -3384,6 +3517,22 @@ function getActionTargetTypeLabel(targetType: SearchAdTargetType) {
     return "광고그룹";
   }
   return "키워드";
+}
+
+function getActionLogReason(status: SearchAdActionStatus, targetType: SearchAdTargetType, requestedAction: SearchAdRequestedAction, errorMessage: string | null) {
+  if (errorMessage) {
+    return errorMessage;
+  }
+
+  const targetLabel = getActionTargetTypeLabel(targetType);
+  if (status === "applied") {
+    return requestedAction === "turn_on" ? `네이버 검색광고 ${targetLabel}을 켰습니다.` : `네이버 검색광고 ${targetLabel}을 껐습니다.`;
+  }
+  if (status === "blocked") {
+    return "실제 변경 권한이 닫혀 있어 네이버 광고에는 반영하지 않았습니다.";
+  }
+
+  return "실행 요청 처리에 실패했습니다.";
 }
 
 function isSearchAdWriteEnabled() {

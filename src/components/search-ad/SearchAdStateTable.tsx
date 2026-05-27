@@ -39,6 +39,7 @@ export function SearchAdStateTable({ records, targetType, title, description, wr
   const [rows, setRows] = useState(records);
   const [sort, setSort] = useState<SearchAdStateSort | undefined>();
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [confirmRecordId, setConfirmRecordId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Record<string, RowMessage>>({});
 
   useEffect(() => {
@@ -58,11 +59,12 @@ export function SearchAdStateTable({ records, targetType, title, description, wr
     });
   }
 
-  async function handleToggle(record: SearchAdStateRecord) {
+  async function executeToggle(record: SearchAdStateRecord) {
     const request = buildStateTogglePreviewRequest(record, targetType);
     const nextUserLock = request.requestedAction === "turn_off";
 
     setPendingId(record.providerId);
+    setConfirmRecordId(null);
     setMessages((current) => ({
       ...current,
       [record.providerId]: { kind: "warning", text: getStateTogglePendingMessage(targetType, writeEnabled) },
@@ -170,7 +172,7 @@ export function SearchAdStateTable({ records, targetType, title, description, wr
                         aria-pressed={isOn}
                         className={`state-toggle ${isOn ? "is-on" : "is-off"}`}
                         disabled={isPending}
-                        onClick={() => handleToggle(record)}
+                        onClick={() => setConfirmRecordId(record.providerId)}
                         type="button"
                       >
                         <span className="state-toggle-track" aria-hidden="true">
@@ -180,6 +182,22 @@ export function SearchAdStateTable({ records, targetType, title, description, wr
                       </button>
                       <span className="state-caption">{record.statusReason ?? record.status ?? "상태 없음"}</span>
                       {message ? <span className={`state-message is-${message.kind}`}>{message.text}</span> : null}
+                      {confirmRecordId === record.providerId ? (
+                        <div className="confirm-box compact" role="group" aria-label={`${record.name} 실행 최종 확인`}>
+                          <strong>{writeEnabled ? "실제 네이버 광고 상태를 변경합니다." : "실제 변경 없이 차단 이력만 남깁니다."}</strong>
+                          <p>
+                            {record.name} {getStateTableTargetLabel(targetType)}을 {isOn ? "끄기" : "켜기"} 요청합니다.
+                          </p>
+                          <div className="confirm-actions">
+                            <button className="primary-button" disabled={isPending} onClick={() => executeToggle(record)} type="button">
+                              최종 실행
+                            </button>
+                            <button className="primary-button secondary-button" disabled={isPending} onClick={() => setConfirmRecordId(null)} type="button">
+                              취소
+                            </button>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </td>
                   <td>{record.bidAmount == null ? "-" : formatWon(record.bidAmount)}</td>

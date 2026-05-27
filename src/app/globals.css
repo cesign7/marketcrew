@@ -777,6 +777,39 @@ table {
   padding: 12px;
 }
 
+.confirm-box {
+  background: #fff8e6;
+  border: 1px solid #f3d08a;
+  border-radius: 8px;
+  color: var(--text);
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px;
+}
+
+.confirm-box.compact {
+  max-width: 340px;
+}
+
+.confirm-box strong {
+  font-size: 13px;
+}
+
+.confirm-box p {
+  color: #664400;
+  font-size: 12px;
+  font-weight: 700;
+  margin: 0;
+  white-space: normal;
+}
+
+.confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .keyword-action-cell {
   align-items: flex-start;
   display: grid;

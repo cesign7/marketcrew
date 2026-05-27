@@ -419,7 +419,9 @@ export const SAMPLE_ACTION_LOGS: SearchAdActionLog[] = [
   {
     id: "log-preview-adgroup-stickersee-thanks-turn-off",
     previewId: "preview-adgroup-stickersee-thanks-turn-off",
+    targetType: "adgroup",
     targetLabel: "감사/생일/답례 스티커",
+    requestedAction: "turn_off",
     actionLabel: "끄기 요청",
     status: "blocked",
     reason: "실제 변경 권한이 닫혀 있어 네이버 광고에는 반영하지 않았습니다.",

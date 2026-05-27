@@ -406,12 +406,16 @@ export function ActionLogsPanel({ view }: { view: SearchAdActionLogsView }) {
     <div className="card-list">
       {view.previews.map((preview) => (
         <article className="rule-card" key={preview.id}>
-          <div>
+          <div className="rule-card-header">
             <span className={`severity ${preview.writeGateOpen ? "severity-low" : "severity-medium"}`}>{preview.writeGateOpen ? "실행 가능" : "실제 변경 차단"}</span>
             <strong>{preview.targetLabel}</strong>
           </div>
           <p>{preview.impactSummary.expectedEffect}</p>
           <dl>
+            <div>
+              <dt>대상</dt>
+              <dd>{getActionTargetTypeLabel(preview.targetType)}</dd>
+            </div>
             <div>
               <dt>요청</dt>
               <dd>{preview.requestedAction === "turn_on" ? "켜기" : "끄기"}</dd>
@@ -428,21 +432,49 @@ export function ActionLogsPanel({ view }: { view: SearchAdActionLogsView }) {
               <dt>최근 전환</dt>
               <dd>{preview.impactSummary.recentConversions.toLocaleString("ko-KR")}건</dd>
             </div>
+            <div>
+              <dt>생성 시간</dt>
+              <dd>{formatDateTime(preview.createdAt)}</dd>
+            </div>
           </dl>
         </article>
       ))}
       {view.logs.map((log) => (
         <article className="rule-card" key={log.id}>
-          <div>
+          <div className="rule-card-header">
             <span className={`severity severity-${log.status === "blocked" ? "medium" : log.status === "applied" ? "low" : "high"}`}>{log.status === "blocked" ? "차단" : log.status === "applied" ? "반영" : "실패"}</span>
             <strong>{log.targetLabel}</strong>
           </div>
           <p>{log.reason}</p>
+          <dl>
+            <div>
+              <dt>대상</dt>
+              <dd>{getActionTargetTypeLabel(log.targetType)}</dd>
+            </div>
+            <div>
+              <dt>요청</dt>
+              <dd>{log.requestedAction === "turn_on" ? "켜기" : "끄기"}</dd>
+            </div>
+            <div>
+              <dt>이력 시간</dt>
+              <dd>{formatDateTime(log.createdAt)}</dd>
+            </div>
+          </dl>
         </article>
       ))}
       {view.previews.length + view.logs.length === 0 ? <p className="empty-text">실행 미리보기와 실행 이력이 없습니다.</p> : null}
     </div>
   );
+}
+
+function getActionTargetTypeLabel(targetType: SearchAdActionLogsView["previews"][number]["targetType"]) {
+  if (targetType === "campaign") {
+    return "캠페인";
+  }
+  if (targetType === "adgroup") {
+    return "광고그룹";
+  }
+  return "키워드";
 }
 
 export function formatWon(value: number) {

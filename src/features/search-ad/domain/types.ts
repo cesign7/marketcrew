@@ -294,7 +294,9 @@ export type SearchAdActionPreview = {
 export type SearchAdActionLog = {
   id: string;
   previewId: string;
+  targetType: SearchAdTargetType;
   targetLabel: string;
+  requestedAction: SearchAdRequestedAction;
   actionLabel: string;
   status: SearchAdActionStatus;
   reason: string;

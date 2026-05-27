@@ -22,6 +22,7 @@ export function RuleResultActionPanel({ actionTarget }: { actionTarget?: SearchA
   const [preview, setPreview] = useState<SearchAdActionPreview | undefined>();
   const [message, setMessage] = useState<{ kind: "success" | "warning" | "error"; text: string } | undefined>();
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (!actionTarget) {
     return (
@@ -41,6 +42,7 @@ export function RuleResultActionPanel({ actionTarget }: { actionTarget?: SearchA
 
     setIsLoading(true);
     setAppliedLog(undefined);
+    setConfirmOpen(false);
     setMessage(undefined);
     try {
       const response = await fetch("/api/search-ad/action-preview", {
@@ -73,6 +75,7 @@ export function RuleResultActionPanel({ actionTarget }: { actionTarget?: SearchA
     }
 
     setIsLoading(true);
+    setConfirmOpen(false);
     setMessage(undefined);
     try {
       const response = await fetch("/api/search-ad/action-apply", {
@@ -151,11 +154,27 @@ export function RuleResultActionPanel({ actionTarget }: { actionTarget?: SearchA
             </div>
           </dl>
           <div className="action-apply-row">
-            <button className="primary-button" disabled={isLoading} onClick={applyPreview} type="button">
-              {preview.writeGateOpen ? "실행 요청" : "차단 이력 남기기"}
+            <button className="primary-button" disabled={isLoading || !!appliedLog} onClick={() => setConfirmOpen(true)} type="button">
+              {preview.writeGateOpen ? "대표 승인 확인" : "차단 이력 확인"}
             </button>
             <span>{preview.writeGateOpen ? "실제 변경 권한이 열려 있어 네이버 반영까지 진행됩니다." : "현재는 실제 변경 권한이 닫혀 있어 안전하게 차단됩니다."}</span>
           </div>
+          {confirmOpen ? (
+            <div className="confirm-box" role="group" aria-label="실행 최종 확인">
+              <strong>{preview.writeGateOpen ? "실제 네이버 광고 상태를 변경합니다." : "실제 변경 없이 차단 이력만 남깁니다."}</strong>
+              <p>
+                {preview.targetLabel} {preview.requestedAction === "turn_on" ? "켜기" : "끄기"} 요청입니다. 실행 후에는 실행 이력에 남습니다.
+              </p>
+              <div className="confirm-actions">
+                <button className="primary-button" disabled={isLoading || !!appliedLog} onClick={applyPreview} type="button">
+                  최종 실행
+                </button>
+                <button className="primary-button secondary-button" disabled={isLoading} onClick={() => setConfirmOpen(false)} type="button">
+                  취소
+                </button>
+              </div>
+            </div>
+          ) : null}
           {appliedLog ? (
             <div className="execution-result">
               <span className={`severity severity-${appliedLog.status === "applied" ? "low" : appliedLog.status === "blocked" ? "medium" : "high"}`}>

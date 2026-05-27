@@ -45,6 +45,7 @@ describe("search ad action logs view", () => {
               status: "applied",
               error_message: null,
               created_at: "2026-05-26T08:01:00+09:00",
+              target_type: "adgroup",
               target_id: "grp-a001-02-000000020742623",
               target_name: "M_감사/생일/답례 스티커",
               requested_action: "turn_off",
@@ -62,6 +63,8 @@ describe("search ad action logs view", () => {
 
     expect(view.previews[0]?.targetLabel).toBe("M_감사/생일/답례 스티커");
     expect(view.logs[0]?.targetLabel).toBe("M_감사/생일/답례 스티커");
+    expect(view.logs[0]?.targetType).toBe("adgroup");
+    expect(view.logs[0]?.reason).toContain("광고그룹");
   });
 
   it("키워드 실행 미리보기와 이력은 최신 키워드명으로 보완한다", async () => {
@@ -94,6 +97,7 @@ describe("search ad action logs view", () => {
               status: "applied",
               error_message: null,
               created_at: "2026-05-26T08:01:00+09:00",
+              target_type: "keyword",
               target_id: "nkw-a001",
               target_name: "감사스티커",
               requested_action: "turn_off",
@@ -111,5 +115,9 @@ describe("search ad action logs view", () => {
 
     expect(view.previews[0]?.targetLabel).toBe("감사스티커");
     expect(view.logs[0]?.targetLabel).toBe("감사스티커");
+    expect(view.logs[0]?.targetType).toBe("keyword");
+    expect(view.logs[0]?.requestedAction).toBe("turn_off");
+    expect(view.logs[0]?.reason).toContain("키워드");
+    expect(view.logs[0]?.reason).toContain("껐습니다");
   });
 });
