@@ -9,7 +9,9 @@ import {
   getSearchAdSearchTermsView,
   getSearchAdStateView,
   listSearchAdRuleCriteria,
+  listSearchAdOperationStrategies,
 } from "@/lib/persistence/searchAdRepository";
+import type { SearchAdOperationStrategy } from "./domain/operationStrategies";
 import type { AdProductFilter, BrandFilter, SearchAdActionLogsView, SearchAdFilters, SearchAdReportArchiveView, SearchAdReportDetailView, SearchAdRuleResultDetailView, SearchAdRuleResultsView, SearchAdSearchTermsView, SearchAdStateView } from "./domain/types";
 import type { SearchAdOperationsView, SearchAdRuleCriteria, SearchAdRuleResultFilters } from "./domain/types";
 import { parseRuleActionIntentFilter } from "./domain/ruleActionIntents";
@@ -84,6 +86,15 @@ export async function loadSearchAdRuleCriteria(): Promise<SearchAdRuleCriteria[]
   return listSearchAdRuleCriteria();
 }
 
+export async function loadSearchAdOperationStrategies(): Promise<SearchAdOperationStrategy[]> {
+  const remote = await fetchBackendJson<SearchAdOperationStrategy[]>("/api/search-ad/operation-strategies", { failClosed: false });
+  if (remote) {
+    return remote;
+  }
+
+  return listSearchAdOperationStrategies();
+}
+
 export async function loadSearchAdStateView(filters: SearchAdFilters): Promise<SearchAdStateView> {
   const remote = await fetchBackendJson<SearchAdStateView>(`/api/search-ad/state?${toQuery(filters)}`);
   if (remote) {
@@ -111,14 +122,14 @@ export async function loadSearchAdActionLogsView(): Promise<SearchAdActionLogsVi
   return getSearchAdActionLogsView();
 }
 
-async function fetchBackendJson<T>(path: string): Promise<T | undefined> {
+async function fetchBackendJson<T>(path: string, options?: { failClosed?: boolean }): Promise<T | undefined> {
   if (isBackendRuntime()) {
     return undefined;
   }
 
   const baseUrl = process.env.MARKETCREW_BACKEND_API_URL ?? process.env.MARKETCREW_API_BASE_URL;
   const token = process.env.MARKETCREW_BACKEND_API_TOKEN ?? process.env.MARKETCREW_API_TOKEN;
-  const shouldFailClosed = process.env.VERCEL === "1";
+  const shouldFailClosed = options?.failClosed ?? process.env.VERCEL === "1";
   if (!baseUrl || !token) {
     return undefined;
   }

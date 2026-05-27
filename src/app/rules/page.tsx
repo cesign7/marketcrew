@@ -1,15 +1,17 @@
 import { MarketingShell } from "@/components/layout/MarketingShell";
+import { OperationStrategyEditor } from "@/components/search-ad/OperationStrategyEditor";
 import { RuleCriteriaEditor } from "@/components/search-ad/RuleCriteriaEditor";
 import { RuleRebuildPanel } from "@/components/search-ad/RuleRebuildPanel";
+import { APPROVAL_DELEGATION_POLICIES, getOperationStrategySummary } from "@/features/search-ad/domain/operationStrategies";
 import { RULE_CATEGORY_GUIDES, RULE_EXECUTION_GUIDE_ITEMS, RULE_PERIOD_GUIDE_ITEMS } from "@/features/search-ad/domain/ruleCriteriaGuides";
 import { API_AND_REPORT_CHECK_GUIDE_ITEMS, BRAND_OPERATION_GUIDE_ITEMS } from "@/features/search-ad/domain/targetSettings";
 import { DEFAULT_SEARCH_AD_FILTERS } from "@/features/search-ad/domain/sampleData";
-import { loadSearchAdRuleCriteria } from "@/features/search-ad/loadSearchAdViews";
+import { loadSearchAdOperationStrategies, loadSearchAdRuleCriteria } from "@/features/search-ad/loadSearchAdViews";
 
 export const dynamic = "force-dynamic";
 
 export default async function RulesPage() {
-  const criteria = await loadSearchAdRuleCriteria();
+  const [criteria, operationStrategies] = await Promise.all([loadSearchAdRuleCriteria(), loadSearchAdOperationStrategies()]);
 
   return (
     <MarketingShell activePath="/rules" description="저효율, 무클릭, 우수 후보를 나누는 기준을 확인합니다." filters={DEFAULT_SEARCH_AD_FILTERS} title="성과 기준">
@@ -103,6 +105,59 @@ export default async function RulesPage() {
                 <span>{item.title}</span>
                 <strong>{item.value}</strong>
                 <p>{item.description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="content-panel">
+          <div className="section-heading">
+            <h2>광고그룹 운영 전략</h2>
+            <p>시즌 그룹은 먼저 넓게 열고, 충분한 데이터가 쌓이면 시간대와 기기를 좁히는 방식으로 봅니다.</p>
+          </div>
+          <div className="rule-guide-grid">
+            {operationStrategies.map((strategy) => (
+              <article key={strategy.id}>
+                <div>
+                  <span>{strategy.scopeLabel}</span>
+                  <strong>{getOperationStrategySummary(strategy)}</strong>
+                </div>
+                <dl>
+                  <div>
+                    <dt>축소 기준</dt>
+                    <dd>{strategy.narrowingRule}</dd>
+                  </div>
+                  <div>
+                    <dt>승인 기준</dt>
+                    <dd>{strategy.approvalRule}</dd>
+                  </div>
+                </dl>
+              </article>
+            ))}
+          </div>
+          <OperationStrategyEditor strategies={operationStrategies} />
+        </div>
+        <div className="content-panel">
+          <div className="section-heading">
+            <h2>승인·위임 룰</h2>
+            <p>처음 실행은 대표 승인으로 시작하고, 반복되는 안전 패턴만 모아에게 위임 후보로 올립니다.</p>
+          </div>
+          <div className="rule-guide-grid">
+            {APPROVAL_DELEGATION_POLICIES.map((policy) => (
+              <article key={policy.actionIntent}>
+                <div>
+                  <span>{policy.title}</span>
+                  <strong>{policy.repeatRunOwner === "moa" ? "반복 패턴은 모아 위임 후보" : "대표 승인 유지"}</strong>
+                </div>
+                <dl>
+                  <div>
+                    <dt>첫 실행</dt>
+                    <dd>대표 승인</dd>
+                  </div>
+                  <div>
+                    <dt>안전장치</dt>
+                    <dd>{policy.guardrail}</dd>
+                  </div>
+                </dl>
               </article>
             ))}
           </div>

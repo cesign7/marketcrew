@@ -20,6 +20,12 @@ import { describeTargetSetting } from "@/features/search-ad/domain/targetSetting
 import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport";
 import { buildSearchAdPeriodRuleResults } from "@/features/search-ad/domain/ruleEngine";
 import { sortSearchAdRuleCriteria } from "@/features/search-ad/domain/ruleCriteriaSettings";
+import {
+  DEFAULT_SEARCH_AD_OPERATION_STRATEGIES,
+  normalizeSearchAdOperationStrategyInput,
+  sortSearchAdOperationStrategies,
+  type SearchAdOperationStrategy,
+} from "@/features/search-ad/domain/operationStrategies";
 import { updateSearchAdAdgroupUserLock, updateSearchAdCampaignUserLock } from "@/lib/integrations/search-ad/management";
 import type {
   AdProductType,
@@ -468,6 +474,174 @@ function mergeRuleCriteriaWithDefaults(rows: SearchAdRuleCriteria[]) {
   }
 
   return sortSearchAdRuleCriteria(Array.from(byId.values()));
+}
+
+export async function listSearchAdOperationStrategies(): Promise<SearchAdOperationStrategy[]> {
+  if (!hasDatabaseUrl()) {
+    return DEFAULT_SEARCH_AD_OPERATION_STRATEGIES;
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const result = await query<{
+      id: string;
+      brand_key: BrandKey;
+      ad_product_type: AdProductType;
+      scope_label: string;
+      strategy_type: SearchAdOperationStrategy["strategyType"];
+      initial_schedule_label: string;
+      minimum_data_days: number;
+      minimum_clicks: string;
+      minimum_cost: string;
+      narrowing_rule: string;
+      approval_rule: string;
+    }>(`
+      SELECT
+        id,
+        brand_key,
+        ad_product_type,
+        scope_label,
+        strategy_type,
+        initial_schedule_label,
+        minimum_data_days,
+        minimum_clicks,
+        minimum_cost,
+        narrowing_rule,
+        approval_rule
+      FROM search_ad_operation_strategies
+      ORDER BY brand_key, ad_product_type, id
+    `);
+
+    return mergeOperationStrategiesWithDefaults(
+      result.rows.map((row) => ({
+        id: row.id,
+        brandKey: row.brand_key,
+        adProductType: row.ad_product_type,
+        scopeLabel: row.scope_label,
+        strategyType: row.strategy_type,
+        initialScheduleLabel: row.initial_schedule_label,
+        minimumDataDays: row.minimum_data_days,
+        minimumClicks: Number(row.minimum_clicks),
+        minimumCost: Number(row.minimum_cost),
+        narrowingRule: row.narrowing_rule,
+        approvalRule: row.approval_rule,
+      })),
+    );
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return DEFAULT_SEARCH_AD_OPERATION_STRATEGIES;
+    }
+
+    throw error;
+  }
+}
+
+export async function updateSearchAdOperationStrategy(input: SearchAdOperationStrategy): Promise<SearchAdOperationStrategy> {
+  const normalized = normalizeSearchAdOperationStrategyInput(input as unknown as Record<string, unknown>);
+  if (!hasDatabaseUrl()) {
+    return normalized;
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const result = await query<{
+      id: string;
+      brand_key: BrandKey;
+      ad_product_type: AdProductType;
+      scope_label: string;
+      strategy_type: SearchAdOperationStrategy["strategyType"];
+      initial_schedule_label: string;
+      minimum_data_days: number;
+      minimum_clicks: string;
+      minimum_cost: string;
+      narrowing_rule: string;
+      approval_rule: string;
+    }>(
+      `
+        INSERT INTO search_ad_operation_strategies (
+          id,
+          brand_key,
+          ad_product_type,
+          scope_label,
+          strategy_type,
+          initial_schedule_label,
+          minimum_data_days,
+          minimum_clicks,
+          minimum_cost,
+          narrowing_rule,
+          approval_rule,
+          updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, now())
+        ON CONFLICT (id) DO UPDATE SET
+          brand_key = EXCLUDED.brand_key,
+          ad_product_type = EXCLUDED.ad_product_type,
+          scope_label = EXCLUDED.scope_label,
+          strategy_type = EXCLUDED.strategy_type,
+          initial_schedule_label = EXCLUDED.initial_schedule_label,
+          minimum_data_days = EXCLUDED.minimum_data_days,
+          minimum_clicks = EXCLUDED.minimum_clicks,
+          minimum_cost = EXCLUDED.minimum_cost,
+          narrowing_rule = EXCLUDED.narrowing_rule,
+          approval_rule = EXCLUDED.approval_rule,
+          updated_at = now()
+        RETURNING
+          id,
+          brand_key,
+          ad_product_type,
+          scope_label,
+          strategy_type,
+          initial_schedule_label,
+          minimum_data_days,
+          minimum_clicks,
+          minimum_cost,
+          narrowing_rule,
+          approval_rule
+      `,
+      [
+        normalized.id,
+        normalized.brandKey,
+        normalized.adProductType,
+        normalized.scopeLabel,
+        normalized.strategyType,
+        normalized.initialScheduleLabel,
+        normalized.minimumDataDays,
+        normalized.minimumClicks,
+        normalized.minimumCost,
+        normalized.narrowingRule,
+        normalized.approvalRule,
+      ],
+    );
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      brandKey: row.brand_key,
+      adProductType: row.ad_product_type,
+      scopeLabel: row.scope_label,
+      strategyType: row.strategy_type,
+      initialScheduleLabel: row.initial_schedule_label,
+      minimumDataDays: row.minimum_data_days,
+      minimumClicks: Number(row.minimum_clicks),
+      minimumCost: Number(row.minimum_cost),
+      narrowingRule: row.narrowing_rule,
+      approvalRule: row.approval_rule,
+    };
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return normalized;
+    }
+
+    throw error;
+  }
+}
+
+function mergeOperationStrategiesWithDefaults(rows: SearchAdOperationStrategy[]) {
+  const byId = new Map(DEFAULT_SEARCH_AD_OPERATION_STRATEGIES.map((item) => [item.id, item]));
+  for (const row of rows) {
+    byId.set(row.id, row);
+  }
+
+  return sortSearchAdOperationStrategies(Array.from(byId.values()));
 }
 
 export async function getSearchAdStateView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdStateView> {
@@ -1642,6 +1816,22 @@ async function ensureSearchAdSchemaUncached() {
       target_cpa NUMERIC,
       target_roas NUMERIC,
       enabled BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS search_ad_operation_strategies (
+      id TEXT PRIMARY KEY,
+      brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT NOT NULL CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      scope_label TEXT NOT NULL,
+      strategy_type TEXT NOT NULL CHECK (strategy_type IN ('standard', 'seasonal_expansion')),
+      initial_schedule_label TEXT NOT NULL,
+      minimum_data_days INTEGER NOT NULL,
+      minimum_clicks NUMERIC NOT NULL DEFAULT 1,
+      minimum_cost NUMERIC NOT NULL DEFAULT 0,
+      narrowing_rule TEXT NOT NULL,
+      approval_rule TEXT NOT NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );

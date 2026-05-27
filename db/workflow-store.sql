@@ -183,6 +183,22 @@ CREATE TABLE IF NOT EXISTS search_ad_rule_criteria (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS search_ad_operation_strategies (
+  id TEXT PRIMARY KEY,
+  brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+  ad_product_type TEXT NOT NULL CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+  scope_label TEXT NOT NULL,
+  strategy_type TEXT NOT NULL CHECK (strategy_type IN ('standard', 'seasonal_expansion')),
+  initial_schedule_label TEXT NOT NULL,
+  minimum_data_days INTEGER NOT NULL,
+  minimum_clicks NUMERIC NOT NULL DEFAULT 1,
+  minimum_cost NUMERIC NOT NULL DEFAULT 0,
+  narrowing_rule TEXT NOT NULL,
+  approval_rule TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS search_ad_rule_results (
   id TEXT PRIMARY KEY,
   brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),

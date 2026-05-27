@@ -795,6 +795,24 @@ table {
   font-weight: 800;
 }
 
+.criteria-text-input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  min-height: 72px;
+  min-width: 220px;
+  padding: 9px;
+  resize: vertical;
+}
+
+.criteria-text-input.is-short {
+  min-height: 36px;
+  min-width: 132px;
+  resize: none;
+}
+
 .criteria-toggle {
   align-items: center;
   display: inline-flex;
