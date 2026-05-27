@@ -28,6 +28,8 @@ export type NaverKeyword = {
   userLock?: boolean;
   status?: string;
   statusReason?: string;
+  bidAmt?: number;
+  [key: string]: unknown;
 };
 
 export type NaverAd = {
@@ -107,6 +109,26 @@ export async function updateSearchAdAdgroupUserLock(adgroupId: string, userLock:
 export function listSearchAdKeywords(adgroupId?: string) {
   const query = adgroupId ? `?nccAdgroupId=${encodeURIComponent(adgroupId)}` : "";
   return searchAdFetch<NaverKeyword[]>(`/ncc/keywords${query}`);
+}
+
+export async function getSearchAdKeyword(keywordId: string) {
+  const keyword = await searchAdFetch<NaverKeyword>(`/ncc/keywords/${encodeURIComponent(keywordId)}`);
+  if (!keyword) {
+    throw new Error("SEARCH_AD_KEYWORD_NOT_FOUND");
+  }
+
+  return keyword;
+}
+
+export async function updateSearchAdKeywordUserLock(keywordId: string, userLock: boolean) {
+  const current = await getSearchAdKeyword(keywordId);
+  return searchAdFetch<NaverKeyword>(`/ncc/keywords/${encodeURIComponent(keywordId)}?fields=userLock`, {
+    method: "PUT",
+    body: JSON.stringify({
+      ...current,
+      userLock,
+    }),
+  });
 }
 
 export function listSearchAdAds(adgroupId?: string) {

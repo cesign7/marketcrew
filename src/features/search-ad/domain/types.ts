@@ -268,7 +268,7 @@ export type SearchAdKeywordCleanupView = {
 
 export type SearchAdActionPreview = {
   id: string;
-  targetType: "campaign" | "adgroup";
+  targetType: SearchAdTargetType;
   targetId: string;
   targetLabel: string;
   requestedAction: SearchAdRequestedAction;

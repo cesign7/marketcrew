@@ -19,6 +19,7 @@ import type {
   SearchAdSearchTermsView,
   SearchAdStateRecord,
   SearchAdStateView,
+  SearchAdTargetType,
   SearchAdTargetSettingRecord,
 } from "./types";
 import { buildSearchAdKeywordCleanupView } from "./keywordCleanup";
@@ -589,8 +590,8 @@ export function createSampleActionLogsView(): SearchAdActionLogsView {
   };
 }
 
-export function createSampleActionPreview(targetType: "campaign" | "adgroup", targetId: string, requestedAction: "turn_on" | "turn_off"): SearchAdActionPreview | undefined {
-  const candidates = targetType === "campaign" ? SAMPLE_CAMPAIGNS : SAMPLE_ADGROUPS;
+export function createSampleActionPreview(targetType: SearchAdTargetType, targetId: string, requestedAction: "turn_on" | "turn_off"): SearchAdActionPreview | undefined {
+  const candidates = targetType === "campaign" ? SAMPLE_CAMPAIGNS : targetType === "adgroup" ? SAMPLE_ADGROUPS : SAMPLE_KEYWORDS;
   const target = candidates.find((item) => item.providerId === targetId || item.id === targetId);
   if (!target) {
     return undefined;
@@ -601,8 +602,13 @@ export function createSampleActionPreview(targetType: "campaign" | "adgroup", ta
       return row.campaignName === target.name || row.campaignId === target.providerId;
     }
 
-    return row.adgroupName === target.name || row.adgroupId === target.providerId;
+    if (targetType === "adgroup") {
+      return row.adgroupName === target.name || row.adgroupId === target.providerId;
+    }
+
+    return row.keywordText === target.name || row.keywordId === target.providerId;
   });
+  const targetTypeLabel = targetType === "campaign" ? "캠페인" : targetType === "adgroup" ? "광고그룹" : "키워드";
   return {
     id: `preview-${targetType}-${target.providerId}-${requestedAction}`,
     targetType,
@@ -612,8 +618,13 @@ export function createSampleActionPreview(targetType: "campaign" | "adgroup", ta
     beforeState: { userLock: target.userLock, status: target.status, statusReason: target.statusReason },
     afterState: { userLock: requestedAction === "turn_off" },
     impactSummary: {
-      expectedEffect: requestedAction === "turn_off" ? "선택한 운영 단위의 광고 노출을 중지합니다." : "선택한 운영 단위의 광고 노출을 다시 허용합니다.",
-      affectedChildren: targetType === "campaign" ? SAMPLE_ADGROUPS.filter((item) => item.parentProviderId === target.providerId).length : SAMPLE_KEYWORDS.filter((item) => item.parentProviderId === target.providerId).length,
+      expectedEffect: requestedAction === "turn_off" ? `${targetTypeLabel} 광고 노출을 중지합니다.` : `${targetTypeLabel} 광고 노출을 다시 허용합니다.`,
+      affectedChildren:
+        targetType === "campaign"
+          ? SAMPLE_ADGROUPS.filter((item) => item.parentProviderId === target.providerId).length
+          : targetType === "adgroup"
+            ? SAMPLE_KEYWORDS.filter((item) => item.parentProviderId === target.providerId).length
+            : 0,
       recentCost: recentRows.reduce((sum, row) => sum + row.cost, 0),
       recentClicks: recentRows.reduce((sum, row) => sum + row.clicks, 0),
       recentConversions: recentRows.reduce((sum, row) => sum + row.conversions, 0),

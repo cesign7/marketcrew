@@ -82,6 +82,40 @@ describe("search ad management API", () => {
     expect(updated.userLock).toBe(true);
   });
 
+  it("키워드 켜기/끄기도 현재 키워드를 읽은 뒤 userLock만 갱신 요청한다", async () => {
+    const { updateSearchAdKeywordUserLock } = await import("@/lib/integrations/search-ad/management");
+    mocks.searchAdFetch
+      .mockResolvedValueOnce({
+        nccKeywordId: "nkw-a001",
+        nccAdgroupId: "grp-a001",
+        keyword: "감사스티커",
+        userLock: false,
+        bidAmt: 220,
+      })
+      .mockResolvedValueOnce({
+        nccKeywordId: "nkw-a001",
+        nccAdgroupId: "grp-a001",
+        keyword: "감사스티커",
+        userLock: true,
+        bidAmt: 220,
+      });
+
+    const updated = await updateSearchAdKeywordUserLock("nkw-a001", true);
+
+    expect(mocks.searchAdFetch).toHaveBeenNthCalledWith(1, "/ncc/keywords/nkw-a001");
+    expect(mocks.searchAdFetch).toHaveBeenNthCalledWith(2, "/ncc/keywords/nkw-a001?fields=userLock", {
+      method: "PUT",
+      body: JSON.stringify({
+        nccKeywordId: "nkw-a001",
+        nccAdgroupId: "grp-a001",
+        keyword: "감사스티커",
+        userLock: true,
+        bidAmt: 220,
+      }),
+    });
+    expect(updated.userLock).toBe(true);
+  });
+
   it("광고그룹 타게팅 설정은 ownerId와 types 조건으로 조회한다", async () => {
     const { listSearchAdTargets } = await import("@/lib/integrations/search-ad/management");
     mocks.searchAdFetch.mockResolvedValueOnce([

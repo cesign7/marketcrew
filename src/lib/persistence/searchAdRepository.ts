@@ -35,7 +35,7 @@ import {
   sortSearchAdOperationStrategies,
   type SearchAdOperationStrategy,
 } from "@/features/search-ad/domain/operationStrategies";
-import { updateSearchAdAdgroupUserLock, updateSearchAdCampaignUserLock } from "@/lib/integrations/search-ad/management";
+import { updateSearchAdAdgroupUserLock, updateSearchAdCampaignUserLock, updateSearchAdKeywordUserLock } from "@/lib/integrations/search-ad/management";
 import type {
   AdProductType,
   BrandKey,
@@ -930,7 +930,7 @@ export async function rebuildAndSaveSearchAdRuleResults() {
 }
 
 export async function createSearchAdActionPreview(input: {
-  targetType: "campaign" | "adgroup";
+  targetType: SearchAdTargetType;
   targetId: string;
   requestedAction: SearchAdRequestedAction;
 }): Promise<SearchAdActionPreview | undefined> {
@@ -961,7 +961,10 @@ export async function createSearchAdActionPreview(input: {
         userLock: input.requestedAction === "turn_off",
       },
       impactSummary: {
-        expectedEffect: input.requestedAction === "turn_off" ? "선택한 운영 단위의 광고 노출을 중지합니다." : "선택한 운영 단위의 광고 노출을 다시 허용합니다.",
+        expectedEffect:
+          input.requestedAction === "turn_off"
+            ? `${getActionTargetTypeLabel(input.targetType)} 광고 노출을 중지합니다.`
+            : `${getActionTargetTypeLabel(input.targetType)} 광고 노출을 다시 허용합니다.`,
         affectedChildren: impact.affectedChildren,
         recentCost: impact.recentCost,
         recentClicks: impact.recentClicks,
@@ -1009,7 +1012,7 @@ export async function applySearchAdActionPreview(previewId: string): Promise<Sea
     const writeGateOpen = isSearchAdWriteEnabled();
     const target = hasDatabaseUrl() ? await getLatestActionTarget(preview.targetType, preview.targetId) : undefined;
     const targetLabel = target?.name ?? preview.targetLabel;
-    const targetTypeLabel = preview.targetType === "campaign" ? "캠페인" : "광고그룹";
+    const targetTypeLabel = getActionTargetTypeLabel(preview.targetType);
     const log: SearchAdActionLog = {
       id: `log-${preview.id}-${Date.now()}`,
       previewId: preview.id,
@@ -1064,6 +1067,56 @@ export async function applySearchAdActionPreview(previewId: string): Promise<Sea
         return log;
       } catch (error) {
         const message = error instanceof Error ? error.message : "네이버 검색광고 상태 변경 요청에 실패했습니다.";
+        const failedLog = {
+          ...log,
+          status: "failed" as const,
+          reason: message,
+        };
+        await insertSearchAdActionLog(
+          failedLog,
+          {
+            targetType: preview.targetType,
+            targetId: preview.targetId,
+            userLock: preview.afterState.userLock,
+          },
+          null,
+          message,
+        );
+        return failedLog;
+      }
+    }
+
+    if (preview.targetType === "keyword") {
+      try {
+        const updated = await updateSearchAdKeywordUserLock(preview.targetId, preview.afterState.userLock);
+        await saveSearchAdStateSnapshots([
+          {
+            targetType: "keyword",
+            providerId: updated.nccKeywordId ?? preview.targetId,
+            parentProviderId: updated.nccAdgroupId ?? target?.parentProviderId,
+            brandKey: target?.brandKey,
+            adProductType: target?.adProductType,
+            name: updated.keyword ?? targetLabel,
+            userLock: updated.userLock ?? preview.afterState.userLock,
+            status: updated.status,
+            statusReason: updated.statusReason,
+            bidAmount: numberFromProviderPayload(updated.bidAmt),
+            rawPayload: updated,
+          },
+        ]);
+        await insertSearchAdActionLog(
+          log,
+          {
+            targetType: preview.targetType,
+            targetId: preview.targetId,
+            userLock: preview.afterState.userLock,
+          },
+          updated,
+          null,
+        );
+        return log;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "네이버 검색광고 키워드 상태 변경 요청에 실패했습니다.";
         const failedLog = {
           ...log,
           status: "failed" as const,
@@ -1887,7 +1940,7 @@ async function ensureSearchAdSchemaUncached() {
 
     CREATE TABLE IF NOT EXISTS search_ad_action_previews (
       id TEXT PRIMARY KEY,
-      target_type TEXT NOT NULL CHECK (target_type IN ('campaign', 'adgroup')),
+      target_type TEXT NOT NULL CHECK (target_type IN ('campaign', 'adgroup', 'keyword')),
       target_id TEXT NOT NULL,
       requested_action TEXT NOT NULL CHECK (requested_action IN ('turn_on', 'turn_off')),
       before_state JSONB NOT NULL,
@@ -1943,6 +1996,13 @@ async function ensureSearchAdSchemaUncached() {
       ADD COLUMN IF NOT EXISTS extension_id TEXT,
       ADD COLUMN IF NOT EXISTS media_id TEXT,
       ADD COLUMN IF NOT EXISTS device TEXT;
+  `);
+  await query(`
+    ALTER TABLE search_ad_action_previews
+      DROP CONSTRAINT IF EXISTS search_ad_action_previews_target_type_check;
+    ALTER TABLE search_ad_action_previews
+      ADD CONSTRAINT search_ad_action_previews_target_type_check
+      CHECK (target_type IN ('campaign', 'adgroup', 'keyword'));
   `);
 }
 
@@ -2877,7 +2937,7 @@ function createSampleRuleResultDetailView(id: string): SearchAdRuleResultDetailV
 async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActionLogsView> {
   const previews = await query<{
     id: string;
-    target_type: "campaign" | "adgroup";
+    target_type: SearchAdTargetType;
     target_id: string;
     target_name: string | null;
     requested_action: SearchAdRequestedAction;
@@ -2899,6 +2959,12 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
           provider_adgroup_id, name
         FROM search_ad_adgroup_snapshots
         ORDER BY provider_adgroup_id, collected_at DESC
+      ),
+      latest_keywords AS (
+        SELECT DISTINCT ON (provider_keyword_id)
+          provider_keyword_id, keyword_text AS name
+        FROM search_ad_keyword_snapshots
+        ORDER BY provider_keyword_id, collected_at DESC
       )
       SELECT
         p.id,
@@ -2908,6 +2974,7 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
           CASE
             WHEN p.target_type = 'campaign' THEN c.name
             WHEN p.target_type = 'adgroup' THEN a.name
+            WHEN p.target_type = 'keyword' THEN k.name
           END,
           p.target_id
         ) AS target_name,
@@ -2920,6 +2987,7 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
       FROM search_ad_action_previews p
       LEFT JOIN latest_campaigns c ON p.target_type = 'campaign' AND c.provider_campaign_id = p.target_id
       LEFT JOIN latest_adgroups a ON p.target_type = 'adgroup' AND a.provider_adgroup_id = p.target_id
+      LEFT JOIN latest_keywords k ON p.target_type = 'keyword' AND k.provider_keyword_id = p.target_id
       ORDER BY p.created_at DESC
       LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
     `,
@@ -2947,6 +3015,12 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
           provider_adgroup_id, name
         FROM search_ad_adgroup_snapshots
         ORDER BY provider_adgroup_id, collected_at DESC
+      ),
+      latest_keywords AS (
+        SELECT DISTINCT ON (provider_keyword_id)
+          provider_keyword_id, keyword_text AS name
+        FROM search_ad_keyword_snapshots
+        ORDER BY provider_keyword_id, collected_at DESC
       )
       SELECT
         l.id,
@@ -2959,6 +3033,7 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
           CASE
             WHEN p.target_type = 'campaign' THEN c.name
             WHEN p.target_type = 'adgroup' THEN a.name
+            WHEN p.target_type = 'keyword' THEN k.name
           END,
           p.target_id
         ) AS target_name,
@@ -2967,6 +3042,7 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
       JOIN search_ad_action_previews p ON p.id = l.preview_id
       LEFT JOIN latest_campaigns c ON p.target_type = 'campaign' AND c.provider_campaign_id = p.target_id
       LEFT JOIN latest_adgroups a ON p.target_type = 'adgroup' AND a.provider_adgroup_id = p.target_id
+      LEFT JOIN latest_keywords k ON p.target_type = 'keyword' AND k.provider_keyword_id = p.target_id
       ORDER BY l.created_at DESC
       LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
     `,
@@ -3224,23 +3300,29 @@ function mapNormalizedRow(row: {
   };
 }
 
-async function getLatestActionTarget(targetType: "campaign" | "adgroup", targetId: string): Promise<SearchAdStateRecord | undefined> {
+async function getLatestActionTarget(targetType: SearchAdTargetType, targetId: string): Promise<SearchAdStateRecord | undefined> {
   const rows = await listLatestStateSnapshots(targetType, DEFAULT_SEARCH_AD_FILTERS);
   return rows.find((row) => row.providerId === targetId || row.id === targetId);
 }
 
-async function getActionImpact(targetType: "campaign" | "adgroup", target: SearchAdStateRecord) {
+async function getActionImpact(targetType: SearchAdTargetType, target: SearchAdStateRecord) {
   const childCount =
     targetType === "campaign"
       ? (await listLatestStateSnapshots("adgroup", DEFAULT_SEARCH_AD_FILTERS)).filter((row) => row.parentProviderId === target.providerId).length
-      : (await listLatestStateSnapshots("keyword", DEFAULT_SEARCH_AD_FILTERS)).filter((row) => row.parentProviderId === target.providerId).length;
+      : targetType === "adgroup"
+        ? (await listLatestStateSnapshots("keyword", DEFAULT_SEARCH_AD_FILTERS)).filter((row) => row.parentProviderId === target.providerId).length
+        : 0;
   const rows = await listNormalizedRowsByFilters(DEFAULT_SEARCH_AD_FILTERS, 500);
   const matchedRows = rows.filter((row) => {
     if (targetType === "campaign") {
       return row.campaignId === target.providerId || row.campaignName === target.name;
     }
 
-    return row.adgroupId === target.providerId || row.adgroupName === target.name;
+    if (targetType === "adgroup") {
+      return row.adgroupId === target.providerId || row.adgroupName === target.name;
+    }
+
+    return row.keywordId === target.providerId || row.keywordText === target.name;
   });
 
   return {
@@ -3259,7 +3341,7 @@ async function getSearchAdActionPreviewById(id: string): Promise<SearchAdActionP
   await ensureSearchAdSchema();
   const result = await query<{
     id: string;
-    target_type: "campaign" | "adgroup";
+    target_type: SearchAdTargetType;
     target_id: string;
     requested_action: SearchAdRequestedAction;
     before_state: SearchAdActionPreview["beforeState"];
@@ -3292,6 +3374,16 @@ async function getSearchAdActionPreviewById(id: string): Promise<SearchAdActionP
     writeGateOpen: row.write_gate_open,
     createdAt: toIso(row.created_at),
   };
+}
+
+function getActionTargetTypeLabel(targetType: SearchAdTargetType) {
+  if (targetType === "campaign") {
+    return "캠페인";
+  }
+  if (targetType === "adgroup") {
+    return "광고그룹";
+  }
+  return "키워드";
 }
 
 function isSearchAdWriteEnabled() {

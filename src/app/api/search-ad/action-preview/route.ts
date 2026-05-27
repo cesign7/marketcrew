@@ -15,7 +15,11 @@ export async function POST(request: Request) {
     targetId?: string;
     requestedAction?: string;
   };
-  if ((body.targetType !== "campaign" && body.targetType !== "adgroup") || !body.targetId || (body.requestedAction !== "turn_on" && body.requestedAction !== "turn_off")) {
+  if (
+    (body.targetType !== "campaign" && body.targetType !== "adgroup" && body.targetType !== "keyword") ||
+    !body.targetId ||
+    (body.requestedAction !== "turn_on" && body.requestedAction !== "turn_off")
+  ) {
     return NextResponse.json({ ok: false, code: "SEARCH_AD_ACTION_INPUT_INVALID", message: "대상과 요청 작업을 확인해 주세요." }, { status: 400 });
   }
 

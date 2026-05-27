@@ -177,6 +177,14 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 - 성과가 가장 좋은 키워드는 `유지`, 나머지는 `끄기 후보` 또는 `삭제 후보`로 표시한다. 실제 provider 삭제/중지는 대표 승인과 write gate 없이는 실행하지 않는다.
 - 클릭 없는 키워드는 저장된 성과 범위와 함께 표시한다. 백필이 완료되기 전에는 `1년 무클릭`으로 단정하지 않고 `저장된 성과 범위에서 클릭 없음`으로 보여준다.
 
+### follow-up 중복 키워드 실행 플로우
+
+- 키워드 후보에도 `/api/search-ad/action-preview`를 연결해 실행 전 영향 범위를 저장한다.
+- 대표 승인 버튼을 누른 경우에만 `/api/search-ad/action-apply`로 이어지고, write gate가 닫혀 있으면 네이버에는 반영하지 않고 차단 이력만 남긴다.
+- write gate가 열린 경우 키워드 `userLock`만 갱신하고, 반영된 키워드 상태 스냅샷과 실행 로그를 함께 저장한다.
+- `/keywords` 표에는 후보별 `끄기 미리보기`, `대표 승인 실행`, `/action-logs` 이동을 제공한다.
+- 삭제 후보도 1차 실행은 실제 삭제가 아니라 키워드 끄기로 제한한다. 삭제/제외어/키워드 추가는 별도 플로우로 남긴다.
+
 ---
 
 ## Verification

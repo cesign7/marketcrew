@@ -312,6 +312,7 @@ table {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
+  min-width: 0;
 }
 
 .summary-card {
@@ -358,6 +359,7 @@ table {
 .table-wrap {
   border: 1px solid var(--line);
   border-radius: 8px;
+  max-width: 100%;
   overflow-x: auto;
 }
 
@@ -549,6 +551,7 @@ table {
   border-radius: 8px;
   display: grid;
   gap: 12px;
+  min-width: 0;
   padding: 14px;
 }
 
@@ -772,6 +775,45 @@ table {
   display: grid;
   gap: 8px;
   padding: 12px;
+}
+
+.keyword-action-cell {
+  align-items: flex-start;
+  display: grid;
+  gap: 8px;
+  min-width: 180px;
+}
+
+.keyword-action-note {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.keyword-preview-mini {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.keyword-preview-mini strong {
+  font-size: 13px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keyword-preview-metrics {
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 6px 10px;
 }
 
 .criteria-editor {

@@ -1,10 +1,22 @@
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
 import { getAdProductLabel, getBrandLabel } from "@/features/search-ad/domain/reportTypes";
 import type {
+  SearchAdActionLog,
+  SearchAdActionPreview,
   SearchAdDuplicateKeywordGroup,
   SearchAdKeywordCleanupCandidate,
   SearchAdKeywordCleanupRecommendation,
   SearchAdKeywordCleanupView,
 } from "@/features/search-ad/domain/types";
+
+type ApiPayload<T> = {
+  ok?: boolean;
+  data?: T;
+  message?: string;
+};
 
 export function KeywordCleanupDashboard({ view }: { view: SearchAdKeywordCleanupView }) {
   return (
@@ -139,6 +151,7 @@ function KeywordCleanupTable({ candidates }: { candidates: SearchAdKeywordCleanu
             <th>비용</th>
             <th>전환</th>
             <th>근거</th>
+            <th>실행</th>
           </tr>
         </thead>
         <tbody>
@@ -165,15 +178,102 @@ function KeywordCleanupTable({ candidates }: { candidates: SearchAdKeywordCleanu
               <td>{formatWon(candidate.cost365)}</td>
               <td>{candidate.conversions365.toLocaleString("ko-KR")}건</td>
               <td>{candidate.reason}</td>
+              <td>
+                <KeywordCandidateActionCell candidate={candidate} />
+              </td>
             </tr>
           ))}
           {candidates.length === 0 ? (
             <tr>
-              <td colSpan={11}>해당 조건의 키워드 후보가 없습니다.</td>
+              <td colSpan={12}>해당 조건의 키워드 후보가 없습니다.</td>
             </tr>
           ) : null}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function KeywordCandidateActionCell({ candidate }: { candidate: SearchAdKeywordCleanupCandidate }) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [preview, setPreview] = useState<SearchAdActionPreview | undefined>();
+  const [log, setLog] = useState<SearchAdActionLog | undefined>();
+  const [message, setMessage] = useState<{ kind: "success" | "warning" | "error"; text: string } | undefined>();
+
+  const canRequestAction = candidate.userLock !== true && (candidate.recommendation === "pause_candidate" || candidate.recommendation === "delete_candidate");
+
+  if (!canRequestAction) {
+    return <span className="keyword-action-note">{candidate.userLock === true ? "이미 꺼짐" : "처리 없음"}</span>;
+  }
+
+  async function requestPreview() {
+    setIsLoading(true);
+    setLog(undefined);
+    setMessage(undefined);
+    try {
+      const nextPreview = await postJson<SearchAdActionPreview>("/api/search-ad/action-preview", {
+        requestedAction: "turn_off",
+        targetId: candidate.keywordId,
+        targetType: "keyword",
+      });
+      setPreview(nextPreview);
+      setMessage({ kind: "success", text: "대표 승인 전 미리보기를 저장했습니다." });
+    } catch (error) {
+      setPreview(undefined);
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "미리보기를 만들지 못했습니다." });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function applyPreview() {
+    if (!preview) {
+      return;
+    }
+
+    setIsLoading(true);
+    setMessage(undefined);
+    try {
+      const nextLog = await postJson<SearchAdActionLog>("/api/search-ad/action-apply", {
+        previewId: preview.id,
+      });
+      setLog(nextLog);
+      setMessage({
+        kind: nextLog.status === "applied" ? "success" : nextLog.status === "blocked" ? "warning" : "error",
+        text: nextLog.reason,
+      });
+    } catch (error) {
+      setLog(undefined);
+      setMessage({ kind: "error", text: error instanceof Error ? error.message : "실행 요청에 실패했습니다." });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <div className="keyword-action-cell">
+      <button className="primary-button secondary-button" disabled={isLoading} onClick={requestPreview} type="button">
+        {isLoading && !preview ? "준비 중" : "끄기 미리보기"}
+      </button>
+      {candidate.recommendation === "delete_candidate" ? <span className="keyword-action-note">삭제 후보도 1차는 끄기로 처리합니다.</span> : null}
+      {preview ? (
+        <div className="keyword-preview-mini">
+          <span className={`severity ${preview.writeGateOpen ? "severity-low" : "severity-medium"}`}>{preview.writeGateOpen ? "실행 가능" : "실제 변경 차단"}</span>
+          <strong>{preview.targetLabel}</strong>
+          <div className="keyword-preview-metrics" aria-label="미리보기 영향">
+            <span>비용 {formatWon(preview.impactSummary.recentCost)}</span>
+            <span>클릭 {preview.impactSummary.recentClicks.toLocaleString("ko-KR")}회</span>
+            <span>전환 {preview.impactSummary.recentConversions.toLocaleString("ko-KR")}건</span>
+          </div>
+          <button className="primary-button" disabled={isLoading || !!log} onClick={applyPreview} type="button">
+            {preview.writeGateOpen ? "대표 승인 실행" : "차단 이력 남기기"}
+          </button>
+          <Link className="text-link" href="/action-logs">
+            실행 로그
+          </Link>
+        </div>
+      ) : null}
+      {message ? <span className={`state-message is-${message.kind}`}>{message.text}</span> : null}
     </div>
   );
 }
@@ -206,4 +306,19 @@ function formatLockState(value: boolean | null) {
 
 function formatWon(value: number) {
   return `${Math.round(value).toLocaleString("ko-KR")}원`;
+}
+
+async function postJson<T>(url: string, body: Record<string, unknown>): Promise<T> {
+  const response = await fetch(url, {
+    body: JSON.stringify(body),
+    headers: { "content-type": "application/json" },
+    method: "POST",
+  });
+  const payload = (await response.json().catch(() => ({}))) as ApiPayload<T>;
+
+  if (payload.ok === true && payload.data) {
+    return payload.data;
+  }
+
+  throw new Error(payload.message ?? (response.ok ? "요청을 처리하지 못했습니다." : `요청 실패: ${response.status}`));
 }
