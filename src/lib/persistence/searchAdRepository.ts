@@ -17,6 +17,7 @@ import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
 import { getRuleResultActionTarget, isSearchTermReport } from "@/features/search-ad/domain/targetDisplay";
 import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport";
 import { buildSearchAdPeriodRuleResults } from "@/features/search-ad/domain/ruleEngine";
+import { sortSearchAdRuleCriteria } from "@/features/search-ad/domain/ruleCriteriaSettings";
 import { updateSearchAdAdgroupUserLock, updateSearchAdCampaignUserLock } from "@/lib/integrations/search-ad/management";
 import type {
   AdProductType,
@@ -351,11 +352,7 @@ export async function listSearchAdRuleCriteria(): Promise<SearchAdRuleCriteria[]
     ORDER BY brand_key, ad_product_type
   `);
 
-    if (result.rows.length === 0) {
-      return SAMPLE_RULE_CRITERIA;
-    }
-
-    return result.rows.map((row) => ({
+    return mergeRuleCriteriaWithDefaults(result.rows.map((row) => ({
       id: row.id,
       brandKey: row.brand_key,
       adProductType: row.ad_product_type,
@@ -366,7 +363,7 @@ export async function listSearchAdRuleCriteria(): Promise<SearchAdRuleCriteria[]
       targetCpa: row.target_cpa === null ? null : Number(row.target_cpa),
       targetRoas: row.target_roas === null ? null : Number(row.target_roas),
       enabled: row.enabled,
-    }));
+    })));
   } catch (error) {
     if (canUseSampleFallback()) {
       return SAMPLE_RULE_CRITERIA;
@@ -374,6 +371,87 @@ export async function listSearchAdRuleCriteria(): Promise<SearchAdRuleCriteria[]
 
     throw error;
   }
+}
+
+export async function updateSearchAdRuleCriteria(input: SearchAdRuleCriteria): Promise<SearchAdRuleCriteria> {
+  if (!hasDatabaseUrl()) {
+    return input;
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const result = await query<{
+      id: string;
+      brand_key: BrandKey;
+      ad_product_type: AdProductType;
+      period_days: number;
+      min_impressions: string;
+      min_clicks: string;
+      min_cost: string;
+      target_cpa: string | null;
+      target_roas: string | null;
+      enabled: boolean;
+    }>(
+      `
+        INSERT INTO search_ad_rule_criteria (
+          id, brand_key, ad_product_type, period_days, min_impressions, min_clicks, min_cost, target_cpa, target_roas, enabled, updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
+        ON CONFLICT (id) DO UPDATE SET
+          brand_key = EXCLUDED.brand_key,
+          ad_product_type = EXCLUDED.ad_product_type,
+          period_days = EXCLUDED.period_days,
+          min_impressions = EXCLUDED.min_impressions,
+          min_clicks = EXCLUDED.min_clicks,
+          min_cost = EXCLUDED.min_cost,
+          target_cpa = EXCLUDED.target_cpa,
+          target_roas = EXCLUDED.target_roas,
+          enabled = EXCLUDED.enabled,
+          updated_at = now()
+        RETURNING id, brand_key, ad_product_type, period_days, min_impressions, min_clicks, min_cost, target_cpa, target_roas, enabled
+      `,
+      [
+        input.id,
+        input.brandKey,
+        input.adProductType,
+        input.periodDays,
+        input.minImpressions,
+        input.minClicks,
+        input.minCost,
+        input.targetCpa,
+        input.targetRoas,
+        input.enabled,
+      ],
+    );
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      brandKey: row.brand_key,
+      adProductType: row.ad_product_type,
+      periodDays: row.period_days,
+      minImpressions: Number(row.min_impressions),
+      minClicks: Number(row.min_clicks),
+      minCost: Number(row.min_cost),
+      targetCpa: row.target_cpa === null ? null : Number(row.target_cpa),
+      targetRoas: row.target_roas === null ? null : Number(row.target_roas),
+      enabled: row.enabled,
+    };
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return input;
+    }
+
+    throw error;
+  }
+}
+
+function mergeRuleCriteriaWithDefaults(rows: SearchAdRuleCriteria[]) {
+  const byId = new Map(SAMPLE_RULE_CRITERIA.map((item) => [item.id, item]));
+  for (const row of rows) {
+    byId.set(row.id, row);
+  }
+
+  return sortSearchAdRuleCriteria(Array.from(byId.values()));
 }
 
 export async function getSearchAdStateView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdStateView> {

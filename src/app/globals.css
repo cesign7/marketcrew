@@ -750,6 +750,57 @@ table {
   padding: 12px;
 }
 
+.criteria-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.criteria-number-input {
+  align-items: center;
+  display: inline-flex;
+  gap: 4px;
+  min-width: 92px;
+}
+
+.criteria-number-input input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  min-height: 36px;
+  padding: 0 9px;
+  width: 86px;
+}
+
+.criteria-number-input span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.criteria-toggle {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.criteria-toggle input {
+  accent-color: var(--brand-strong);
+}
+
+.criteria-save-button {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.criteria-help {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
 .target-chip {
   background: #eef4ff;
   border-radius: 999px;
