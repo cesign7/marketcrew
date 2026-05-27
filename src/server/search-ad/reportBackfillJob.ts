@@ -82,13 +82,6 @@ export async function startSearchAdReportBackfillJob(input: BackgroundBackfillIn
 
 export async function getSearchAdReportBackfillJob(runId?: string): Promise<{ data: { run: SearchAdBackfillRunRecord | null }; ok: true }> {
   const run = runId ? await getSearchAdBackfillRun(runId) : await getLatestSearchAdBackfillRun();
-  if (run && shouldAutoResumeBackfillRun(run)) {
-    const input = normalizeBackgroundInput(run.inputJson as BackgroundBackfillInput);
-    const resumedRun = (await markSearchAdBackfillRunRunning(run.id, input as Record<string, unknown>)) ?? run;
-    queueBackfillRun(run.id, input);
-    return { data: { run: resumedRun }, ok: true };
-  }
-
   return { data: { run: run ?? null }, ok: true };
 }
 

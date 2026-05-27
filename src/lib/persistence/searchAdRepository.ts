@@ -118,6 +118,9 @@ type DataCoverageRecord = {
 
 export type SearchAdBackfillRunStatus = "queued" | "running" | "waiting" | "completed" | "failed";
 
+let searchAdSchemaReady = false;
+let searchAdSchemaPromise: Promise<void> | undefined;
+
 export type SearchAdBackfillRunRecord = {
   completedAt?: string;
   createdAt: string;
@@ -866,6 +869,28 @@ export async function saveDownloadedReport(input: {
   await ensureSearchAdSchema();
   const reportId = `report-${input.providerReportJobId}`;
   const fileId = `${reportId}-${input.checksum.slice(0, 12)}`;
+
+  const existingFile = await query<{ already_saved: boolean }>(
+    `
+      SELECT EXISTS (
+        SELECT 1
+        FROM search_ad_report_files f
+        WHERE f.id = $1
+          AND f.checksum = $2
+          AND EXISTS (
+            SELECT 1
+            FROM search_ad_report_rows r
+            WHERE r.report_file_id = f.id
+            LIMIT 1
+          )
+      ) AS already_saved
+    `,
+    [fileId, input.checksum],
+  );
+  if (existingFile.rows[0]?.already_saved) {
+    return { reportId, fileId };
+  }
+
   const stateLookup = await getLatestStateBrandLookup();
   const rawRows = input.rawRows.map((row) => hydrateReportRowWithState(row, stateLookup));
   const normalizedRows = rawRows
@@ -1246,6 +1271,22 @@ export async function ensureSearchAdSchema() {
     return;
   }
 
+  if (searchAdSchemaReady) {
+    return;
+  }
+
+  searchAdSchemaPromise ??= ensureSearchAdSchemaUncached()
+    .then(() => {
+      searchAdSchemaReady = true;
+    })
+    .finally(() => {
+      searchAdSchemaPromise = undefined;
+    });
+
+  await searchAdSchemaPromise;
+}
+
+async function ensureSearchAdSchemaUncached() {
   await query(`
     CREATE TABLE IF NOT EXISTS workflow_records (
       collection TEXT NOT NULL,
@@ -1473,6 +1514,9 @@ export async function ensureSearchAdSchema() {
 
     CREATE INDEX IF NOT EXISTS search_ad_normalized_brand_type_date_idx
       ON search_ad_report_normalized_rows (brand_key, ad_product_type, source_date DESC);
+
+    CREATE INDEX IF NOT EXISTS search_ad_normalized_report_row_id_idx
+      ON search_ad_report_normalized_rows (report_row_id);
 
     CREATE INDEX IF NOT EXISTS search_ad_backfill_runs_updated_idx
       ON search_ad_backfill_runs (updated_at DESC);
