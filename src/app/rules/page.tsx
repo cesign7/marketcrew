@@ -95,7 +95,7 @@ export default async function RulesPage() {
         <div className="content-panel">
           <div className="section-heading">
             <h2>운영시간 기준</h2>
-            <p>확정된 운영 기준은 API 타게팅 설정과 보고서 성과를 비교할 때 사용합니다.</p>
+            <p>운영시간은 고정값이 아니라 기본 기준과 시즌 예외를 분리해 봅니다. 현재 네이버 API 설정과 보고서 성과를 함께 확인합니다.</p>
           </div>
           <div className="rule-period-grid">
             {BRAND_OPERATION_GUIDE_ITEMS.map((item) => (

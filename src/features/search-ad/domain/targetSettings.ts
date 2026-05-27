@@ -38,14 +38,14 @@ export const BRAND_OPERATION_GUIDE_ITEMS: Array<{
   {
     brandKey: "coffeeprint",
     title: "커피프린트",
-    value: "일요일 OFF 확인",
-    description: "요일/시간 API 설정과 타게팅 보고서를 함께 봅니다. 평일과 토요일 시간 기준은 실제 운영시간 확정 후 수치 규칙으로 고정합니다.",
+    value: "기본값 + 시즌 예외",
+    description: "기본 운영시간은 참고 기준으로 두고, 시즌 광고그룹과 키워드는 현재 네이버 API 설정을 우선합니다. 바뀐 설정은 보고서 성과와 함께 다시 판단합니다.",
   },
   {
     brandKey: "stickersee",
     title: "스티커씨",
-    value: "API 설정 우선",
-    description: "광고그룹 타게팅 API에서 요일/시간 설정이 있으면 설정값을 기준으로 보고서 성과를 비교합니다.",
+    value: "그룹별 현재 설정",
+    description: "광고그룹 타게팅 API의 요일/시간 설정을 현재 기준으로 보고, 시즌 그룹은 고정 운영시간 위반이 아니라 별도 예외 운영으로 분리합니다.",
   },
 ];
 
@@ -64,6 +64,11 @@ export const API_AND_REPORT_CHECK_GUIDE_ITEMS = [
     title: "불일치 판단",
     value: "분리 표시",
     description: "API 설정과 보고서 결과가 다르면 설정 기준과 실제 성과 기준을 나눠 카드에 표시합니다.",
+  },
+  {
+    title: "시즌 예외",
+    value: "고정 아님",
+    description: "시즌 광고그룹과 키워드는 운영시간이 바뀔 수 있으므로 현재 API 설정과 변경 이력을 기준으로 판단합니다.",
   },
 ];
 
