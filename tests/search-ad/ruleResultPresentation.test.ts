@@ -33,6 +33,7 @@ describe("rule result presentation", () => {
         actionIntentLabel: "제외어 후보",
         actionIntentDescription: "유지할 방어 검색어가 아니면 제외어 후보로 봅니다.",
         deviceLabel: "모바일",
+        measurementStatusLabel: "전환 기준 확인 필요",
         seasonHint: "스승의날",
       },
     };
@@ -44,6 +45,7 @@ describe("rule result presentation", () => {
     expect(getRuleResultContextBadges(result)).toEqual([
       { label: "기기", value: "모바일" },
       { label: "시즌/행사", value: "스승의날" },
+      { label: "전환 기준", value: "전환 기준 확인 필요" },
     ]);
   });
 });

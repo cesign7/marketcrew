@@ -144,7 +144,7 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 - 백필된 보고서가 늘어난 뒤 규칙 결과가 하루치 행을 그대로 30일 판단처럼 보이지 않도록 `buildSearchAdPeriodRuleResults`를 추가했다.
 - 규칙 재생성은 브랜드/광고유형별 기준 기간 안의 같은 검색어·소재·타게팅·광고그룹 성과를 합산한 뒤 저효율, 클릭 없음, 높은 CPA, 낮은 ROAS, 우수 후보를 계산한다.
 - 결과 근거에는 `actualDataDays`, `criteriaPeriodDays`, `dataWindowStart`, `dataWindowEnd`, `ruleWindowStart`, `ruleWindowEnd`, `coverageStatus`, `coverageWarningLabel`, `sourceRowIds`를 남긴다.
-- 화면 카드에는 `판단 기준`과 별도로 `판단 상태`를 표시한다. 예: `임시 판단 · 수집 1/30일`, `일부 기간 판단 · 수집 2/30일`, `정상 판단 · 수집 30/30일`.
+- 화면 카드에는 `판단 기준`과 별도로 `판단 상태`를 표시한다. 예: `수집 기준일 2026-05-25 · 1일 기준 (목표 30일)`, `수집 2026-05-24~2026-05-25 · 실제 2일 기준 (목표 30일)`, `수집 2026-05-19~2026-05-25 · 최근 7일 기준`.
 - `/api/search-ad/rules/rebuild`는 최대 100,000개의 정규화 행을 읽어 백필 후 기간 합산 결과를 재생성한다. 대규모 장기 운영 단계에서는 DB 집계 테이블 또는 materialized summary로 한 번 더 최적화한다.
 
 ### follow-up 규칙 결과 상세와 실행 대상 연결
@@ -164,6 +164,8 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 - 타게팅은 `타게팅 성과 보고서`와 `타게팅 전환 보고서`를 같은 타게팅 ID 기준으로 합산해 판단한다.
 - 규칙 결과에는 `제외어 후보`, `랜딩 점검 후보`, `입찰 조정 후보`, `키워드 추가 후보`, `상품 확장 후보`, `타게팅 조정 후보`, `데이터 점검 후보`를 붙인다.
 - 기기는 `PC/모바일`로 표시하고, 시즌/행사 단서는 카드와 상세 화면에 별도 표시한다.
+- 커피프린트는 전환 목적과 전환매출 세팅이 확정되기 전까지 전환이 잡혀도 `우수 후보`, `CPA`, `ROAS`로 단정하지 않고 `전환 기준 확인 필요` 데이터 점검 카드로 먼저 올린다.
+- 운영시간 기준은 평일, 토요일, 일요일 기본 OFF, 시즌 그룹 예외를 분리해서 `/rules`에서 확인한다. 시즌 그룹은 넓게 열고 충분한 데이터 뒤 시간대/기기 축소 후보를 판단한다.
 
 ---
 

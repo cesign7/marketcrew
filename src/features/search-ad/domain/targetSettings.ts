@@ -49,6 +49,29 @@ export const BRAND_OPERATION_GUIDE_ITEMS: Array<{
   },
 ];
 
+export const OPERATION_TIME_POLICY_ITEMS = [
+  {
+    title: "월~금",
+    value: "평일 기준 별도 관리",
+    description: "정확한 시간은 네이버 API의 현재 요일/시간 설정을 우선하고, 보고서 성과가 쌓이면 시간대 축소 후보를 계산합니다.",
+  },
+  {
+    title: "토요일",
+    value: "평일과 분리",
+    description: "토요일은 평일과 운영시간과 전환 흐름이 다르므로 같은 기준으로 섞지 않고 별도 확인합니다.",
+  },
+  {
+    title: "일요일",
+    value: "기본 OFF",
+    description: "일요일은 기본적으로 광고를 끄는 운영 기준으로 두고, 실제 API 설정이 켜져 있으면 점검 대상으로 올립니다.",
+  },
+  {
+    title: "시즌 그룹",
+    value: "예외 허용",
+    description: "시즌 키워드와 광고그룹은 처음부터 확정 시간이 아니라 넓게 열고, 충분한 데이터 뒤 기기와 시간대를 좁힙니다.",
+  },
+];
+
 export const API_AND_REPORT_CHECK_GUIDE_ITEMS = [
   {
     title: "API 설정값",

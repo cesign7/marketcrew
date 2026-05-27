@@ -4,7 +4,7 @@ import { RuleCriteriaEditor } from "@/components/search-ad/RuleCriteriaEditor";
 import { RuleRebuildPanel } from "@/components/search-ad/RuleRebuildPanel";
 import { APPROVAL_DELEGATION_POLICIES, getOperationStrategySummary } from "@/features/search-ad/domain/operationStrategies";
 import { RULE_CATEGORY_GUIDES, RULE_EXECUTION_GUIDE_ITEMS, RULE_PERIOD_GUIDE_ITEMS } from "@/features/search-ad/domain/ruleCriteriaGuides";
-import { API_AND_REPORT_CHECK_GUIDE_ITEMS, BRAND_OPERATION_GUIDE_ITEMS } from "@/features/search-ad/domain/targetSettings";
+import { API_AND_REPORT_CHECK_GUIDE_ITEMS, BRAND_OPERATION_GUIDE_ITEMS, OPERATION_TIME_POLICY_ITEMS } from "@/features/search-ad/domain/targetSettings";
 import { DEFAULT_SEARCH_AD_FILTERS } from "@/features/search-ad/domain/sampleData";
 import { loadSearchAdOperationStrategies, loadSearchAdRuleCriteria } from "@/features/search-ad/loadSearchAdViews";
 
@@ -102,6 +102,15 @@ export default async function RulesPage() {
           <div className="rule-period-grid">
             {BRAND_OPERATION_GUIDE_ITEMS.map((item) => (
               <article key={item.brandKey}>
+                <span>{item.title}</span>
+                <strong>{item.value}</strong>
+                <p>{item.description}</p>
+              </article>
+            ))}
+          </div>
+          <div className="rule-period-grid">
+            {OPERATION_TIME_POLICY_ITEMS.map((item) => (
+              <article key={item.title}>
                 <span>{item.title}</span>
                 <strong>{item.value}</strong>
                 <p>{item.description}</p>

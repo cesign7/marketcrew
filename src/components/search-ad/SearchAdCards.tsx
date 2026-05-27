@@ -485,7 +485,7 @@ function getCoverageDecisionLabel(result: SearchAdRuleResult) {
     return warningLabel;
   }
 
-  return `${warningLabel} · 수집 ${actualDays.toLocaleString("ko-KR")}/${criteriaDays.toLocaleString("ko-KR")}일`;
+  return `${warningLabel} · 기준 ${actualDays.toLocaleString("ko-KR")}/${criteriaDays.toLocaleString("ko-KR")}일`;
 }
 
 function stringFromEvidence(value: unknown) {

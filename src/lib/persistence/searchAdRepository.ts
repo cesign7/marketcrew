@@ -2568,9 +2568,17 @@ function coverageKey(brandKey: BrandKey, adProductType: AdProductType) {
 }
 
 function formatDataCoverageLabel(coverage: DataCoverageRecord, periodDays: number) {
-  const actualDaysLabel = `실제 ${coverage.actualDays.toLocaleString("ko-KR")}일치`;
   const dateLabel = coverage.startDate === coverage.endDate ? `수집 기준일 ${coverage.endDate}` : `수집 ${coverage.startDate}~${coverage.endDate}`;
-  return `${dateLabel} · ${actualDaysLabel} / 규칙 ${periodDays}일`;
+  return `${dateLabel} · ${formatCoverageBasisLabel(coverage.actualDays, periodDays)}`;
+}
+
+function formatCoverageBasisLabel(actualDays: number, periodDays: number) {
+  if (actualDays >= periodDays) {
+    return `최근 ${periodDays.toLocaleString("ko-KR")}일 기준`;
+  }
+
+  const actualLabel = actualDays === 1 ? "1일 기준" : `실제 ${actualDays.toLocaleString("ko-KR")}일 기준`;
+  return `${actualLabel} (목표 ${periodDays.toLocaleString("ko-KR")}일)`;
 }
 
 function evidenceString(value: unknown) {

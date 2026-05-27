@@ -35,13 +35,14 @@ describe("buildSearchAdPeriodRuleResults", () => {
     expect(results[0]?.reason).toContain("일부 기간 판단");
     expect(results[0]?.evidencePacket.actualDataDays).toBe(2);
     expect(results[0]?.evidencePacket.coverageStatus).toBe("partial");
-    expect(results[0]?.evidencePacket.dataCoverageLabel).toBe("수집 2026-05-24~2026-05-25 · 실제 2일치 / 규칙 30일");
+    expect(results[0]?.evidencePacket.dataCoverageLabel).toBe("수집 2026-05-24~2026-05-25 · 실제 2일 기준 (목표 30일)");
   });
 
   it("기준 기간이 모두 수집되면 정상 판단으로 표시하고 합산 전환 성과를 판단한다", () => {
     const sevenDayCriteria: SearchAdRuleCriteria[] = [
       {
         ...criteria[0],
+        brandKey: "stickersee",
         periodDays: 7,
         minClicks: 7,
         minCost: 700,
@@ -51,6 +52,7 @@ describe("buildSearchAdPeriodRuleResults", () => {
     ];
     const rows = Array.from({ length: 7 }, (_, index) =>
       row({
+        brandKey: "stickersee",
         id: `row-good-${index}`,
         sourceDate: `2026-05-${String(19 + index).padStart(2, "0")}`,
         clicks: 2,
@@ -67,6 +69,28 @@ describe("buildSearchAdPeriodRuleResults", () => {
     expect(results[0]?.evidencePacket.actualDataDays).toBe(7);
     expect(results[0]?.evidencePacket.coverageStatus).toBe("complete");
     expect(results[0]?.evidencePacket.coverageWarningLabel).toBe("정상 판단");
+    expect(results[0]?.evidencePacket.dataCoverageLabel).toBe("수집 2026-05-19~2026-05-25 · 최근 7일 기준");
+  });
+
+  it("커피프린트 전환 기준이 확정 전이면 우수 성과로 단정하지 않고 데이터 점검으로 올린다", () => {
+    const results = buildSearchAdPeriodRuleResults(
+      [
+        row({
+          id: "coffeeprint-conversion",
+          clicks: 20,
+          cost: 20000,
+          conversions: 2,
+          salesAmount: 100000,
+        }),
+      ],
+      criteria,
+      "2026-05-26T08:00:00+09:00",
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.category).toBe("needs_review");
+    expect(results[0]?.reason).toContain("커피프린트 전환 기준");
+    expect(results[0]?.evidencePacket.measurementStatusLabel).toBe("전환 기준 확인 필요");
   });
 
   it("기준 기간 밖의 오래된 성과는 현재 판단에 합산하지 않는다", () => {
@@ -137,6 +161,7 @@ describe("buildSearchAdPeriodRuleResults", () => {
     const shoppingCriteria: SearchAdRuleCriteria[] = [
       {
         ...criteria[0],
+        brandKey: "stickersee",
         adProductType: "shopping_search",
         targetCpa: 10000,
         targetRoas: 200,
@@ -147,6 +172,7 @@ describe("buildSearchAdPeriodRuleResults", () => {
       [
         row({
           id: "shopping-clicks",
+          brandKey: "stickersee",
           adProductType: "shopping_search",
           reportType: "SHOPPINGKEYWORD_DETAIL",
           campaignId: "cmp-shopping",
@@ -159,6 +185,7 @@ describe("buildSearchAdPeriodRuleResults", () => {
         }),
         row({
           id: "shopping-conversions",
+          brandKey: "stickersee",
           adProductType: "shopping_search",
           reportType: "SHOPPINGKEYWORD_CONVERSION_DETAIL",
           campaignId: "cmp-shopping",
@@ -189,6 +216,7 @@ describe("buildSearchAdPeriodRuleResults", () => {
       [
         row({
           id: "criterion-clicks",
+          brandKey: "stickersee",
           reportType: "CRITERION",
           criterionId: "grp-a001~AG3539",
           searchTerm: undefined,
@@ -201,6 +229,7 @@ describe("buildSearchAdPeriodRuleResults", () => {
         }),
         row({
           id: "criterion-conversions",
+          brandKey: "stickersee",
           reportType: "CRITERION_CONVERSION",
           criterionId: "grp-a001~AG3539",
           searchTerm: undefined,
@@ -212,7 +241,7 @@ describe("buildSearchAdPeriodRuleResults", () => {
           salesAmount: 60000,
         }),
       ],
-      criteria,
+      [{ ...criteria[0], brandKey: "stickersee" }],
       "2026-05-26T08:00:00+09:00",
     );
 

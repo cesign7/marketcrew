@@ -59,6 +59,7 @@ export function getRuleResultContextBadges(result: SearchAdRuleResult): RuleResu
   const badges: RuleResultContextBadge[] = [];
   const deviceLabel = stringFromEvidence(result.evidencePacket.deviceLabel);
   const seasonHint = stringFromEvidence(result.evidencePacket.seasonHint);
+  const measurementStatusLabel = stringFromEvidence(result.evidencePacket.measurementStatusLabel);
 
   if (deviceLabel) {
     badges.push({ label: "기기", value: deviceLabel });
@@ -66,6 +67,10 @@ export function getRuleResultContextBadges(result: SearchAdRuleResult): RuleResu
 
   if (seasonHint) {
     badges.push({ label: "시즌/행사", value: seasonHint });
+  }
+
+  if (measurementStatusLabel && measurementStatusLabel !== "전환 기준 사용 가능") {
+    badges.push({ label: "전환 기준", value: measurementStatusLabel });
   }
 
   return badges;

@@ -59,11 +59,11 @@ describe("rule result target display", () => {
     const result = ruleResult({
       periodDays: 30,
       evidencePacket: {
-        dataCoverageLabel: "수집 기준일 2026-05-25 · 실제 1일치 / 규칙 30일",
+        dataCoverageLabel: "수집 기준일 2026-05-25 · 1일 기준 (목표 30일)",
       },
     });
 
-    expect(getRuleResultPeriodLabel(result)).toBe("수집 기준일 2026-05-25 · 실제 1일치 / 규칙 30일");
+    expect(getRuleResultPeriodLabel(result)).toBe("수집 기준일 2026-05-25 · 1일 기준 (목표 30일)");
   });
 
   it("수집 기간이 저장되지 않은 기존 결과는 원천 기준일로 보완한다", () => {
@@ -74,7 +74,7 @@ describe("rule result target display", () => {
       },
     });
 
-    expect(getRuleResultPeriodLabel(result)).toBe("수집 기준일 2026-05-25 · 실제 1일치 / 규칙 30일");
+    expect(getRuleResultPeriodLabel(result)).toBe("수집 기준일 2026-05-25 · 1일 기준 (목표 30일)");
   });
 
   it("소재명이 ID뿐이면 화면 소재명으로 쓰지 않는다", () => {

@@ -145,7 +145,7 @@ export function getRuleResultPeriodLabel(result: SearchAdRuleResult) {
 
   const sourceDate = stringFromEvidence(result.evidencePacket.sourceDate);
   if (sourceDate) {
-    return `수집 기준일 ${sourceDate} · 실제 1일치 / 규칙 ${result.periodDays}일`;
+    return `수집 기준일 ${sourceDate} · 1일 기준 (목표 ${result.periodDays.toLocaleString("ko-KR")}일)`;
   }
 
   return `규칙 ${result.periodDays}일`;

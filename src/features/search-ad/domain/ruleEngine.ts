@@ -3,6 +3,7 @@ import { describeSearchAdRuleTarget, getSearchAdDeviceLabel } from "./targetDisp
 import { getReportTypeLabel } from "./reportTypes";
 
 const RULE_RUN_AT = "2026-05-26T08:00:00+09:00";
+const CONVERSION_UNCONFIRMED_BRANDS = new Set<SearchAdNormalizedRow["brandKey"]>(["coffeeprint"]);
 
 export function buildSearchAdRuleResults(rows: SearchAdNormalizedRow[], criteriaList: SearchAdRuleCriteria[], now = RULE_RUN_AT): SearchAdRuleResult[] {
   const criteriaByScope = new Map(criteriaList.filter((item) => item.enabled).map((item) => [`${item.brandKey}:${item.adProductType}`, item]));
@@ -55,7 +56,29 @@ export function buildSearchAdRuleResults(rows: SearchAdNormalizedRow[], criteria
       rawTargetCode: target.rawTargetCode ?? null,
       targetDetailLabel: target.targetDetailLabel ?? null,
       seasonHint: inferSeasonHint([row.searchTerm, row.keywordText, row.adgroupName, row.campaignName]) ?? null,
+      measurementStatus: getMeasurementStatus(row.brandKey),
+      measurementStatusLabel: getMeasurementStatusLabel(row.brandKey),
+      measurementCaution: getMeasurementCaution(row.brandKey),
     };
+
+    if (hasUnconfirmedConversionMeasurement(row) && row.conversions > 0 && row.cost >= criteria.minCost) {
+      results.push({
+        id: ruleId("needs-review-conversion-policy", row.id),
+        brandKey: row.brandKey,
+        adProductType: row.adProductType,
+        category: "needs_review",
+        targetType: target.targetType,
+        targetId: target.targetId,
+        targetLabel: target.targetLabel,
+        severity: "high",
+        periodDays: criteria.periodDays,
+        reason: `${targetReasonSubject(target.targetType)} 전환 ${formatNumber(row.conversions)}건이 잡혔지만 커피프린트 전환 기준이 구매/매출로 확정되지 않았습니다. 우수 성과나 ROAS로 단정하기 전에 회원가입, 시안완료, 구매 중 무엇을 전환으로 보는지 먼저 확인해야 합니다.`,
+        metrics,
+        evidencePacket: withRuleEvidenceContext(evidencePacket, row, target.targetType, "needs_review"),
+        createdAt: now,
+      });
+      continue;
+    }
 
     if (row.conversions > 0 && row.salesAmount === 0 && row.cost >= criteria.minCost) {
       results.push({
@@ -106,7 +129,7 @@ export function buildSearchAdRuleResults(rows: SearchAdNormalizedRow[], criteria
         targetLabel: target.targetLabel,
         severity: "medium",
         periodDays: criteria.periodDays,
-        reason: `${targetReasonSubject(target.targetType)} 클릭 ${formatNumber(row.clicks)}회와 비용 ${formatWon(row.cost)}가 있으나 전환이 없어 입찰, 제외어, 랜딩 점검이 필요합니다.`,
+        reason: `${targetReasonSubject(target.targetType)} 클릭 ${formatNumber(row.clicks)}회와 비용 ${formatWon(row.cost)}가 있으나 전환이 없어 입찰, 제외어, 랜딩 점검이 필요합니다.${hasUnconfirmedConversionMeasurement(row) ? " 단, 커피프린트는 전환 기준 확정 전이므로 중지 전에 실제 주문 흐름도 함께 확인합니다." : ""}`,
         metrics,
         evidencePacket: withRuleEvidenceContext(evidencePacket, row, target.targetType, "low_efficiency"),
         createdAt: now,
@@ -284,6 +307,26 @@ function formatWon(value: number) {
 
 function formatPercent(value: number) {
   return `${Math.round(value * 10) / 10}%`;
+}
+
+function hasUnconfirmedConversionMeasurement(row: SearchAdNormalizedRow) {
+  return CONVERSION_UNCONFIRMED_BRANDS.has(row.brandKey);
+}
+
+function getMeasurementStatus(brandKey: SearchAdNormalizedRow["brandKey"]) {
+  return CONVERSION_UNCONFIRMED_BRANDS.has(brandKey) ? "conversion_unconfirmed" : "confirmed";
+}
+
+function getMeasurementStatusLabel(brandKey: SearchAdNormalizedRow["brandKey"]) {
+  return CONVERSION_UNCONFIRMED_BRANDS.has(brandKey) ? "전환 기준 확인 필요" : "전환 기준 사용 가능";
+}
+
+function getMeasurementCaution(brandKey: SearchAdNormalizedRow["brandKey"]) {
+  if (!CONVERSION_UNCONFIRMED_BRANDS.has(brandKey)) {
+    return null;
+  }
+
+  return "커피프린트는 전환 목적과 전환매출 세팅이 확정되기 전까지 CPA/ROAS/우수 후보를 보수적으로 봅니다.";
 }
 
 function groupPeriodRows(rows: SearchAdNormalizedRow[], periodDays: number) {
@@ -518,7 +561,16 @@ function getCoverageWarningLabel(status: ReturnType<typeof getCoverageStatus>) {
 
 function formatCoverageLabel(startDate: string, endDate: string, actualDays: number, periodDays: number) {
   const dateLabel = startDate === endDate ? `수집 기준일 ${endDate}` : `수집 ${startDate}~${endDate}`;
-  return `${dateLabel} · 실제 ${actualDays.toLocaleString("ko-KR")}일치 / 규칙 ${periodDays}일`;
+  return `${dateLabel} · ${formatCoverageBasisLabel(actualDays, periodDays)}`;
+}
+
+function formatCoverageBasisLabel(actualDays: number, periodDays: number) {
+  if (actualDays >= periodDays) {
+    return `최근 ${periodDays.toLocaleString("ko-KR")}일 기준`;
+  }
+
+  const actualLabel = actualDays === 1 ? "1일 기준" : `실제 ${actualDays.toLocaleString("ko-KR")}일 기준`;
+  return `${actualLabel} (목표 ${periodDays.toLocaleString("ko-KR")}일)`;
 }
 
 function withCoverageWarning(reason: string, status: ReturnType<typeof getCoverageStatus>, label: string, actualDays: number, periodDays: number) {
