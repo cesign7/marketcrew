@@ -972,6 +972,31 @@ export async function saveDownloadedReport(input: {
   return { reportId, fileId };
 }
 
+export async function saveUnavailableSearchAdReport(input: {
+  downloadUrl?: string;
+  providerReportJobId: string;
+  reportType: SearchAdReportType;
+  statDate: string;
+  status: SearchAdReportStatus;
+}) {
+  if (!hasDatabaseUrl()) {
+    throw new Error("SEARCH_AD_DATABASE_MISSING");
+  }
+
+  await ensureSearchAdSchema();
+  const reportId = `report-${input.providerReportJobId}`;
+  await query(
+    `
+      INSERT INTO search_ad_report_jobs (id, provider_report_job_id, report_type, stat_date, status, download_url, status_message, synced_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, now(), now())
+      ON CONFLICT (provider_report_job_id)
+      DO UPDATE SET report_type = EXCLUDED.report_type, stat_date = EXCLUDED.stat_date, status = EXCLUDED.status,
+        download_url = EXCLUDED.download_url, status_message = EXCLUDED.status_message, synced_at = now(), updated_at = now()
+    `,
+    [reportId, input.providerReportJobId, input.reportType, input.statDate, input.status, input.downloadUrl ?? null, "네이버 파일 없음"],
+  );
+}
+
 export async function listSavedSearchAdReportKeys(): Promise<Array<{ reportType: SearchAdReportType; statDate: string }>> {
   if (!hasDatabaseUrl()) {
     return [];
@@ -981,7 +1006,8 @@ export async function listSavedSearchAdReportKeys(): Promise<Array<{ reportType:
   const result = await query<{ report_type: SearchAdReportType; stat_date: string }>(`
     SELECT DISTINCT j.report_type, to_char(j.stat_date, 'YYYY-MM-DD') AS stat_date
     FROM search_ad_report_jobs j
-    JOIN search_ad_report_files f ON f.report_job_id = j.id
+    LEFT JOIN search_ad_report_files f ON f.report_job_id = j.id
+    WHERE f.id IS NOT NULL OR j.status = 'NONE'
     ORDER BY stat_date ASC, j.report_type ASC
   `);
 
@@ -2231,7 +2257,7 @@ function mapReportJobRow(row: ReportJobRow): SearchAdReportJobRecord {
     syncedAt: row.synced_at ? toIso(row.synced_at) : undefined,
     rowCount: Number(row.row_count ?? 0),
     mappedBrands: Array.isArray(row.mapped_brands) ? row.mapped_brands : [],
-    parseStatus: Number(row.row_count ?? 0) > 0 ? "완료" : "대기",
+    parseStatus: row.status === "NONE" ? "파일 없음" : Number(row.row_count ?? 0) > 0 ? "완료" : "대기",
     summary: {
       impressions: Number(summary.impressions ?? 0),
       clicks: Number(summary.clicks ?? 0),

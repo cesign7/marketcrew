@@ -5,7 +5,7 @@ import type { SearchAdReportStatus, SearchAdReportType } from "@/features/search
 import { downloadSearchAdReport, listSearchAdReportJobs, createSearchAdReportJob, type SearchAdReportJob } from "@/lib/integrations/search-ad/reports";
 import { getSearchAdCredentials } from "@/lib/integrations/search-ad/client";
 import { hasDatabaseUrl } from "@/lib/persistence/postgres";
-import { listSavedSearchAdReportKeys, rebuildAndSaveSearchAdRuleResults, saveDownloadedReport } from "@/lib/persistence/searchAdRepository";
+import { listSavedSearchAdReportKeys, rebuildAndSaveSearchAdRuleResults, saveDownloadedReport, saveUnavailableSearchAdReport } from "@/lib/persistence/searchAdRepository";
 import { normalizeSearchAdReportStatDate } from "./reportSync";
 
 export const DEFAULT_BACKFILL_REPORT_TYPES: SearchAdReportType[] = DEFAULT_SEARCH_AD_BACKFILL_REPORT_TYPES;
@@ -43,7 +43,16 @@ export type SearchAdBackfillDependencies = {
   onProgress?: (snapshot: SearchAdBackfillProgressSnapshot) => Promise<void>;
   rebuildRules: () => Promise<{ saved: number }>;
   saveReport: typeof saveDownloadedReport;
+  saveUnavailableReport?: (input: SearchAdUnavailableReportInput) => Promise<void>;
   wait?: (ms: number) => Promise<void>;
+};
+
+export type SearchAdUnavailableReportInput = {
+  downloadUrl?: string;
+  providerReportJobId: string;
+  reportType: SearchAdReportType;
+  statDate: string;
+  status: SearchAdReportStatus;
 };
 
 export type SearchAdBackfillRunInput = SearchAdBackfillPlanInput &
@@ -55,7 +64,7 @@ export type SearchAdBackfillRunInput = SearchAdBackfillPlanInput &
   skipSaved?: boolean;
 };
 
-export type SearchAdBackfillResultStatus = "created" | "download_skipped" | "downloadable" | "downloaded" | "failed" | "missing" | "pending" | "rate_limited";
+export type SearchAdBackfillResultStatus = "created" | "download_skipped" | "downloadable" | "downloaded" | "failed" | "missing" | "no_data" | "pending" | "rate_limited";
 
 export type SearchAdBackfillSavedReportKey = {
   reportType: SearchAdReportType;
@@ -80,6 +89,7 @@ export type SearchAdBackfillSummary = {
   maxDownloads: number;
   maxHourlyCreates: number;
   missing: number;
+  noData: number;
   parsed: number;
   pending: number;
   planned: number;
@@ -183,6 +193,7 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
     maxDownloads,
     maxHourlyCreates: safetyLimits.maxHourlyCreates,
     missing: 0,
+    noData: 0,
     parsed: 0,
     pending: 0,
     planned: plan.totalItems,
@@ -234,6 +245,28 @@ export async function runSearchAdReportBackfill(input: SearchAdBackfillRunInput 
 
       summary.missing += 1;
       results.push({ ...item, status: "missing" });
+      continue;
+    }
+
+    if (existing.status === "NONE") {
+      summary.noData += 1;
+      if (!dryRun) {
+        await dependencies.saveUnavailableReport?.({
+          downloadUrl: existing.downloadUrl,
+          providerReportJobId: String(existing.reportJobId),
+          reportType: item.reportType,
+          statDate: item.statDate,
+          status: existing.status,
+        });
+      }
+      results.push({
+        ...item,
+        message: "네이버가 다운로드 파일을 제공하지 않아 저장할 원본이 없습니다.",
+        providerReportJobId: String(existing.reportJobId),
+        providerStatus: existing.status,
+        status: "no_data",
+      });
+      await emitProgress();
       continue;
     }
 
@@ -358,7 +391,7 @@ function createProgressEmitter(
     if (!onProgress) {
       return;
     }
-    const progressedCount = summary.created + summary.downloaded + summary.failed + summary.rateLimited;
+    const progressedCount = summary.created + summary.downloaded + summary.failed + summary.noData + summary.rateLimited;
     if (!force && progressedCount - lastEmittedCount < 10) {
       return;
     }
@@ -380,6 +413,7 @@ function defaultBackfillDependencies(): SearchAdBackfillDependencies {
     listJobs: listSearchAdReportJobs,
     rebuildRules: rebuildAndSaveSearchAdRuleResults,
     saveReport: saveDownloadedReport,
+    saveUnavailableReport: saveUnavailableSearchAdReport,
     listSavedReportKeys: listSavedSearchAdReportKeys,
   };
 }

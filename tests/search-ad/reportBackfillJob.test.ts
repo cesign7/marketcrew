@@ -127,6 +127,7 @@ function buildBackfillResult(summary: Partial<SearchAdBackfillRunSuccess["data"]
         maxDownloads: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxDownloadsPerRun,
         maxHourlyCreates: SEARCH_AD_BACKFILL_SAFETY_LIMITS.maxCreatesPerHour,
         missing: summary.missing ?? 0,
+        noData: summary.noData ?? 0,
         parsed: summary.downloaded ?? 0,
         pending: 0,
         planned: summary.planned ?? 542,

@@ -46,7 +46,7 @@ export type SearchAdReportJobRecord = {
   syncedAt?: string;
   rowCount: number;
   mappedBrands: BrandKey[];
-  parseStatus: "대기" | "완료" | "실패";
+  parseStatus: "대기" | "완료" | "실패" | "파일 없음";
   summary: SearchAdMetricSummary;
 };
 

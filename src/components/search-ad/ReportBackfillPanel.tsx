@@ -89,6 +89,7 @@ const STATUS_LABELS: Record<SearchAdBackfillResultStatus, string> = {
   downloaded: "저장 완료",
   failed: "실패",
   missing: "생성 필요",
+  no_data: "파일 없음",
   pending: "준비 중",
   rate_limited: "속도 제한",
 };
@@ -138,7 +139,7 @@ export function getQuickBackfillLimits(input: { fromDate: string; reportTypes: S
 }
 
 export function getBackfillStatusLabel(status: SearchAdBackfillResultStatus, providerStatus?: string) {
-  if (status === "pending" && providerStatus === "NONE") {
+  if (status === "no_data" || (status === "pending" && providerStatus === "NONE")) {
     return "파일 없음";
   }
 
@@ -356,6 +357,7 @@ function BackfillSummaryCards({ summary }: { summary: SearchAdBackfillSummary })
     { helper: "다시 받지 않음", label: "이미 저장", value: summary.alreadySaved },
     { helper: "네이버에 생성 요청함", label: "생성 요청", value: summary.created },
     { helper: "네이버 생성 요청 필요", label: "생성 필요", value: summary.missing },
+    { helper: "재요청 제외", label: "파일 없음", value: summary.noData ?? 0 },
     { helper: "네이버 준비 완료", label: "저장 가능", value: summary.downloadable },
     { helper: "아직 생성 중", label: "준비 중", value: summary.pending },
     { helper: "이번 실행 결과", label: "저장 완료", value: summary.downloaded },
@@ -413,6 +415,9 @@ function getBackfillNextStep(summary: SearchAdBackfillSummary) {
   }
   if (summary.pending > 0) {
     return "네이버가 보고서를 생성 중입니다. 잠시 뒤 계획을 다시 확인하세요.";
+  }
+  if ((summary.noData ?? 0) > 0) {
+    return "네이버가 파일 없음으로 응답한 보고서는 재요청하지 않고 제외했습니다.";
   }
   return "선택한 범위에서 추가로 처리할 보고서가 없습니다.";
 }
@@ -522,7 +527,7 @@ export function getBackfillResultMessage(item: Pick<BackfillResult, "message" | 
   if (item.status === "download_skipped" && item.message?.includes("maxDownloads 제한")) {
     return "마켓크루 다운로드 안전 상한에 도달해 다음 자동 배치에서 이어서 저장합니다.";
   }
-  if (item.status === "pending" && item.providerStatus === "NONE") {
+  if (item.status === "no_data" || (item.status === "pending" && item.providerStatus === "NONE")) {
     return "네이버가 다운로드 파일을 제공하지 않아 저장할 원본이 없습니다.";
   }
 

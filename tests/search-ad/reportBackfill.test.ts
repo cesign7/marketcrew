@@ -301,4 +301,63 @@ describe("runSearchAdReportBackfill", () => {
       }),
     );
   });
+
+  it("네이버가 파일 없음으로 응답한 보고서는 완료 상태로 기록하고 재생성 대상에서 제외한다", async () => {
+    const createJob = vi.fn();
+    const downloadReport = vi.fn();
+    const saveUnavailableReport = vi.fn();
+
+    const result = await runSearchAdReportBackfill({
+      dependencies: {
+        createJob,
+        credentialsReady: () => true,
+        databaseReady: () => true,
+        downloadReport,
+        listJobs: async () => [
+          {
+            reportJobId: "job-empty-ad",
+            reportTp: "AD",
+            statDt: "20260525",
+            status: "NONE",
+          },
+        ],
+        listSavedReportKeys: async () => [],
+        rebuildRules: async () => ({ saved: 0 }),
+        saveReport: vi.fn(),
+        saveUnavailableReport,
+      },
+      dryRun: false,
+      fromDate: "2026-05-25",
+      reportTypes: ["AD"],
+      toDate: "2026-05-25",
+      todayKst: "2026-05-26",
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      throw new Error(result.message);
+    }
+    expect(createJob).not.toHaveBeenCalled();
+    expect(downloadReport).not.toHaveBeenCalled();
+    expect(saveUnavailableReport).toHaveBeenCalledWith({
+      downloadUrl: undefined,
+      providerReportJobId: "job-empty-ad",
+      reportType: "AD",
+      statDate: "2026-05-25",
+      status: "NONE",
+    });
+    expect(result.data.summary).toMatchObject({
+      missing: 0,
+      noData: 1,
+      pending: 0,
+      planned: 1,
+    });
+    expect(result.data.results).toContainEqual(
+      expect.objectContaining({
+        providerReportJobId: "job-empty-ad",
+        providerStatus: "NONE",
+        status: "no_data",
+      }),
+    );
+  });
 });
