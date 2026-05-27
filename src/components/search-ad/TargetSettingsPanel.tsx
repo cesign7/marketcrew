@@ -4,12 +4,13 @@ import { formatDateTime } from "./SearchAdCards";
 
 type TargetSettingsPanelProps = {
   adgroups: SearchAdStateRecord[];
-  targetSettings: SearchAdTargetSettingRecord[];
+  targetSettings?: SearchAdTargetSettingRecord[];
 };
 
 export function TargetSettingsPanel({ adgroups, targetSettings }: TargetSettingsPanelProps) {
+  const safeTargetSettings = targetSettings ?? [];
   const rows = adgroups.map((adgroup) => {
-    const settings = targetSettings.filter((setting) => setting.ownerId === adgroup.providerId);
+    const settings = safeTargetSettings.filter((setting) => setting.ownerId === adgroup.providerId);
     const timeSettings = settings.filter((setting) => setting.targetType === "TIME_WEEKLY_TARGET");
     const deviceSettings = settings.filter((setting) => setting.targetType === "PC_MOBILE_TARGET");
     const mediaSettings = settings.filter((setting) => setting.targetType === "MEDIA_TARGET");
