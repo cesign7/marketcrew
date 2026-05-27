@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { MarketingShell } from "@/components/layout/MarketingShell";
 import { RuleResultActionPanel } from "@/components/search-ad/RuleResultActionPanel";
-import { RuleResultDetailSummary, RuleResultEvidenceRows } from "@/components/search-ad/RuleResultDetailSections";
+import { RuleResultActionPlanSection, RuleResultDetailSummary, RuleResultEvidenceRows } from "@/components/search-ad/RuleResultDetailSections";
 import { DEFAULT_SEARCH_AD_FILTERS } from "@/features/search-ad/domain/sampleData";
 import { loadSearchAdRuleResultDetailView } from "@/features/search-ad/loadSearchAdViews";
 
@@ -27,6 +27,7 @@ export default async function RuleResultDetailPage({ params }: RuleResultDetailP
     >
       <div className="page-stack">
         <RuleResultDetailSummary view={view} />
+        <RuleResultActionPlanSection view={view} />
         <RuleResultActionPanel actionTarget={view.actionTarget} />
         <RuleResultEvidenceRows view={view} />
       </div>

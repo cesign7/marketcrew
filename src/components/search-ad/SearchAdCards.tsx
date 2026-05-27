@@ -22,6 +22,7 @@ import {
   getRuleResultDiagnosis,
   getRuleResultMetricBadges,
 } from "@/features/search-ad/domain/ruleResultPresentation";
+import { truncateDisplayText } from "@/features/search-ad/domain/displayText";
 import type {
   RuleActionIntentFilter,
   SearchAdActionLogsView,
@@ -194,6 +195,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const metricBadges = getRuleResultMetricBadges(result);
         const actionCandidate = getRuleResultActionCandidate(result);
         const contextBadges = getRuleResultContextBadges(result);
+        const shortTargetLabel = truncateDisplayText(targetLabel, result.adProductType === "shopping_search" ? 32 : 38);
         return (
           <article className="rule-card" key={result.id}>
             <div className="rule-card-header">
@@ -205,8 +207,8 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
                   <span className="target-chip">{getAdProductLabel(result.adProductType)}</span>
                   <span className="target-chip action-chip">{actionCandidate.label}</span>
                 </div>
-                <Link className="rule-card-title" href={getRuleResultDetailHref(result)}>
-                  {targetLabel}
+                <Link className="rule-card-title" href={getRuleResultDetailHref(result)} title={targetLabel}>
+                  {shortTargetLabel}
                 </Link>
               </div>
             </div>
@@ -223,7 +225,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
             <dl>
               <div>
                 <dt>연결 위치</dt>
-                <dd>{getRuleResultConnectedTarget(result)}</dd>
+                <dd title={getRuleResultConnectedTarget(result)}>{truncateDisplayText(getRuleResultConnectedTarget(result), 30)}</dd>
               </div>
               <div>
                 <dt>근거 보고서</dt>
@@ -254,7 +256,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
               {creativeLabel ? (
                 <div>
                   <dt>소재</dt>
-                  <dd>{creativeLabel}</dd>
+                  <dd title={creativeLabel}>{truncateDisplayText(creativeLabel, 30)}</dd>
                 </div>
               ) : null}
               {landingLabel ? (
@@ -313,7 +315,11 @@ export function StateRecordTable({ records, title, description }: { records: Sea
           <tbody>
             {records.map((record) => (
               <tr key={record.id}>
-                <td>{record.name}</td>
+                <td>
+                  <span className="text-clip" title={record.name}>
+                    {truncateDisplayText(record.name, 34)}
+                  </span>
+                </td>
                 <td>{record.brandKey ? getBrandLabel(record.brandKey) : "매핑 필요"}</td>
                 <td>{record.adProductType ? getAdProductLabel(record.adProductType) : "매핑 필요"}</td>
                 <td>{formatLockState(record.userLock)} · {record.statusReason ?? record.status ?? "상태 없음"}</td>
@@ -357,9 +363,14 @@ export function SearchTermTable({ rows }: { rows: SearchAdNormalizedRow[] }) {
           {rows.map((row) => {
             const cpa = row.conversions > 0 ? row.cost / row.conversions : null;
             const roas = row.cost > 0 ? (row.salesAmount / row.cost) * 100 : null;
+            const displayTarget = getNormalizedRowDisplayTarget(row);
             return (
               <tr key={row.id}>
-                <td>{getNormalizedRowDisplayTarget(row)}</td>
+                <td>
+                  <span className="text-clip" title={displayTarget}>
+                    {truncateDisplayText(displayTarget, 34)}
+                  </span>
+                </td>
                 <td>{getBrandLabel(row.brandKey)}</td>
                 <td>{getAdProductLabel(row.adProductType)}</td>
                 <td>{getSearchAdDeviceLabel(row.device) ?? "-"}</td>

@@ -713,6 +713,51 @@ table {
   padding-left: 18px;
 }
 
+.action-plan-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.action-plan-grid article {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.action-plan-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.action-plan-grid strong {
+  font-size: 14px;
+}
+
+.action-plan-grid p {
+  color: #344054;
+  font-size: 13px;
+  margin: 0;
+}
+
+.action-plan-steps {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-left: 18px;
+}
+
+.action-plan-steps li {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .text-break {
   overflow-wrap: anywhere;
 }
@@ -1497,6 +1542,7 @@ table {
   .backfill-range-card,
   .backfill-next-grid,
   .detail-grid,
+  .action-plan-grid,
   .report-guide-detail,
   .report-guide-grid,
   .rule-guide-grid,

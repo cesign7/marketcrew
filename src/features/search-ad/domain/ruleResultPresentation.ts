@@ -1,3 +1,6 @@
+import { getApprovalDelegationPolicy } from "./operationStrategies";
+import { getRuleResultActionIntentKey } from "./ruleActionIntents";
+import { getRuleResultDisplayTargetLabel } from "./targetDisplay";
 import type { SearchAdRuleResult } from "./types";
 
 export type RuleResultMetricBadge = {
@@ -13,6 +16,16 @@ export type RuleResultActionCandidate = {
 export type RuleResultContextBadge = {
   label: string;
   value: string;
+};
+
+export type RuleResultActionPlan = {
+  title: string;
+  summary: string;
+  approvalLabel: string;
+  delegationLabel: string;
+  previewLabel: string;
+  guardrail: string;
+  steps: string[];
 };
 
 export function getRuleResultDiagnosis(result: SearchAdRuleResult) {
@@ -159,6 +172,22 @@ export function getRuleResultPreApplyChecks(result: SearchAdRuleResult) {
   return checks;
 }
 
+export function getRuleResultActionPlan(result: SearchAdRuleResult): RuleResultActionPlan {
+  const intent = getRuleResultActionIntentKey(result);
+  const policy = getApprovalDelegationPolicy(intent);
+  const targetLabel = getRuleResultDisplayTargetLabel(result);
+
+  return {
+    title: getActionPlanTitle(intent),
+    summary: getActionPlanSummary(intent, targetLabel),
+    approvalLabel: "첫 실행은 대표 승인",
+    delegationLabel: policy?.repeatRunOwner === "moa" ? "반복 패턴은 모아 위임 후보" : "대표 승인 유지",
+    previewLabel: policy?.requiresPreview ? "실행 전 미리보기 필요" : "점검 기록만 필요",
+    guardrail: policy?.guardrail ?? "실제 외부 변경 전에는 근거와 실행 범위를 다시 확인합니다.",
+    steps: getActionPlanSteps(intent),
+  };
+}
+
 export function metricNumber(result: SearchAdRuleResult, key: string) {
   const value = result.metrics[key];
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -200,6 +229,101 @@ function fallbackActionCandidateLabel(result: SearchAdRuleResult) {
       return "전환 점검 후보";
     default:
       return "운영 점검 후보";
+  }
+}
+
+function getActionPlanTitle(intent: string) {
+  switch (intent) {
+    case "negative_keyword":
+      return "제외어 등록 후보";
+    case "keyword_expand":
+      return "키워드 추가 후보";
+    case "shopping_expand":
+      return "상품 확장 후보";
+    case "landing_check":
+      return "소재·랜딩 점검 후보";
+    case "bid_adjustment":
+      return "입찰 조정 후보";
+    case "targeting_adjustment":
+      return "시간대·기기 조정 후보";
+    case "conversion_check":
+      return "전환 점검 후보";
+    case "data_check":
+      return "데이터 점검 후보";
+    case "fit_check":
+      return "노출 적합도 점검";
+    default:
+      return "운영 점검 후보";
+  }
+}
+
+function getActionPlanSummary(intent: string, targetLabel: string) {
+  switch (intent) {
+    case "negative_keyword":
+      return `${targetLabel} 검색어를 바로 제외하지 않고, 방어/브랜드/시즌성 여부를 확인한 뒤 제외어 후보로 올립니다.`;
+    case "keyword_expand":
+      return `${targetLabel} 검색어를 신규 등록 키워드 또는 유사 키워드 후보로 올립니다.`;
+    case "shopping_expand":
+      return `${targetLabel} 성과와 맞는 상품, 이미지, 랜딩을 확인한 뒤 확장 후보로 둡니다.`;
+    case "landing_check":
+      return `${targetLabel} 검색 의도와 광고 문구, 상품명, 이미지, 랜딩이 맞는지 먼저 확인합니다.`;
+    case "bid_adjustment":
+      return `${targetLabel} 비용 효율을 기준으로 입찰 하향, 예산 유지, 일시 중지를 나눠 검토합니다.`;
+    case "targeting_adjustment":
+      return `${targetLabel} 시간대, 기기, 성별, 연령 성과 차이를 보고 조정 후보로 둡니다.`;
+    case "conversion_check":
+      return `${targetLabel} 전환 코드, 전환 유형, 전환매출 전달을 먼저 확인합니다.`;
+    default:
+      return `${targetLabel} 항목은 근거 행을 확인한 뒤 조치 방향을 정합니다.`;
+  }
+}
+
+function getActionPlanSteps(intent: string) {
+  switch (intent) {
+    case "negative_keyword":
+      return [
+        "방어 키워드, 브랜드 키워드, 시즌 준비 키워드인지 먼저 확인합니다.",
+        "제외어 등록 또는 입찰 하향 중 더 안전한 조치를 고릅니다.",
+        "대표 승인 후 실행 이력을 남기고, 반복되는 패턴만 모아 위임 후보로 올립니다.",
+      ];
+    case "keyword_expand":
+      return [
+        "성과가 난 실제 유입 검색어와 기존 등록 키워드의 중복 여부를 확인합니다.",
+        "소액 테스트 예산과 연결 광고그룹을 정한 뒤 대표 승인 후보로 올립니다.",
+        "반영 후 CPA와 ROAS가 유지되는지 후속 성과를 확인합니다.",
+      ];
+    case "shopping_expand":
+      return [
+        "검색어와 실제 상품명, 대표 이미지, 랜딩 상품의 적합도를 확인합니다.",
+        "연결 상품이 맞으면 예산 확대 또는 유사 상품 확장 후보로 올립니다.",
+        "상품 연결이 불명확하면 자동 확장하지 않고 랜딩 점검으로 돌립니다.",
+      ];
+    case "landing_check":
+      return [
+        "광고 문구, 상품명, 대표 이미지, 랜딩 URL을 같은 화면에서 확인합니다.",
+        "검색 의도와 다른 상품으로 연결되면 소재 수정 또는 광고그룹 분리를 검토합니다.",
+        "랜딩 적합도 확인 전에는 자동 중지보다 점검 이력을 우선 남깁니다.",
+      ];
+    case "bid_adjustment":
+      return [
+        "최소 클릭과 비용 기준을 넘겼는지 확인합니다.",
+        "전환매출 누락 가능성이 있으면 조정 전에 전환 점검으로 돌립니다.",
+        "대표 승인 후 입찰 하향 또는 일시 중지 미리보기로 연결합니다.",
+      ];
+    case "targeting_adjustment":
+      return [
+        "PC/모바일, 요일, 시간대, 성별, 연령 성과 차이를 함께 봅니다.",
+        "시즌 그룹은 충분한 데이터 전까지 너무 좁히지 않습니다.",
+        "반복되는 저효율 조건만 모아 위임 후보로 올립니다.",
+      ];
+    case "conversion_check":
+      return [
+        "전환 코드 설치와 전환 유형을 확인합니다.",
+        "전환매출이 주문 금액으로 전달되는지 확인합니다.",
+        "확정 전에는 CPA/ROAS 기반 축소 조치를 자동 실행하지 않습니다.",
+      ];
+    default:
+      return ["근거 보고서와 연결 위치를 확인합니다.", "실행 범위를 정한 뒤 대표 승인 여부를 판단합니다."];
   }
 }
 

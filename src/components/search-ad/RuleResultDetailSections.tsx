@@ -12,12 +12,14 @@ import {
 } from "@/features/search-ad/domain/targetDisplay";
 import {
   getRuleResultActionCandidate,
+  getRuleResultActionPlan,
   getRuleResultContextBadges,
   getRuleResultDiagnosis,
   getRuleResultMetricBadges,
   getRuleResultPreApplyChecks,
   metricNumber,
 } from "@/features/search-ad/domain/ruleResultPresentation";
+import { truncateDisplayText } from "@/features/search-ad/domain/displayText";
 import type { SearchAdRuleResultDetailView } from "@/features/search-ad/domain/types";
 import { formatDateTime, formatWon, SearchTermTable } from "./SearchAdCards";
 
@@ -38,7 +40,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
     <section className="content-panel">
       <div className="section-heading">
         <div>
-          <h2>{targetLabel}</h2>
+          <h2 title={targetLabel}>{truncateDisplayText(targetLabel, 46)}</h2>
           <p>{getRuleResultDiagnosis(result)}</p>
         </div>
         <span className={`severity severity-${result.severity}`}>{RULE_CATEGORY_LABELS[result.category]}</span>
@@ -122,7 +124,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
         {creativeLabel ? (
           <div>
             <dt>소재</dt>
-            <dd>{creativeLabel}</dd>
+            <dd title={creativeLabel}>{truncateDisplayText(creativeLabel, 34)}</dd>
           </div>
         ) : null}
         {landingLabel ? (
@@ -139,6 +141,43 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
           <code>{rawTargetId}</code>
         </details>
       ) : null}
+    </section>
+  );
+}
+
+export function RuleResultActionPlanSection({ view }: { view: SearchAdRuleResultDetailView }) {
+  const plan = getRuleResultActionPlan(view.result);
+
+  return (
+    <section className="content-panel">
+      <div className="section-heading">
+        <div>
+          <h2>후보 처리 흐름</h2>
+          <p>{plan.summary}</p>
+        </div>
+      </div>
+      <div className="action-plan-grid">
+        <article>
+          <span>후보</span>
+          <strong>{plan.title}</strong>
+          <p>{plan.previewLabel}</p>
+        </article>
+        <article>
+          <span>승인</span>
+          <strong>{plan.approvalLabel}</strong>
+          <p>{plan.delegationLabel}</p>
+        </article>
+        <article>
+          <span>안전장치</span>
+          <strong>외부 반영 전 확인</strong>
+          <p>{plan.guardrail}</p>
+        </article>
+      </div>
+      <ol className="action-plan-steps">
+        {plan.steps.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
     </section>
   );
 }

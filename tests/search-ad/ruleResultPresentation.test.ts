@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SAMPLE_RULE_RESULTS } from "@/features/search-ad/domain/sampleData";
 import {
   getRuleResultActionCandidate,
+  getRuleResultActionPlan,
   getRuleResultContextBadges,
   getRuleResultDiagnosis,
   getRuleResultMetricBadges,
@@ -65,5 +66,38 @@ describe("rule result presentation", () => {
       description: "전환 코드와 매출 전달을 확인합니다.",
     });
     expect(getRuleResultRecommendedAction(result)).toContain("전환 코드");
+  });
+
+  it("제외어 후보는 대표 승인과 반복 위임 조건을 분리해 보여준다", () => {
+    const result = {
+      ...SAMPLE_RULE_RESULTS[0],
+      targetLabel: "소량 종이컵 제작",
+      evidencePacket: {
+        actionIntent: "negative_keyword",
+      },
+    };
+
+    expect(getRuleResultActionPlan(result)).toMatchObject({
+      title: "제외어 등록 후보",
+      approvalLabel: "첫 실행은 대표 승인",
+      delegationLabel: "반복 패턴은 모아 위임 후보",
+    });
+    expect(getRuleResultActionPlan(result).steps).toContain("방어 키워드, 브랜드 키워드, 시즌 준비 키워드인지 먼저 확인합니다.");
+  });
+
+  it("키워드 추가 후보는 실제 광고비 증가 가능성을 승인 조건으로 보여준다", () => {
+    const result = {
+      ...SAMPLE_RULE_RESULTS[1],
+      targetLabel: "답례 스티커",
+      evidencePacket: {
+        actionIntent: "keyword_expand",
+      },
+    };
+
+    const plan = getRuleResultActionPlan(result);
+
+    expect(plan.title).toBe("키워드 추가 후보");
+    expect(plan.delegationLabel).toBe("대표 승인 유지");
+    expect(plan.guardrail).toContain("실제 광고비가 늘 수");
   });
 });
