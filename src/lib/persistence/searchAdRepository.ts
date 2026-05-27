@@ -4,6 +4,7 @@ import {
   DEFAULT_SEARCH_AD_FILTERS,
   DEFAULT_SEARCH_AD_RULE_RESULT_FILTERS,
   SAMPLE_NORMALIZED_ROWS,
+  createSampleKeywordCleanupView,
   SAMPLE_RULE_CRITERIA,
   SAMPLE_RULE_RESULTS,
   createSampleActionLogsView,
@@ -14,6 +15,13 @@ import {
   createSampleSearchTermsView,
   createSampleStateView,
 } from "@/features/search-ad/domain/sampleData";
+import {
+  buildSearchAdKeywordCleanupView,
+  normalizeKeywordText,
+  type SearchAdKeywordCoverageForCleanup,
+  type SearchAdKeywordPerformanceForCleanup,
+  type SearchAdKeywordStateForCleanup,
+} from "@/features/search-ad/domain/keywordCleanup";
 import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
 import { getRuleResultActionTarget, isSearchTermReport } from "@/features/search-ad/domain/targetDisplay";
 import { describeTargetSetting } from "@/features/search-ad/domain/targetSettings";
@@ -49,6 +57,7 @@ import type {
   SearchAdRuleResult,
   SearchAdRuleResultFilters,
   SearchAdRuleResultsView,
+  SearchAdKeywordCleanupView,
   SearchAdSearchTermsView,
   SearchAdStateRecord,
   SearchAdStateView,
@@ -689,6 +698,29 @@ export async function getSearchAdSearchTermsView(filters = DEFAULT_SEARCH_AD_FIL
   } catch (error) {
     if (canUseSampleFallback()) {
       return createSampleSearchTermsView(filters);
+    }
+
+    throw error;
+  }
+}
+
+export async function getSearchAdKeywordCleanupView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdKeywordCleanupView> {
+  if (!hasDatabaseUrl()) {
+    return createSampleKeywordCleanupView(filters);
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const keywords = await listLatestKeywordStatesForCleanup(filters);
+    return buildSearchAdKeywordCleanupView({
+      filters,
+      keywords,
+      performanceRows: await listKeywordPerformanceForCleanup(filters, keywords),
+      coverageRows: await listKeywordCoverageForCleanup(filters),
+    });
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return createSampleKeywordCleanupView(filters);
     }
 
     throw error;
@@ -2181,6 +2213,225 @@ async function listLatestStateSnapshots(targetType: SearchAdTargetType, filters:
     statusReason: row.status_reason ?? undefined,
     bidAmount: row.bid_amount === null ? null : Number(row.bid_amount),
     collectedAt: toIso(row.collected_at),
+  }));
+}
+
+async function listLatestKeywordStatesForCleanup(filters: SearchAdFilters): Promise<SearchAdKeywordStateForCleanup[]> {
+  const clauses = ["k.brand_key IS NOT NULL", "k.ad_product_type IS NOT NULL"];
+  const values: unknown[] = [];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`k.brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`k.ad_product_type = $${values.length}`);
+  }
+
+  const result = await query<{
+    provider_keyword_id: string;
+    provider_adgroup_id: string | null;
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    keyword_text: string;
+    user_lock: boolean | null;
+    status: string | null;
+    status_reason: string | null;
+    bid_amount: string | null;
+    collected_at: string | Date;
+    adgroup_name: string | null;
+    provider_campaign_id: string | null;
+    campaign_name: string | null;
+  }>(
+    `
+      WITH latest_keywords AS (
+        SELECT DISTINCT ON (provider_keyword_id)
+          provider_keyword_id,
+          provider_adgroup_id,
+          brand_key,
+          ad_product_type,
+          keyword_text,
+          user_lock,
+          status,
+          status_reason,
+          bid_amount,
+          collected_at
+        FROM search_ad_keyword_snapshots
+        ORDER BY provider_keyword_id, collected_at DESC
+      ),
+      latest_adgroups AS (
+        SELECT DISTINCT ON (provider_adgroup_id)
+          provider_adgroup_id,
+          provider_campaign_id,
+          name
+        FROM search_ad_adgroup_snapshots
+        ORDER BY provider_adgroup_id, collected_at DESC
+      ),
+      latest_campaigns AS (
+        SELECT DISTINCT ON (provider_campaign_id)
+          provider_campaign_id,
+          name
+        FROM search_ad_campaign_snapshots
+        ORDER BY provider_campaign_id, collected_at DESC
+      )
+      SELECT
+        k.provider_keyword_id,
+        k.provider_adgroup_id,
+        k.brand_key,
+        k.ad_product_type,
+        k.keyword_text,
+        k.user_lock,
+        k.status,
+        k.status_reason,
+        k.bid_amount,
+        k.collected_at,
+        ag.name AS adgroup_name,
+        ag.provider_campaign_id,
+        c.name AS campaign_name
+      FROM latest_keywords k
+      LEFT JOIN latest_adgroups ag ON ag.provider_adgroup_id = k.provider_adgroup_id
+      LEFT JOIN latest_campaigns c ON c.provider_campaign_id = ag.provider_campaign_id
+      WHERE ${clauses.join(" AND ")}
+      ORDER BY k.brand_key, k.ad_product_type, lower(k.keyword_text), ag.name NULLS LAST
+      LIMIT 10000
+    `,
+    values,
+  );
+
+  return result.rows.map((row) => ({
+    keywordId: row.provider_keyword_id,
+    keywordText: row.keyword_text,
+    brandKey: row.brand_key,
+    adProductType: row.ad_product_type,
+    campaignId: row.provider_campaign_id ?? undefined,
+    campaignName: row.campaign_name ?? undefined,
+    adgroupId: row.provider_adgroup_id ?? undefined,
+    adgroupName: row.adgroup_name ?? undefined,
+    userLock: row.user_lock,
+    status: row.status ?? undefined,
+    statusReason: row.status_reason ?? undefined,
+    bidAmount: row.bid_amount === null ? null : Number(row.bid_amount),
+    collectedAt: toIso(row.collected_at),
+  }));
+}
+
+async function listKeywordPerformanceForCleanup(
+  filters: SearchAdFilters,
+  keywords: SearchAdKeywordStateForCleanup[],
+): Promise<SearchAdKeywordPerformanceForCleanup[]> {
+  const scopedKeywords = keywords.filter((keyword) => {
+    const brandMatched = filters.brand === "all" || keyword.brandKey === filters.brand;
+    const adProductMatched = filters.adProduct === "all" || keyword.adProductType === filters.adProduct;
+    return brandMatched && adProductMatched && normalizeKeywordText(keyword.keywordText);
+  });
+  if (scopedKeywords.length === 0) {
+    return [];
+  }
+
+  const keywordIds = scopedKeywords.map((keyword) => keyword.keywordId);
+
+  const result = await query<{
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    keyword_id: string | null;
+    keyword_text: string | null;
+    adgroup_id: string | null;
+    impressions: string;
+    clicks: string;
+    cost: string;
+    conversions: string;
+    sales_amount: string;
+    data_days: string;
+    start_date: string | Date | null;
+    end_date: string | Date | null;
+  }>(
+    `
+      WITH bounds AS (
+        SELECT MAX(source_date) AS end_date
+        FROM search_ad_report_normalized_rows
+      )
+      SELECT
+        n.brand_key,
+        n.ad_product_type,
+        NULLIF(n.keyword_id, '') AS keyword_id,
+        MIN(NULLIF(n.keyword_text, '')) AS keyword_text,
+        MIN(NULLIF(n.adgroup_id, '')) AS adgroup_id,
+        SUM(n.impressions)::text AS impressions,
+        SUM(n.clicks)::text AS clicks,
+        SUM(n.cost)::text AS cost,
+        SUM(n.conversions)::text AS conversions,
+        SUM(n.sales_amount)::text AS sales_amount,
+        COUNT(DISTINCT n.source_date)::text AS data_days,
+        MIN(n.source_date) AS start_date,
+        MAX(n.source_date) AS end_date
+      FROM search_ad_report_normalized_rows n
+      CROSS JOIN bounds
+      WHERE bounds.end_date IS NOT NULL
+        AND n.source_date >= (bounds.end_date - INTERVAL '364 days')::date
+        AND NULLIF(n.keyword_id, '') = ANY($1::text[])
+      GROUP BY n.brand_key, n.ad_product_type, NULLIF(n.keyword_id, '')
+    `,
+    [keywordIds],
+  );
+
+  return result.rows.map((row) => ({
+    brandKey: row.brand_key,
+    adProductType: row.ad_product_type,
+    keywordId: row.keyword_id ?? undefined,
+    keywordText: row.keyword_text ?? undefined,
+    adgroupId: row.adgroup_id ?? undefined,
+    impressions: Number(row.impressions),
+    clicks: Number(row.clicks),
+    cost: Number(row.cost),
+    conversions: Number(row.conversions),
+    salesAmount: Number(row.sales_amount),
+    dataDays: Number(row.data_days),
+    startDate: row.start_date ? toDate(row.start_date) : undefined,
+    endDate: row.end_date ? toDate(row.end_date) : undefined,
+  }));
+}
+
+async function listKeywordCoverageForCleanup(filters: SearchAdFilters): Promise<SearchAdKeywordCoverageForCleanup[]> {
+  const clauses: string[] = [];
+  const values: unknown[] = [];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`ad_product_type = $${values.length}`);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+
+  const result = await query<{
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    start_date: string | Date | null;
+    end_date: string | Date | null;
+    actual_days: string;
+  }>(
+    `
+      SELECT
+        brand_key,
+        ad_product_type,
+        MIN(source_date) AS start_date,
+        MAX(source_date) AS end_date,
+        COUNT(DISTINCT source_date)::text AS actual_days
+      FROM search_ad_report_normalized_rows
+      ${where}
+      GROUP BY brand_key, ad_product_type
+      ORDER BY brand_key, ad_product_type
+    `,
+    values,
+  );
+
+  return result.rows.map((row) => ({
+    brandKey: row.brand_key,
+    adProductType: row.ad_product_type,
+    startDate: row.start_date ? toDate(row.start_date) : undefined,
+    endDate: row.end_date ? toDate(row.end_date) : undefined,
+    actualDays: Number(row.actual_days),
   }));
 }
 

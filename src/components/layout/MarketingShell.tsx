@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/campaigns", label: "캠페인" },
   { href: "/adgroups", label: "광고그룹" },
   { href: "/search-terms", label: "검색어 성과" },
+  { href: "/keywords", label: "키워드 정리" },
   { href: "/rule-results", label: "규칙 결과" },
   { href: "/rules", label: "성과 기준" },
   { href: "/action-logs", label: "실행 이력" },

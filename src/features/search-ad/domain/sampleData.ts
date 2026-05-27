@@ -15,11 +15,14 @@ import type {
   SearchAdRuleCriteria,
   SearchAdRuleResult,
   SearchAdRuleResultFilters,
+  SearchAdKeywordCleanupView,
   SearchAdSearchTermsView,
   SearchAdStateRecord,
   SearchAdStateView,
   SearchAdTargetSettingRecord,
 } from "./types";
+import { buildSearchAdKeywordCleanupView } from "./keywordCleanup";
+import type { SearchAdKeywordCoverageForCleanup } from "./keywordCleanup";
 
 export const DEFAULT_SEARCH_AD_FILTERS: SearchAdFilters = {
   brand: "all",
@@ -334,6 +337,20 @@ export const SAMPLE_KEYWORDS: SearchAdStateRecord[] = [
     collectedAt: "2026-05-26T08:10:00+09:00",
   },
   {
+    id: "keyword-coffeeprint-paper-cup-duplicate",
+    targetType: "keyword",
+    providerId: "kw-coffeeprint-paper-cup-duplicate",
+    parentProviderId: "grp-coffeeprint-packaging",
+    brandKey: "coffeeprint",
+    adProductType: "powerlink",
+    name: "종이컵인쇄",
+    userLock: false,
+    status: "ELIGIBLE",
+    statusReason: "운영 가능",
+    bidAmount: 690,
+    collectedAt: "2026-05-26T08:10:00+09:00",
+  },
+  {
     id: "keyword-stickersee-small",
     targetType: "keyword",
     providerId: "kw-stickersee-small-sticker",
@@ -516,6 +533,53 @@ export function createSampleSearchTermsView(filters = DEFAULT_SEARCH_AD_FILTERS)
     rows: filterNormalizedRows(SAMPLE_NORMALIZED_ROWS, filters),
     ruleResults: filterRuleResults(SAMPLE_RULE_RESULTS, filters),
   };
+}
+
+export function createSampleKeywordCleanupView(filters = DEFAULT_SEARCH_AD_FILTERS): SearchAdKeywordCleanupView {
+  const keywords = filterStateRecords(SAMPLE_KEYWORDS, filters).map((keyword) => ({
+    keywordId: keyword.providerId,
+    keywordText: keyword.name,
+    brandKey: keyword.brandKey ?? "stickersee",
+    adProductType: keyword.adProductType ?? "powerlink",
+    campaignName: keyword.brandKey === "coffeeprint" ? "커피프린트_파워링크" : "스티커씨_쇼핑검색",
+    adgroupId: keyword.parentProviderId,
+    adgroupName: SAMPLE_ADGROUPS.find((adgroup) => adgroup.providerId === keyword.parentProviderId)?.name,
+    userLock: keyword.userLock,
+    status: keyword.status,
+    statusReason: keyword.statusReason,
+    bidAmount: keyword.bidAmount,
+    collectedAt: keyword.collectedAt,
+  }));
+  const rows = filterNormalizedRows(SAMPLE_NORMALIZED_ROWS, filters);
+
+  return buildSearchAdKeywordCleanupView({
+    filters,
+    generatedAt: "2026-05-26T08:30:00+09:00",
+    keywords,
+    performanceRows: rows.map((row) => ({
+      brandKey: row.brandKey,
+      adProductType: row.adProductType,
+      keywordId: row.keywordId,
+      keywordText: row.keywordText,
+      adgroupId: row.adgroupId,
+      impressions: row.impressions,
+      clicks: row.clicks,
+      cost: row.cost,
+      conversions: row.conversions,
+      salesAmount: row.salesAmount,
+      dataDays: 1,
+      startDate: row.sourceDate,
+      endDate: row.sourceDate,
+    })),
+    coverageRows: ([
+      { brandKey: "coffeeprint", adProductType: "powerlink", startDate: "2026-05-25", endDate: "2026-05-25", actualDays: 1 },
+      { brandKey: "stickersee", adProductType: "shopping_search", startDate: "2026-05-25", endDate: "2026-05-25", actualDays: 1 },
+    ] satisfies SearchAdKeywordCoverageForCleanup[]).filter((coverage) => {
+      const brandMatched = filters.brand === "all" || coverage.brandKey === filters.brand;
+      const adProductMatched = filters.adProduct === "all" || coverage.adProductType === filters.adProduct;
+      return brandMatched && adProductMatched;
+    }),
+  });
 }
 
 export function createSampleActionLogsView(): SearchAdActionLogsView {

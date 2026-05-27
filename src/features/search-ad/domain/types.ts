@@ -198,6 +198,73 @@ export type SearchAdSearchTermsView = {
   ruleResults: SearchAdRuleResult[];
 };
 
+export type SearchAdKeywordCleanupRecommendation = "keep" | "pause_candidate" | "delete_candidate" | "review";
+
+export type SearchAdKeywordCleanupCandidate = {
+  id: string;
+  brandKey: BrandKey;
+  adProductType: AdProductType;
+  keywordId: string;
+  keywordText: string;
+  normalizedKeyword: string;
+  campaignId?: string;
+  campaignName?: string;
+  adgroupId?: string;
+  adgroupName?: string;
+  userLock: boolean | null;
+  status?: string;
+  statusReason?: string;
+  bidAmount?: number | null;
+  collectedAt: string;
+  impressions365: number;
+  clicks365: number;
+  cost365: number;
+  conversions365: number;
+  salesAmount365: number;
+  dataDays: number;
+  reportStartDate?: string;
+  reportEndDate?: string;
+  recommendation: SearchAdKeywordCleanupRecommendation;
+  recommendationLabel: string;
+  reason: string;
+};
+
+export type SearchAdDuplicateKeywordGroup = {
+  id: string;
+  brandKey: BrandKey;
+  adProductType: AdProductType;
+  keywordText: string;
+  normalizedKeyword: string;
+  duplicateCount: number;
+  activeCount: number;
+  totalClicks365: number;
+  totalCost365: number;
+  bestKeywordId?: string;
+  recommendationSummary: string;
+  candidates: SearchAdKeywordCleanupCandidate[];
+};
+
+export type SearchAdKeywordCleanupView = {
+  filters: SearchAdFilters;
+  generatedAt: string;
+  summaryCards: Array<{
+    key: string;
+    label: string;
+    value: string;
+    helper: string;
+  }>;
+  duplicateGroups: SearchAdDuplicateKeywordGroup[];
+  noClickCandidates: SearchAdKeywordCleanupCandidate[];
+  coverageSummaries: Array<{
+    brandKey: BrandKey;
+    adProductType: AdProductType;
+    startDate?: string;
+    endDate?: string;
+    actualDays: number;
+    label: string;
+  }>;
+};
+
 export type SearchAdActionPreview = {
   id: string;
   targetType: "campaign" | "adgroup";
