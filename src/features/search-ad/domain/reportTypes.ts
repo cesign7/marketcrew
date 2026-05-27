@@ -36,6 +36,76 @@ export const REPORT_TYPE_DESCRIPTIONS: Record<SearchAdReportType, string> = {
   CRITERION_CONVERSION: "타게팅별 전환 흐름을 확인합니다.",
 };
 
+export type SearchAdReportTypeGuide = {
+  caution: string;
+  focus: string;
+  includes: string;
+  useFor: string;
+};
+
+export const REPORT_TYPE_GUIDES: Record<SearchAdReportType, SearchAdReportTypeGuide> = {
+  AD: {
+    caution: "검색어 원인은 이 보고서만으로 단정하지 않고 검색어 보고서와 함께 봅니다.",
+    focus: "캠페인, 광고그룹, 소재 단위의 기본 성과를 봅니다.",
+    includes: "노출, 클릭, 비용, 평균 순위, 상태",
+    useFor: "캠페인이나 광고그룹 전체 예산, 입찰, 노출 상태 점검",
+  },
+  AD_DETAIL: {
+    caution: "세부 코드가 많아 원문 ID보다 연결 대상 이름과 함께 해석해야 합니다.",
+    focus: "광고 성과를 세부 구분으로 나눠 원인을 좁혀 봅니다.",
+    includes: "세부 구분, 세부 코드, 매체, 기기, 비용, 클릭",
+    useFor: "특정 소재, 매체, 기기 쪽에서 비용이 새는지 확인",
+  },
+  AD_CONVERSION: {
+    caution: "전환 추적이 누락되면 실제 주문이 있어도 0으로 보일 수 있습니다.",
+    focus: "광고 단위의 전환과 전환매출을 봅니다.",
+    includes: "전환 방식, 전환 유형, 전환수, 전환매출",
+    useFor: "ROAS, CPA, 구매 전환 기준의 유지/축소 판단",
+  },
+  AD_CONVERSION_DETAIL: {
+    caution: "상세 구분이 많아 광고성과 상세 보고서와 함께 봐야 원인이 선명해집니다.",
+    focus: "전환 성과를 더 작은 구분으로 쪼개 봅니다.",
+    includes: "세부 구분, 전환 방식, 전환 유형, 전환수, 전환매출",
+    useFor: "전환은 있으나 어떤 조건에서 발생했는지 확인",
+  },
+  ADEXTENSION: {
+    caution: "확장소재는 보조 노출이므로 단독 성과보다 본 광고 성과와 같이 봅니다.",
+    focus: "전화, 추가 링크 같은 확장소재 성과를 봅니다.",
+    includes: "확장소재, 노출, 클릭, 비용, 평균 순위",
+    useFor: "확장소재 유지, 교체, 문구 점검",
+  },
+  EXPKEYWORD: {
+    caution: "파워링크 검색어 보고서입니다. 쇼핑검색광고 검색어와 섞어 판단하지 않습니다.",
+    focus: "파워링크에서 실제 유입된 검색어를 봅니다.",
+    includes: "검색어, 기기, 클릭, 비용, 전환, 전환매출",
+    useFor: "제외어 후보, 키워드 확장, 클릭은 있는데 주문 없는 검색어 점검",
+  },
+  SHOPPINGKEYWORD_DETAIL: {
+    caution: "상품명, 이미지, 랜딩 적합도와 함께 봐야 합니다.",
+    focus: "쇼핑검색광고에서 실제 유입된 검색어 성과를 봅니다.",
+    includes: "쇼핑 검색어, 상품 광고 ID, 노출, 클릭, 비용",
+    useFor: "상품 노출 검색어 점검, 랜딩/상품명 적합도 확인",
+  },
+  SHOPPINGKEYWORD_CONVERSION_DETAIL: {
+    caution: "전환 금액이 비어 있으면 쇼핑검색 추적 설정을 함께 점검합니다.",
+    focus: "쇼핑검색광고 검색어별 전환과 매출을 봅니다.",
+    includes: "쇼핑 검색어, 전환 방식, 전환 유형, 전환수, 전환매출",
+    useFor: "쇼핑검색광고 ROAS와 전환 검색어 확장 판단",
+  },
+  CRITERION: {
+    caution: "GNF, AG3539 같은 코드는 여성, 연령대, 시간대 같은 타게팅 의미로 번역해 봐야 합니다.",
+    focus: "기기, 성별, 연령, 시간대 같은 타게팅 성과를 봅니다.",
+    includes: "타게팅 ID, 기기, 노출, 클릭, 비용",
+    useFor: "PC/모바일, 성별, 연령대, 시간대별 비용 낭비 점검",
+  },
+  CRITERION_CONVERSION: {
+    caution: "성과 보고서와 전환 보고서를 같이 봐야 클릭 대비 전환 차이가 보입니다.",
+    focus: "타게팅별 전환과 매출을 봅니다.",
+    includes: "타게팅 ID, 전환 방식, 전환 유형, 전환수, 전환매출",
+    useFor: "기기/시간대/연령대별 전환 차이와 입찰 조정 판단",
+  },
+};
+
 export const RULE_CATEGORY_LABELS: Record<RuleCategory, string> = {
   low_efficiency: "저효율",
   high_cpa: "높은 CPA",
@@ -63,6 +133,10 @@ export function getAdProductLabel(value: AdProductType | "all") {
 
 export function getReportTypeLabel(reportType: SearchAdReportType) {
   return REPORT_TYPE_LABELS[reportType] ?? reportType;
+}
+
+export function getReportTypeGuide(reportType: SearchAdReportType) {
+  return REPORT_TYPE_GUIDES[reportType];
 }
 
 export function inferAdProductFromReportType(reportType: SearchAdReportType): AdProductType {

@@ -1,6 +1,7 @@
-import { getAdProductLabel, getBrandLabel, getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
+import { ALL_SEARCH_AD_REPORT_TYPES } from "@/features/search-ad/domain/reportRetention";
+import { getAdProductLabel, getBrandLabel, getReportTypeGuide, getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
 import { getNormalizedRowDisplayTarget } from "@/features/search-ad/domain/targetDisplay";
-import type { SearchAdReportDetailView } from "@/features/search-ad/domain/types";
+import type { SearchAdReportDetailView, SearchAdReportType } from "@/features/search-ad/domain/types";
 import { formatWon } from "@/components/search-ad/SearchAdCards";
 
 export function ReportSummaryPanel({ view }: { view: SearchAdReportDetailView }) {
@@ -19,6 +20,76 @@ export function ReportSummaryPanel({ view }: { view: SearchAdReportDetailView })
         <Metric label="매출" value={formatWon(view.summary.salesAmount)} />
         <Metric label="CPA" value={view.summary.cpa === null ? "계산 불가" : formatWon(view.summary.cpa)} />
         <Metric label="ROAS" value={view.summary.roas === null ? "계산 불가" : `${view.summary.roas.toFixed(1)}%`} />
+      </div>
+    </section>
+  );
+}
+
+export function ReportTypeGuidePanel({ reportType }: { reportType: SearchAdReportType }) {
+  const guide = getReportTypeGuide(reportType);
+
+  return (
+    <section className="content-panel">
+      <div className="section-heading">
+        <h2>이 보고서 읽는 법</h2>
+        <p>{getReportTypeLabel(reportType)}를 운영 판단에 쓰는 기준입니다.</p>
+      </div>
+      <div className="report-guide-detail">
+        <article>
+          <span>주로 보는 것</span>
+          <strong>{guide.focus}</strong>
+        </article>
+        <article>
+          <span>들어있는 항목</span>
+          <strong>{guide.includes}</strong>
+        </article>
+        <article>
+          <span>활용 방법</span>
+          <strong>{guide.useFor}</strong>
+        </article>
+        <article>
+          <span>주의할 점</span>
+          <strong>{guide.caution}</strong>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+export function ReportTypeGuideGrid({ reportTypes = ALL_SEARCH_AD_REPORT_TYPES }: { reportTypes?: SearchAdReportType[] }) {
+  return (
+    <section className="content-panel">
+      <div className="section-heading">
+        <h2>보고서 읽는 법</h2>
+        <p>보고서마다 답하는 질문이 다릅니다. 파워링크와 쇼핑검색광고를 섞어 판단하지 않습니다.</p>
+      </div>
+      <div className="report-guide-grid">
+        {reportTypes.map((reportType) => {
+          const guide = getReportTypeGuide(reportType);
+
+          return (
+            <article className="report-guide-card" key={reportType}>
+              <div>
+                <span>{getReportTypeLabel(reportType)}</span>
+                <strong>{guide.focus}</strong>
+              </div>
+              <dl>
+                <div>
+                  <dt>항목</dt>
+                  <dd>{guide.includes}</dd>
+                </div>
+                <div>
+                  <dt>활용</dt>
+                  <dd>{guide.useFor}</dd>
+                </div>
+                <div>
+                  <dt>주의</dt>
+                  <dd>{guide.caution}</dd>
+                </div>
+              </dl>
+            </article>
+          );
+        })}
       </div>
     </section>
   );

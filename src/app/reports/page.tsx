@@ -1,4 +1,5 @@
 import { MarketingShell } from "@/components/layout/MarketingShell";
+import { ReportTypeGuideGrid } from "@/components/reports/ReportDetailSections";
 import { ReportListTable, SyncStatusStrip } from "@/components/search-ad/SearchAdCards";
 import { loadSearchAdOperationsView, loadSearchAdReportArchiveView, parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
 
@@ -21,6 +22,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
     >
       <div className="page-stack">
         <SyncStatusStrip view={operations} />
+        <ReportTypeGuideGrid />
         <section className="content-panel">
           <div className="section-heading">
             <h2>수집된 보고서</h2>

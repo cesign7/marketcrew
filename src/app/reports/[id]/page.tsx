@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { MarketingShell } from "@/components/layout/MarketingShell";
 import { RuleResultList } from "@/components/search-ad/SearchAdCards";
-import { ColumnDescriptionTable, RawReportPreview, ReportEasyTable, ReportSummaryPanel } from "@/components/reports/ReportDetailSections";
+import { ColumnDescriptionTable, RawReportPreview, ReportEasyTable, ReportSummaryPanel, ReportTypeGuidePanel } from "@/components/reports/ReportDetailSections";
 import { DEFAULT_SEARCH_AD_FILTERS } from "@/features/search-ad/domain/sampleData";
 import { loadSearchAdReportDetailView } from "@/features/search-ad/loadSearchAdViews";
 
@@ -27,6 +27,7 @@ export default async function ReportDetailPage({ params }: ReportDetailPageProps
     >
       <div className="page-stack">
         <ReportSummaryPanel view={view} />
+        <ReportTypeGuidePanel reportType={view.report.reportType} />
         <ReportEasyTable view={view} />
         <section className="content-panel">
           <div className="section-heading">

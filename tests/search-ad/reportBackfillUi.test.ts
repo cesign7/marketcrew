@@ -4,6 +4,8 @@ import {
   buildBackfillRequestBody,
   buildBackgroundBackfillRequestBody,
   createFullBackfillFormState,
+  getBackfillCompletionChecklist,
+  getBackfillProgressView,
   getBackfillResultMessage,
   getBackfillSafetyDescription,
   getBackfillStatusLabel,
@@ -75,6 +77,113 @@ describe("report backfill UI helpers", () => {
         status: "pending",
       }),
     ).toBe("네이버가 다운로드 파일을 제공하지 않아 저장할 원본이 없습니다.");
+  });
+
+  it("백필 진행률은 저장 완료와 파일 없음 누적을 함께 반영한다", () => {
+    const view = getBackfillProgressView(
+      {
+        createdAt: "2026-05-27T04:00:00.000Z",
+        id: "run-1",
+        resultJson: {},
+        status: "running",
+        updatedAt: "2026-05-27T04:09:30.000Z",
+      },
+      {
+        alreadySaved: 50,
+        created: 0,
+        createLimit: 80,
+        downloadable: 20,
+        downloaded: 20,
+        failed: 0,
+        maxDownloads: 100,
+        maxHourlyCreates: 100000,
+        missing: 0,
+        noData: 5,
+        parsed: 20,
+        pending: 0,
+        planned: 100,
+        rateLimitBackoffMs: 600000,
+        rateLimited: 0,
+        requestDelayMs: 3000,
+        ruleResults: 0,
+        skippedDownloads: 0,
+      },
+      Date.parse("2026-05-27T04:10:00.000Z"),
+    );
+
+    expect(view).toMatchObject({
+      completionPercent: 50,
+      doneCount: 75,
+      headline: "저장 진행 중",
+      remainingCount: 75,
+      stale: false,
+      tone: "good",
+      totalCount: 150,
+    });
+  });
+
+  it("백필 진행 카드에서는 10분 이상 갱신이 없을 때만 멈춤 확인으로 올린다", () => {
+    const baseRun = {
+      createdAt: "2026-05-27T04:00:00.000Z",
+      id: "run-1",
+      resultJson: {},
+      status: "running" as const,
+      updatedAt: "2026-05-27T04:00:00.000Z",
+    };
+    const summary = {
+      alreadySaved: 50,
+      created: 0,
+      createLimit: 80,
+      downloadable: 0,
+      downloaded: 0,
+      failed: 0,
+      maxDownloads: 100,
+      maxHourlyCreates: 100000,
+      missing: 50,
+      noData: 0,
+      parsed: 0,
+      pending: 0,
+      planned: 100,
+      rateLimitBackoffMs: 600000,
+      rateLimited: 0,
+      requestDelayMs: 3000,
+      ruleResults: 0,
+      skippedDownloads: 0,
+    };
+
+    expect(getBackfillProgressView(baseRun, summary, Date.parse("2026-05-27T04:09:59.000Z")).stale).toBe(false);
+    expect(getBackfillProgressView(baseRun, summary, Date.parse("2026-05-27T04:10:00.000Z"))).toMatchObject({
+      headline: "멈춤 확인 필요",
+      stale: true,
+      tone: "danger",
+    });
+  });
+
+  it("백필 완료 후 확인 순서는 저장 보고서와 규칙 결과 상태를 나눠 보여준다", () => {
+    const checklist = getBackfillCompletionChecklist({
+      alreadySaved: 100,
+      created: 0,
+      createLimit: 80,
+      downloadable: 0,
+      downloaded: 10,
+      failed: 0,
+      maxDownloads: 100,
+      maxHourlyCreates: 100000,
+      missing: 0,
+      noData: 2,
+      parsed: 10,
+      pending: 0,
+      planned: 0,
+      rateLimitBackoffMs: 600000,
+      rateLimited: 0,
+      requestDelayMs: 3000,
+      ruleResults: 7,
+      skippedDownloads: 0,
+    });
+
+    expect(checklist.map((item) => item.title)).toEqual(["보고서 보관함 확인", "규칙 결과 재계산", "검색어 성과 점검", "남은 보고서 처리"]);
+    expect(checklist[1]).toMatchObject({ label: "완료", status: "done" });
+    expect(checklist[3]).toMatchObject({ label: "완료", status: "done" });
   });
 
   it("안전 기준 안내는 마켓크루 건수 상한 대신 긴 요청 간격을 설명한다", () => {

@@ -46,6 +46,7 @@ export function SearchAdStateTable({ records, targetType, title, description, wr
   }, [records]);
 
   const sortedRows = useMemo(() => sortSearchAdStateRecords(rows, sort), [rows, sort]);
+  const summary = useMemo(() => getSearchAdStateSummary(rows, writeEnabled), [rows, writeEnabled]);
 
   function updateSort(key: SearchAdStateSortKey) {
     setSort((current) => {
@@ -114,6 +115,28 @@ export function SearchAdStateTable({ records, targetType, title, description, wr
         <h2>{title}</h2>
         <p>{description}</p>
       </div>
+      <div className="state-summary-grid" aria-label={`${getStateTableTargetLabel(targetType)} 요약`}>
+        <article>
+          <span>전체</span>
+          <strong>{summary.total.toLocaleString("ko-KR")}개</strong>
+        </article>
+        <article>
+          <span>켜짐</span>
+          <strong>{summary.on.toLocaleString("ko-KR")}개</strong>
+        </article>
+        <article>
+          <span>꺼짐</span>
+          <strong>{summary.off.toLocaleString("ko-KR")}개</strong>
+        </article>
+        <article>
+          <span>매핑 필요</span>
+          <strong>{summary.needsMapping.toLocaleString("ko-KR")}개</strong>
+        </article>
+        <article>
+          <span>실제 변경</span>
+          <strong>{summary.writeLabel}</strong>
+        </article>
+      </div>
       <div className="table-wrap">
         <table>
           <thead>
@@ -135,7 +158,9 @@ export function SearchAdStateTable({ records, targetType, title, description, wr
               const isPending = pendingId === record.providerId;
               return (
                 <tr key={record.id}>
-                  <td className="state-name-cell">{record.name}</td>
+                  <td className="state-name-cell" title={record.name}>
+                    {record.name}
+                  </td>
                   <td>{record.brandKey ? getBrandLabel(record.brandKey) : "매핑 필요"}</td>
                   <td>{record.adProductType ? getAdProductLabel(record.adProductType) : "매핑 필요"}</td>
                   <td>
@@ -177,6 +202,25 @@ export function SearchAdStateTable({ records, targetType, title, description, wr
 
 export function getSearchAdStateSortHeaders() {
   return SORT_HEADERS;
+}
+
+export function getSearchAdStateSummary(records: SearchAdStateRecord[], writeEnabled: boolean) {
+  return records.reduce(
+    (summary, record) => ({
+      total: summary.total + 1,
+      on: summary.on + (record.userLock === true ? 0 : 1),
+      off: summary.off + (record.userLock === true ? 1 : 0),
+      needsMapping: summary.needsMapping + (!record.brandKey || !record.adProductType ? 1 : 0),
+      writeLabel: writeEnabled ? "허용됨" : "차단됨",
+    }),
+    {
+      total: 0,
+      on: 0,
+      off: 0,
+      needsMapping: 0,
+      writeLabel: writeEnabled ? "허용됨" : "차단됨",
+    },
+  );
 }
 
 export function getStateTableTargetLabel(targetType: "campaign" | "adgroup") {

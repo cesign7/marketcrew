@@ -395,6 +395,31 @@ table {
   text-overflow: ellipsis;
 }
 
+.state-summary-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.state-summary-grid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.state-summary-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.state-summary-grid strong {
+  font-size: 18px;
+}
+
 .state-toggle-cell {
   display: grid;
   gap: 5px;
@@ -705,6 +730,101 @@ table {
   margin: 0;
 }
 
+.report-guide-grid,
+.rule-guide-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.report-guide-card,
+.rule-guide-grid article,
+.report-guide-detail article,
+.rule-period-grid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.report-guide-card > div,
+.rule-guide-grid article > div {
+  display: grid;
+  gap: 5px;
+}
+
+.report-guide-card span,
+.rule-guide-grid span,
+.report-guide-detail span,
+.rule-period-grid span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.report-guide-card strong,
+.rule-guide-grid strong,
+.report-guide-detail strong,
+.rule-period-grid strong {
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.report-guide-card dl,
+.rule-guide-grid dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.report-guide-card dl div,
+.rule-guide-grid dl div {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.report-guide-card dt,
+.rule-guide-grid dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.report-guide-card dd,
+.rule-guide-grid dd {
+  margin: 3px 0 0;
+}
+
+.report-guide-detail,
+.rule-period-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.rule-rebuild-panel {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.rule-rebuild-panel div {
+  display: grid;
+  gap: 6px;
+}
+
+.rule-rebuild-panel strong {
+  font-size: 17px;
+}
+
+.rule-rebuild-panel p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
 .backfill-controls {
   display: grid;
   gap: 12px;
@@ -842,6 +962,155 @@ table {
   margin: 0;
 }
 
+.backfill-progress-card {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.backfill-progress-card.is-good {
+  background: #f4faf8;
+  border-color: #b8e0d1;
+}
+
+.backfill-progress-card.is-warning {
+  background: #fff8ed;
+  border-color: #f5d6a4;
+}
+
+.backfill-progress-card.is-danger {
+  background: #fff1f0;
+  border-color: #ffccc7;
+}
+
+.backfill-progress-head {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.backfill-progress-head span {
+  color: var(--muted);
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.backfill-progress-head strong {
+  font-size: 18px;
+}
+
+.backfill-progress-head p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 5px 0 0;
+}
+
+.backfill-progress-track {
+  background: #e5e7eb;
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.backfill-progress-track span {
+  background: var(--brand);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  min-width: 4px;
+}
+
+.backfill-progress-card.is-warning .backfill-progress-track span {
+  background: #c57914;
+}
+
+.backfill-progress-card.is-danger .backfill-progress-track span {
+  background: #cf1322;
+}
+
+.backfill-progress-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.backfill-progress-metrics span {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 9px;
+}
+
+.backfill-next-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.backfill-next-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.backfill-next-heading strong {
+  font-size: 16px;
+}
+
+.backfill-next-heading p {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.backfill-next-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.backfill-next-grid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.backfill-next-grid article.is-done {
+  border-color: rgb(22 121 76 / 35%);
+}
+
+.backfill-next-grid article.is-ready {
+  border-color: rgb(23 107 135 / 35%);
+}
+
+.backfill-next-grid span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.backfill-next-grid strong {
+  font-size: 15px;
+}
+
+.backfill-next-grid p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 0;
+}
+
 .backfill-details {
   margin-top: 14px;
 }
@@ -925,7 +1194,13 @@ table {
   .grid,
   .backfill-controls,
   .backfill-range-card,
+  .backfill-next-grid,
   .detail-grid,
+  .report-guide-detail,
+  .report-guide-grid,
+  .rule-guide-grid,
+  .rule-period-grid,
+  .state-summary-grid,
   .summary-grid,
   .summary-grid.compact,
   .settings-grid,
@@ -935,6 +1210,8 @@ table {
 
   .section-heading,
   .backfill-fast-row,
+  .backfill-progress-head,
+  .rule-rebuild-panel,
   .workspace-header {
     align-items: flex-start;
     flex-direction: column;

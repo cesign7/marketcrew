@@ -61,6 +61,25 @@ type BackfillJobRun = {
   updatedAt: string;
 };
 
+type BackfillProgressView = {
+  completionPercent: number;
+  detail: string;
+  doneCount: number;
+  headline: string;
+  label: string;
+  remainingCount: number;
+  stale: boolean;
+  tone: "danger" | "good" | "neutral" | "warning";
+  totalCount: number;
+};
+
+type BackfillCompletionItem = {
+  detail: string;
+  label: string;
+  status: "done" | "ready" | "waiting";
+  title: string;
+};
+
 type BackfillJobResponse =
   | {
       data: {
@@ -75,7 +94,7 @@ type BackfillJobResponse =
     };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const ACTIVE_WAITING_JOB_MS = 90_000;
+const BACKFILL_STALE_JOB_MS = 10 * 60 * 1000;
 
 export const BACKFILL_REPORT_TYPE_OPTIONS: Array<{ label: string; value: SearchAdReportType }> = ALL_SEARCH_AD_REPORT_TYPES.map((value) => ({
   label: getReportTypeLabel(value),
@@ -297,6 +316,8 @@ export function ReportBackfillPanel() {
           </strong>
           <p>{getBackfillSafetyDescription(quickLimits)}</p>
         </div>
+        {displayResponse?.ok && jobRun ? <BackfillProgressOverview run={jobRun} summary={displayResponse.data.summary} /> : null}
+        {displayResponse?.ok ? <BackfillCompletionChecklist summary={displayResponse.data.summary} /> : null}
         <div className="backfill-actions">
           <button className="button secondary-button" disabled={Boolean(loadingMode) || quickLimits.selectedDates === 0} onClick={() => runBackfill("preview")} type="button">
             {loadingMode === "preview" ? "확인 중" : "남은 보고서 확인"}
@@ -351,6 +372,55 @@ export function ReportBackfillPanel() {
   );
 }
 
+function BackfillCompletionChecklist({ summary }: { summary: SearchAdBackfillSummary }) {
+  const items = getBackfillCompletionChecklist(summary);
+
+  return (
+    <div className="backfill-next-panel" aria-label="백필 완료 후 확인 순서">
+      <div className="backfill-next-heading">
+        <strong>백필 완료 후 확인 순서</strong>
+        <p>보고서가 쌓인 뒤 바로 확인할 운영 화면입니다.</p>
+      </div>
+      <div className="backfill-next-grid">
+        {items.map((item) => (
+          <article className={`is-${item.status}`} key={item.title}>
+            <span>{item.label}</span>
+            <strong>{item.title}</strong>
+            <p>{item.detail}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BackfillProgressOverview({ run, summary }: { run: BackfillJobRun; summary: SearchAdBackfillSummary }) {
+  const progress = getBackfillProgressView(run, summary);
+  return (
+    <div className={`backfill-progress-card is-${progress.tone}`} aria-label="보고서 복구 진행상황">
+      <div className="backfill-progress-head">
+        <div>
+          <span>보고서 복구 진행상황 · {progress.label}</span>
+          <strong>{progress.headline}</strong>
+          <p>{progress.detail}</p>
+        </div>
+        <strong>{progress.completionPercent.toLocaleString("ko-KR", { maximumFractionDigits: 1 })}%</strong>
+      </div>
+      <div className="backfill-progress-track" aria-hidden="true">
+        <span style={{ width: `${progress.completionPercent}%` }} />
+      </div>
+      <div className="backfill-progress-metrics">
+        <span>처리 완료 {progress.doneCount.toLocaleString("ko-KR")}건</span>
+        <span>남은 대상 {progress.remainingCount.toLocaleString("ko-KR")}건</span>
+        <span>생성 요청 {summary.created.toLocaleString("ko-KR")}건</span>
+        <span>저장 완료 {summary.downloaded.toLocaleString("ko-KR")}건</span>
+        <span>파일 없음 {(summary.noData ?? 0).toLocaleString("ko-KR")}건</span>
+        <span>속도 제한 {summary.rateLimited.toLocaleString("ko-KR")}건</span>
+      </div>
+    </div>
+  );
+}
+
 function BackfillSummaryCards({ summary }: { summary: SearchAdBackfillSummary }) {
   const cards = [
     { helper: "이번 실행 대상", label: "남은 보고서", value: summary.planned },
@@ -375,6 +445,175 @@ function BackfillSummaryCards({ summary }: { summary: SearchAdBackfillSummary })
       ))}
     </section>
   );
+}
+
+export function getBackfillCompletionChecklist(summary: SearchAdBackfillSummary): BackfillCompletionItem[] {
+  const hasSavedReports = summary.alreadySaved + summary.downloaded > 0;
+  const hasOpenBackfillWork = summary.planned > 0 || summary.missing > 0 || summary.pending > 0 || summary.downloadable > 0 || summary.created > 0;
+  const ruleStatus = summary.ruleResults > 0 ? "done" : summary.downloaded > 0 ? "ready" : "waiting";
+
+  return [
+    {
+      detail: hasSavedReports ? "보고서 보관함에서 원문, 쉽게 보기, 컬럼 설명을 확인할 수 있습니다." : "저장된 보고서가 생기면 보관함에서 먼저 확인합니다.",
+      label: hasSavedReports ? "확인 가능" : "대기",
+      status: hasSavedReports ? "ready" : "waiting",
+      title: "보고서 보관함 확인",
+    },
+    {
+      detail: ruleStatus === "done" ? `${summary.ruleResults.toLocaleString("ko-KR")}건의 규칙 결과가 만들어졌습니다.` : "저장된 보고서 기준으로 저효율, 우수, 점검 필요 후보를 다시 계산합니다.",
+      label: ruleStatus === "done" ? "완료" : ruleStatus === "ready" ? "재계산 필요" : "대기",
+      status: ruleStatus,
+      title: "규칙 결과 재계산",
+    },
+    {
+      detail: hasSavedReports ? "검색어 성과에서 파워링크와 쇼핑검색광고 검색어를 분리해 확인합니다." : "보고서 저장 뒤 검색어 성과 화면이 채워집니다.",
+      label: hasSavedReports ? "확인 가능" : "대기",
+      status: hasSavedReports ? "ready" : "waiting",
+      title: "검색어 성과 점검",
+    },
+    {
+      detail: hasOpenBackfillWork ? "아직 준비 중이거나 생성 요청한 보고서가 남아 있습니다. 서버 작업이 계속 이어받습니다." : "남은 보고서가 없으면 이후에는 매일 전일 보고서만 수집하면 됩니다.",
+      label: hasOpenBackfillWork ? "진행 중" : "완료",
+      status: hasOpenBackfillWork ? "waiting" : "done",
+      title: "남은 보고서 처리",
+    },
+  ];
+}
+
+export function getBackfillProgressView(run: BackfillJobRun, summary: SearchAdBackfillSummary, now = Date.now()): BackfillProgressView {
+  const totalCount = Math.max(0, summary.alreadySaved + summary.planned);
+  const doneCount = clampCount(summary.alreadySaved + summary.downloaded + (summary.noData ?? 0), totalCount);
+  const remainingCount = Math.max(0, totalCount - doneCount);
+  const completionPercent = totalCount > 0 ? Math.min(100, Math.round((doneCount / totalCount) * 1000) / 10) : 100;
+  const updatedAt = Date.parse(run.updatedAt);
+  const ageMs = Number.isFinite(updatedAt) ? now - updatedAt : Number.POSITIVE_INFINITY;
+  const stale = run.status !== "completed" && run.status !== "failed" && ageMs >= BACKFILL_STALE_JOB_MS;
+  const nextAttemptAt = parseOptionalTimestamp(getBackfillJobMeta(run)?.nextAttemptAt);
+  const nextDelayMs = nextAttemptAt && nextAttemptAt > now ? nextAttemptAt - now : undefined;
+
+  if (run.status === "failed") {
+    return {
+      completionPercent,
+      detail: run.errorMessage ?? "보고서 복구 작업에서 오류가 발생했습니다.",
+      doneCount,
+      headline: "작업이 멈췄습니다",
+      label: "실패",
+      remainingCount,
+      stale: true,
+      tone: "danger",
+      totalCount,
+    };
+  }
+
+  if (run.status === "completed" || remainingCount === 0) {
+    return {
+      completionPercent: 100,
+      detail: "선택 가능한 보고서가 모두 저장되었거나 재요청 제외 처리됐습니다.",
+      doneCount: totalCount,
+      headline: "복구 완료",
+      label: "완료",
+      remainingCount: 0,
+      stale: false,
+      tone: "good",
+      totalCount,
+    };
+  }
+
+  if (stale) {
+    return {
+      completionPercent,
+      detail: `마지막 갱신 후 ${formatDuration(ageMs)} 지났습니다. DB 잠금이 없다면 전체 저장 / 이어받기로 남은 보고서부터 다시 시작할 수 있습니다.`,
+      doneCount,
+      headline: "멈춤 확인 필요",
+      label: "점검 필요",
+      remainingCount,
+      stale: true,
+      tone: "danger",
+      totalCount,
+    };
+  }
+
+  if (summary.rateLimited > 0) {
+    return {
+      completionPercent,
+      detail: "네이버 호출 속도 제한 신호가 있어 자동으로 충분히 대기합니다.",
+      doneCount,
+      headline: "속도 제한 대기 중",
+      label: "자동 대기",
+      remainingCount,
+      stale: false,
+      tone: "warning",
+      totalCount,
+    };
+  }
+
+  if (nextDelayMs !== undefined) {
+    return {
+      completionPercent,
+      detail: `${formatDuration(nextDelayMs)} 뒤 네이버 준비 상태를 다시 확인합니다.`,
+      doneCount,
+      headline: "다음 확인 대기 중",
+      label: "자동 대기",
+      remainingCount,
+      stale: false,
+      tone: "warning",
+      totalCount,
+    };
+  }
+
+  if (summary.downloaded > 0 || summary.downloadable > 0) {
+    return {
+      completionPercent,
+      detail: "네이버 준비가 끝난 보고서를 DB에 저장하고 있습니다.",
+      doneCount,
+      headline: "저장 진행 중",
+      label: "정상 진행",
+      remainingCount,
+      stale: false,
+      tone: "good",
+      totalCount,
+    };
+  }
+
+  if (summary.created > 0 || summary.pending > 0) {
+    return {
+      completionPercent,
+      detail: "생성 요청한 보고서의 네이버 준비 상태를 다시 확인하고 있습니다.",
+      doneCount,
+      headline: "생성 후 확인 중",
+      label: "정상 진행",
+      remainingCount,
+      stale: false,
+      tone: "neutral",
+      totalCount,
+    };
+  }
+
+  if ((summary.noData ?? 0) > 0) {
+    return {
+      completionPercent,
+      detail: "파일 없음으로 확인된 보고서는 저장 기록에 남기고 다음 요청에서 제외합니다.",
+      doneCount,
+      headline: "파일 없음 정리 중",
+      label: "정상 진행",
+      remainingCount,
+      stale: false,
+      tone: "neutral",
+      totalCount,
+    };
+  }
+
+  return {
+    completionPercent,
+    detail: getBackfillJobMeta(run)?.message ?? "남은 보고서를 계속 확인합니다.",
+    doneCount,
+    headline: "진행 상태 확인 중",
+    label: "확인 중",
+    remainingCount,
+    stale: false,
+    tone: "neutral",
+    totalCount,
+  };
 }
 
 function getProviderStatusLabel(status?: string) {
@@ -453,7 +692,7 @@ function isActiveBackfillJob(run: BackfillJobRun) {
     return true;
   }
 
-  return Date.now() - Date.parse(run.updatedAt) < ACTIVE_WAITING_JOB_MS;
+  return Date.now() - Date.parse(run.updatedAt) < BACKFILL_STALE_JOB_MS;
 }
 
 function getBackfillJobMessage(run: BackfillJobRun) {
@@ -512,7 +751,8 @@ function isWaitingBackfillJobPastAttempt(run: BackfillJobRun) {
     return false;
   }
   const nextAttemptAt = getBackfillJobMeta(run)?.nextAttemptAt;
-  return Boolean(nextAttemptAt && Date.parse(nextAttemptAt) <= Date.now());
+  const updatedAt = Date.parse(run.updatedAt);
+  return Boolean(nextAttemptAt && Date.parse(nextAttemptAt) <= Date.now() && Number.isFinite(updatedAt) && Date.now() - updatedAt >= BACKFILL_STALE_JOB_MS);
 }
 
 export function createFullBackfillFormState(todayKst?: string): BackfillFormState {
@@ -553,6 +793,39 @@ function formatSeconds(ms: number) {
 
 function formatMinutes(ms: number) {
   return `${Math.ceil(ms / 60_000).toLocaleString("ko-KR")}분`;
+}
+
+function formatDuration(ms: number) {
+  if (!Number.isFinite(ms) || ms <= 0) {
+    return "0초";
+  }
+  const totalSeconds = Math.ceil(ms / 1000);
+  if (totalSeconds < 60) {
+    return `${totalSeconds.toLocaleString("ko-KR")}초`;
+  }
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes < 60) {
+    return seconds > 0 ? `${minutes.toLocaleString("ko-KR")}분 ${seconds.toLocaleString("ko-KR")}초` : `${minutes.toLocaleString("ko-KR")}분`;
+  }
+  const hours = Math.floor(minutes / 60);
+  const restMinutes = minutes % 60;
+  return restMinutes > 0 ? `${hours.toLocaleString("ko-KR")}시간 ${restMinutes.toLocaleString("ko-KR")}분` : `${hours.toLocaleString("ko-KR")}시간`;
+}
+
+function parseOptionalTimestamp(value?: string) {
+  if (!value) {
+    return undefined;
+  }
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : undefined;
+}
+
+function clampCount(value: number, max: number) {
+  if (max <= 0) {
+    return 0;
+  }
+  return Math.max(0, Math.min(max, value));
 }
 
 function parseDateOnly(value: string) {

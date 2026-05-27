@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getSearchAdStateSummary,
   buildStateTogglePreviewRequest,
   getSearchAdStateSortHeaders,
   getStateTableTargetLabel,
@@ -35,6 +36,25 @@ describe("search ad state table UI helpers", () => {
       "일예산",
       "수집 시간",
     ]);
+  });
+
+  it("상태 요약은 켜짐, 꺼짐, 매핑 필요를 나눠 보여준다", () => {
+    const summary = getSearchAdStateSummary(
+      [
+        stateRecord({ id: "on", userLock: false }),
+        stateRecord({ id: "off", userLock: true }),
+        stateRecord({ id: "unknown", adProductType: undefined, brandKey: undefined, userLock: null }),
+      ],
+      false,
+    );
+
+    expect(summary).toEqual({
+      total: 3,
+      on: 2,
+      off: 1,
+      needsMapping: 1,
+      writeLabel: "차단됨",
+    });
   });
 });
 
