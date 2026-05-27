@@ -240,6 +240,11 @@ export type SearchAdOperationsView = {
   }>;
 };
 
+export type SearchAdRuleResultsView = {
+  filters: SearchAdFilters;
+  results: SearchAdRuleResult[];
+};
+
 export type SearchAdReportArchiveView = {
   filters: SearchAdFilters;
   reports: SearchAdReportJobRecord[];

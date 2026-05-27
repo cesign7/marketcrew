@@ -1,7 +1,7 @@
 import { MarketingShell } from "@/components/layout/MarketingShell";
 import { ReportTypeGuideGrid } from "@/components/reports/ReportDetailSections";
 import { ReportListTable, SyncStatusStrip } from "@/components/search-ad/SearchAdCards";
-import { loadSearchAdOperationsView, loadSearchAdReportArchiveView, parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
+import { loadSearchAdReportArchiveView, parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
 
 type ReportsPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ReportsPage({ searchParams }: ReportsPageProps) {
   const filters = parseSearchAdFilters(await searchParams);
-  const [archive, operations] = await Promise.all([loadSearchAdReportArchiveView(filters), loadSearchAdOperationsView(filters)]);
+  const archive = await loadSearchAdReportArchiveView(filters);
 
   return (
     <MarketingShell
@@ -21,7 +21,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
       title="보고서 보관함"
     >
       <div className="page-stack">
-        <SyncStatusStrip view={operations} />
+        <SyncStatusStrip view={archive} />
         <ReportTypeGuideGrid />
         <section className="content-panel">
           <div className="section-heading">

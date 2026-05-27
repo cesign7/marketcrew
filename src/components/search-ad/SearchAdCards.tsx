@@ -15,7 +15,7 @@ import {
 } from "@/features/search-ad/domain/targetDisplay";
 import type { SearchAdActionLogsView, SearchAdNormalizedRow, SearchAdOperationsView, SearchAdReportJobRecord, SearchAdRuleResult, SearchAdStateRecord } from "@/features/search-ad/domain/types";
 
-export function SyncStatusStrip({ view }: { view: SearchAdOperationsView }) {
+export function SyncStatusStrip({ view }: { view: { syncStatus: SearchAdOperationsView["syncStatus"] } }) {
   return (
     <section className="status-strip" aria-label="수집 상태">
       <div>

@@ -37,6 +37,7 @@ import type {
   SearchAdRuleCriteria,
   SearchAdRuleResultDetailView,
   SearchAdRuleResult,
+  SearchAdRuleResultsView,
   SearchAdSearchTermsView,
   SearchAdStateRecord,
   SearchAdStateView,
@@ -226,6 +227,32 @@ export async function getSearchAdReportArchiveView(filters = DEFAULT_SEARCH_AD_F
   } catch (error) {
     if (canUseSampleFallback()) {
       return createSampleReportArchiveView(filters);
+    }
+
+    throw error;
+  }
+}
+
+export async function getSearchAdRuleResultsView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdRuleResultsView> {
+  if (!hasDatabaseUrl()) {
+    return {
+      filters,
+      results: createSampleOperationsView(filters).recentRuleResults,
+    };
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    return {
+      filters,
+      results: await listSearchAdRuleResultsFromDb(filters, 100),
+    };
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return {
+        filters,
+        results: createSampleOperationsView(filters).recentRuleResults,
+      };
     }
 
     throw error;
@@ -1577,10 +1604,61 @@ async function listSearchAdReportsFromDb(filters: SearchAdFilters, limit: number
     const shopping = filters.adProduct === "shopping_search";
     clauses.push(shopping ? "j.report_type LIKE 'SHOPPING%'" : "j.report_type NOT LIKE 'SHOPPING%'");
   }
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`
+      EXISTS (
+        SELECT 1
+        FROM search_ad_report_files brand_file
+        JOIN search_ad_report_rows brand_row ON brand_row.report_file_id = brand_file.id
+        WHERE brand_file.report_job_id = j.id
+          AND brand_row.brand_key = $${values.length}
+      )
+    `);
+  }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+  const safeLimit = Number.isFinite(limit) ? Math.max(1, limit) : 100;
 
   const result = await query<ReportJobRow>(
     `
+      WITH limited_jobs AS (
+        SELECT
+          j.id,
+          j.provider_report_job_id,
+          j.report_type,
+          j.stat_date,
+          j.status,
+          j.download_url,
+          j.synced_at,
+          j.updated_at
+        FROM search_ad_report_jobs j
+        ${where}
+        ORDER BY j.stat_date DESC, j.updated_at DESC
+        LIMIT ${safeLimit}
+      ),
+      file_summary AS (
+        SELECT
+          f.report_job_id,
+          COALESCE(SUM(f.row_count), 0)::int AS row_count
+        FROM search_ad_report_files f
+        JOIN limited_jobs j ON j.id = f.report_job_id
+        GROUP BY f.report_job_id
+      ),
+      row_summary AS (
+        SELECT
+          f.report_job_id,
+          COALESCE(jsonb_agg(DISTINCT r.brand_key) FILTER (WHERE r.brand_key IS NOT NULL), '[]'::jsonb) AS mapped_brands,
+          COALESCE(SUM(n.impressions), 0) AS impressions,
+          COALESCE(SUM(n.clicks), 0) AS clicks,
+          COALESCE(SUM(n.cost), 0) AS cost,
+          COALESCE(SUM(n.conversions), 0) AS conversions,
+          COALESCE(SUM(n.sales_amount), 0) AS sales_amount
+        FROM search_ad_report_files f
+        JOIN limited_jobs j ON j.id = f.report_job_id
+        LEFT JOIN search_ad_report_rows r ON r.report_file_id = f.id
+        LEFT JOIN search_ad_report_normalized_rows n ON n.report_row_id = r.id
+        GROUP BY f.report_job_id
+      )
       SELECT
         j.id,
         j.provider_report_job_id,
@@ -1590,29 +1668,23 @@ async function listSearchAdReportsFromDb(filters: SearchAdFilters, limit: number
         j.download_url,
         j.synced_at,
         COALESCE(f.row_count, 0)::int AS row_count,
-        COALESCE(jsonb_agg(DISTINCT r.brand_key) FILTER (WHERE r.brand_key IS NOT NULL), '[]'::jsonb) AS mapped_brands,
+        COALESCE(r.mapped_brands, '[]'::jsonb) AS mapped_brands,
         jsonb_build_object(
-          'impressions', COALESCE(SUM(n.impressions), 0),
-          'clicks', COALESCE(SUM(n.clicks), 0),
-          'cost', COALESCE(SUM(n.cost), 0),
-          'conversions', COALESCE(SUM(n.conversions), 0),
-          'salesAmount', COALESCE(SUM(n.sales_amount), 0)
+          'impressions', COALESCE(r.impressions, 0),
+          'clicks', COALESCE(r.clicks, 0),
+          'cost', COALESCE(r.cost, 0),
+          'conversions', COALESCE(r.conversions, 0),
+          'salesAmount', COALESCE(r.sales_amount, 0)
         ) AS summary
-      FROM search_ad_report_jobs j
-      LEFT JOIN search_ad_report_files f ON f.report_job_id = j.id
-      LEFT JOIN search_ad_report_rows r ON r.report_file_id = f.id
-      LEFT JOIN search_ad_report_normalized_rows n ON n.report_row_id = r.id
-      ${where}
-      GROUP BY j.id, f.row_count
+      FROM limited_jobs j
+      LEFT JOIN file_summary f ON f.report_job_id = j.id
+      LEFT JOIN row_summary r ON r.report_job_id = j.id
       ORDER BY j.stat_date DESC, j.updated_at DESC
-      LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
     `,
     values,
   );
 
-  return result.rows
-    .map(mapReportJobRow)
-    .filter((report) => filters.brand === "all" || report.mappedBrands.includes(filters.brand));
+  return result.rows.map(mapReportJobRow);
 }
 
 async function listSearchAdRuleResultsFromDb(filters: SearchAdFilters, limit: number): Promise<SearchAdRuleResult[]> {

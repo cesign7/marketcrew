@@ -5,11 +5,12 @@ import {
   getSearchAdReportArchiveView,
   getSearchAdReportDetailView,
   getSearchAdRuleResultDetailView,
+  getSearchAdRuleResultsView,
   getSearchAdSearchTermsView,
   getSearchAdStateView,
   listSearchAdRuleCriteria,
 } from "@/lib/persistence/searchAdRepository";
-import type { AdProductFilter, BrandFilter, SearchAdActionLogsView, SearchAdFilters, SearchAdReportArchiveView, SearchAdReportDetailView, SearchAdRuleResultDetailView, SearchAdSearchTermsView, SearchAdStateView } from "./domain/types";
+import type { AdProductFilter, BrandFilter, SearchAdActionLogsView, SearchAdFilters, SearchAdReportArchiveView, SearchAdReportDetailView, SearchAdRuleResultDetailView, SearchAdRuleResultsView, SearchAdSearchTermsView, SearchAdStateView } from "./domain/types";
 import type { SearchAdOperationsView, SearchAdRuleCriteria } from "./domain/types";
 
 export function parseSearchAdFilters(searchParams: Record<string, string | string[] | undefined>): SearchAdFilters {
@@ -35,6 +36,15 @@ export async function loadSearchAdReportArchiveView(filters: SearchAdFilters): P
   }
 
   return getSearchAdReportArchiveView(filters);
+}
+
+export async function loadSearchAdRuleResultsView(filters: SearchAdFilters): Promise<SearchAdRuleResultsView> {
+  const remote = await fetchBackendJson<SearchAdRuleResultsView>(`/api/search-ad/rule-results?${toQuery(filters)}`);
+  if (remote) {
+    return remote;
+  }
+
+  return getSearchAdRuleResultsView(filters);
 }
 
 export async function loadSearchAdReportDetailView(id: string): Promise<SearchAdReportDetailView | undefined> {
