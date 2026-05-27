@@ -17,6 +17,7 @@ import type {
   SearchAdSearchTermsView,
   SearchAdStateRecord,
   SearchAdStateView,
+  SearchAdTargetSettingRecord,
 } from "./types";
 
 export const DEFAULT_SEARCH_AD_FILTERS: SearchAdFilters = {
@@ -347,6 +348,33 @@ export const SAMPLE_KEYWORDS: SearchAdStateRecord[] = [
   },
 ];
 
+export const SAMPLE_TARGET_SETTINGS: SearchAdTargetSettingRecord[] = [
+  {
+    id: "target-coffeeprint-packaging-device",
+    providerTargetId: "tgt-coffeeprint-packaging-device",
+    ownerId: "grp-coffeeprint-packaging",
+    ownerName: "봉투/포장 인쇄",
+    brandKey: "coffeeprint",
+    adProductType: "powerlink",
+    targetType: "PC_MOBILE_TARGET",
+    targetTypeLabel: "기기",
+    settingLabel: "PC와 모바일 모두 노출",
+    collectedAt: "2026-05-26T08:10:00+09:00",
+  },
+  {
+    id: "target-stickersee-seasonal-device",
+    providerTargetId: "tgt-stickersee-seasonal-device",
+    ownerId: "grp-stickersee-seasonal",
+    ownerName: "시즈널스티커",
+    brandKey: "stickersee",
+    adProductType: "shopping_search",
+    targetType: "PC_MOBILE_TARGET",
+    targetTypeLabel: "기기",
+    settingLabel: "모바일만 노출",
+    collectedAt: "2026-05-26T08:10:00+09:00",
+  },
+];
+
 export const SAMPLE_ACTION_PREVIEWS: SearchAdActionPreview[] = [
   {
     id: "preview-adgroup-stickersee-thanks-turn-off",
@@ -476,6 +504,7 @@ export function createSampleStateView(filters = DEFAULT_SEARCH_AD_FILTERS): Sear
     campaigns: filterStateRecords(SAMPLE_CAMPAIGNS, filters),
     adgroups: filterStateRecords(SAMPLE_ADGROUPS, filters),
     keywords: filterStateRecords(SAMPLE_KEYWORDS, filters),
+    targetSettings: filterTargetSettings(SAMPLE_TARGET_SETTINGS, filters),
   };
 }
 
@@ -548,6 +577,14 @@ function filterRuleResults(results: SearchAdRuleResult[], filters: SearchAdFilte
 }
 
 function filterStateRecords(records: SearchAdStateRecord[], filters: SearchAdFilters) {
+  return records.filter((record) => {
+    const brandMatched = filters.brand === "all" || record.brandKey === filters.brand;
+    const adProductMatched = filters.adProduct === "all" || record.adProductType === filters.adProduct;
+    return brandMatched && adProductMatched;
+  });
+}
+
+function filterTargetSettings(records: SearchAdTargetSettingRecord[], filters: SearchAdFilters) {
   return records.filter((record) => {
     const brandMatched = filters.brand === "all" || record.brandKey === filters.brand;
     const adProductMatched = filters.adProduct === "all" || record.adProductType === filters.adProduct;

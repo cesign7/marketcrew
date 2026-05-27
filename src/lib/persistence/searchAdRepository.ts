@@ -16,6 +16,7 @@ import {
 } from "@/features/search-ad/domain/sampleData";
 import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
 import { getRuleResultActionTarget, isSearchTermReport } from "@/features/search-ad/domain/targetDisplay";
+import { describeTargetSetting } from "@/features/search-ad/domain/targetSettings";
 import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport";
 import { buildSearchAdPeriodRuleResults } from "@/features/search-ad/domain/ruleEngine";
 import { sortSearchAdRuleCriteria } from "@/features/search-ad/domain/ruleCriteriaSettings";
@@ -45,6 +46,7 @@ import type {
   SearchAdStateRecord,
   SearchAdStateView,
   SearchAdTargetType,
+  SearchAdTargetSettingRecord,
 } from "@/features/search-ad/domain/types";
 
 type ReportJobRow = {
@@ -96,6 +98,18 @@ type StateSnapshotInput = {
   dailyBudget?: number | null;
   pcFinalUrl?: string | null;
   mobileFinalUrl?: string | null;
+  rawPayload: Record<string, unknown>;
+};
+
+type TargetSnapshotInput = {
+  providerTargetId: string;
+  ownerId: string;
+  ownerType: "adgroup" | "ad";
+  ownerName?: string;
+  brandKey?: BrandKey;
+  adProductType?: AdProductType;
+  targetType: string;
+  targetPayload?: Record<string, unknown>;
   rawPayload: Record<string, unknown>;
 };
 
@@ -472,6 +486,7 @@ export async function getSearchAdStateView(filters = DEFAULT_SEARCH_AD_FILTERS):
       campaigns: await listLatestStateSnapshots("campaign", filters),
       adgroups: await listLatestStateSnapshots("adgroup", filters),
       keywords: await listLatestStateSnapshots("keyword", filters),
+      targetSettings: await listLatestTargetSettings(filters),
     };
   } catch (error) {
     if (canUseSampleFallback()) {
@@ -522,13 +537,12 @@ export async function getSearchAdActionLogsView(): Promise<SearchAdActionLogsVie
   }
 }
 
-export async function saveSearchAdStateSnapshots(input: StateSnapshotInput[]) {
+export async function saveSearchAdStateSnapshots(input: StateSnapshotInput[], collectedAt = new Date().toISOString()) {
   if (!hasDatabaseUrl()) {
     throw new Error("SEARCH_AD_DATABASE_MISSING");
   }
 
   await ensureSearchAdSchema();
-  const collectedAt = new Date().toISOString();
   for (const item of input) {
     if (item.targetType === "campaign") {
       await query(
@@ -636,6 +650,44 @@ export async function saveSearchAdStateSnapshots(input: StateSnapshotInput[]) {
         item.status ?? null,
         item.statusReason ?? null,
         item.bidAmount ?? null,
+        JSON.stringify(item.rawPayload),
+        collectedAt,
+      ],
+    );
+  }
+
+  return { collectedAt, saved: input.length };
+}
+
+export async function saveSearchAdTargetSnapshots(input: TargetSnapshotInput[], collectedAt = new Date().toISOString()) {
+  if (!hasDatabaseUrl()) {
+    throw new Error("SEARCH_AD_DATABASE_MISSING");
+  }
+
+  await ensureSearchAdSchema();
+  for (const item of input) {
+    const described = describeTargetSetting(item.targetType, item.targetPayload);
+    await query(
+      `
+        INSERT INTO search_ad_target_snapshots (
+          id, provider_target_id, owner_id, owner_type, owner_name, brand_key, ad_product_type,
+          target_type, target_type_label, setting_label, target_payload, raw_payload, collected_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ON CONFLICT (id) DO NOTHING
+      `,
+      [
+        snapshotId("target", item.providerTargetId, collectedAt),
+        item.providerTargetId,
+        item.ownerId,
+        item.ownerType,
+        item.ownerName ?? null,
+        item.brandKey ?? null,
+        item.adProductType ?? null,
+        item.targetType,
+        described.targetTypeLabel,
+        described.settingLabel,
+        JSON.stringify(item.targetPayload ?? {}),
         JSON.stringify(item.rawPayload),
         collectedAt,
       ],
@@ -1562,6 +1614,23 @@ async function ensureSearchAdSchemaUncached() {
       UNIQUE (provider_ad_id, collected_at)
     );
 
+    CREATE TABLE IF NOT EXISTS search_ad_target_snapshots (
+      id TEXT PRIMARY KEY,
+      provider_target_id TEXT NOT NULL,
+      owner_id TEXT NOT NULL,
+      owner_type TEXT NOT NULL CHECK (owner_type IN ('adgroup', 'ad')),
+      owner_name TEXT,
+      brand_key TEXT CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      target_type TEXT NOT NULL,
+      target_type_label TEXT NOT NULL,
+      setting_label TEXT NOT NULL,
+      target_payload JSONB NOT NULL,
+      raw_payload JSONB NOT NULL,
+      collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (provider_target_id, collected_at)
+    );
+
     CREATE TABLE IF NOT EXISTS search_ad_rule_criteria (
       id TEXT PRIMARY KEY,
       brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),
@@ -1639,6 +1708,9 @@ async function ensureSearchAdSchemaUncached() {
 
     CREATE INDEX IF NOT EXISTS search_ad_ad_latest_idx
       ON search_ad_ad_snapshots (provider_ad_id, collected_at DESC);
+
+    CREATE INDEX IF NOT EXISTS search_ad_target_latest_idx
+      ON search_ad_target_snapshots (provider_target_id, collected_at DESC);
   `);
 
   await query(`
@@ -1917,6 +1989,56 @@ async function listLatestStateSnapshots(targetType: SearchAdTargetType, filters:
     status: row.status ?? undefined,
     statusReason: row.status_reason ?? undefined,
     bidAmount: row.bid_amount === null ? null : Number(row.bid_amount),
+    collectedAt: toIso(row.collected_at),
+  }));
+}
+
+async function listLatestTargetSettings(filters: SearchAdFilters): Promise<SearchAdTargetSettingRecord[]> {
+  const clauses: string[] = [];
+  const values: unknown[] = [];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`ad_product_type = $${values.length}`);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+  const result = await query<{
+    id: string;
+    provider_target_id: string;
+    owner_id: string;
+    owner_name: string | null;
+    brand_key: BrandKey | null;
+    ad_product_type: AdProductType | null;
+    target_type: string;
+    target_type_label: string;
+    setting_label: string;
+    collected_at: string | Date;
+  }>(
+    `
+      SELECT DISTINCT ON (provider_target_id)
+        id, provider_target_id, owner_id, owner_name, brand_key, ad_product_type,
+        target_type, target_type_label, setting_label, collected_at
+      FROM search_ad_target_snapshots
+      ${where}
+      ORDER BY provider_target_id, collected_at DESC
+      LIMIT 500
+    `,
+    values,
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    providerTargetId: row.provider_target_id,
+    ownerId: row.owner_id,
+    ownerName: row.owner_name ?? undefined,
+    brandKey: row.brand_key ?? undefined,
+    adProductType: row.ad_product_type ?? undefined,
+    targetType: row.target_type,
+    targetTypeLabel: row.target_type_label,
+    settingLabel: row.setting_label,
     collectedAt: toIso(row.collected_at),
   }));
 }
@@ -2508,7 +2630,8 @@ async function getSyncStatusFromDb() {
         COALESCE((SELECT MAX(collected_at) FROM search_ad_campaign_snapshots), 'epoch'::timestamptz),
         COALESCE((SELECT MAX(collected_at) FROM search_ad_adgroup_snapshots), 'epoch'::timestamptz),
         COALESCE((SELECT MAX(collected_at) FROM search_ad_keyword_snapshots), 'epoch'::timestamptz),
-        COALESCE((SELECT MAX(collected_at) FROM search_ad_ad_snapshots), 'epoch'::timestamptz)
+        COALESCE((SELECT MAX(collected_at) FROM search_ad_ad_snapshots), 'epoch'::timestamptz),
+        COALESCE((SELECT MAX(collected_at) FROM search_ad_target_snapshots), 'epoch'::timestamptz)
       ) AS last_state_sync_at
   `);
   const lastStateSyncAt = result.rows[0]?.last_state_sync_at;
@@ -2724,7 +2847,7 @@ function isSearchAdWriteEnabled() {
   return process.env.SEARCH_AD_WRITE_ENABLED === "1" || process.env.NAVER_SEARCH_AD_WRITE_ENABLED === "1";
 }
 
-function snapshotId(targetType: SearchAdTargetType | "ad", providerId: string, collectedAt: string) {
+function snapshotId(targetType: SearchAdTargetType | "ad" | "target", providerId: string, collectedAt: string) {
   return `${targetType}-${providerId}-${collectedAt}`.replace(/[^a-zA-Z0-9_-]/g, "-");
 }
 

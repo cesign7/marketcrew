@@ -8,7 +8,10 @@ const mocks = vi.hoisted(() => ({
   listSearchAdAdgroups: vi.fn(),
   listSearchAdKeywords: vi.fn(),
   listSearchAdAds: vi.fn(),
+  listSearchAdTargets: vi.fn(),
+  listSearchAdTargetsByOwnerIds: vi.fn(),
   saveSearchAdStateSnapshots: vi.fn(),
+  saveSearchAdTargetSnapshots: vi.fn(),
 }));
 
 vi.mock("@/lib/integrations/search-ad/client", () => ({
@@ -20,6 +23,8 @@ vi.mock("@/lib/integrations/search-ad/management", () => ({
   listSearchAdAdgroups: mocks.listSearchAdAdgroups,
   listSearchAdKeywords: mocks.listSearchAdKeywords,
   listSearchAdAds: mocks.listSearchAdAds,
+  listSearchAdTargets: mocks.listSearchAdTargets,
+  listSearchAdTargetsByOwnerIds: mocks.listSearchAdTargetsByOwnerIds,
 }));
 
 vi.mock("@/lib/persistence/postgres", () => ({
@@ -28,6 +33,7 @@ vi.mock("@/lib/persistence/postgres", () => ({
 
 vi.mock("@/lib/persistence/searchAdRepository", () => ({
   saveSearchAdStateSnapshots: mocks.saveSearchAdStateSnapshots,
+  saveSearchAdTargetSnapshots: mocks.saveSearchAdTargetSnapshots,
 }));
 
 describe("syncSearchAdState", () => {
@@ -69,7 +75,24 @@ describe("syncSearchAdState", () => {
         },
       ];
     });
+    mocks.listSearchAdTargetsByOwnerIds.mockImplementation(async (adgroupIds: string[]) =>
+      adgroupIds.map((adgroupId) => ({
+        nccTargetId: `tgt-${adgroupId}`,
+        ownerId: adgroupId,
+        targetTp: "PC_MOBILE_TARGET",
+        target: { pc: true, mobile: adgroupId === "grp-2" },
+      })),
+    );
+    mocks.listSearchAdTargets.mockImplementation(async (adgroupId: string) => [
+      {
+        nccTargetId: `tgt-${adgroupId}`,
+        ownerId: adgroupId,
+        targetTp: "PC_MOBILE_TARGET",
+        target: { pc: true, mobile: adgroupId === "grp-2" },
+      },
+    ]);
     mocks.saveSearchAdStateSnapshots.mockResolvedValue({ collectedAt: "2026-05-26T04:10:00.000Z", saved: 7 });
+    mocks.saveSearchAdTargetSnapshots.mockResolvedValue({ collectedAt: "2026-05-26T04:10:00.000Z", saved: 2 });
 
     const result = await syncSearchAdState();
 
@@ -79,6 +102,7 @@ describe("syncSearchAdState", () => {
     expect(mocks.listSearchAdKeywords).not.toHaveBeenCalledWith();
     expect(mocks.listSearchAdAds).toHaveBeenCalledWith("grp-1");
     expect(mocks.listSearchAdAds).toHaveBeenCalledWith("grp-2");
+    expect(mocks.listSearchAdTargetsByOwnerIds).toHaveBeenCalledWith(["grp-1", "grp-2"]);
     expect(mocks.saveSearchAdStateSnapshots).toHaveBeenCalledWith(
       expect.arrayContaining([
         expect.objectContaining({ targetType: "keyword", providerId: "kw-grp-1", parentProviderId: "grp-1" }),
@@ -100,6 +124,26 @@ describe("syncSearchAdState", () => {
           mobileFinalUrl: "https://m.smartstore.example/products/1",
         }),
       ]),
+      expect.any(String),
+    );
+    expect(mocks.saveSearchAdTargetSnapshots).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          providerTargetId: "tgt-grp-1",
+          ownerId: "grp-1",
+          ownerName: "스티커씨_감사스티커",
+          targetType: "PC_MOBILE_TARGET",
+          targetPayload: { pc: true, mobile: false },
+        }),
+        expect.objectContaining({
+          providerTargetId: "tgt-grp-2",
+          ownerId: "grp-2",
+          ownerName: "스티커씨_생일스티커",
+          targetType: "PC_MOBILE_TARGET",
+          targetPayload: { pc: true, mobile: true },
+        }),
+      ]),
+      expect.any(String),
     );
   });
 });

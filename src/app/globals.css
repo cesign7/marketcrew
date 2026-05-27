@@ -405,6 +405,12 @@ table {
   text-overflow: ellipsis;
 }
 
+.target-setting-cell {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .state-summary-grid {
   display: grid;
   gap: 10px;

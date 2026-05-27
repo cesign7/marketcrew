@@ -170,12 +170,26 @@ export type SearchAdStateRecord = {
   collectedAt: string;
 };
 
+export type SearchAdTargetSettingRecord = {
+  id: string;
+  providerTargetId: string;
+  ownerId: string;
+  ownerName?: string;
+  brandKey?: BrandKey;
+  adProductType?: AdProductType;
+  targetType: string;
+  targetTypeLabel: string;
+  settingLabel: string;
+  collectedAt: string;
+};
+
 export type SearchAdStateView = {
   filters: SearchAdFilters;
   syncStatus: SearchAdOperationsView["syncStatus"];
   campaigns: SearchAdStateRecord[];
   adgroups: SearchAdStateRecord[];
   keywords: SearchAdStateRecord[];
+  targetSettings: SearchAdTargetSettingRecord[];
 };
 
 export type SearchAdSearchTermsView = {

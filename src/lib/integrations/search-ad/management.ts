@@ -43,6 +43,17 @@ export type NaverAd = {
   [key: string]: unknown;
 };
 
+export type NaverTarget = {
+  nccTargetId: string;
+  ownerId: string;
+  targetTp: string;
+  target?: Record<string, unknown>;
+  delFlag?: boolean;
+  regTm?: string;
+  editTm?: string;
+  [key: string]: unknown;
+};
+
 export function listSearchAdCampaigns() {
   return searchAdFetch<NaverCampaign[]>("/ncc/campaigns");
 }
@@ -101,4 +112,22 @@ export function listSearchAdKeywords(adgroupId?: string) {
 export function listSearchAdAds(adgroupId?: string) {
   const query = adgroupId ? `?nccAdgroupId=${encodeURIComponent(adgroupId)}` : "";
   return searchAdFetch<NaverAd[]>(`/ncc/ads${query}`);
+}
+
+export function listSearchAdTargets(ownerId: string, types: string[] = []) {
+  const params = new URLSearchParams();
+  params.set("ownerId", ownerId);
+  for (const type of types) {
+    params.append("types", type);
+  }
+
+  return searchAdFetch<NaverTarget[]>(`/ncc/targets?${params.toString()}`);
+}
+
+export function listSearchAdTargetsByOwnerIds(ownerIds: string[]) {
+  const uniqueOwnerIds = [...new Set(ownerIds.filter(Boolean))];
+  const params = new URLSearchParams();
+  params.set("ownerIds", uniqueOwnerIds.join(","));
+
+  return searchAdFetch<NaverTarget[]>(`/ncc/targets?${params.toString()}`);
 }

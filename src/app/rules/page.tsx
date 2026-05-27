@@ -2,6 +2,7 @@ import { MarketingShell } from "@/components/layout/MarketingShell";
 import { RuleCriteriaEditor } from "@/components/search-ad/RuleCriteriaEditor";
 import { RuleRebuildPanel } from "@/components/search-ad/RuleRebuildPanel";
 import { RULE_CATEGORY_GUIDES, RULE_EXECUTION_GUIDE_ITEMS, RULE_PERIOD_GUIDE_ITEMS } from "@/features/search-ad/domain/ruleCriteriaGuides";
+import { API_AND_REPORT_CHECK_GUIDE_ITEMS, BRAND_OPERATION_GUIDE_ITEMS } from "@/features/search-ad/domain/targetSettings";
 import { DEFAULT_SEARCH_AD_FILTERS } from "@/features/search-ad/domain/sampleData";
 import { loadSearchAdRuleCriteria } from "@/features/search-ad/loadSearchAdViews";
 
@@ -69,6 +70,36 @@ export default async function RulesPage() {
           <div className="rule-period-grid">
             {RULE_EXECUTION_GUIDE_ITEMS.map((item) => (
               <article key={item.title}>
+                <span>{item.title}</span>
+                <strong>{item.value}</strong>
+                <p>{item.description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="content-panel">
+          <div className="section-heading">
+            <h2>API와 보고서 비교</h2>
+            <p>운영시간, 기기, 타게팅 질문은 네이버 설정값과 실제 보고서 성과를 함께 확인합니다.</p>
+          </div>
+          <div className="rule-period-grid">
+            {API_AND_REPORT_CHECK_GUIDE_ITEMS.map((item) => (
+              <article key={item.title}>
+                <span>{item.title}</span>
+                <strong>{item.value}</strong>
+                <p>{item.description}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div className="content-panel">
+          <div className="section-heading">
+            <h2>운영시간 기준</h2>
+            <p>확정된 운영 기준은 API 타게팅 설정과 보고서 성과를 비교할 때 사용합니다.</p>
+          </div>
+          <div className="rule-period-grid">
+            {BRAND_OPERATION_GUIDE_ITEMS.map((item) => (
+              <article key={item.brandKey}>
                 <span>{item.title}</span>
                 <strong>{item.value}</strong>
                 <p>{item.description}</p>

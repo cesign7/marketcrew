@@ -81,4 +81,38 @@ describe("search ad management API", () => {
     });
     expect(updated.userLock).toBe(true);
   });
+
+  it("광고그룹 타게팅 설정은 ownerId와 types 조건으로 조회한다", async () => {
+    const { listSearchAdTargets } = await import("@/lib/integrations/search-ad/management");
+    mocks.searchAdFetch.mockResolvedValueOnce([
+      {
+        nccTargetId: "tgt-a001",
+        ownerId: "grp-a001",
+        targetTp: "TIME_WEEKLY_TARGET",
+        target: { monday: [{ startHour: 9, endHour: 18 }] },
+      },
+    ]);
+
+    const targets = await listSearchAdTargets("grp-a001", ["TIME_WEEKLY_TARGET", "PC_MOBILE_TARGET"]);
+
+    expect(mocks.searchAdFetch).toHaveBeenCalledWith("/ncc/targets?ownerId=grp-a001&types=TIME_WEEKLY_TARGET&types=PC_MOBILE_TARGET");
+    expect(targets[0]?.targetTp).toBe("TIME_WEEKLY_TARGET");
+  });
+
+  it("여러 광고그룹 타게팅 설정은 ownerIds 조건으로 한 번에 조회한다", async () => {
+    const { listSearchAdTargetsByOwnerIds } = await import("@/lib/integrations/search-ad/management");
+    mocks.searchAdFetch.mockResolvedValueOnce([
+      {
+        nccTargetId: "tgt-a001",
+        ownerId: "grp-a001",
+        targetTp: "PC_MOBILE_TARGET",
+        target: { pc: true, mobile: true },
+      },
+    ]);
+
+    const targets = await listSearchAdTargetsByOwnerIds(["grp-a001", "grp-a002", "grp-a001"]);
+
+    expect(mocks.searchAdFetch).toHaveBeenCalledWith("/ncc/targets?ownerIds=grp-a001%2Cgrp-a002");
+    expect(targets[0]?.ownerId).toBe("grp-a001");
+  });
 });

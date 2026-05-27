@@ -1,5 +1,6 @@
 import { MarketingShell } from "@/components/layout/MarketingShell";
 import { AdgroupStateTable } from "@/components/search-ad/AdgroupStateTable";
+import { TargetSettingsPanel } from "@/components/search-ad/TargetSettingsPanel";
 import { loadSearchAdStateView, parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
 
 type AdgroupsPageProps = {
@@ -21,6 +22,7 @@ export default async function AdgroupsPage({ searchParams }: AdgroupsPageProps) 
           title="광고그룹 상태"
           writeEnabled={view.syncStatus.searchAdWriteEnabled}
         />
+        <TargetSettingsPanel adgroups={view.adgroups} targetSettings={view.targetSettings} />
       </section>
     </MarketingShell>
   );

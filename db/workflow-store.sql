@@ -133,6 +133,41 @@ CREATE TABLE IF NOT EXISTS search_ad_keyword_snapshots (
   UNIQUE (provider_keyword_id, collected_at)
 );
 
+CREATE TABLE IF NOT EXISTS search_ad_ad_snapshots (
+  id TEXT PRIMARY KEY,
+  provider_ad_id TEXT NOT NULL,
+  provider_adgroup_id TEXT,
+  brand_key TEXT CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+  ad_product_type TEXT CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+  name TEXT NOT NULL,
+  ad_type TEXT,
+  user_lock BOOLEAN,
+  status TEXT,
+  status_reason TEXT,
+  pc_final_url TEXT,
+  mobile_final_url TEXT,
+  raw_payload JSONB NOT NULL,
+  collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (provider_ad_id, collected_at)
+);
+
+CREATE TABLE IF NOT EXISTS search_ad_target_snapshots (
+  id TEXT PRIMARY KEY,
+  provider_target_id TEXT NOT NULL,
+  owner_id TEXT NOT NULL,
+  owner_type TEXT NOT NULL CHECK (owner_type IN ('adgroup', 'ad')),
+  owner_name TEXT,
+  brand_key TEXT CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+  ad_product_type TEXT CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+  target_type TEXT NOT NULL,
+  target_type_label TEXT NOT NULL,
+  setting_label TEXT NOT NULL,
+  target_payload JSONB NOT NULL,
+  raw_payload JSONB NOT NULL,
+  collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (provider_target_id, collected_at)
+);
+
 CREATE TABLE IF NOT EXISTS search_ad_rule_criteria (
   id TEXT PRIMARY KEY,
   brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),
@@ -201,3 +236,9 @@ CREATE INDEX IF NOT EXISTS search_ad_campaign_latest_idx
 
 CREATE INDEX IF NOT EXISTS search_ad_adgroup_latest_idx
   ON search_ad_adgroup_snapshots (provider_adgroup_id, collected_at DESC);
+
+CREATE INDEX IF NOT EXISTS search_ad_ad_latest_idx
+  ON search_ad_ad_snapshots (provider_ad_id, collected_at DESC);
+
+CREATE INDEX IF NOT EXISTS search_ad_target_latest_idx
+  ON search_ad_target_snapshots (provider_target_id, collected_at DESC);
