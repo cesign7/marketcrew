@@ -48,4 +48,22 @@ describe("rule result presentation", () => {
       { label: "전환 기준", value: "전환 기준 확인 필요" },
     ]);
   });
+
+  it("전환 점검 후보는 추적 설정 확인을 먼저 안내한다", () => {
+    const result = {
+      ...SAMPLE_RULE_RESULTS[0],
+      category: "needs_review" as const,
+      evidencePacket: {
+        actionIntent: "conversion_check",
+        actionIntentLabel: "전환 점검 후보",
+        actionIntentDescription: "전환 코드와 매출 전달을 확인합니다.",
+      },
+    };
+
+    expect(getRuleResultActionCandidate(result)).toEqual({
+      label: "전환 점검 후보",
+      description: "전환 코드와 매출 전달을 확인합니다.",
+    });
+    expect(getRuleResultRecommendedAction(result)).toContain("전환 코드");
+  });
 });

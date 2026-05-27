@@ -108,7 +108,7 @@ export function getRuleResultRecommendedAction(result: SearchAdRuleResult) {
     return "제외어 등록 후보인지 확인하고, 유지해야 할 검색어면 입찰만 낮춥니다.";
   }
   if (actionIntent === "landing_check") {
-    return "상품명, 대표 이미지, 랜딩 상품이 검색 의도와 맞는지 확인합니다.";
+    return "광고 문구, 상품명, 대표 이미지, 랜딩 상품이 검색 의도와 맞는지 확인합니다.";
   }
   if (actionIntent === "keyword_expand") {
     return "등록 키워드와 유사 키워드로 확장하되 예산은 소액부터 시작합니다.";
@@ -118,6 +118,9 @@ export function getRuleResultRecommendedAction(result: SearchAdRuleResult) {
   }
   if (actionIntent === "data_check") {
     return "전환매출, 주문 금액 전달, 보고서 수집 상태를 먼저 점검합니다.";
+  }
+  if (actionIntent === "conversion_check") {
+    return "전환 코드, 전환 유형, 전환매출 전달이 정상인지 먼저 확인합니다.";
   }
 
   switch (result.category) {
@@ -194,7 +197,7 @@ function fallbackActionCandidateLabel(result: SearchAdRuleResult) {
     case "good_performance":
       return result.adProductType === "shopping_search" ? "상품 확장 후보" : "키워드 추가 후보";
     case "needs_review":
-      return "데이터 점검 후보";
+      return "전환 점검 후보";
     default:
       return "운영 점검 후보";
   }

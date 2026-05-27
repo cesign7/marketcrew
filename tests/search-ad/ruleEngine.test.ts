@@ -44,7 +44,7 @@ describe("buildSearchAdRuleResults", () => {
 
     expect(results).toHaveLength(1);
     expect(results[0]?.category).toBe("needs_review");
-    expect(results[0]?.evidencePacket.actionIntentLabel).toBe("데이터 점검 후보");
+    expect(results[0]?.evidencePacket.actionIntentLabel).toBe("전환 점검 후보");
     expect(results[0]?.reason).toContain("전환매출");
   });
 
@@ -55,6 +55,19 @@ describe("buildSearchAdRuleResults", () => {
     expect(results[0]?.category).toBe("needs_review");
     expect(results[0]?.reason).toContain("커피프린트 전환 기준");
     expect(results[0]?.evidencePacket.measurementStatusLabel).toBe("전환 기준 확인 필요");
+    expect(results[0]?.evidencePacket.actionIntent).toBe("conversion_check");
+  });
+
+  it("쇼핑검색 저효율 검색어는 소재와 랜딩 점검 후보로 분류한다", () => {
+    const results = buildSearchAdRuleResults(
+      [row({ id: "row-shopping-low", brandKey: "stickersee", adProductType: "shopping_search", reportType: "SHOPPINGKEYWORD_DETAIL", clicks: 30, cost: 30000 })],
+      [{ ...criteria[0], brandKey: "stickersee", adProductType: "shopping_search" }],
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.category).toBe("low_efficiency");
+    expect(results[0]?.evidencePacket.actionIntent).toBe("landing_check");
+    expect(results[0]?.evidencePacket.actionIntentLabel).toBe("소재·랜딩 점검 후보");
   });
 
   it("최소 표본에 못 미치면 판단하지 않는다", () => {

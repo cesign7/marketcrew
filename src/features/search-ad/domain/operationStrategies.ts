@@ -69,6 +69,14 @@ export const DEFAULT_SEARCH_AD_OPERATION_STRATEGIES: SearchAdOperationStrategy[]
 
 export const APPROVAL_DELEGATION_POLICIES: ApprovalDelegationPolicy[] = [
   {
+    actionIntent: "conversion_check",
+    title: "전환 점검",
+    firstRunOwner: "representative",
+    repeatRunOwner: "representative",
+    requiresPreview: false,
+    guardrail: "전환 추적과 매출 전달이 확인되기 전에는 자동 중지나 예산 축소로 이어가지 않습니다.",
+  },
+  {
     actionIntent: "negative_keyword",
     title: "제외어 후보",
     firstRunOwner: "representative",

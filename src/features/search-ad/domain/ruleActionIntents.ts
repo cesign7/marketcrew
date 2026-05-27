@@ -13,6 +13,11 @@ export const RULE_ACTION_INTENTS: RuleActionIntentOption[] = [
     description: "전환매출, 연결 대상, 수집 상태를 먼저 확인합니다.",
   },
   {
+    key: "conversion_check",
+    label: "전환 점검",
+    description: "전환 코드, 전환 유형, 매출 전달이 정상인지 먼저 확인합니다.",
+  },
+  {
     key: "negative_keyword",
     label: "제외어 후보",
     description: "방어 검색어가 아니면 제외어 또는 입찰 하향을 검토합니다.",
@@ -79,7 +84,7 @@ export function getRuleResultActionIntentKey(result: SearchAdRuleResult): Search
   }
 
   if (result.category === "needs_review") {
-    return "data_check";
+    return stringEvidenceContains(result, "전환") || stringEvidenceContains(result, "전환매출") ? "conversion_check" : "data_check";
   }
 
   if (result.targetType === "criterion") {
@@ -103,4 +108,8 @@ export function getRuleResultActionIntentKey(result: SearchAdRuleResult): Search
   }
 
   return "operation_check";
+}
+
+function stringEvidenceContains(result: SearchAdRuleResult, needle: string) {
+  return Object.values(result.evidencePacket).some((value) => typeof value === "string" && value.includes(needle)) || result.reason.includes(needle);
 }

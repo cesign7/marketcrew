@@ -393,6 +393,14 @@ function withRuleEvidenceContext(
 
 function getRuleActionIntent(row: SearchAdNormalizedRow, targetType: SearchAdRuleResult["targetType"], category: SearchAdRuleResult["category"]) {
   if (category === "needs_review") {
+    if (hasUnconfirmedConversionMeasurement(row) || row.conversions > 0 || row.salesAmount === 0) {
+      return {
+        key: "conversion_check",
+        label: "전환 점검 후보",
+        description: "전환 코드, 전환 유형, 전환매출 전달이 정상인지 먼저 확인합니다.",
+      };
+    }
+
     return {
       key: "data_check",
       label: "데이터 점검 후보",
@@ -412,8 +420,8 @@ function getRuleActionIntent(row: SearchAdNormalizedRow, targetType: SearchAdRul
     if (row.adProductType === "shopping_search") {
       return {
         key: "landing_check",
-        label: "랜딩 점검 후보",
-        description: "검색어와 상품명, 이미지, 랜딩 적합도를 먼저 봅니다.",
+        label: "소재·랜딩 점검 후보",
+        description: "검색어와 상품명, 대표 이미지, 랜딩 상품이 맞는지 먼저 봅니다.",
       };
     }
 
@@ -421,6 +429,14 @@ function getRuleActionIntent(row: SearchAdNormalizedRow, targetType: SearchAdRul
       key: "negative_keyword",
       label: "제외어 후보",
       description: "유지할 방어 검색어가 아니면 제외어 또는 입찰 하향을 검토합니다.",
+    };
+  }
+
+  if (category === "low_efficiency" && (targetType === "ad" || targetType === "ad_extension")) {
+    return {
+      key: "landing_check",
+      label: "소재·랜딩 점검 후보",
+      description: "광고 문구, 확장소재, 랜딩 URL이 검색 의도와 맞는지 확인합니다.",
     };
   }
 

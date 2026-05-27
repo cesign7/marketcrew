@@ -37,6 +37,7 @@ export type SearchAdFilters = {
 
 export type SearchAdRuleActionIntent =
   | "data_check"
+  | "conversion_check"
   | "negative_keyword"
   | "landing_check"
   | "bid_adjustment"

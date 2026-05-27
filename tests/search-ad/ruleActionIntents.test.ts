@@ -5,6 +5,7 @@ import { getRuleActionIntentLabel, getRuleResultActionIntentKey, parseRuleAction
 describe("rule action intents", () => {
   it("주소의 조치 후보 필터를 허용된 값으로만 해석한다", () => {
     expect(parseRuleActionIntentFilter("negative_keyword")).toBe("negative_keyword");
+    expect(parseRuleActionIntentFilter("conversion_check")).toBe("conversion_check");
     expect(parseRuleActionIntentFilter("unknown")).toBe("all");
     expect(parseRuleActionIntentFilter(undefined)).toBe("all");
   });
@@ -29,5 +30,16 @@ describe("rule action intents", () => {
     };
 
     expect(getRuleResultActionIntentKey(result)).toBe("negative_keyword");
+  });
+
+  it("전환 관련 점검 필요 결과는 전환 점검 후보로 보완한다", () => {
+    const result = {
+      ...SAMPLE_RULE_RESULTS[0],
+      category: "needs_review" as const,
+      reason: "전환매출 전달 상태를 먼저 확인해야 합니다.",
+      evidencePacket: {},
+    };
+
+    expect(getRuleResultActionIntentKey(result)).toBe("conversion_check");
   });
 });
