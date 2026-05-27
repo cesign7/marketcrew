@@ -811,6 +811,11 @@ table {
   padding: 4px 8px;
 }
 
+.action-chip {
+  background: #ecfdf3;
+  color: #05603a;
+}
+
 .technical-details {
   color: var(--muted);
   font-size: 12px;

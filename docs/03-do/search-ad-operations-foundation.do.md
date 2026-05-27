@@ -156,6 +156,15 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 - 상세 화면의 실행 미리보기는 외부 광고를 바로 바꾸지 않고 `/api/search-ad/action-preview`에 미리보기만 저장한다.
 - 캠페인 상태 화면도 광고그룹과 같은 토글 테이블을 사용하게 했고, 캠페인 `userLock` 변경 경로를 write gate 뒤 provider write로 연결했다.
 
+### follow-up 마케팅 룰 보강
+
+- 상세 플랜은 `docs/01-plan/features/search-ad-marketing-rules.plan.md`에 분리했다.
+- 전환은 있는데 전환매출이 0원인 경우 낮은 ROAS로 단정하지 않고 `점검 필요` 카드로 먼저 올린다.
+- 쇼핑검색광고는 `쇼핑검색 검색어 상세 보고서`와 `쇼핑검색 검색어 전환 상세 보고서`를 같은 검색어 기준으로 합산해 판단한다.
+- 타게팅은 `타게팅 성과 보고서`와 `타게팅 전환 보고서`를 같은 타게팅 ID 기준으로 합산해 판단한다.
+- 규칙 결과에는 `제외어 후보`, `랜딩 점검 후보`, `입찰 조정 후보`, `키워드 추가 후보`, `상품 확장 후보`, `타게팅 조정 후보`, `데이터 점검 후보`를 붙인다.
+- 기기는 `PC/모바일`로 표시하고, 시즌/행사 단서는 카드와 상세 화면에 별도 표시한다.
+
 ---
 
 ## Verification

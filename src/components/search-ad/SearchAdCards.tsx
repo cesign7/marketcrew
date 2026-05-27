@@ -12,8 +12,14 @@ import {
   getRuleResultRawTargetId,
   getRuleResultSourceReportLabel,
   getRuleResultTargetDetailLabel,
+  getSearchAdDeviceLabel,
 } from "@/features/search-ad/domain/targetDisplay";
-import { getRuleResultDiagnosis, getRuleResultMetricBadges, getRuleResultRecommendedAction } from "@/features/search-ad/domain/ruleResultPresentation";
+import {
+  getRuleResultActionCandidate,
+  getRuleResultContextBadges,
+  getRuleResultDiagnosis,
+  getRuleResultMetricBadges,
+} from "@/features/search-ad/domain/ruleResultPresentation";
 import type { SearchAdActionLogsView, SearchAdNormalizedRow, SearchAdOperationsView, SearchAdReportJobRecord, SearchAdRuleResult, SearchAdStateRecord } from "@/features/search-ad/domain/types";
 
 export function SyncStatusStrip({ view }: { view: { syncStatus: SearchAdOperationsView["syncStatus"] } }) {
@@ -145,6 +151,8 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const landingLabel = getRuleResultLandingLabel(result);
         const coverageLabel = getCoverageDecisionLabel(result);
         const metricBadges = getRuleResultMetricBadges(result);
+        const actionCandidate = getRuleResultActionCandidate(result);
+        const contextBadges = getRuleResultContextBadges(result);
         return (
           <article className="rule-card" key={result.id}>
             <div className="rule-card-header">
@@ -154,6 +162,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
                   <span className="target-chip">{targetTypeLabel}</span>
                   <span className="target-chip">{getBrandLabel(result.brandKey)}</span>
                   <span className="target-chip">{getAdProductLabel(result.adProductType)}</span>
+                  <span className="target-chip action-chip">{actionCandidate.label}</span>
                 </div>
                 <Link className="rule-card-title" href={getRuleResultDetailHref(result)}>
                   {targetLabel}
@@ -169,7 +178,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
                 </span>
               ))}
             </div>
-            <p className="rule-card-action">추천 조치: {getRuleResultRecommendedAction(result)}</p>
+            <p className="rule-card-action">조치 후보: {actionCandidate.description}</p>
             <dl>
               <div>
                 <dt>연결 위치</dt>
@@ -195,6 +204,12 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
                   <dd>{targetDetailLabel}</dd>
                 </div>
               ) : null}
+              {contextBadges.map((badge) => (
+                <div key={`${result.id}-${badge.label}`}>
+                  <dt>{badge.label}</dt>
+                  <dd>{badge.value}</dd>
+                </div>
+              ))}
               {creativeLabel ? (
                 <div>
                   <dt>소재</dt>
@@ -277,6 +292,7 @@ export function SearchTermTable({ rows }: { rows: SearchAdNormalizedRow[] }) {
             <th>검색어/대상</th>
             <th>브랜드</th>
             <th>광고유형</th>
+            <th>기기</th>
             <th>캠페인</th>
             <th>광고그룹</th>
             <th>비용</th>
@@ -295,6 +311,7 @@ export function SearchTermTable({ rows }: { rows: SearchAdNormalizedRow[] }) {
                 <td>{getNormalizedRowDisplayTarget(row)}</td>
                 <td>{getBrandLabel(row.brandKey)}</td>
                 <td>{getAdProductLabel(row.adProductType)}</td>
+                <td>{getSearchAdDeviceLabel(row.device) ?? "-"}</td>
                 <td>{row.campaignName ?? "-"}</td>
                 <td>{row.adgroupName ?? "-"}</td>
                 <td>{formatWon(row.cost)}</td>
@@ -307,7 +324,7 @@ export function SearchTermTable({ rows }: { rows: SearchAdNormalizedRow[] }) {
           })}
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={10}>검색어 성과 데이터가 없습니다.</td>
+              <td colSpan={11}>검색어 성과 데이터가 없습니다.</td>
             </tr>
           ) : null}
         </tbody>

@@ -5,6 +5,16 @@ export type RuleResultMetricBadge = {
   value: string;
 };
 
+export type RuleResultActionCandidate = {
+  label: string;
+  description: string;
+};
+
+export type RuleResultContextBadge = {
+  label: string;
+  value: string;
+};
+
 export function getRuleResultDiagnosis(result: SearchAdRuleResult) {
   const clicks = metricNumber(result, "clicks");
   const cost = metricNumber(result, "cost");
@@ -26,10 +36,39 @@ export function getRuleResultDiagnosis(result: SearchAdRuleResult) {
     case "good_performance":
       return `${formatCount(conversions, "전환")}과 매출 ${formatWonText(salesAmount)}가 확인된 확장 후보입니다.`;
     case "needs_review":
-      return "필수 데이터 또는 연결 대상이 부족해 점검이 먼저 필요합니다.";
+      return result.reason || "필수 데이터 또는 연결 대상이 부족해 점검이 먼저 필요합니다.";
     default:
       return result.reason;
   }
+}
+
+export function getRuleResultActionCandidate(result: SearchAdRuleResult): RuleResultActionCandidate {
+  const label = stringFromEvidence(result.evidencePacket.actionIntentLabel);
+  const description = stringFromEvidence(result.evidencePacket.actionIntentDescription);
+  if (label && description) {
+    return { label, description };
+  }
+
+  return {
+    label: fallbackActionCandidateLabel(result),
+    description: getRuleResultRecommendedAction(result),
+  };
+}
+
+export function getRuleResultContextBadges(result: SearchAdRuleResult): RuleResultContextBadge[] {
+  const badges: RuleResultContextBadge[] = [];
+  const deviceLabel = stringFromEvidence(result.evidencePacket.deviceLabel);
+  const seasonHint = stringFromEvidence(result.evidencePacket.seasonHint);
+
+  if (deviceLabel) {
+    badges.push({ label: "기기", value: deviceLabel });
+  }
+
+  if (seasonHint) {
+    badges.push({ label: "시즌/행사", value: seasonHint });
+  }
+
+  return badges;
 }
 
 export function getRuleResultMetricBadges(result: SearchAdRuleResult): RuleResultMetricBadge[] {
@@ -59,6 +98,23 @@ export function getRuleResultMetricBadges(result: SearchAdRuleResult): RuleResul
 }
 
 export function getRuleResultRecommendedAction(result: SearchAdRuleResult) {
+  const actionIntent = stringFromEvidence(result.evidencePacket.actionIntent);
+  if (actionIntent === "negative_keyword") {
+    return "제외어 등록 후보인지 확인하고, 유지해야 할 검색어면 입찰만 낮춥니다.";
+  }
+  if (actionIntent === "landing_check") {
+    return "상품명, 대표 이미지, 랜딩 상품이 검색 의도와 맞는지 확인합니다.";
+  }
+  if (actionIntent === "keyword_expand") {
+    return "등록 키워드와 유사 키워드로 확장하되 예산은 소액부터 시작합니다.";
+  }
+  if (actionIntent === "targeting_adjustment") {
+    return "기기, 성별, 연령, 시간대별 성과 차이를 보고 입찰 조정을 검토합니다.";
+  }
+  if (actionIntent === "data_check") {
+    return "전환매출, 주문 금액 전달, 보고서 수집 상태를 먼저 점검합니다.";
+  }
+
   switch (result.category) {
     case "low_efficiency":
       return "입찰 하향, 제외어 후보, 랜딩 적합도 순서로 점검";
@@ -119,4 +175,26 @@ function formatCount(value: number | undefined, suffix: string) {
 
 function formatPercentText(value: number | undefined) {
   return value === undefined ? "-" : `${Math.round(value * 10) / 10}%`;
+}
+
+function fallbackActionCandidateLabel(result: SearchAdRuleResult) {
+  switch (result.category) {
+    case "low_efficiency":
+      return result.adProductType === "shopping_search" ? "랜딩 점검 후보" : "제외어 후보";
+    case "high_cpa":
+    case "low_roas":
+      return "입찰 조정 후보";
+    case "no_click":
+      return "노출 적합도 점검";
+    case "good_performance":
+      return result.adProductType === "shopping_search" ? "상품 확장 후보" : "키워드 추가 후보";
+    case "needs_review":
+      return "데이터 점검 후보";
+    default:
+      return "운영 점검 후보";
+  }
+}
+
+function stringFromEvidence(value: unknown) {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
 }

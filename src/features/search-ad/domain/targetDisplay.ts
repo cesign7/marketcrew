@@ -183,6 +183,23 @@ export function getRuleResultLandingLabel(result: SearchAdRuleResult) {
   return pcUrl ?? mobileUrl ?? finalUrl;
 }
 
+export function getSearchAdDeviceLabel(device: string | undefined) {
+  if (!device) {
+    return undefined;
+  }
+
+  const normalized = device.toUpperCase();
+  if (normalized === "P" || normalized === "PC") {
+    return "PC";
+  }
+
+  if (normalized === "M" || normalized === "MOBILE") {
+    return "모바일";
+  }
+
+  return device;
+}
+
 export function getRuleResultDetailHref(result: SearchAdRuleResult) {
   return `/rule-results/${encodeURIComponent(result.id)}`;
 }

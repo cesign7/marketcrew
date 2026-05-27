@@ -53,10 +53,10 @@ export const RULE_CATEGORY_GUIDES: SearchAdRuleCategoryGuide[] = [
   {
     category: "needs_review",
     title: "점검 필요",
-    when: "필수 데이터가 비어 있거나 연결 대상이 불명확할 때",
-    requiredData: "원문 보고서 행, 광고그룹/소재/검색어 연결 정보",
-    firstAction: "수집 상태, 매핑 상태, 전환 추적 상태 확인",
-    caution: "자동 조정 전에 데이터 점검 대상으로 올립니다.",
+    when: "전환은 있는데 전환매출이 없거나 필수 연결 대상이 불명확할 때",
+    requiredData: "원문 보고서 행, 광고그룹/소재/검색어 연결 정보, 전환매출",
+    firstAction: "전환매출 연동, 수집 상태, 매핑 상태, 전환 추적 상태 확인",
+    caution: "ROAS가 0%로 보여도 전환매출 누락이면 광고 성과가 아니라 데이터 문제일 수 있습니다.",
   },
 ];
 
@@ -80,6 +80,11 @@ export const RULE_PERIOD_GUIDE_ITEMS = [
     title: "LLM 연결",
     value: "규칙 이후",
     description: "숫자 규칙으로 후보를 먼저 만들고, 나중에 LLM은 이유 설명과 조치 제안에 붙입니다.",
+  },
+  {
+    title: "조치 후보",
+    value: "카드에 별도 표시",
+    description: "제외어, 입찰 조정, 키워드 추가, 랜딩 점검, 타게팅 조정처럼 실제 다음 행동 기준으로 나눕니다.",
   },
 ];
 

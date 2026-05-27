@@ -132,6 +132,97 @@ describe("buildSearchAdPeriodRuleResults", () => {
     expect(new Set(results.map((result) => result.id)).size).toBe(2);
     expect(results.map((result) => result.targetLabel).sort()).toEqual(["말띠해", "병오년"]);
   });
+
+  it("쇼핑검색 검색어 상세와 전환 상세를 같은 검색어로 합산해 판단한다", () => {
+    const shoppingCriteria: SearchAdRuleCriteria[] = [
+      {
+        ...criteria[0],
+        adProductType: "shopping_search",
+        targetCpa: 10000,
+        targetRoas: 200,
+      },
+    ];
+
+    const results = buildSearchAdPeriodRuleResults(
+      [
+        row({
+          id: "shopping-clicks",
+          adProductType: "shopping_search",
+          reportType: "SHOPPINGKEYWORD_DETAIL",
+          campaignId: "cmp-shopping",
+          adgroupId: "grp-shopping",
+          searchTerm: "생일답례품스티커",
+          clicks: 20,
+          cost: 10000,
+          conversions: 0,
+          salesAmount: 0,
+        }),
+        row({
+          id: "shopping-conversions",
+          adProductType: "shopping_search",
+          reportType: "SHOPPINGKEYWORD_CONVERSION_DETAIL",
+          campaignId: "cmp-shopping",
+          adgroupId: "grp-shopping",
+          searchTerm: "생일답례품스티커",
+          clicks: 0,
+          cost: 0,
+          conversions: 2,
+          salesAmount: 50000,
+        }),
+      ],
+      shoppingCriteria,
+      "2026-05-26T08:00:00+09:00",
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.category).toBe("good_performance");
+    expect(results[0]?.metrics.clicks).toBe(20);
+    expect(results[0]?.metrics.conversions).toBe(2);
+    expect(results[0]?.metrics.salesAmount).toBe(50000);
+    expect(results[0]?.evidencePacket.actionIntentLabel).toBe("상품 확장 후보");
+    expect(results[0]?.evidencePacket.seasonHint).toBe("생일/답례");
+    expect(results[0]?.evidencePacket.sourceRowIds).toEqual(expect.arrayContaining([expect.stringContaining("shopping-clicks"), expect.stringContaining("shopping-conversions")]));
+  });
+
+  it("타게팅 성과와 타게팅 전환을 합산해 기기/연령대 조정 후보를 판단한다", () => {
+    const results = buildSearchAdPeriodRuleResults(
+      [
+        row({
+          id: "criterion-clicks",
+          reportType: "CRITERION",
+          criterionId: "grp-a001~AG3539",
+          searchTerm: undefined,
+          keywordText: undefined,
+          device: "M",
+          clicks: 12,
+          cost: 12000,
+          conversions: 0,
+          salesAmount: 0,
+        }),
+        row({
+          id: "criterion-conversions",
+          reportType: "CRITERION_CONVERSION",
+          criterionId: "grp-a001~AG3539",
+          searchTerm: undefined,
+          keywordText: undefined,
+          device: "M",
+          clicks: 0,
+          cost: 0,
+          conversions: 1,
+          salesAmount: 60000,
+        }),
+      ],
+      criteria,
+      "2026-05-26T08:00:00+09:00",
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.category).toBe("good_performance");
+    expect(results[0]?.targetType).toBe("criterion");
+    expect(results[0]?.evidencePacket.actionIntentLabel).toBe("타게팅 조정 후보");
+    expect(results[0]?.evidencePacket.deviceLabel).toBe("모바일");
+    expect(results[0]?.evidencePacket.targetDetailLabel).toBe("35~39세");
+  });
 });
 
 function row(overrides: Partial<SearchAdNormalizedRow>): SearchAdNormalizedRow {

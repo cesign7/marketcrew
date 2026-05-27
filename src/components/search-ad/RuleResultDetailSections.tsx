@@ -11,10 +11,11 @@ import {
   getRuleResultTargetDetailLabel,
 } from "@/features/search-ad/domain/targetDisplay";
 import {
+  getRuleResultActionCandidate,
+  getRuleResultContextBadges,
   getRuleResultDiagnosis,
   getRuleResultMetricBadges,
   getRuleResultPreApplyChecks,
-  getRuleResultRecommendedAction,
   metricNumber,
 } from "@/features/search-ad/domain/ruleResultPresentation";
 import type { SearchAdRuleResultDetailView } from "@/features/search-ad/domain/types";
@@ -29,6 +30,8 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
   const landingLabel = getRuleResultLandingLabel(result);
   const rawTargetId = getRuleResultRawTargetId(result);
   const metricBadges = getRuleResultMetricBadges(result);
+  const actionCandidate = getRuleResultActionCandidate(result);
+  const contextBadges = getRuleResultContextBadges(result);
   const checks = getRuleResultPreApplyChecks(result);
 
   return (
@@ -52,9 +55,9 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
 
       <div className="recommendation-panel">
         <div>
-          <span>추천 조치</span>
-          <strong>{getRuleResultRecommendedAction(result)}</strong>
-          <p>{result.reason}</p>
+          <span>조치 후보</span>
+          <strong>{actionCandidate.label}</strong>
+          <p>{actionCandidate.description}</p>
         </div>
         <div>
           <span>실행 전 확인</span>
@@ -110,6 +113,12 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
             <dd>{detailLabel}</dd>
           </div>
         ) : null}
+        {contextBadges.map((badge) => (
+          <div key={badge.label}>
+            <dt>{badge.label}</dt>
+            <dd>{badge.value}</dd>
+          </div>
+        ))}
         {creativeLabel ? (
           <div>
             <dt>소재</dt>

@@ -33,6 +33,15 @@ describe("buildSearchAdRuleResults", () => {
     expect(results[0]?.category).toBe("good_performance");
   });
 
+  it("전환은 있는데 전환매출이 없으면 ROAS 판단보다 데이터 점검을 먼저 올린다", () => {
+    const results = buildSearchAdRuleResults([row({ id: "row-missing-sales", clicks: 30, cost: 30000, conversions: 2, salesAmount: 0 })], criteria);
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.category).toBe("needs_review");
+    expect(results[0]?.evidencePacket.actionIntentLabel).toBe("데이터 점검 후보");
+    expect(results[0]?.reason).toContain("전환매출");
+  });
+
   it("최소 표본에 못 미치면 판단하지 않는다", () => {
     const results = buildSearchAdRuleResults([row({ id: "row-small", impressions: 10, clicks: 1, cost: 900, conversions: 0, salesAmount: 0 })], criteria);
 
