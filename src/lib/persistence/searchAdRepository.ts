@@ -29,6 +29,7 @@ import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport
 import { buildSearchAdPeriodRuleResults } from "@/features/search-ad/domain/ruleEngine";
 import { sortSearchAdRuleCriteria } from "@/features/search-ad/domain/ruleCriteriaSettings";
 import { getSearchAdReportScheduleStatus } from "@/features/search-ad/domain/reportSchedule";
+import { extractSearchAdProductEvidence } from "@/features/search-ad/domain/adCreativeEvidence";
 import {
   DEFAULT_SEARCH_AD_OPERATION_STRATEGIES,
   normalizeSearchAdOperationStrategyInput,
@@ -184,6 +185,10 @@ type AdCreativeLookupValue = {
   name?: string;
   pcFinalUrl?: string;
   mobileFinalUrl?: string;
+  productName?: string;
+  productImageUrl?: string;
+  mallName?: string;
+  mallProductId?: string;
   status?: string;
   statusReason?: string;
 };
@@ -2827,26 +2832,34 @@ async function listLatestAdCreativeLookup(): Promise<Map<string, AdCreativeLooku
     name: string | null;
     pc_final_url: string | null;
     mobile_final_url: string | null;
+    raw_payload: Record<string, unknown> | null;
     status: string | null;
     status_reason: string | null;
   }>(`
     SELECT DISTINCT ON (provider_ad_id)
-      provider_ad_id, name, pc_final_url, mobile_final_url, status, status_reason
+      provider_ad_id, name, pc_final_url, mobile_final_url, raw_payload, status, status_reason
     FROM search_ad_ad_snapshots
     ORDER BY provider_ad_id, collected_at DESC
   `);
 
   return new Map(
-    result.rows.map((row) => [
-      row.provider_ad_id,
-      {
-        name: row.name ?? undefined,
-        pcFinalUrl: row.pc_final_url ?? undefined,
-        mobileFinalUrl: row.mobile_final_url ?? undefined,
-        status: row.status ?? undefined,
-        statusReason: row.status_reason ?? undefined,
-      },
-    ]),
+    result.rows.map((row) => {
+      const product = extractSearchAdProductEvidence(row.raw_payload);
+      return [
+        row.provider_ad_id,
+        {
+          name: row.name ?? undefined,
+          pcFinalUrl: row.pc_final_url ?? undefined,
+          mobileFinalUrl: row.mobile_final_url ?? undefined,
+          productName: product.productName,
+          productImageUrl: product.productImageUrl,
+          mallName: product.mallName,
+          mallProductId: product.mallProductId,
+          status: row.status ?? undefined,
+          statusReason: row.status_reason ?? undefined,
+        },
+      ];
+    }),
   );
 }
 
@@ -2869,11 +2882,15 @@ function enrichRuleResultsWithEvidenceContext(
         dataWindowStart: result.evidencePacket.dataWindowStart ?? coverage?.startDate ?? null,
         dataWindowEnd: result.evidencePacket.dataWindowEnd ?? coverage?.endDate ?? null,
         dataCoverageLabel: result.evidencePacket.dataCoverageLabel ?? (coverage ? formatDataCoverageLabel(coverage, result.periodDays) : null),
-        adHeadline: adCreative?.name ?? null,
-        pcFinalUrl: adCreative?.pcFinalUrl ?? null,
-        mobileFinalUrl: adCreative?.mobileFinalUrl ?? null,
-        adStatus: adCreative?.status ?? null,
-        adStatusReason: adCreative?.statusReason ?? null,
+        adHeadline: result.evidencePacket.adHeadline ?? adCreative?.name ?? null,
+        pcFinalUrl: result.evidencePacket.pcFinalUrl ?? adCreative?.pcFinalUrl ?? null,
+        mobileFinalUrl: result.evidencePacket.mobileFinalUrl ?? adCreative?.mobileFinalUrl ?? null,
+        productName: result.evidencePacket.productName ?? adCreative?.productName ?? null,
+        productImageUrl: result.evidencePacket.productImageUrl ?? adCreative?.productImageUrl ?? null,
+        mallName: result.evidencePacket.mallName ?? adCreative?.mallName ?? null,
+        mallProductId: result.evidencePacket.mallProductId ?? adCreative?.mallProductId ?? null,
+        adStatus: result.evidencePacket.adStatus ?? adCreative?.status ?? null,
+        adStatusReason: result.evidencePacket.adStatusReason ?? adCreative?.statusReason ?? null,
       },
     };
   });

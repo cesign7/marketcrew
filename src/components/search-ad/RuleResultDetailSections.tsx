@@ -6,6 +6,7 @@ import {
   getRuleResultDisplayTargetTypeLabel,
   getRuleResultLandingLabel,
   getRuleResultPeriodLabel,
+  getRuleResultProductConnection,
   getRuleResultRawTargetId,
   getRuleResultSourceReportLabel,
   getRuleResultTargetDetailLabel,
@@ -30,6 +31,8 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
   const detailLabel = getRuleResultTargetDetailLabel(result);
   const creativeLabel = getRuleResultCreativeLabel(result);
   const landingLabel = getRuleResultLandingLabel(result);
+  const productConnection = getRuleResultProductConnection(result);
+  const showProductConnection = result.adProductType === "shopping_search" && productConnection.hasConnection;
   const rawTargetId = getRuleResultRawTargetId(result);
   const metricBadges = getRuleResultMetricBadges(result);
   const actionCandidate = getRuleResultActionCandidate(result);
@@ -79,6 +82,25 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
         <MetricCard label="CPA" value={formatMaybeWon(metricNumber(result, "cpa"))} />
         <MetricCard label="ROAS" value={formatPercent(metricNumber(result, "roas"))} />
       </div>
+
+      {showProductConnection ? (
+        <div className="product-connection is-detail">
+          {productConnection.imageUrl ? (
+            <img alt="" loading="lazy" src={productConnection.imageUrl} />
+          ) : (
+            <span className="product-image-fallback">상품</span>
+          )}
+          <div>
+            <span>연결 상품</span>
+            <strong title={productConnection.productName ?? "상품명 확인 필요"}>
+              {truncateDisplayText(productConnection.productName ?? "상품명 확인 필요", 48)}
+            </strong>
+            {productConnection.landingLabel ? (
+              <small title={productConnection.landingLabel}>{truncateDisplayText(productConnection.landingLabel, 72)}</small>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <dl className="detail-grid">
         <div>

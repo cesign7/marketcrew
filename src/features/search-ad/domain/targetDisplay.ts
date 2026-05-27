@@ -183,6 +183,32 @@ export function getRuleResultLandingLabel(result: SearchAdRuleResult) {
   return pcUrl ?? mobileUrl ?? finalUrl;
 }
 
+export function getRuleResultProductConnection(result: SearchAdRuleResult) {
+  const productName = nonTechnicalString(
+    stringFromEvidence(result.evidencePacket.productName) ??
+      stringFromEvidence(result.evidencePacket.productTitle) ??
+      stringFromEvidence(result.evidencePacket.adProductName) ??
+      stringFromEvidence(result.evidencePacket.adProductTitle) ??
+      stringFromEvidence(result.evidencePacket.shoppingProductName) ??
+      stringFromEvidence(result.evidencePacket.shoppingProductTitle) ??
+      getRuleResultCreativeLabel(result),
+  );
+  const imageUrl =
+    stringFromEvidence(result.evidencePacket.productImageUrl) ??
+    stringFromEvidence(result.evidencePacket.imageUrl) ??
+    stringFromEvidence(result.evidencePacket.thumbnailUrl) ??
+    stringFromEvidence(result.evidencePacket.productThumbnailUrl) ??
+    stringFromEvidence(result.evidencePacket.representativeImageUrl);
+  const landingLabel = getRuleResultLandingLabel(result);
+
+  return {
+    ...(productName ? { productName } : {}),
+    ...(imageUrl ? { imageUrl } : {}),
+    ...(landingLabel ? { landingLabel } : {}),
+    hasConnection: Boolean(productName || imageUrl || landingLabel),
+  };
+}
+
 export function getSearchAdDeviceLabel(device: string | undefined) {
   if (!device) {
     return undefined;
@@ -260,6 +286,10 @@ function identifierLike(value: string | undefined, prefix: string) {
 
 function stringFromEvidence(value: unknown) {
   return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function nonTechnicalString(value: string | undefined) {
+  return isTechnicalTargetIdentifier(value) ? undefined : value;
 }
 
 function inferTechnicalTargetType(value: string | undefined): SearchAdRuleResult["targetType"] | undefined {

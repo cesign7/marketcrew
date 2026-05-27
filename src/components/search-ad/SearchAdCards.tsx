@@ -11,6 +11,7 @@ import {
   getRuleResultDetailHref,
   getRuleResultLandingLabel,
   getRuleResultPeriodLabel,
+  getRuleResultProductConnection,
   getRuleResultRawTargetId,
   getRuleResultSourceReportLabel,
   getRuleResultTargetDetailLabel,
@@ -191,6 +192,8 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const targetDetailLabel = getRuleResultTargetDetailLabel(result);
         const creativeLabel = getRuleResultCreativeLabel(result);
         const landingLabel = getRuleResultLandingLabel(result);
+        const productConnection = getRuleResultProductConnection(result);
+        const showProductConnection = result.adProductType === "shopping_search" && productConnection.hasConnection;
         const coverageLabel = getCoverageDecisionLabel(result);
         const metricBadges = getRuleResultMetricBadges(result);
         const actionCandidate = getRuleResultActionCandidate(result);
@@ -213,6 +216,24 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
               </div>
             </div>
             <p className="rule-card-diagnosis">{getRuleResultDiagnosis(result)}</p>
+            {showProductConnection ? (
+              <div className="product-connection is-compact">
+                {productConnection.imageUrl ? (
+                  <img alt="" loading="lazy" src={productConnection.imageUrl} />
+                ) : (
+                  <span className="product-image-fallback">상품</span>
+                )}
+                <div>
+                  <span>연결 상품</span>
+                  <strong title={productConnection.productName ?? "상품명 확인 필요"}>
+                    {truncateDisplayText(productConnection.productName ?? "상품명 확인 필요", 30)}
+                  </strong>
+                  {productConnection.landingLabel ? (
+                    <small title={productConnection.landingLabel}>{truncateDisplayText(productConnection.landingLabel, 46)}</small>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
             <div className="metric-pill-row" aria-label="핵심 성과">
               {metricBadges.map((badge) => (
                 <span className="metric-pill" key={`${result.id}-${badge.label}`}>

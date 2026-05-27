@@ -5,6 +5,7 @@ import {
   getRuleResultDisplayTargetTypeLabel,
   getRuleResultDetailHref,
   getRuleResultPeriodLabel,
+  getRuleResultProductConnection,
   getRuleResultRawTargetId,
   getRuleResultTargetDetailLabel,
 } from "@/features/search-ad/domain/targetDisplay";
@@ -116,6 +117,41 @@ describe("rule result target display", () => {
     });
 
     expect(getRuleResultDetailHref(result)).toBe("/rule-results/rule-low%20%EC%8A%A4%ED%8B%B0%EC%BB%A4%2F%ED%85%8C%EC%8A%A4%ED%8A%B8");
+  });
+
+  it("쇼핑검색 연결 상품명과 대표 이미지, 랜딩을 묶어 보여준다", () => {
+    const result = ruleResult({
+      adProductType: "shopping_search",
+      evidencePacket: {
+        productName: "1406 추석선물카드 감사 명절연하인사카드",
+        productImageUrl: "https://shopping-phinf.pstatic.net/main_8453022/84530220617.1.jpg",
+        pcFinalUrl: "https://smartstore.naver.com/main/products/6985720295",
+        mobileFinalUrl: "https://m.smartstore.naver.com/main/products/6985720295",
+      },
+    });
+
+    expect(getRuleResultProductConnection(result)).toEqual({
+      productName: "1406 추석선물카드 감사 명절연하인사카드",
+      imageUrl: "https://shopping-phinf.pstatic.net/main_8453022/84530220617.1.jpg",
+      landingLabel:
+        "PC https://smartstore.naver.com/main/products/6985720295 / 모바일 https://m.smartstore.naver.com/main/products/6985720295",
+      hasConnection: true,
+    });
+  });
+
+  it("상품명이 없을 때 기술 ID를 연결 상품명으로 쓰지 않는다", () => {
+    const result = ruleResult({
+      adProductType: "shopping_search",
+      evidencePacket: {
+        adHeadline: "nad-a001-02-000000203421541",
+        productImageUrl: "https://shopping-phinf.pstatic.net/main_8453022/84530220617.1.jpg",
+      },
+    });
+
+    expect(getRuleResultProductConnection(result)).toEqual({
+      imageUrl: "https://shopping-phinf.pstatic.net/main_8453022/84530220617.1.jpg",
+      hasConnection: true,
+    });
   });
 });
 

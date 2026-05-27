@@ -199,6 +199,13 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 - 실제 제외어 등록과 신규 키워드 등록은 아직 외부 반영으로 열지 않고, 대표 승인/위임 판단을 위한 내부 후보 단계로 유지한다.
 - 스마트스토어 상품명처럼 긴 표시명은 규칙 카드, 상세 제목, 상태 표, 검색어 표에서 적정 길이로 줄이고 전체명은 hover로 확인하게 했다.
 
+### follow-up 쇼핑검색 상품 연결
+
+- Search Ad 광고 상태 스냅샷의 `referenceData`에서 상품명, 대표 이미지, 스토어 상품 ID를 추출해 규칙 결과 근거에 보강한다.
+- 쇼핑검색광고 규칙 카드와 상세 화면에는 연결 상품 블록을 추가했다. 상품명은 줄여 보이고 전체명은 hover로 확인한다.
+- 대표 이미지는 네이버 쇼핑 이미지 URL을 직접 사용하고, 이미지가 없으면 작은 `상품` 대체 박스를 보여준다.
+- 파워링크는 랜딩 URL만 있어도 상품 연결 블록을 보여주지 않는다. 상품명/대표 이미지/랜딩 확인이 필요한 쇼핑검색광고에만 노출한다.
+
 ---
 
 ## Verification
@@ -206,7 +213,7 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 | Check | Result |
 |-------|--------|
 | `npm run typecheck` | 통과 |
-| `npm test -- --run` | 통과, 17 files / 52 tests |
+| `npm test -- --run` | 통과, 33 files / 124 tests |
 | `npm run build` | 통과 |
 | `npm audit --omit=dev` | 0 vulnerabilities |
 | `git diff --check` | 통과 |
