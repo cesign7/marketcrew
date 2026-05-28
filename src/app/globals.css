@@ -755,6 +755,81 @@ table {
   font-weight: 800;
 }
 
+.keyword-insight-list {
+  display: grid;
+  gap: 12px;
+}
+
+.keyword-insight-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.keyword-insight-card p {
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.keyword-insight-title-row {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.keyword-insight-title-row strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.keyword-insight-title-row span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.keyword-insight-axis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.keyword-insight-axis span {
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.82rem;
+  padding: 5px 9px;
+}
+
+.insight-recommendation-scale {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.insight-recommendation-keep {
+  background: #eff8ff;
+  color: #175cd3;
+}
+
+.insight-recommendation-narrow {
+  background: #fff1f3;
+  color: #c01048;
+}
+
+.insight-recommendation-watch {
+  background: #fffaeb;
+  color: #b54708;
+}
+
 .metric-pill-row {
   display: flex;
   flex-wrap: wrap;

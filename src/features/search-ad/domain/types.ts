@@ -217,6 +217,69 @@ export type SearchAdSearchTermsView = {
   ruleResults: SearchAdRuleResult[];
 };
 
+export type SearchAdKeywordInsightReliability = "high" | "medium" | "low";
+
+export type SearchAdKeywordInsightSegment = {
+  id: string;
+  brandKey: BrandKey;
+  adProductType: AdProductType;
+  targetLabel: string;
+  targetKind: "registered_keyword" | "search_term" | "ad";
+  keywordId?: string;
+  keywordText?: string;
+  searchTerm?: string;
+  adId?: string;
+  campaignId?: string;
+  campaignName?: string;
+  adgroupId?: string;
+  adgroupName?: string;
+  device?: string;
+  deviceLabel: string;
+  mediaId?: string;
+  mediaLabel: string;
+  mediaNetworkLabel?: string;
+  hourCode?: string;
+  hourLabel: string;
+  regionCode?: string;
+  regionLabel: string;
+  impressions: number;
+  clicks: number;
+  cost: number;
+  conversions: number;
+  salesAmount: number;
+  cpa: number | null;
+  ctr: number | null;
+  conversionRate: number | null;
+  roas: number | null;
+  costShare: number;
+  dataDays: number;
+  reportStartDate?: string;
+  reportEndDate?: string;
+  reportsUsed: SearchAdReportType[];
+  reliability: SearchAdKeywordInsightReliability;
+  recommendation: "scale" | "keep" | "narrow" | "watch";
+  recommendationLabel: string;
+  reason: string;
+};
+
+export type SearchAdKeywordInsightView = {
+  filters: SearchAdFilters;
+  generatedAt: string;
+  summaryCards: Array<{
+    key: string;
+    label: string;
+    value: string;
+    helper: string;
+  }>;
+  bestSegments: SearchAdKeywordInsightSegment[];
+  wasteSegments: SearchAdKeywordInsightSegment[];
+  watchSegments: SearchAdKeywordInsightSegment[];
+  methodology: Array<{
+    title: string;
+    description: string;
+  }>;
+};
+
 export type SearchAdKeywordCleanupRecommendation = "keep" | "pause_candidate" | "delete_candidate" | "review";
 
 export type SearchAdKeywordCleanupCandidate = {

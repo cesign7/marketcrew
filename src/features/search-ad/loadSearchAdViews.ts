@@ -7,6 +7,7 @@ import {
   getSearchAdRuleResultDetailView,
   getSearchAdRuleResultsView,
   getSearchAdSearchTermsView,
+  getSearchAdKeywordInsightView,
   getSearchAdKeywordCleanupView,
   getSearchAdOperationCalendarPreview,
   getSearchAdStateView,
@@ -15,7 +16,7 @@ import {
 } from "@/lib/persistence/searchAdRepository";
 import type { SearchAdOperationCalendarPreview } from "./domain/operationCalendar";
 import type { SearchAdOperationStrategy } from "./domain/operationStrategies";
-import type { AdProductFilter, BrandFilter, SearchAdActionLogsView, SearchAdFilters, SearchAdReportArchiveView, SearchAdReportDetailView, SearchAdRuleResultDetailView, SearchAdRuleResultsView, SearchAdKeywordCleanupView, SearchAdSearchTermsView, SearchAdStateView } from "./domain/types";
+import type { AdProductFilter, BrandFilter, SearchAdActionLogsView, SearchAdFilters, SearchAdReportArchiveView, SearchAdReportDetailView, SearchAdRuleResultDetailView, SearchAdRuleResultsView, SearchAdKeywordInsightView, SearchAdKeywordCleanupView, SearchAdSearchTermsView, SearchAdStateView } from "./domain/types";
 import type { SearchAdOperationsView, SearchAdRuleCriteria, SearchAdRuleResultFilters } from "./domain/types";
 import { parseRuleActionIntentFilter } from "./domain/ruleActionIntents";
 
@@ -123,6 +124,15 @@ export async function loadSearchAdSearchTermsView(filters: SearchAdFilters): Pro
   }
 
   return getSearchAdSearchTermsView(filters);
+}
+
+export async function loadSearchAdKeywordInsightView(filters: SearchAdFilters): Promise<SearchAdKeywordInsightView> {
+  const remote = await fetchBackendJson<SearchAdKeywordInsightView>(`/api/search-ad/keyword-insights?${toQuery(filters)}`);
+  if (remote) {
+    return remote;
+  }
+
+  return getSearchAdKeywordInsightView(filters);
 }
 
 export async function loadSearchAdKeywordCleanupView(filters: SearchAdFilters): Promise<SearchAdKeywordCleanupView> {

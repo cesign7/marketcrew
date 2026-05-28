@@ -57,6 +57,7 @@ const NAV_AREAS: NavigationArea[] = [
     description: "규칙과 기준",
     tabs: [
       { href: "/rule-results", label: "규칙 결과" },
+      { href: "/keyword-insights", label: "키워드 효율" },
       { href: "/rules", label: "성과 기준" },
     ],
   },

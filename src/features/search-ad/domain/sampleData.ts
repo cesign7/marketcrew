@@ -15,6 +15,7 @@ import type {
   SearchAdRuleCriteria,
   SearchAdRuleResult,
   SearchAdRuleResultFilters,
+  SearchAdKeywordInsightView,
   SearchAdKeywordCleanupView,
   SearchAdSearchTermsView,
   SearchAdStateRecord,
@@ -22,6 +23,7 @@ import type {
   SearchAdTargetType,
   SearchAdTargetSettingRecord,
 } from "./types";
+import { buildSearchAdKeywordInsightView } from "./keywordInsights";
 import { buildSearchAdKeywordCleanupView } from "./keywordCleanup";
 import type { SearchAdKeywordCoverageForCleanup } from "./keywordCleanup";
 
@@ -540,6 +542,42 @@ export function createSampleSearchTermsView(filters = DEFAULT_SEARCH_AD_FILTERS)
     rows: filterNormalizedRows(SAMPLE_NORMALIZED_ROWS, filters),
     ruleResults: filterRuleResults(SAMPLE_RULE_RESULTS, filters),
   };
+}
+
+export function createSampleKeywordInsightView(filters = DEFAULT_SEARCH_AD_FILTERS): SearchAdKeywordInsightView {
+  return buildSearchAdKeywordInsightView({
+    filters,
+    generatedAt: "2026-05-26T08:30:00+09:00",
+    segments: filterNormalizedRows(SAMPLE_NORMALIZED_ROWS, filters).map((row, index) => ({
+      brandKey: row.brandKey,
+      adProductType: row.adProductType,
+      targetLabel: row.searchTerm ?? row.keywordText ?? `샘플 ${index + 1}`,
+      targetKind: row.searchTerm ? "search_term" : "registered_keyword",
+      keywordId: row.keywordId,
+      keywordText: row.keywordText,
+      searchTerm: row.searchTerm,
+      adId: row.adId,
+      campaignId: row.campaignId,
+      campaignName: row.campaignName,
+      adgroupId: row.adgroupId,
+      adgroupName: row.adgroupName,
+      device: row.device ?? (index % 2 === 0 ? "M" : "P"),
+      mediaId: row.mediaId,
+      mediaLabel: index % 2 === 0 ? "네이버 통합검색 - 모바일" : "네이버 쇼핑 - PC",
+      mediaNetworkLabel: "검색/콘텐츠 네트워크",
+      hourCode: index % 2 === 0 ? "10" : "21",
+      regionCode: index % 2 === 0 ? "02" : "09",
+      impressions: row.impressions,
+      clicks: row.clicks,
+      cost: row.cost,
+      conversions: row.conversions,
+      salesAmount: row.salesAmount,
+      dataDays: 1,
+      reportStartDate: row.sourceDate,
+      reportEndDate: row.sourceDate,
+      reportsUsed: [row.reportType],
+    })),
+  });
 }
 
 export function createSampleKeywordCleanupView(filters = DEFAULT_SEARCH_AD_FILTERS): SearchAdKeywordCleanupView {

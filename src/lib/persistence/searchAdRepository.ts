@@ -4,6 +4,7 @@ import {
   DEFAULT_SEARCH_AD_FILTERS,
   DEFAULT_SEARCH_AD_RULE_RESULT_FILTERS,
   SAMPLE_NORMALIZED_ROWS,
+  createSampleKeywordInsightView,
   createSampleKeywordCleanupView,
   SAMPLE_RULE_CRITERIA,
   SAMPLE_RULE_RESULTS,
@@ -22,6 +23,7 @@ import {
   type SearchAdKeywordPerformanceForCleanup,
   type SearchAdKeywordStateForCleanup,
 } from "@/features/search-ad/domain/keywordCleanup";
+import { buildSearchAdKeywordInsightView, type SearchAdKeywordInsightSourceSegment } from "@/features/search-ad/domain/keywordInsights";
 import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
 import { getRuleResultActionTarget } from "@/features/search-ad/domain/targetDisplay";
 import { describeTargetSetting } from "@/features/search-ad/domain/targetSettings";
@@ -70,6 +72,7 @@ import type {
   SearchAdRuleResult,
   SearchAdRuleResultFilters,
   SearchAdRuleResultsView,
+  SearchAdKeywordInsightView,
   SearchAdKeywordCleanupView,
   SearchAdSearchTermsView,
   SearchAdStateRecord,
@@ -855,6 +858,27 @@ export async function getSearchAdSearchTermsView(filters = DEFAULT_SEARCH_AD_FIL
   } catch (error) {
     if (canUseSampleFallback()) {
       return createSampleSearchTermsView(filters);
+    }
+
+    throw error;
+  }
+}
+
+export async function getSearchAdKeywordInsightView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdKeywordInsightView> {
+  if (!hasDatabaseUrl()) {
+    return createSampleKeywordInsightView(filters);
+  }
+
+  try {
+    await ensureSearchAdSchema();
+    const segments = await listKeywordInsightSegments(filters);
+    return buildSearchAdKeywordInsightView({
+      filters,
+      segments,
+    });
+  } catch (error) {
+    if (canUseSampleFallback()) {
+      return createSampleKeywordInsightView(filters);
     }
 
     throw error;
@@ -3314,6 +3338,193 @@ async function listSearchTermRowsByFilters(filters: SearchAdFilters, limit: numb
   );
 
   return result.rows.map(mapNormalizedRow);
+}
+
+async function listKeywordInsightSegments(filters: SearchAdFilters): Promise<SearchAdKeywordInsightSourceSegment[]> {
+  const clauses = [
+    `n.report_type IN ('EXPKEYWORD', 'AD_DETAIL', 'AD_CONVERSION_DETAIL', 'SHOPPINGKEYWORD_DETAIL', 'SHOPPINGKEYWORD_CONVERSION_DETAIL')`,
+    `COALESCE(n.search_term, n.keyword_text, n.keyword_id, n.ad_id) IS NOT NULL`,
+  ];
+  const values: unknown[] = [];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`n.brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`n.ad_product_type = $${values.length}`);
+  }
+
+  const scopedWhere = clauses.join(" AND ");
+  const latestResult = await query<{ end_date: string | Date | null }>(
+    `
+      SELECT MAX(n.source_date) AS end_date
+      FROM search_ad_report_normalized_rows n
+      WHERE ${scopedWhere}
+    `,
+    values,
+  );
+  const endDate = latestResult.rows[0]?.end_date ? toDate(latestResult.rows[0].end_date) : undefined;
+  if (!endDate) {
+    return [];
+  }
+
+  const startDate = addDateDays(endDate, -29);
+  const result = await query<{
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    target_label: string;
+    target_kind: "registered_keyword" | "search_term" | "ad";
+    keyword_id: string | null;
+    keyword_text: string | null;
+    search_term: string | null;
+    ad_id: string | null;
+    campaign_id: string | null;
+    campaign_name: string | null;
+    adgroup_id: string | null;
+    adgroup_name: string | null;
+    device: string | null;
+    media_id: string | null;
+    detail_group: string | null;
+    detail_code: string | null;
+    impressions: string;
+    clicks: string;
+    cost: string;
+    conversions: string;
+    sales_amount: string;
+    data_days: string;
+    start_date: string | Date;
+    end_date: string | Date;
+    report_types: SearchAdReportType[] | null;
+  }>(
+    `
+      WITH latest_keywords AS (
+        SELECT DISTINCT ON (provider_keyword_id)
+          provider_keyword_id,
+          keyword_text
+        FROM search_ad_keyword_snapshots
+        ORDER BY provider_keyword_id, collected_at DESC
+      ),
+      latest_ads AS (
+        SELECT DISTINCT ON (provider_ad_id)
+          provider_ad_id,
+          name
+        FROM search_ad_ad_snapshots
+        ORDER BY provider_ad_id, collected_at DESC
+      ),
+      segment_rows AS (
+        SELECT
+          n.brand_key,
+          n.ad_product_type,
+          CASE
+            WHEN n.search_term IS NOT NULL THEN n.search_term
+            WHEN n.keyword_id IS NOT NULL THEN COALESCE(n.keyword_text, k.keyword_text, n.keyword_id)
+            ELSE COALESCE(a.name, n.ad_id)
+          END AS target_label,
+          CASE
+            WHEN n.search_term IS NOT NULL THEN 'search_term'
+            WHEN n.keyword_id IS NOT NULL THEN 'registered_keyword'
+            ELSE 'ad'
+          END AS target_kind,
+          n.keyword_id,
+          COALESCE(n.keyword_text, k.keyword_text) AS keyword_text,
+          n.search_term,
+          n.ad_id,
+          n.campaign_id,
+          n.campaign_name,
+          n.adgroup_id,
+          n.adgroup_name,
+          n.device,
+          n.media_id,
+          r.raw_row ->> 'detailGroup' AS detail_group,
+          r.raw_row ->> 'detailCode' AS detail_code,
+          n.impressions,
+          n.clicks,
+          n.cost,
+          n.conversions,
+          n.sales_amount,
+          n.source_date,
+          n.report_type
+        FROM search_ad_report_normalized_rows n
+        JOIN search_ad_report_rows r ON r.id = n.report_row_id
+        LEFT JOIN latest_keywords k ON k.provider_keyword_id = n.keyword_id
+        LEFT JOIN latest_ads a ON a.provider_ad_id = n.ad_id
+        WHERE ${scopedWhere}
+          AND n.source_date >= $${values.length + 1}::date
+          AND n.source_date <= $${values.length + 2}::date
+      )
+      SELECT
+        brand_key,
+        ad_product_type,
+        target_label,
+        target_kind,
+        keyword_id,
+        keyword_text,
+        search_term,
+        ad_id,
+        campaign_id,
+        campaign_name,
+        adgroup_id,
+        adgroup_name,
+        device,
+        media_id,
+        detail_group,
+        detail_code,
+        SUM(impressions)::text AS impressions,
+        SUM(clicks)::text AS clicks,
+        SUM(cost)::text AS cost,
+        SUM(conversions)::text AS conversions,
+        SUM(sales_amount)::text AS sales_amount,
+        COUNT(DISTINCT source_date)::text AS data_days,
+        MIN(source_date) AS start_date,
+        MAX(source_date) AS end_date,
+        ARRAY_AGG(DISTINCT report_type)::text[] AS report_types
+      FROM segment_rows
+      GROUP BY
+        brand_key, ad_product_type, target_label, target_kind,
+        keyword_id, keyword_text, search_term, ad_id,
+        campaign_id, campaign_name, adgroup_id, adgroup_name,
+        device, media_id, detail_group, detail_code
+      HAVING SUM(impressions) > 0 OR SUM(clicks) > 0 OR SUM(cost) > 0 OR SUM(conversions) > 0
+      ORDER BY SUM(cost) DESC, SUM(clicks) DESC
+      LIMIT 500
+    `,
+    [...values, startDate, endDate],
+  );
+
+  const mediaLookup = await listLatestSearchAdMediaLookup(result.rows.map((row) => row.media_id).filter((value): value is string => Boolean(value)));
+  return result.rows.map((row) => {
+    const media = row.media_id ? mediaLookup.get(row.media_id) : undefined;
+    return {
+      brandKey: row.brand_key,
+      adProductType: row.ad_product_type,
+      targetLabel: row.target_label,
+      targetKind: row.target_kind,
+      keywordId: row.keyword_id ?? undefined,
+      keywordText: row.keyword_text ?? undefined,
+      searchTerm: row.search_term ?? undefined,
+      adId: row.ad_id ?? undefined,
+      campaignId: row.campaign_id ?? undefined,
+      campaignName: row.campaign_name ?? undefined,
+      adgroupId: row.adgroup_id ?? undefined,
+      adgroupName: row.adgroup_name ?? undefined,
+      device: row.device ?? undefined,
+      mediaId: row.media_id ?? undefined,
+      mediaLabel: row.media_id ? buildMediaDisplayLabel(row.media_id, media) ?? undefined : undefined,
+      mediaNetworkLabel: media ? buildMediaNetworkLabel(media) ?? undefined : undefined,
+      hourCode: row.detail_group ?? undefined,
+      regionCode: row.detail_code ?? undefined,
+      impressions: Number(row.impressions),
+      clicks: Number(row.clicks),
+      cost: Number(row.cost),
+      conversions: Number(row.conversions),
+      salesAmount: Number(row.sales_amount),
+      dataDays: Number(row.data_days),
+      reportStartDate: toDate(row.start_date),
+      reportEndDate: toDate(row.end_date),
+      reportsUsed: row.report_types ?? [],
+    };
+  });
 }
 
 async function listNormalizedRowsForRuleCriteria(criteriaList: SearchAdRuleCriteria[]): Promise<SearchAdNormalizedRow[]> {
