@@ -39,6 +39,7 @@ import {
 import {
   buildSearchAdOperationCalendarPreview,
   normalizeCalendarDate,
+  type SearchAdOperationCalendarDecision,
   type SearchAdHoliday,
   type SearchAdOperationCalendarPreview,
 } from "@/features/search-ad/domain/operationCalendar";
@@ -711,6 +712,7 @@ export async function getSearchAdOperationCalendarPreview(input: { date?: string
   return buildSearchAdOperationCalendarPreview({
     adgroups: state.adgroups,
     automationEnabled: isSearchAdOperationAutomationEnabled(),
+    autoLockedTargetIds: await listActiveOperationCalendarLockTargetIds(),
     date,
     holidays: input.holidays ?? (await loadOperationCalendarHolidays(date)),
     writeEnabled: isSearchAdWriteEnabled(),
@@ -743,7 +745,17 @@ export async function runSearchAdOperationCalendar(input: { date?: string; dryRu
     }
 
     createdPreviews.push(actionPreview);
-    appliedLogs.push(await applySearchAdActionPreview(actionPreview.id));
+    const log = await applySearchAdActionPreview(actionPreview.id);
+    appliedLogs.push(log);
+    if (log.status !== "applied") {
+      continue;
+    }
+
+    if (decision.requestedAction === "turn_off") {
+      await recordOperationCalendarLock(decision, actionPreview, log, preview.date);
+    } else {
+      await releaseOperationCalendarLock(decision.targetId, log);
+    }
   }
 
   return { appliedLogs, automationEnabled, createdPreviews, dryRun: false, preview };
@@ -2033,6 +2045,23 @@ async function ensureSearchAdSchemaUncached() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
 
+    CREATE TABLE IF NOT EXISTS search_ad_operation_calendar_locks (
+      target_type TEXT NOT NULL CHECK (target_type IN ('adgroup')),
+      target_id TEXT NOT NULL,
+      brand_key TEXT,
+      ad_product_type TEXT,
+      target_label TEXT NOT NULL,
+      lock_date DATE NOT NULL,
+      locked_reason TEXT NOT NULL,
+      action_preview_id TEXT NOT NULL,
+      action_log_id TEXT NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('active', 'released')),
+      locked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      released_at TIMESTAMPTZ,
+      release_action_log_id TEXT,
+      PRIMARY KEY (target_type, target_id)
+    );
+
     CREATE INDEX IF NOT EXISTS search_ad_report_jobs_stat_date_idx
       ON search_ad_report_jobs (stat_date DESC, report_type);
 
@@ -2044,6 +2073,9 @@ async function ensureSearchAdSchemaUncached() {
 
     CREATE INDEX IF NOT EXISTS search_ad_backfill_runs_updated_idx
       ON search_ad_backfill_runs (updated_at DESC);
+
+    CREATE INDEX IF NOT EXISTS search_ad_operation_calendar_locks_status_idx
+      ON search_ad_operation_calendar_locks (status, lock_date DESC);
 
     CREATE INDEX IF NOT EXISTS search_ad_rule_results_brand_category_idx
       ON search_ad_rule_results (brand_key, ad_product_type, category, created_at DESC);
@@ -3663,6 +3695,91 @@ async function loadOperationCalendarHolidays(date: string): Promise<SearchAdHoli
   } catch {
     return [];
   }
+}
+
+async function listActiveOperationCalendarLockTargetIds() {
+  if (!hasDatabaseUrl()) {
+    return [];
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<{ target_id: string }>(`
+    SELECT target_id
+    FROM search_ad_operation_calendar_locks
+    WHERE target_type = 'adgroup' AND status = 'active'
+  `);
+  return result.rows.map((row) => row.target_id);
+}
+
+async function recordOperationCalendarLock(decision: SearchAdOperationCalendarDecision, preview: SearchAdActionPreview, log: SearchAdActionLog, lockDate: string) {
+  if (!hasDatabaseUrl()) {
+    return;
+  }
+
+  await query(
+    `
+      INSERT INTO search_ad_operation_calendar_locks (
+        target_type,
+        target_id,
+        brand_key,
+        ad_product_type,
+        target_label,
+        lock_date,
+        locked_reason,
+        action_preview_id,
+        action_log_id,
+        status,
+        locked_at,
+        released_at,
+        release_action_log_id
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'active', $10, NULL, NULL)
+      ON CONFLICT (target_type, target_id)
+      DO UPDATE SET
+        brand_key = EXCLUDED.brand_key,
+        ad_product_type = EXCLUDED.ad_product_type,
+        target_label = EXCLUDED.target_label,
+        lock_date = EXCLUDED.lock_date,
+        locked_reason = EXCLUDED.locked_reason,
+        action_preview_id = EXCLUDED.action_preview_id,
+        action_log_id = EXCLUDED.action_log_id,
+        status = 'active',
+        locked_at = EXCLUDED.locked_at,
+        released_at = NULL,
+        release_action_log_id = NULL
+    `,
+    [
+      decision.targetType,
+      decision.targetId,
+      decision.brandKey ?? null,
+      decision.adProductType ?? null,
+      decision.targetLabel,
+      lockDate,
+      decision.reason,
+      preview.id,
+      log.id,
+      log.createdAt,
+    ],
+  );
+}
+
+async function releaseOperationCalendarLock(targetId: string, log: SearchAdActionLog) {
+  if (!hasDatabaseUrl()) {
+    return;
+  }
+
+  await query(
+    `
+      UPDATE search_ad_operation_calendar_locks
+      SET status = 'released',
+          released_at = $2,
+          release_action_log_id = $3
+      WHERE target_type = 'adgroup'
+        AND target_id = $1
+        AND status = 'active'
+    `,
+    [targetId, log.createdAt, log.id],
+  );
 }
 
 function snapshotId(targetType: SearchAdTargetType | "ad" | "target", providerId: string, collectedAt: string) {
