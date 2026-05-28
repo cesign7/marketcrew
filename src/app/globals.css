@@ -645,6 +645,105 @@ table {
   padding: 10px 12px;
 }
 
+.split-chip {
+  background: #eef6ff;
+  border-color: #b9dafc;
+  color: #175cd3;
+}
+
+.rule-breakdown-panel {
+  background: #fffdfa;
+  border: 1px solid #f4c779;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.rule-breakdown-heading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.rule-breakdown-heading div {
+  display: grid;
+  gap: 3px;
+}
+
+.rule-breakdown-heading strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.rule-breakdown-heading span {
+  color: #7a4d00;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.rule-breakdown-badge {
+  background: #fff4d6;
+  border: 1px solid #f4c779;
+  border-radius: 999px;
+  color: #7a4d00 !important;
+  flex: 0 0 auto;
+  padding: 5px 9px;
+}
+
+.rule-breakdown-list {
+  display: grid;
+  gap: 6px;
+}
+
+.rule-breakdown-row {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #f5deb0;
+  border-radius: 8px;
+  color: var(--text);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(140px, 1.4fr) repeat(5, minmax(70px, 0.65fr));
+  padding: 9px 10px;
+  text-decoration: none;
+}
+
+.rule-breakdown-row:hover {
+  border-color: #e2a635;
+  box-shadow: 0 4px 14px rgb(122 77 0 / 8%);
+}
+
+.rule-breakdown-row span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rule-breakdown-row small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.rule-breakdown-row strong {
+  font-size: 12px;
+}
+
+.rule-breakdown-name strong {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rule-breakdown-more {
+  color: #7a4d00 !important;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .metric-pill-row {
   display: flex;
   flex-wrap: wrap;
@@ -1823,5 +1922,18 @@ table {
   .backfill-fast-row .primary-button {
     justify-content: center;
     width: 100%;
+  }
+
+  .rule-breakdown-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .rule-breakdown-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .rule-breakdown-name {
+    grid-column: 1 / -1;
   }
 }

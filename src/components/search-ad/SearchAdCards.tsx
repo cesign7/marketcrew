@@ -3,6 +3,7 @@ import { buildSearchAdFilterHref } from "@/features/search-ad/domain/filterLinks
 import { RULE_ACTION_INTENTS, getRuleActionIntentLabel } from "@/features/search-ad/domain/ruleActionIntents";
 import { getSearchAdReportScheduleStatus } from "@/features/search-ad/domain/reportSchedule";
 import { getAdProductLabel, getBrandLabel, getReportTypeLabel, RULE_CATEGORY_LABELS } from "@/features/search-ad/domain/reportTypes";
+import { groupRuleResultsForDisplay } from "@/features/search-ad/domain/ruleResultGrouping";
 import {
   getRuleResultCreativeLabel,
   getNormalizedRowDisplayTarget,
@@ -185,9 +186,12 @@ export function RuleResultActionTabs({ filters }: { filters: SearchAdRuleResultF
 }
 
 export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
+  const groups = groupRuleResultsForDisplay(results);
+
   return (
     <div className="card-list">
-      {results.map((result) => {
+      {groups.map((group) => {
+        const result = group.result;
         const rawTargetId = getRuleResultRawTargetId(result);
         const targetLabel = getRuleResultDisplayTargetLabel(result);
         const targetTypeLabel = getRuleResultDisplayTargetTypeLabel(result);
@@ -202,7 +206,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const contextBadges = getRuleResultContextBadges(result);
         const shortTargetLabel = truncateDisplayText(targetLabel, result.adProductType === "shopping_search" ? 32 : 38);
         return (
-          <article className="rule-card" key={result.id}>
+          <article className="rule-card" key={group.id}>
             <div className="rule-card-header">
               <div className="rule-card-title-group">
                 <div className="rule-card-kicker">
@@ -211,6 +215,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
                   <span className="target-chip">{getBrandLabel(result.brandKey)}</span>
                   <span className="target-chip">{getAdProductLabel(result.adProductType)}</span>
                   <span className="target-chip action-chip">{actionCandidate.label}</span>
+                  {group.results.length > 1 ? <span className="target-chip split-chip">합산 {group.results.length.toLocaleString("ko-KR")}건</span> : null}
                 </div>
                 <Link className="rule-card-title" href={getRuleResultDetailHref(result)} title={targetLabel}>
                   {shortTargetLabel}
@@ -218,6 +223,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
               </div>
             </div>
             <p className="rule-card-diagnosis">{getRuleResultDiagnosis(result)}</p>
+            {group.breakdowns.length > 1 ? <RuleResultBreakdownPanel group={group} /> : null}
             {showProductConnection ? (
               <div className="product-connection is-compact">
                 {productConnection.imageUrl ? (
@@ -302,6 +308,57 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
       })}
       {results.length === 0 ? <p className="empty-text">해당 조건에 걸린 규칙 결과가 없습니다.</p> : null}
     </div>
+  );
+}
+
+function RuleResultBreakdownPanel({ group }: { group: ReturnType<typeof groupRuleResultsForDisplay>[number] }) {
+  const visibleBreakdowns = group.breakdowns.slice(0, 6);
+  const hiddenCount = Math.max(0, group.breakdowns.length - visibleBreakdowns.length);
+
+  return (
+    <section className="rule-breakdown-panel" aria-label="세부 분해">
+      <div className="rule-breakdown-heading">
+        <div>
+          <strong>세부 분해</strong>
+          <span>
+            기기 {Math.max(group.deviceCount, 1).toLocaleString("ko-KR")}개 · 매체 {Math.max(group.mediaCount, 1).toLocaleString("ko-KR")}개 · 근거{" "}
+            {group.sourceRowCount.toLocaleString("ko-KR")}행
+          </span>
+        </div>
+        <span className="rule-breakdown-badge">합산 카드</span>
+      </div>
+      <div className="rule-breakdown-list">
+        {visibleBreakdowns.map((item) => (
+          <Link className="rule-breakdown-row" href={getRuleResultDetailHref(item.result)} key={item.id} prefetch={false}>
+            <span className="rule-breakdown-name">
+              <strong>{item.label}</strong>
+              <small>상세 근거 보기</small>
+            </span>
+            <span>
+              <small>클릭</small>
+              <strong>{formatCount(item.clicks, "회")}</strong>
+            </span>
+            <span>
+              <small>전환</small>
+              <strong>{formatCount(item.conversions, "건")}</strong>
+            </span>
+            <span>
+              <small>전환율</small>
+              <strong>{formatPercent(item.conversionRate)}</strong>
+            </span>
+            <span>
+              <small>비용</small>
+              <strong>{formatWon(item.cost)}</strong>
+            </span>
+            <span>
+              <small>ROAS</small>
+              <strong>{formatPercent(item.roas)}</strong>
+            </span>
+          </Link>
+        ))}
+      </div>
+      {hiddenCount > 0 ? <p className="rule-breakdown-more">나머지 {hiddenCount.toLocaleString("ko-KR")}개 세부 근거는 상세 화면에서 확인합니다.</p> : null}
+    </section>
   );
 }
 
@@ -513,6 +570,17 @@ function getActionTargetTypeLabel(targetType: SearchAdActionLogsView["previews"]
 
 export function formatWon(value: number) {
   return `${Math.round(value).toLocaleString("ko-KR")}원`;
+}
+
+function formatCount(value: number, suffix: string) {
+  return `${Math.round(value).toLocaleString("ko-KR")}${suffix}`;
+}
+
+function formatPercent(value: number | null) {
+  if (value === null || !Number.isFinite(value)) {
+    return "-";
+  }
+  return `${Math.round(value * 10) / 10}%`;
 }
 
 export function formatDateTime(value: string | null | undefined) {
