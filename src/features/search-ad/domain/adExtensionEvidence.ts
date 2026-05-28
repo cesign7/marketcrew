@@ -22,11 +22,15 @@ const EXTENSION_TYPE_LABELS: Record<string, string> = {
   POWER_LINK_IMAGE: "파워링크 이미지",
   PRICE_LINKS: "가격 링크",
   PROMOTION: "프로모션",
-  SHOPPING_EXTRA: "쇼핑 부가정보",
+  SHOPPING_EXTRA: "쇼핑 상품 부가 정보",
   SHOPPING_WEB: "쇼핑 웹사이트",
   SUB_LINKS: "추가 링크",
   TALK: "네이버 톡톡",
   WEBSITE_INFO: "웹사이트 정보",
+};
+
+const EXTENSION_TYPE_LABEL_ALIASES: Record<string, string> = {
+  "쇼핑 부가정보": "쇼핑 상품 부가 정보",
 };
 
 const CONTENT_KEYS = new Set([
@@ -48,6 +52,11 @@ export function getSearchAdAdExtensionTypeLabel(type: string | undefined) {
     return "확장소재";
   }
 
+  const alias = EXTENSION_TYPE_LABEL_ALIASES[type.trim()];
+  if (alias) {
+    return alias;
+  }
+
   const normalized = type.toUpperCase();
   return EXTENSION_TYPE_LABELS[normalized] ?? type;
 }
@@ -57,13 +66,15 @@ export function extractSearchAdAdExtensionEvidence(rawPayload: Record<string, un
   const extensionTypeLabel = getSearchAdAdExtensionTypeLabel(extensionType);
   const payload = parseExtensionPayload(rawPayload?.adExtension);
   const extensionContentLabel = firstReadableContent(payload);
+  const missingContentLabel = isShoppingExtraWithoutPayload(extensionType, payload, extensionContentLabel) ? "세부 항목 미제공" : undefined;
   const extensionImagePath = firstImageReference(payload);
   const extensionImageUrl = toSearchAdImageUrl(extensionImagePath);
   const imageLabel = extensionImageUrl ? buildImageLabel(payload) : undefined;
   const extensionShortId = shortExtensionId(readString(rawPayload, "nccAdExtensionId"));
-  const extensionLabel = extensionContentLabel ?? imageLabel ?? extensionTypeLabel;
-  const extensionDisplayLabel = extensionContentLabel
-    ? `${extensionTypeLabel} · ${extensionContentLabel}`
+  const visibleContentLabel = extensionContentLabel ?? missingContentLabel;
+  const extensionLabel = visibleContentLabel ?? imageLabel ?? extensionTypeLabel;
+  const extensionDisplayLabel = visibleContentLabel
+    ? `${extensionTypeLabel} · ${visibleContentLabel}`
     : imageLabel
       ? `${extensionTypeLabel} · ${imageLabel}`
       : extensionTypeLabel;
@@ -78,6 +89,10 @@ export function extractSearchAdAdExtensionEvidence(rawPayload: Record<string, un
     ...(extensionType ? { extensionType } : {}),
     extensionTypeLabel,
   };
+}
+
+function isShoppingExtraWithoutPayload(extensionType: string | undefined, payload: unknown, extensionContentLabel: string | undefined) {
+  return extensionType?.toUpperCase() === "SHOPPING_EXTRA" && !extensionContentLabel && (payload === null || payload === undefined);
 }
 
 function parseExtensionPayload(value: unknown): unknown {

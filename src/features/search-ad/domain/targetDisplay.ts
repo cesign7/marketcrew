@@ -191,6 +191,20 @@ export function getRuleResultExtensionLabel(result: SearchAdRuleResult) {
   return sanitizeExtensionLabel(label, result);
 }
 
+export function getRuleResultExtensionContentStatusLabel(result: SearchAdRuleResult) {
+  if (result.targetType !== "ad_extension" || !isShoppingExtraResult(result)) {
+    return undefined;
+  }
+
+  const label =
+    stringFromEvidence(result.evidencePacket.extensionDisplayLabel) ??
+    stringFromEvidence(result.evidencePacket.extensionLabel) ??
+    stringFromEvidence(result.evidencePacket.extensionTypeLabel);
+  const contentLabel = readableExtensionContentFromLabel(label);
+
+  return contentLabel ? undefined : "세부 항목은 네이버 API 원문에 제공되지 않음";
+}
+
 export function getRuleResultLandingLabel(result: SearchAdRuleResult) {
   const pcUrl = stringFromEvidence(result.evidencePacket.pcFinalUrl) ?? stringFromEvidence(result.evidencePacket.finalPcUrl);
   const mobileUrl = stringFromEvidence(result.evidencePacket.mobileFinalUrl) ?? stringFromEvidence(result.evidencePacket.finalMobileUrl);
@@ -338,9 +352,8 @@ function sanitizeExtensionLabel(label: string | undefined, result: SearchAdRuleR
     return `${typeLabel} · 이미지 소재`;
   }
 
-  const ownerContentLabel = getExtensionOwnerContentLabel(result);
   if (isShoppingExtraExtensionLabel(extensionType) || isShoppingExtraExtensionLabel(rawTypeLabel) || isShoppingExtraExtensionLabel(evidenceTypeLabel)) {
-    return ownerContentLabel ? `${typeLabel} · ${ownerContentLabel}` : typeLabel;
+    return `${typeLabel} · 세부 항목 미제공`;
   }
 
   if (parts.length === 1 && rawTypeLabel) {
@@ -351,7 +364,7 @@ function sanitizeExtensionLabel(label: string | undefined, result: SearchAdRuleR
 }
 
 function isReadableExtensionContent(value: string) {
-  return !isExtensionImagePathLike(value) && !isExtensionShortIdLabel(value) && !isTechnicalTargetIdentifier(value);
+  return !isExtensionImagePathLike(value) && !isExtensionShortIdLabel(value) && value !== "세부 항목 미제공" && !isTechnicalTargetIdentifier(value);
 }
 
 function isExtensionImagePathLike(value: string) {
@@ -363,7 +376,7 @@ function isImageExtensionLabel(value: string | undefined) {
 }
 
 function isShoppingExtraExtensionLabel(value: string | undefined) {
-  return value?.toUpperCase() === "SHOPPING_EXTRA" || value === "쇼핑 부가정보";
+  return value?.toUpperCase() === "SHOPPING_EXTRA" || value === "쇼핑 부가정보" || value === "쇼핑 상품 부가 정보";
 }
 
 function isExtensionShortIdLabel(value: string) {
@@ -420,14 +433,21 @@ function getReadableTargetLabel(result: SearchAdRuleResult) {
   return undefined;
 }
 
-function getExtensionOwnerContentLabel(result: SearchAdRuleResult) {
-  const ownerLabel =
-    nonTechnicalString(stringFromEvidence(result.evidencePacket.productName)) ??
-    nonTechnicalString(stringFromEvidence(result.evidencePacket.adDisplayLabel)) ??
-    nonTechnicalString(stringFromEvidence(result.evidencePacket.adHeadline)) ??
-    nonTechnicalString(stringFromEvidence(result.evidencePacket.extensionOwnerLabel));
+function isShoppingExtraResult(result: SearchAdRuleResult) {
+  return (
+    isShoppingExtraExtensionLabel(stringFromEvidence(result.evidencePacket.extensionType)) ||
+    isShoppingExtraExtensionLabel(stringFromEvidence(result.evidencePacket.extensionTypeLabel)) ||
+    isShoppingExtraExtensionLabel(stringFromEvidence(result.evidencePacket.extensionDisplayLabel)?.split("·")[0]?.trim())
+  );
+}
 
-  return ownerLabel && ownerLabel !== "-" ? ownerLabel : undefined;
+function readableExtensionContentFromLabel(label: string | undefined) {
+  const parts = label
+    ?.split("·")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return parts?.slice(1).find((part) => isReadableExtensionContent(part));
 }
 
 function inferTechnicalTargetType(value: string | undefined): SearchAdRuleResult["targetType"] | undefined {

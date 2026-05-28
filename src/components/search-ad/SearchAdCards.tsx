@@ -12,6 +12,7 @@ import {
   getRuleResultDisplayTargetLabel,
   getRuleResultDisplayTargetTypeLabel,
   getRuleResultDetailHref,
+  getRuleResultExtensionContentStatusLabel,
   getRuleResultExtensionLabel,
   getRuleResultLandingLabel,
   getRuleResultPeriodLabel,
@@ -201,6 +202,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const adLabel = getRuleResultAdLabel(result);
         const creativeLabel = getRuleResultCreativeLabel(result);
         const extensionLabel = getRuleResultExtensionLabel(result);
+        const extensionContentStatusLabel = getRuleResultExtensionContentStatusLabel(result);
         const landingLabel = getRuleResultLandingLabel(result);
         const productConnection = getRuleResultProductConnection(result);
         const isAdMaterialTarget = result.targetType === "ad" || result.targetType === "ad_extension";
@@ -248,6 +250,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
                   {productConnection.productName && productConnection.productName !== materialTitle ? (
                     <small title={productConnection.productName}>{truncateDisplayText(`연결 상품 ${productConnection.productName}`, 44)}</small>
                   ) : null}
+                  {extensionContentStatusLabel ? <small>{extensionContentStatusLabel}</small> : null}
                   {landingLabel ? <small title={landingLabel}>{truncateDisplayText(landingLabel, 52)}</small> : null}
                 </div>
               </div>
@@ -328,6 +331,12 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
                   <div>
                     <dt>확장소재</dt>
                     <dd title={extensionLabel}>{truncateDisplayText(extensionLabel, 30)}</dd>
+                  </div>
+                ) : null}
+                {extensionContentStatusLabel ? (
+                  <div>
+                    <dt>부가정보 내용</dt>
+                    <dd>{extensionContentStatusLabel}</dd>
                   </div>
                 ) : null}
                 {landingLabel ? (

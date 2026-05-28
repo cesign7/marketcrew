@@ -6,6 +6,7 @@ import {
   getRuleResultDisplayTargetLabel,
   getRuleResultDisplayTargetTypeLabel,
   getRuleResultExtensionLabel,
+  getRuleResultExtensionContentStatusLabel,
   getRuleResultLandingLabel,
   getRuleResultPeriodLabel,
   getRuleResultProductConnection,
@@ -34,6 +35,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
   const adLabel = getRuleResultAdLabel(result);
   const creativeLabel = getRuleResultCreativeLabel(result);
   const extensionLabel = getRuleResultExtensionLabel(result);
+  const extensionContentStatusLabel = getRuleResultExtensionContentStatusLabel(result);
   const landingLabel = getRuleResultLandingLabel(result);
   const productConnection = getRuleResultProductConnection(result);
   const isAdMaterialTarget = result.targetType === "ad" || result.targetType === "ad_extension";
@@ -126,6 +128,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
             {productConnection.productName && productConnection.productName !== materialTitle ? (
               <small title={productConnection.productName}>{truncateDisplayText(`연결 상품 ${productConnection.productName}`, 72)}</small>
             ) : null}
+            {extensionContentStatusLabel ? <small>{extensionContentStatusLabel}</small> : null}
             {landingLabel ? <small title={landingLabel}>{truncateDisplayText(landingLabel, 84)}</small> : null}
           </div>
         </div>
@@ -188,6 +191,12 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
           <div>
             <dt>확장소재</dt>
             <dd title={extensionLabel}>{truncateDisplayText(extensionLabel, 34)}</dd>
+          </div>
+        ) : null}
+        {extensionContentStatusLabel ? (
+          <div>
+            <dt>부가정보 내용</dt>
+            <dd>{extensionContentStatusLabel}</dd>
           </div>
         ) : null}
         {landingLabel ? (

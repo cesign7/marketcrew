@@ -3,13 +3,13 @@ import { extractSearchAdAdExtensionEvidence, getSearchAdAdExtensionTypeLabel } f
 
 describe("search ad ad extension evidence", () => {
   it("네이버 확장소재 종류를 한국어로 보여준다", () => {
-    expect(getSearchAdAdExtensionTypeLabel("SHOPPING_EXTRA")).toBe("쇼핑 부가정보");
+    expect(getSearchAdAdExtensionTypeLabel("SHOPPING_EXTRA")).toBe("쇼핑 상품 부가 정보");
     expect(getSearchAdAdExtensionTypeLabel("POWER_LINK_IMAGE")).toBe("파워링크 이미지");
     expect(getSearchAdAdExtensionTypeLabel("IMAGE_SUB_LINKS")).toBe("이미지 추가 링크");
     expect(getSearchAdAdExtensionTypeLabel("TALK")).toBe("네이버 톡톡");
   });
 
-  it("확장소재 내용이 없으면 화면 라벨에는 종류만 보여주고 고유번호는 별도 값으로 남긴다", () => {
+  it("쇼핑 상품 부가 정보 원문 내용이 없으면 세부 항목 미제공으로 표시하고 고유번호는 별도 값으로 남긴다", () => {
     expect(
       extractSearchAdAdExtensionEvidence({
         nccAdExtensionId: "ext-a001-02-000000124735420",
@@ -17,10 +17,10 @@ describe("search ad ad extension evidence", () => {
         adExtension: null,
       }),
     ).toMatchObject({
-      extensionDisplayLabel: "쇼핑 부가정보",
-      extensionLabel: "쇼핑 부가정보",
+      extensionDisplayLabel: "쇼핑 상품 부가 정보 · 세부 항목 미제공",
+      extensionLabel: "세부 항목 미제공",
       extensionShortId: "고유번호 735420",
-      extensionTypeLabel: "쇼핑 부가정보",
+      extensionTypeLabel: "쇼핑 상품 부가 정보",
     });
   });
 
