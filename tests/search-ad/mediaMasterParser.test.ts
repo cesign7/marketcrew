@@ -20,4 +20,10 @@ describe("parseSearchAdMediaMaster", () => {
     });
     expect(parsed.rows[1]?.mediaUrl).toBe("https://search.naver.com");
   });
+
+  it("매체명 표시가 불가능한 빈 이름 행은 저장 대상에서 제외한다", () => {
+    const parsed = parseSearchAdMediaMaster(["media\t8753\t네이버 모바일 통합검색", "media\t9999\t"].join("\n"));
+
+    expect(parsed.rows.map((row) => row.mediaId)).toEqual(["8753"]);
+  });
 });

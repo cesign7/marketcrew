@@ -32,7 +32,10 @@ export function parseSearchAdMediaMaster(rawText: string): ParsedSearchAdMediaMa
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
     .filter((line) => line.length > 0)
-    .map((line, index) => parseMediaMasterLine(line, index + 1));
+    .flatMap((line, index) => {
+      const row = parseMediaMasterLine(line, index + 1);
+      return row ? [row] : [];
+    });
 
   return {
     checksum,
@@ -41,10 +44,10 @@ export function parseSearchAdMediaMaster(rawText: string): ParsedSearchAdMediaMa
   };
 }
 
-function parseMediaMasterLine(line: string, rowNumber: number): SearchAdMediaMasterRow {
+function parseMediaMasterLine(line: string, rowNumber: number): SearchAdMediaMasterRow | undefined {
   const values = line.split("\t");
   if (values.length < 3) {
-    throw new Error(`SEARCH_AD_MEDIA_MASTER_PARSE_FAILED:expected_at_least=3:actual=${values.length}:row=${rowNumber}`);
+    return undefined;
   }
 
   const rawRow = Object.fromEntries(
@@ -60,7 +63,7 @@ function parseMediaMasterLine(line: string, rowNumber: number): SearchAdMediaMas
   const mediaId = normalizeString(values[1]);
   const mediaName = normalizeString(values[2]);
   if (!mediaId || !mediaName) {
-    throw new Error(`SEARCH_AD_MEDIA_MASTER_PARSE_FAILED:missing_media_id_or_name:row=${rowNumber}`);
+    return undefined;
   }
 
   return {
