@@ -1001,18 +1001,10 @@ export async function saveSearchAdMediaSnapshots(input: SearchAdMediaMasterRow[]
   }
 
   await ensureSearchAdSchema();
-  for (const item of input) {
-    await query(
-      `
-        INSERT INTO search_ad_media_snapshots (
-          id, media_id, media_type, media_name, media_url, naver_ad_network, portal_site,
-          pc_media, mobile_media, search_ad_network, contents_ad_network, group_id,
-          contracted_at, revoked_at, raw_payload, collected_at
-        )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-        ON CONFLICT (id) DO NOTHING
-      `,
-      [
+  for (const chunk of chunkItems(input, 500)) {
+    const values: unknown[] = [];
+    const placeholders = chunk.map((item) => {
+      values.push(
         snapshotId("media", `${item.mediaType}-${item.mediaId}`, collectedAt),
         item.mediaId,
         item.mediaType,
@@ -1029,7 +1021,22 @@ export async function saveSearchAdMediaSnapshots(input: SearchAdMediaMasterRow[]
         item.revokedAt ?? null,
         JSON.stringify(item.rawRow),
         collectedAt,
-      ],
+      );
+      const offset = values.length - 15;
+      return `($${offset}, $${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15})`;
+    });
+
+    await query(
+      `
+        INSERT INTO search_ad_media_snapshots (
+          id, media_id, media_type, media_name, media_url, naver_ad_network, portal_site,
+          pc_media, mobile_media, search_ad_network, contents_ad_network, group_id,
+          contracted_at, revoked_at, raw_payload, collected_at
+        )
+        VALUES ${placeholders.join(", ")}
+        ON CONFLICT (id) DO NOTHING
+      `,
+      values,
     );
   }
 
@@ -3924,6 +3931,14 @@ async function releaseOperationCalendarLock(targetId: string, log: SearchAdActio
 
 function snapshotId(targetType: SearchAdTargetType | "ad" | "target" | "media", providerId: string, collectedAt: string) {
   return `${targetType}-${providerId}-${collectedAt}`.replace(/[^a-zA-Z0-9_-]/g, "-");
+}
+
+function chunkItems<T>(items: T[], size: number) {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
 }
 
 function canUseSampleFallback() {
