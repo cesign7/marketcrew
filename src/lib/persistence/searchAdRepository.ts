@@ -23,7 +23,7 @@ import {
   type SearchAdKeywordStateForCleanup,
 } from "@/features/search-ad/domain/keywordCleanup";
 import { getReportTypeLabel } from "@/features/search-ad/domain/reportTypes";
-import { getRuleResultActionTarget, isSearchTermReport } from "@/features/search-ad/domain/targetDisplay";
+import { getRuleResultActionTarget } from "@/features/search-ad/domain/targetDisplay";
 import { describeTargetSetting } from "@/features/search-ad/domain/targetSettings";
 import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport";
 import { buildSearchAdPeriodRuleResults } from "@/features/search-ad/domain/ruleEngine";
@@ -828,11 +828,11 @@ export async function getSearchAdSearchTermsView(filters = DEFAULT_SEARCH_AD_FIL
 
   try {
     await ensureSearchAdSchema();
-    const rows = await listNormalizedRowsByFilters(filters, 500);
+    const rows = await listSearchTermRowsByFilters(filters, 200);
     const ruleResults = await listSearchAdRuleResultsFromDb(filters, 500);
     return {
       filters,
-      rows: rows.filter((row) => isSearchTermReport(row.reportType)),
+      rows,
       ruleResults: ruleResults.filter((rule) => rule.targetType === "search_term"),
     };
   } catch (error) {
@@ -851,12 +851,14 @@ export async function getSearchAdKeywordCleanupView(filters = DEFAULT_SEARCH_AD_
 
   try {
     await ensureSearchAdSchema();
+    const coverageRowsPromise = listKeywordCoverageForCleanup(filters);
     const keywords = await listLatestKeywordStatesForCleanup(filters);
+    const performanceRows = await listKeywordPerformanceForCleanup(filters, keywords);
     return buildSearchAdKeywordCleanupView({
       filters,
       keywords,
-      performanceRows: await listKeywordPerformanceForCleanup(filters, keywords),
-      coverageRows: await listKeywordCoverageForCleanup(filters),
+      performanceRows,
+      coverageRows: await coverageRowsPromise,
     });
   } catch (error) {
     if (canUseSampleFallback()) {
@@ -2525,6 +2527,14 @@ async function ensureSearchAdSchemaUncached() {
     CREATE INDEX IF NOT EXISTS search_ad_normalized_brand_type_date_idx
       ON search_ad_report_normalized_rows (brand_key, ad_product_type, source_date DESC);
 
+    CREATE INDEX IF NOT EXISTS search_ad_normalized_search_terms_latest_idx
+      ON search_ad_report_normalized_rows (report_type, brand_key, ad_product_type, source_date DESC, cost DESC, clicks DESC)
+      WHERE report_type IN ('EXPKEYWORD', 'SHOPPINGKEYWORD_DETAIL', 'SHOPPINGKEYWORD_CONVERSION_DETAIL');
+
+    CREATE INDEX IF NOT EXISTS search_ad_normalized_keyword_recent_idx
+      ON search_ad_report_normalized_rows (keyword_id, source_date DESC, brand_key, ad_product_type)
+      WHERE keyword_id IS NOT NULL AND keyword_id <> '';
+
     CREATE INDEX IF NOT EXISTS search_ad_normalized_report_row_id_idx
       ON search_ad_report_normalized_rows (report_row_id);
 
@@ -2956,6 +2966,16 @@ async function listKeywordPerformanceForCleanup(
   }
 
   const keywordIds = scopedKeywords.map((keyword) => keyword.keywordId);
+  const clauses = ["bounds.end_date IS NOT NULL", "n.source_date >= (bounds.end_date - INTERVAL '364 days')::date", "NULLIF(n.keyword_id, '') = ANY($1::text[])"];
+  const values: unknown[] = [keywordIds];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`n.brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`n.ad_product_type = $${values.length}`);
+  }
 
   const result = await query<{
     brand_key: BrandKey;
@@ -2993,12 +3013,10 @@ async function listKeywordPerformanceForCleanup(
         MAX(n.source_date) AS end_date
       FROM search_ad_report_normalized_rows n
       CROSS JOIN bounds
-      WHERE bounds.end_date IS NOT NULL
-        AND n.source_date >= (bounds.end_date - INTERVAL '364 days')::date
-        AND NULLIF(n.keyword_id, '') = ANY($1::text[])
+      WHERE ${clauses.join(" AND ")}
       GROUP BY n.brand_key, n.ad_product_type, NULLIF(n.keyword_id, '')
     `,
-    [keywordIds],
+    values,
   );
 
   return result.rows.map((row) => ({
@@ -3154,6 +3172,56 @@ async function listNormalizedRowsByFilters(filters: SearchAdFilters, limit: numb
       SELECT *
       FROM search_ad_report_normalized_rows
       ${where}
+      ORDER BY source_date DESC, cost DESC, clicks DESC
+      LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
+    `,
+    values,
+  );
+
+  return result.rows.map(mapNormalizedRow);
+}
+
+async function listSearchTermRowsByFilters(filters: SearchAdFilters, limit: number): Promise<SearchAdNormalizedRow[]> {
+  const clauses = ["report_type IN ('EXPKEYWORD', 'SHOPPINGKEYWORD_DETAIL', 'SHOPPINGKEYWORD_CONVERSION_DETAIL')"];
+  const values: unknown[] = [];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`ad_product_type = $${values.length}`);
+  }
+
+  const result = await query<{
+    id: string;
+    report_row_id: string;
+    report_type: SearchAdReportType;
+    brand_key: BrandKey;
+    ad_product_type: AdProductType;
+    campaign_id: string | null;
+    campaign_name: string | null;
+    adgroup_id: string | null;
+    adgroup_name: string | null;
+    keyword_id: string | null;
+    keyword_text: string | null;
+    search_term: string | null;
+    ad_id: string | null;
+    criterion_id: string | null;
+    extension_id: string | null;
+    media_id: string | null;
+    device: string | null;
+    impressions: string;
+    clicks: string;
+    cost: string;
+    conversions: string;
+    sales_amount: string;
+    source_date: string | Date;
+  }>(
+    `
+      SELECT *
+      FROM search_ad_report_normalized_rows
+      WHERE ${clauses.join(" AND ")}
       ORDER BY source_date DESC, cost DESC, clicks DESC
       LIMIT ${Number.isFinite(limit) ? Math.max(1, limit) : 100}
     `,

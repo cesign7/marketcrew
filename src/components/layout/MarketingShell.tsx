@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { LogoutButton } from "@/components/LogoutButton";
 import { buildSearchAdFilterHref } from "@/features/search-ad/domain/filterLinks";
 import { AD_PRODUCTS, BRANDS, getAdProductLabel, getBrandLabel } from "@/features/search-ad/domain/reportTypes";
@@ -92,10 +93,10 @@ export function MarketingShell({ activePath, children, description, filterPath, 
         </div>
         <nav className="side-nav__links">
           {NAV_AREAS.map((area) => (
-            <a aria-current={activeArea.key === area.key ? "page" : undefined} className={activeArea.key === area.key ? "is-active" : ""} href={buildSearchAdFilterHref(area.href, filters)} key={area.key}>
+            <Link aria-current={activeArea.key === area.key ? "page" : undefined} className={activeArea.key === area.key ? "is-active" : ""} href={buildSearchAdFilterHref(area.href, filters)} key={area.key}>
               <span>{area.label}</span>
               <small>{area.description}</small>
-            </a>
+            </Link>
           ))}
         </nav>
       </aside>
@@ -126,9 +127,9 @@ function WorkAreaTabs({ activePath, area, filters }: { activePath: string; area:
   return (
     <nav className="work-tabs" aria-label={`${area.label} 업무 이동`}>
       {area.tabs.map((tab) => (
-        <a aria-current={activePath === tab.href ? "page" : undefined} className={activePath === tab.href ? "is-active" : ""} href={buildSearchAdFilterHref(tab.href, filters)} key={tab.href}>
+        <Link aria-current={activePath === tab.href ? "page" : undefined} className={activePath === tab.href ? "is-active" : ""} href={buildSearchAdFilterHref(tab.href, filters)} key={tab.href}>
           {tab.label}
-        </a>
+        </Link>
       ))}
     </nav>
   );
@@ -139,24 +140,24 @@ function SearchAdTopFilters({ filterPath, filters }: { filterPath: string; filte
     <section className="filter-bar" aria-label="검색광고 필터">
       <div className="filter-group">
         <span>브랜드</span>
-        <a className={filters.brand === "all" ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, brand: "all" })}>
+        <Link className={filters.brand === "all" ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, brand: "all" })}>
           {getBrandLabel("all")}
-        </a>
+        </Link>
         {BRANDS.map((brand) => (
-          <a className={filters.brand === brand.key ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, brand: brand.key })} key={brand.key}>
+          <Link className={filters.brand === brand.key ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, brand: brand.key })} key={brand.key}>
             {brand.label}
-          </a>
+          </Link>
         ))}
       </div>
       <div className="filter-group">
         <span>광고유형</span>
-        <a className={filters.adProduct === "all" ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, adProduct: "all" })}>
+        <Link className={filters.adProduct === "all" ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, adProduct: "all" })}>
           {getAdProductLabel("all")}
-        </a>
+        </Link>
         {AD_PRODUCTS.map((product) => (
-          <a className={filters.adProduct === product.key ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, adProduct: product.key })} key={product.key}>
+          <Link className={filters.adProduct === product.key ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, adProduct: product.key })} key={product.key}>
             {product.label}
-          </a>
+          </Link>
         ))}
       </div>
     </section>
