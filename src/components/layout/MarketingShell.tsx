@@ -93,7 +93,13 @@ export function MarketingShell({ activePath, children, description, filterPath, 
         </div>
         <nav className="side-nav__links">
           {NAV_AREAS.map((area) => (
-            <Link aria-current={activeArea.key === area.key ? "page" : undefined} className={activeArea.key === area.key ? "is-active" : ""} href={buildSearchAdFilterHref(area.href, filters)} key={area.key}>
+            <Link
+              aria-current={activeArea.key === area.key ? "page" : undefined}
+              className={activeArea.key === area.key ? "is-active" : ""}
+              href={buildSearchAdFilterHref(area.href, filters)}
+              key={area.key}
+              prefetch={false}
+            >
               <span>{area.label}</span>
               <small>{area.description}</small>
             </Link>
@@ -127,7 +133,13 @@ function WorkAreaTabs({ activePath, area, filters }: { activePath: string; area:
   return (
     <nav className="work-tabs" aria-label={`${area.label} 업무 이동`}>
       {area.tabs.map((tab) => (
-        <Link aria-current={activePath === tab.href ? "page" : undefined} className={activePath === tab.href ? "is-active" : ""} href={buildSearchAdFilterHref(tab.href, filters)} key={tab.href}>
+        <Link
+          aria-current={activePath === tab.href ? "page" : undefined}
+          className={activePath === tab.href ? "is-active" : ""}
+          href={buildSearchAdFilterHref(tab.href, filters)}
+          key={tab.href}
+          prefetch={false}
+        >
           {tab.label}
         </Link>
       ))}
@@ -140,22 +152,22 @@ function SearchAdTopFilters({ filterPath, filters }: { filterPath: string; filte
     <section className="filter-bar" aria-label="검색광고 필터">
       <div className="filter-group">
         <span>브랜드</span>
-        <Link className={filters.brand === "all" ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, brand: "all" })}>
+        <Link className={filters.brand === "all" ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, brand: "all" })} prefetch={false}>
           {getBrandLabel("all")}
         </Link>
         {BRANDS.map((brand) => (
-          <Link className={filters.brand === brand.key ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, brand: brand.key })} key={brand.key}>
+          <Link className={filters.brand === brand.key ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, brand: brand.key })} key={brand.key} prefetch={false}>
             {brand.label}
           </Link>
         ))}
       </div>
       <div className="filter-group">
         <span>광고유형</span>
-        <Link className={filters.adProduct === "all" ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, adProduct: "all" })}>
+        <Link className={filters.adProduct === "all" ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, adProduct: "all" })} prefetch={false}>
           {getAdProductLabel("all")}
         </Link>
         {AD_PRODUCTS.map((product) => (
-          <Link className={filters.adProduct === product.key ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, adProduct: product.key })} key={product.key}>
+          <Link className={filters.adProduct === product.key ? "is-active" : ""} href={buildSearchAdFilterHref(filterPath, { ...filters, adProduct: product.key })} key={product.key} prefetch={false}>
             {product.label}
           </Link>
         ))}

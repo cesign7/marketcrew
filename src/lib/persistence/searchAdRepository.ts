@@ -828,12 +828,14 @@ export async function getSearchAdSearchTermsView(filters = DEFAULT_SEARCH_AD_FIL
 
   try {
     await ensureSearchAdSchema();
-    const rows = await listSearchTermRowsByFilters(filters, 200);
-    const ruleResults = await listSearchAdRuleResultsFromDb(filters, 500);
+    const [rows, ruleResults] = await Promise.all([
+      listSearchTermRowsByFilters(filters, 160),
+      listSearchAdRuleResultsFromDb({ ...filters, targetType: "search_term" }, 80),
+    ]);
     return {
       filters,
       rows,
-      ruleResults: ruleResults.filter((rule) => rule.targetType === "search_term"),
+      ruleResults,
     };
   } catch (error) {
     if (canUseSampleFallback()) {
@@ -2674,7 +2676,7 @@ async function listSearchAdReportsFromDb(filters: SearchAdFilters, limit: number
 }
 
 async function listSearchAdRuleResultsFromDb(
-  filters: SearchAdFilters & Partial<Pick<SearchAdRuleResultFilters, "actionIntent">>,
+  filters: SearchAdFilters & Partial<Pick<SearchAdRuleResultFilters, "actionIntent">> & { targetType?: SearchAdRuleResult["targetType"] },
   limit: number,
 ): Promise<SearchAdRuleResult[]> {
   const clauses: string[] = [];
@@ -2690,6 +2692,10 @@ async function listSearchAdRuleResultsFromDb(
   if (filters.actionIntent && filters.actionIntent !== "all") {
     values.push(filters.actionIntent);
     clauses.push(`evidence_packet ->> 'actionIntent' = $${values.length}`);
+  }
+  if (filters.targetType) {
+    values.push(filters.targetType);
+    clauses.push(`target_type = $${values.length}`);
   }
   const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
 
