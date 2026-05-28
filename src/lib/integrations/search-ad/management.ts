@@ -45,6 +45,24 @@ export type NaverAd = {
   [key: string]: unknown;
 };
 
+export type NaverAdExtension = {
+  nccAdExtensionId: string;
+  ownerId?: string;
+  type?: string;
+  adExtension?: string | Record<string, unknown> | null;
+  userLock?: boolean;
+  status?: string;
+  statusReason?: string;
+  inspectStatus?: string;
+  enable?: boolean;
+  pcChannelId?: string;
+  mobileChannelId?: string;
+  periodStartDt?: string;
+  periodEndDt?: string;
+  schedule?: string | Record<string, unknown> | null;
+  [key: string]: unknown;
+};
+
 export type NaverTarget = {
   nccTargetId: string;
   ownerId: string;
@@ -134,6 +152,18 @@ export async function updateSearchAdKeywordUserLock(keywordId: string, userLock:
 export function listSearchAdAds(adgroupId?: string) {
   const query = adgroupId ? `?nccAdgroupId=${encodeURIComponent(adgroupId)}` : "";
   return searchAdFetch<NaverAd[]>(`/ncc/ads${query}`);
+}
+
+export function listSearchAdAdExtensionsByIds(ids: string[]) {
+  const uniqueIds = [...new Set(ids.filter(Boolean))];
+  if (uniqueIds.length === 0) {
+    return Promise.resolve([]);
+  }
+
+  const params = new URLSearchParams();
+  params.set("ids", uniqueIds.join(","));
+
+  return searchAdFetch<NaverAdExtension[]>(`/ncc/ad-extensions?${params.toString()}`);
 }
 
 export function listSearchAdTargets(ownerId: string, types: string[] = []) {

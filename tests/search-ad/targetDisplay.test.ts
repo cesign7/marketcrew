@@ -4,6 +4,7 @@ import {
   getRuleResultDisplayTargetLabel,
   getRuleResultDisplayTargetTypeLabel,
   getRuleResultDetailHref,
+  getRuleResultExtensionLabel,
   getRuleResultPeriodLabel,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
@@ -96,6 +97,38 @@ describe("rule result target display", () => {
     });
 
     expect(getRuleResultCreativeLabel(result)).toBe("생일 스티커");
+  });
+
+  it("광고 소재 카드 제목은 광고그룹 대신 실제 소재명을 우선 보여준다", () => {
+    const result = ruleResult({
+      targetType: "ad",
+      targetId: "nad-a001-02-000000203421541",
+      targetLabel: "M_감사/생일/답례 스티커 광고 소재",
+      evidencePacket: {
+        adDisplayLabel: "생일축하스티커 생일01 답례품 감사 소량 주문",
+        adgroupName: "M_감사/생일/답례 스티커",
+      },
+    });
+
+    expect(getRuleResultDisplayTargetLabel(result)).toBe("생일축하스티커 생일01 답례품 감사 소량 주문 광고 소재");
+  });
+
+  it("확장소재 카드 제목은 연결 소재와 확장소재 종류를 함께 보여준다", () => {
+    const result = ruleResult({
+      targetType: "ad_extension",
+      targetId: "ext-a001-02-000000124735420",
+      targetLabel: "M_감사/생일/답례 스티커 확장소재",
+      evidencePacket: {
+        adDisplayLabel: "생일축하스티커 생일01 답례품 감사 소량 주문",
+        extensionDisplayLabel: "쇼핑 부가정보 · 고유번호 735420",
+        extensionTypeLabel: "쇼핑 부가정보",
+      },
+    });
+
+    expect(getRuleResultExtensionLabel(result)).toBe("쇼핑 부가정보 · 고유번호 735420");
+    expect(getRuleResultDisplayTargetLabel(result)).toBe("생일축하스티커 생일01 답례품 감사 소량 주문 · 쇼핑 부가정보 · 고유번호 735420");
+    expect(getRuleResultDisplayTargetTypeLabel(result)).toBe("확장소재");
+    expect(getRuleResultRawTargetId(result)).toBe("ext-a001-02-000000124735420");
   });
 
   it("실제 검색어는 그대로 보여준다", () => {

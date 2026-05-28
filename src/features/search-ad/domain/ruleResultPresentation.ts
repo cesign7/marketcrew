@@ -73,6 +73,12 @@ export function getRuleResultContextBadges(result: SearchAdRuleResult): RuleResu
   const deviceLabel = stringFromEvidence(result.evidencePacket.deviceLabel);
   const seasonHint = stringFromEvidence(result.evidencePacket.seasonHint);
   const measurementStatusLabel = stringFromEvidence(result.evidencePacket.measurementStatusLabel);
+  const adStatusLabel = translateSearchAdStatus(stringFromEvidence(result.evidencePacket.adStatus), stringFromEvidence(result.evidencePacket.adStatusReason));
+  const extensionTypeLabel = stringFromEvidence(result.evidencePacket.extensionTypeLabel);
+  const extensionStatusLabel = translateSearchAdStatus(
+    stringFromEvidence(result.evidencePacket.extensionStatus),
+    stringFromEvidence(result.evidencePacket.extensionStatusReason),
+  );
 
   if (deviceLabel) {
     badges.push({ label: "기기", value: deviceLabel });
@@ -84,6 +90,18 @@ export function getRuleResultContextBadges(result: SearchAdRuleResult): RuleResu
 
   if (measurementStatusLabel && measurementStatusLabel !== "전환 기준 사용 가능") {
     badges.push({ label: "전환 기준", value: measurementStatusLabel });
+  }
+
+  if (extensionTypeLabel) {
+    badges.push({ label: "확장소재 종류", value: extensionTypeLabel });
+  }
+
+  if (extensionStatusLabel) {
+    badges.push({ label: "확장소재 상태", value: extensionStatusLabel });
+  }
+
+  if (adStatusLabel && result.targetType === "ad") {
+    badges.push({ label: "소재 상태", value: adStatusLabel });
   }
 
   return badges;
@@ -229,6 +247,44 @@ function fallbackActionCandidateLabel(result: SearchAdRuleResult) {
       return "전환 점검 후보";
     default:
       return "운영 점검 후보";
+  }
+}
+
+function translateSearchAdStatus(status: string | undefined, reason: string | undefined) {
+  const label = translateSearchAdStatusCode(reason) ?? translateSearchAdStatusCode(status);
+  if (!label) {
+    return undefined;
+  }
+
+  return label;
+}
+
+function translateSearchAdStatusCode(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  switch (value.toUpperCase()) {
+    case "ELIGIBLE":
+      return "운영 가능";
+    case "APPROVED":
+      return "검수 승인";
+    case "PENDING":
+    case "UNDER_REVIEW":
+      return "검수 중";
+    case "DISAPPROVED":
+    case "REJECTED":
+      return "검수 반려";
+    case "PAUSED":
+      return "꺼짐";
+    case "DELETED":
+      return "삭제됨";
+    case "CAMPAIGN_PAUSED":
+      return "캠페인 꺼짐";
+    case "ADGROUP_PAUSED":
+      return "광고그룹 꺼짐";
+    default:
+      return undefined;
   }
 }
 

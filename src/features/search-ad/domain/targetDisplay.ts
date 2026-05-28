@@ -114,6 +114,11 @@ export function getRuleResultDisplayTargetTypeLabel(result: SearchAdRuleResult) 
 }
 
 export function getRuleResultDisplayTargetLabel(result: SearchAdRuleResult) {
+  const readableTargetLabel = getReadableTargetLabel(result);
+  if (readableTargetLabel) {
+    return readableTargetLabel;
+  }
+
   if (!isTechnicalTargetIdentifier(result.targetLabel)) {
     return result.targetLabel;
   }
@@ -163,10 +168,20 @@ export function getRuleResultTargetDetailLabel(result: SearchAdRuleResult) {
 
 export function getRuleResultCreativeLabel(result: SearchAdRuleResult) {
   const label =
+    stringFromEvidence(result.evidencePacket.adDisplayLabel) ??
     stringFromEvidence(result.evidencePacket.adHeadline) ??
     stringFromEvidence(result.evidencePacket.adTitle) ??
     stringFromEvidence(result.evidencePacket.adDescription) ??
     stringFromEvidence(result.evidencePacket.creativeLabel);
+
+  return isTechnicalTargetIdentifier(label) ? undefined : label;
+}
+
+export function getRuleResultExtensionLabel(result: SearchAdRuleResult) {
+  const label =
+    stringFromEvidence(result.evidencePacket.extensionDisplayLabel) ??
+    stringFromEvidence(result.evidencePacket.extensionLabel) ??
+    stringFromEvidence(result.evidencePacket.extensionTypeLabel);
 
   return isTechnicalTargetIdentifier(label) ? undefined : label;
 }
@@ -292,9 +307,44 @@ function nonTechnicalString(value: string | undefined) {
   return isTechnicalTargetIdentifier(value) ? undefined : value;
 }
 
+function getReadableTargetLabel(result: SearchAdRuleResult) {
+  if (result.targetType === "ad") {
+    const creativeLabel = nonTechnicalString(getRuleResultCreativeLabel(result));
+    return creativeLabel ? `${creativeLabel} 광고 소재` : undefined;
+  }
+
+  if (result.targetType === "ad_extension") {
+    const extensionLabel = getRuleResultExtensionLabel(result);
+    const ownerLabel =
+      nonTechnicalString(stringFromEvidence(result.evidencePacket.productName)) ??
+      nonTechnicalString(stringFromEvidence(result.evidencePacket.adDisplayLabel)) ??
+      nonTechnicalString(stringFromEvidence(result.evidencePacket.extensionOwnerLabel)) ??
+      nonTechnicalString(stringFromEvidence(result.evidencePacket.adHeadline)) ??
+      nonTechnicalString(getRuleResultConnectedTarget(result));
+
+    if (extensionLabel && ownerLabel && ownerLabel !== "-") {
+      return `${ownerLabel} · ${extensionLabel}`;
+    }
+
+    if (extensionLabel) {
+      return extensionLabel;
+    }
+
+    if (ownerLabel && ownerLabel !== "-") {
+      return `${ownerLabel} 확장소재`;
+    }
+  }
+
+  return undefined;
+}
+
 function inferTechnicalTargetType(value: string | undefined): SearchAdRuleResult["targetType"] | undefined {
   if (!value) {
     return undefined;
+  }
+
+  if (/^ext-[a-z0-9-]+$/i.test(value)) {
+    return "ad_extension";
   }
 
   if (/^nad-[a-z0-9-]+$/i.test(value)) {

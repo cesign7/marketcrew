@@ -140,6 +140,27 @@ type TargetSnapshotInput = {
   rawPayload: Record<string, unknown>;
 };
 
+export type SearchAdAdExtensionSnapshotInput = {
+  providerExtensionId: string;
+  ownerId?: string;
+  ownerName?: string;
+  ownerType?: "campaign" | "adgroup" | "ad";
+  brandKey?: BrandKey;
+  adProductType?: AdProductType;
+  extensionType?: string;
+  extensionTypeLabel: string;
+  extensionLabel: string;
+  extensionDisplayLabel: string;
+  userLock?: boolean | null;
+  status?: string;
+  statusReason?: string;
+  inspectStatus?: string;
+  enable?: boolean | null;
+  pcChannelId?: string;
+  mobileChannelId?: string;
+  rawPayload: Record<string, unknown>;
+};
+
 type StateBrandLookupValue = {
   brandKey?: BrandKey;
   adProductType?: AdProductType;
@@ -199,6 +220,7 @@ type BackfillRunRow = {
 };
 
 type AdCreativeLookupValue = {
+  adgroupId?: string;
   name?: string;
   pcFinalUrl?: string;
   mobileFinalUrl?: string;
@@ -208,6 +230,30 @@ type AdCreativeLookupValue = {
   mallProductId?: string;
   status?: string;
   statusReason?: string;
+};
+
+export type SearchAdExtensionOwnerMetadata = {
+  ownerId: string;
+  ownerType: "campaign" | "adgroup" | "ad";
+  name?: string;
+  brandKey?: BrandKey;
+  adProductType?: AdProductType;
+};
+
+type AdExtensionLookupValue = {
+  providerExtensionId: string;
+  ownerId?: string;
+  ownerName?: string;
+  ownerType?: "campaign" | "adgroup" | "ad";
+  extensionType?: string;
+  extensionTypeLabel: string;
+  extensionLabel: string;
+  extensionDisplayLabel: string;
+  userLock?: boolean | null;
+  status?: string;
+  statusReason?: string;
+  inspectStatus?: string;
+  enable?: boolean | null;
 };
 
 type MediaLookupValue = {
@@ -1043,6 +1089,59 @@ export async function saveSearchAdMediaSnapshots(input: SearchAdMediaMasterRow[]
   return { collectedAt, saved: input.length };
 }
 
+export async function saveSearchAdAdExtensionSnapshots(input: SearchAdAdExtensionSnapshotInput[], collectedAt = new Date().toISOString()) {
+  if (!hasDatabaseUrl()) {
+    throw new Error("SEARCH_AD_DATABASE_MISSING");
+  }
+
+  await ensureSearchAdSchema();
+  for (const chunk of chunkItems(input, 500)) {
+    const values: unknown[] = [];
+    const placeholders = chunk.map((item) => {
+      values.push(
+        snapshotId("ad_extension", item.providerExtensionId, collectedAt),
+        item.providerExtensionId,
+        item.ownerId ?? null,
+        item.ownerName ?? null,
+        item.ownerType ?? null,
+        item.brandKey ?? null,
+        item.adProductType ?? null,
+        item.extensionType ?? null,
+        item.extensionTypeLabel,
+        item.extensionLabel,
+        item.extensionDisplayLabel,
+        item.userLock ?? null,
+        item.status ?? null,
+        item.statusReason ?? null,
+        item.inspectStatus ?? null,
+        item.enable ?? null,
+        item.pcChannelId ?? null,
+        item.mobileChannelId ?? null,
+        JSON.stringify(item.rawPayload),
+        collectedAt,
+      );
+      const offset = values.length - 19;
+      return `($${offset}, $${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13}, $${offset + 14}, $${offset + 15}, $${offset + 16}, $${offset + 17}, $${offset + 18}, $${offset + 19})`;
+    });
+
+    await query(
+      `
+        INSERT INTO search_ad_ad_extension_snapshots (
+          id, provider_extension_id, owner_id, owner_name, owner_type, brand_key, ad_product_type,
+          extension_type, extension_type_label, extension_label, extension_display_label,
+          user_lock, status, status_reason, inspect_status, enable, pc_channel_id, mobile_channel_id,
+          raw_payload, collected_at
+        )
+        VALUES ${placeholders.join(", ")}
+        ON CONFLICT (id) DO NOTHING
+      `,
+      values,
+    );
+  }
+
+  return { collectedAt, saved: input.length };
+}
+
 export async function listReferencedSearchAdMediaIds() {
   if (!hasDatabaseUrl()) {
     return new Set<string>();
@@ -1060,6 +1159,93 @@ export async function listReferencedSearchAdMediaIds() {
   `);
 
   return new Set(result.rows.map((row) => row.media_id));
+}
+
+export async function listReferencedSearchAdAdExtensionIds() {
+  if (!hasDatabaseUrl()) {
+    return new Set<string>();
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<{ extension_id: string }>(`
+    SELECT DISTINCT extension_id
+    FROM search_ad_report_normalized_rows
+    WHERE extension_id IS NOT NULL AND extension_id <> ''
+    UNION
+    SELECT DISTINCT evidence_packet ->> 'extensionId' AS extension_id
+    FROM search_ad_rule_results
+    WHERE evidence_packet ->> 'extensionId' IS NOT NULL AND evidence_packet ->> 'extensionId' <> ''
+    UNION
+    SELECT DISTINCT target_id AS extension_id
+    FROM search_ad_rule_results
+    WHERE target_type = 'ad_extension' AND target_id IS NOT NULL AND target_id <> ''
+  `);
+
+  return new Set(result.rows.map((row) => row.extension_id));
+}
+
+export async function listSearchAdAdExtensionOwnerMetadata(): Promise<Map<string, SearchAdExtensionOwnerMetadata>> {
+  if (!hasDatabaseUrl()) {
+    return new Map();
+  }
+
+  await ensureSearchAdSchema();
+  const rows = await query<{
+    owner_id: string;
+    owner_type: "campaign" | "adgroup" | "ad";
+    name: string | null;
+    brand_key: BrandKey | null;
+    ad_product_type: AdProductType | null;
+  }>(`
+    WITH latest_campaigns AS (
+      SELECT DISTINCT ON (provider_campaign_id)
+        provider_campaign_id AS owner_id,
+        'campaign'::text AS owner_type,
+        name,
+        brand_key,
+        ad_product_type
+      FROM search_ad_campaign_snapshots
+      ORDER BY provider_campaign_id, collected_at DESC
+    ),
+    latest_adgroups AS (
+      SELECT DISTINCT ON (provider_adgroup_id)
+        provider_adgroup_id AS owner_id,
+        'adgroup'::text AS owner_type,
+        name,
+        brand_key,
+        ad_product_type
+      FROM search_ad_adgroup_snapshots
+      ORDER BY provider_adgroup_id, collected_at DESC
+    ),
+    latest_ads AS (
+      SELECT DISTINCT ON (provider_ad_id)
+        provider_ad_id AS owner_id,
+        'ad'::text AS owner_type,
+        name,
+        brand_key,
+        ad_product_type
+      FROM search_ad_ad_snapshots
+      ORDER BY provider_ad_id, collected_at DESC
+    )
+    SELECT * FROM latest_campaigns
+    UNION ALL
+    SELECT * FROM latest_adgroups
+    UNION ALL
+    SELECT * FROM latest_ads
+  `);
+
+  return new Map(
+    rows.rows.map((row) => [
+      row.owner_id,
+      {
+        ownerId: row.owner_id,
+        ownerType: row.owner_type,
+        ...(row.name ? { name: row.name } : {}),
+        ...(row.brand_key ? { brandKey: row.brand_key } : {}),
+        ...(row.ad_product_type ? { adProductType: row.ad_product_type } : {}),
+      },
+    ]),
+  );
 }
 
 export async function backfillSearchAdRuleResultMediaEvidence() {
@@ -1095,6 +1281,80 @@ export async function backfillSearchAdRuleResultMediaEvidence() {
   return { updated: result.rowCount ?? 0 };
 }
 
+export async function backfillSearchAdRuleResultCreativeEvidence() {
+  if (!hasDatabaseUrl()) {
+    throw new Error("SEARCH_AD_DATABASE_MISSING");
+  }
+
+  await ensureSearchAdSchema();
+  const adResult = await query(`
+    WITH latest_ads AS (
+      SELECT DISTINCT ON (provider_ad_id)
+        provider_ad_id, provider_adgroup_id, name, pc_final_url, mobile_final_url, raw_payload, status, status_reason
+      FROM search_ad_ad_snapshots
+      ORDER BY provider_ad_id, collected_at DESC
+    ),
+    ad_evidence AS (
+      SELECT
+        provider_ad_id,
+        jsonb_strip_nulls(jsonb_build_object(
+          'adDisplayLabel', name,
+          'adHeadline', name,
+          'pcFinalUrl', pc_final_url,
+          'mobileFinalUrl', mobile_final_url,
+          'productName', COALESCE(raw_payload #>> '{ad,productName}', raw_payload #>> '{ad,productTitle}', raw_payload #>> '{referenceData,productTitle}', raw_payload #>> '{referenceData,productName}'),
+          'productImageUrl', COALESCE(raw_payload #>> '{referenceData,imageUrl}', raw_payload #>> '{referenceData,thumbnailUrl}', raw_payload #>> '{referenceData,productImageUrl}', raw_payload #>> '{ad,imageUrl}', raw_payload #>> '{ad,thumbnailUrl}'),
+          'mallName', raw_payload #>> '{referenceData,mallName}',
+          'mallProductId', raw_payload #>> '{referenceData,mallProductId}',
+          'adStatus', status,
+          'adStatusReason', status_reason
+        )) AS packet
+      FROM latest_ads
+    )
+    UPDATE search_ad_rule_results r
+    SET evidence_packet = r.evidence_packet || a.packet
+    FROM ad_evidence a
+    WHERE r.evidence_packet ->> 'adId' = a.provider_ad_id
+       OR (r.target_type = 'ad' AND r.target_id = a.provider_ad_id)
+  `);
+
+  const extensionResult = await query(`
+    WITH latest_extensions AS (
+      SELECT DISTINCT ON (provider_extension_id)
+        provider_extension_id, owner_id, owner_name, owner_type, extension_type, extension_type_label,
+        extension_label, extension_display_label, user_lock, status, status_reason, inspect_status, enable
+      FROM search_ad_ad_extension_snapshots
+      ORDER BY provider_extension_id, collected_at DESC
+    ),
+    extension_evidence AS (
+      SELECT
+        provider_extension_id,
+        jsonb_strip_nulls(jsonb_build_object(
+          'extensionOwnerId', owner_id,
+          'extensionOwnerLabel', owner_name,
+          'extensionOwnerType', owner_type,
+          'extensionType', extension_type,
+          'extensionTypeLabel', extension_type_label,
+          'extensionLabel', extension_label,
+          'extensionDisplayLabel', extension_display_label,
+          'extensionUserLock', user_lock,
+          'extensionStatus', status,
+          'extensionStatusReason', status_reason,
+          'extensionInspectStatus', inspect_status,
+          'extensionEnable', enable
+        )) AS packet
+      FROM latest_extensions
+    )
+    UPDATE search_ad_rule_results r
+    SET evidence_packet = r.evidence_packet || e.packet
+    FROM extension_evidence e
+    WHERE r.evidence_packet ->> 'extensionId' = e.provider_extension_id
+       OR (r.target_type = 'ad_extension' AND r.target_id = e.provider_extension_id)
+  `);
+
+  return { updated: (adResult.rowCount ?? 0) + (extensionResult.rowCount ?? 0) };
+}
+
 export async function rebuildAndSaveSearchAdRuleResults() {
   if (!hasDatabaseUrl()) {
     return { saved: 0, results: createSampleSearchTermsView(DEFAULT_SEARCH_AD_FILTERS).ruleResults };
@@ -1106,8 +1366,9 @@ export async function rebuildAndSaveSearchAdRuleResults() {
     const rows = await listNormalizedRowsForRuleCriteria(criteria);
     const dataCoverage = await listNormalizedDataCoverage();
     const adLookup = await listLatestAdCreativeLookup();
+    const adExtensionLookup = await listLatestAdExtensionLookup();
     const mediaLookup = await listLatestSearchAdMediaLookup();
-    const results = enrichRuleResultsWithEvidenceContext(buildSearchAdPeriodRuleResults(rows, criteria), dataCoverage, adLookup, mediaLookup);
+    const results = enrichRuleResultsWithEvidenceContext(buildSearchAdPeriodRuleResults(rows, criteria), dataCoverage, adLookup, adExtensionLookup, mediaLookup);
 
     await replaceSearchAdRuleResults(results);
 
@@ -2070,6 +2331,30 @@ async function ensureSearchAdSchemaUncached() {
       UNIQUE (provider_ad_id, collected_at)
     );
 
+    CREATE TABLE IF NOT EXISTS search_ad_ad_extension_snapshots (
+      id TEXT PRIMARY KEY,
+      provider_extension_id TEXT NOT NULL,
+      owner_id TEXT,
+      owner_name TEXT,
+      owner_type TEXT CHECK (owner_type IN ('campaign', 'adgroup', 'ad')),
+      brand_key TEXT CHECK (brand_key IN ('coffeeprint', 'stickersee')),
+      ad_product_type TEXT CHECK (ad_product_type IN ('powerlink', 'shopping_search')),
+      extension_type TEXT,
+      extension_type_label TEXT NOT NULL,
+      extension_label TEXT NOT NULL,
+      extension_display_label TEXT NOT NULL,
+      user_lock BOOLEAN,
+      status TEXT,
+      status_reason TEXT,
+      inspect_status TEXT,
+      enable BOOLEAN,
+      pc_channel_id TEXT,
+      mobile_channel_id TEXT,
+      raw_payload JSONB NOT NULL,
+      collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (provider_extension_id, collected_at)
+    );
+
     CREATE TABLE IF NOT EXISTS search_ad_target_snapshots (
       id TEXT PRIMARY KEY,
       provider_target_id TEXT NOT NULL,
@@ -2220,6 +2505,9 @@ async function ensureSearchAdSchemaUncached() {
 
     CREATE INDEX IF NOT EXISTS search_ad_ad_latest_idx
       ON search_ad_ad_snapshots (provider_ad_id, collected_at DESC);
+
+    CREATE INDEX IF NOT EXISTS search_ad_ad_extension_latest_idx
+      ON search_ad_ad_extension_snapshots (provider_extension_id, collected_at DESC);
 
     CREATE INDEX IF NOT EXISTS search_ad_target_latest_idx
       ON search_ad_target_snapshots (provider_target_id, collected_at DESC);
@@ -3058,6 +3346,7 @@ async function listNormalizedDataCoverage(): Promise<Map<string, DataCoverageRec
 async function listLatestAdCreativeLookup(): Promise<Map<string, AdCreativeLookupValue>> {
   const result = await query<{
     provider_ad_id: string;
+    provider_adgroup_id: string | null;
     name: string | null;
     pc_final_url: string | null;
     mobile_final_url: string | null;
@@ -3066,7 +3355,7 @@ async function listLatestAdCreativeLookup(): Promise<Map<string, AdCreativeLooku
     status_reason: string | null;
   }>(`
     SELECT DISTINCT ON (provider_ad_id)
-      provider_ad_id, name, pc_final_url, mobile_final_url, raw_payload, status, status_reason
+      provider_ad_id, provider_adgroup_id, name, pc_final_url, mobile_final_url, raw_payload, status, status_reason
     FROM search_ad_ad_snapshots
     ORDER BY provider_ad_id, collected_at DESC
   `);
@@ -3077,6 +3366,7 @@ async function listLatestAdCreativeLookup(): Promise<Map<string, AdCreativeLooku
       return [
         row.provider_ad_id,
         {
+          adgroupId: row.provider_adgroup_id ?? undefined,
           name: row.name ?? undefined,
           pcFinalUrl: row.pc_final_url ?? undefined,
           mobileFinalUrl: row.mobile_final_url ?? undefined,
@@ -3125,18 +3415,67 @@ async function listLatestSearchAdMediaLookup(): Promise<Map<string, MediaLookupV
   );
 }
 
+async function listLatestAdExtensionLookup(): Promise<Map<string, AdExtensionLookupValue>> {
+  const result = await query<{
+    provider_extension_id: string;
+    owner_id: string | null;
+    owner_name: string | null;
+    owner_type: "campaign" | "adgroup" | "ad" | null;
+    extension_type: string | null;
+    extension_type_label: string;
+    extension_label: string;
+    extension_display_label: string;
+    user_lock: boolean | null;
+    status: string | null;
+    status_reason: string | null;
+    inspect_status: string | null;
+    enable: boolean | null;
+  }>(`
+    SELECT DISTINCT ON (provider_extension_id)
+      provider_extension_id, owner_id, owner_name, owner_type, extension_type, extension_type_label,
+      extension_label, extension_display_label, user_lock, status, status_reason, inspect_status, enable
+    FROM search_ad_ad_extension_snapshots
+    ORDER BY provider_extension_id, collected_at DESC
+  `);
+
+  return new Map(
+    result.rows.map((row) => [
+      row.provider_extension_id,
+      {
+        providerExtensionId: row.provider_extension_id,
+        ownerId: row.owner_id ?? undefined,
+        ownerName: row.owner_name ?? undefined,
+        ownerType: row.owner_type ?? undefined,
+        extensionType: row.extension_type ?? undefined,
+        extensionTypeLabel: row.extension_type_label,
+        extensionLabel: row.extension_label,
+        extensionDisplayLabel: row.extension_display_label,
+        userLock: row.user_lock,
+        status: row.status ?? undefined,
+        statusReason: row.status_reason ?? undefined,
+        inspectStatus: row.inspect_status ?? undefined,
+        enable: row.enable,
+      },
+    ]),
+  );
+}
+
 function enrichRuleResultsWithEvidenceContext(
   results: SearchAdRuleResult[],
   coverageByScope: Map<string, DataCoverageRecord>,
   adCreativeById: Map<string, AdCreativeLookupValue>,
+  adExtensionById: Map<string, AdExtensionLookupValue>,
   mediaById: Map<string, MediaLookupValue>,
 ): SearchAdRuleResult[] {
   return results.map((result) => {
     const coverage = coverageByScope.get(coverageKey(result.brandKey, result.adProductType));
     const adId = evidenceString(result.evidencePacket.adId) ?? (result.targetType === "ad" ? result.targetId : undefined);
     const adCreative = adId ? adCreativeById.get(adId) : undefined;
+    const extensionId = evidenceString(result.evidencePacket.extensionId) ?? (result.targetType === "ad_extension" ? result.targetId : undefined);
+    const adExtension = extensionId ? adExtensionById.get(extensionId) : undefined;
     const mediaId = evidenceString(result.evidencePacket.mediaId);
     const media = mediaId ? mediaById.get(mediaId) : undefined;
+    const extensionOwnerCreative = adExtension?.ownerType === "ad" && adExtension.ownerId ? adCreativeById.get(adExtension.ownerId) : undefined;
 
     return {
       ...result,
@@ -3147,15 +3486,28 @@ function enrichRuleResultsWithEvidenceContext(
         dataWindowStart: result.evidencePacket.dataWindowStart ?? coverage?.startDate ?? null,
         dataWindowEnd: result.evidencePacket.dataWindowEnd ?? coverage?.endDate ?? null,
         dataCoverageLabel: result.evidencePacket.dataCoverageLabel ?? (coverage ? formatDataCoverageLabel(coverage, result.periodDays) : null),
+        adDisplayLabel: result.evidencePacket.adDisplayLabel ?? adCreative?.productName ?? adCreative?.name ?? extensionOwnerCreative?.productName ?? extensionOwnerCreative?.name ?? null,
         adHeadline: result.evidencePacket.adHeadline ?? adCreative?.name ?? null,
         pcFinalUrl: result.evidencePacket.pcFinalUrl ?? adCreative?.pcFinalUrl ?? null,
         mobileFinalUrl: result.evidencePacket.mobileFinalUrl ?? adCreative?.mobileFinalUrl ?? null,
-        productName: result.evidencePacket.productName ?? adCreative?.productName ?? null,
-        productImageUrl: result.evidencePacket.productImageUrl ?? adCreative?.productImageUrl ?? null,
-        mallName: result.evidencePacket.mallName ?? adCreative?.mallName ?? null,
-        mallProductId: result.evidencePacket.mallProductId ?? adCreative?.mallProductId ?? null,
+        productName: result.evidencePacket.productName ?? adCreative?.productName ?? extensionOwnerCreative?.productName ?? null,
+        productImageUrl: result.evidencePacket.productImageUrl ?? adCreative?.productImageUrl ?? extensionOwnerCreative?.productImageUrl ?? null,
+        mallName: result.evidencePacket.mallName ?? adCreative?.mallName ?? extensionOwnerCreative?.mallName ?? null,
+        mallProductId: result.evidencePacket.mallProductId ?? adCreative?.mallProductId ?? extensionOwnerCreative?.mallProductId ?? null,
         adStatus: result.evidencePacket.adStatus ?? adCreative?.status ?? null,
         adStatusReason: result.evidencePacket.adStatusReason ?? adCreative?.statusReason ?? null,
+        extensionOwnerId: result.evidencePacket.extensionOwnerId ?? adExtension?.ownerId ?? null,
+        extensionOwnerLabel: result.evidencePacket.extensionOwnerLabel ?? adExtension?.ownerName ?? null,
+        extensionOwnerType: result.evidencePacket.extensionOwnerType ?? adExtension?.ownerType ?? null,
+        extensionType: result.evidencePacket.extensionType ?? adExtension?.extensionType ?? null,
+        extensionTypeLabel: result.evidencePacket.extensionTypeLabel ?? adExtension?.extensionTypeLabel ?? null,
+        extensionLabel: result.evidencePacket.extensionLabel ?? adExtension?.extensionLabel ?? null,
+        extensionDisplayLabel: result.evidencePacket.extensionDisplayLabel ?? adExtension?.extensionDisplayLabel ?? null,
+        extensionUserLock: result.evidencePacket.extensionUserLock ?? adExtension?.userLock ?? null,
+        extensionStatus: result.evidencePacket.extensionStatus ?? adExtension?.status ?? null,
+        extensionStatusReason: result.evidencePacket.extensionStatusReason ?? adExtension?.statusReason ?? null,
+        extensionInspectStatus: result.evidencePacket.extensionInspectStatus ?? adExtension?.inspectStatus ?? null,
+        extensionEnable: result.evidencePacket.extensionEnable ?? adExtension?.enable ?? null,
         mediaName: result.evidencePacket.mediaName ?? media?.mediaName ?? null,
         mediaUrl: result.evidencePacket.mediaUrl ?? media?.mediaUrl ?? null,
         mediaType: result.evidencePacket.mediaType ?? media?.mediaType ?? null,
@@ -3981,7 +4333,7 @@ async function releaseOperationCalendarLock(targetId: string, log: SearchAdActio
   );
 }
 
-function snapshotId(targetType: SearchAdTargetType | "ad" | "target" | "media", providerId: string, collectedAt: string) {
+function snapshotId(targetType: SearchAdTargetType | "ad" | "ad_extension" | "target" | "media", providerId: string, collectedAt: string) {
   return `${targetType}-${providerId}-${collectedAt}`.replace(/[^a-zA-Z0-9_-]/g, "-");
 }
 

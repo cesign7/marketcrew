@@ -4,6 +4,7 @@ import {
   getRuleResultCreativeLabel,
   getRuleResultDisplayTargetLabel,
   getRuleResultDisplayTargetTypeLabel,
+  getRuleResultExtensionLabel,
   getRuleResultLandingLabel,
   getRuleResultPeriodLabel,
   getRuleResultProductConnection,
@@ -30,6 +31,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
   const targetTypeLabel = getRuleResultDisplayTargetTypeLabel(result);
   const detailLabel = getRuleResultTargetDetailLabel(result);
   const creativeLabel = getRuleResultCreativeLabel(result);
+  const extensionLabel = getRuleResultExtensionLabel(result);
   const landingLabel = getRuleResultLandingLabel(result);
   const productConnection = getRuleResultProductConnection(result);
   const showProductConnection = result.adProductType === "shopping_search" && productConnection.hasConnection;
@@ -147,6 +149,12 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
           <div>
             <dt>소재</dt>
             <dd title={creativeLabel}>{truncateDisplayText(creativeLabel, 34)}</dd>
+          </div>
+        ) : null}
+        {extensionLabel ? (
+          <div>
+            <dt>확장소재</dt>
+            <dd title={extensionLabel}>{truncateDisplayText(extensionLabel, 34)}</dd>
           </div>
         ) : null}
         {landingLabel ? (
