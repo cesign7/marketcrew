@@ -24,6 +24,7 @@ export type SearchAdShoppingAdPreview = {
   productName: string;
   imageUrl?: string;
   mallName?: string;
+  highlightLabel: string;
   priceLabel?: string;
   reviewLabel?: string;
   purchaseLabel?: string;
@@ -236,6 +237,7 @@ export function getRuleResultShoppingAdPreview(result: SearchAdRuleResult): Sear
     productName: productConnection.productName,
     ...(productConnection.imageUrl ? { imageUrl: productConnection.imageUrl } : {}),
     ...(stringFromEvidence(result.evidencePacket.mallName) ? { mallName: stringFromEvidence(result.evidencePacket.mallName) } : {}),
+    highlightLabel: getAdTargetTypeLabel(result.adProductType),
     ...(price ? { priceLabel: formatWonText(price) } : {}),
     ...(reviewCount ? { reviewLabel: `리뷰 ${formatCountText(reviewCount)}` } : {}),
     ...(purchaseCount ? { purchaseLabel: `구매 ${formatCountText(purchaseCount)}` } : {}),

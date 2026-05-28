@@ -55,6 +55,7 @@ describe("rule result target display", () => {
       productName: "생일축하스티커 생일01 답례품 감사 소량 주문",
       imageUrl: "https://shopping-phinf.pstatic.net/main_8478242/84782425770.3.jpg",
       mallName: "스티커씨",
+      highlightLabel: "상품 광고",
       priceLabel: "2,500원",
       reviewLabel: "리뷰 2,272",
       purchaseLabel: "구매 2,264",

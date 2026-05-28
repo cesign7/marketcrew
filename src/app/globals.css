@@ -895,11 +895,11 @@ table {
 
 .ad-material-preview {
   background: #fff;
-  border-color: #b9dafc;
+  border-color: var(--line);
 }
 
 .ad-material-preview span {
-  color: #175cd3;
+  color: #475467;
 }
 
 .product-connection .ad-material-meta {
@@ -970,6 +970,45 @@ table {
   font-weight: 950;
 }
 
+.product-connection .material-target-image {
+  border: 2px solid #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.product-connection .material-target-copy {
+  border: 2px solid #2563eb;
+  border-radius: 7px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  padding: 8px;
+  position: relative;
+}
+
+.product-connection .material-target-copy .ad-material-meta,
+.product-connection .material-target-copy strong,
+.product-connection .material-target-copy small {
+  padding-right: 72px;
+}
+
+.inspection-corner-label {
+  background: #2563eb;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1;
+  padding: 4px 7px;
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.product-connection span.inspection-corner-label,
+.naver-shopping-ad-preview .inspection-corner-label {
+  color: #fff;
+}
+
 .product-connection.is-detail {
   margin: 0 0 16px;
 }
@@ -985,10 +1024,9 @@ table {
 }
 
 .naver-shopping-ad-preview {
-  background: #fff;
-  border: 2px solid #2563eb;
+  background: #f8fafc;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
   display: grid;
   gap: 8px;
   padding: 10px;
@@ -1012,25 +1050,21 @@ table {
   font-weight: 850;
 }
 
-.naver-preview-heading strong {
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 999px;
-  color: #1d4ed8;
-  font-size: 11px;
-  padding: 3px 8px;
-  white-space: nowrap;
-}
-
-.naver-preview-frame {
+.naver-preview-target {
   align-items: center;
+  background: #fff;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
   display: grid;
   gap: 12px;
   grid-template-columns: auto minmax(0, 1fr);
   min-width: 0;
+  padding: 10px;
+  position: relative;
 }
 
-.naver-preview-frame img,
+.naver-preview-target img,
 .naver-shopping-ad-preview .product-image-fallback {
   aspect-ratio: 1;
   border: 1px solid #d0d5dd;
@@ -1040,7 +1074,7 @@ table {
   width: 72px;
 }
 
-.naver-shopping-ad-preview.is-detail .naver-preview-frame img,
+.naver-shopping-ad-preview.is-detail .naver-preview-target img,
 .naver-shopping-ad-preview.is-detail .product-image-fallback {
   height: 96px;
   width: 96px;
@@ -1050,6 +1084,7 @@ table {
   display: grid;
   gap: 3px;
   min-width: 0;
+  padding-right: 72px;
 }
 
 .naver-preview-meta {

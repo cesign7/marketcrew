@@ -127,11 +127,12 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
       {!shoppingAdPreview && showAdMaterial ? (
         <div className="product-connection ad-material-preview is-detail">
           {productConnection.imageUrl ? (
-            <img alt={`${materialTitle} 이미지`} loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />
+            <img className="material-target-image" alt={`${materialTitle} 이미지`} loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />
           ) : (
-            <span className="product-image-fallback">소재</span>
+            <span className="product-image-fallback material-target-image">소재</span>
           )}
-          <div>
+          <div className="material-target-copy">
+            <span className="inspection-corner-label">{materialLabel}</span>
             <div className="ad-material-meta">
               {extensionMaterial ? (
                 <>

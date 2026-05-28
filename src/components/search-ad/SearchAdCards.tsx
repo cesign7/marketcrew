@@ -248,11 +248,12 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
             ) : showAdMaterial ? (
               <div className="product-connection ad-material-preview is-compact">
                 {productConnection.imageUrl ? (
-                  <img alt={`${materialTitle} 이미지`} loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />
+                  <img className="material-target-image" alt={`${materialTitle} 이미지`} loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />
                 ) : (
-                  <span className="product-image-fallback">소재</span>
+                  <span className="product-image-fallback material-target-image">소재</span>
                 )}
-                <div>
+                <div className="material-target-copy">
+                  <span className="inspection-corner-label">{materialLabel}</span>
                   <div className="ad-material-meta">
                     {extensionMaterial ? (
                       <>
@@ -408,9 +409,9 @@ export function ShoppingAdPreview({ density, preview }: ShoppingAdPreviewProps) 
     <div className={`naver-shopping-ad-preview is-${density}`} aria-label="네이버 쇼핑검색광고 재구성 미리보기">
       <div className="naver-preview-heading">
         <span>{preview.basisLabel}</span>
-        <strong>성과 점검 대상</strong>
       </div>
-      <div className="naver-preview-frame">
+      <div className="naver-preview-target">
+        <span className="inspection-corner-label">{preview.highlightLabel}</span>
         {preview.imageUrl ? (
           <img alt={`${preview.productName} 상품 이미지`} loading="lazy" referrerPolicy="no-referrer" src={preview.imageUrl} />
         ) : (
