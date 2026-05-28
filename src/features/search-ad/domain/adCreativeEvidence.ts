@@ -15,6 +15,14 @@ export type SearchAdProductEvidence = {
   mallProductMobileUrl?: string;
 };
 
+export type SearchAdTextEvidence = {
+  headline?: string;
+  description?: string;
+  pcDisplayUrl?: string;
+  mobileDisplayUrl?: string;
+  adType?: string;
+};
+
 export function extractSearchAdProductEvidence(rawPayload: Record<string, unknown> | null | undefined): SearchAdProductEvidence {
   const ad = readObjectValue(rawPayload, "ad");
   const referenceData = readObjectValue(rawPayload, "referenceData");
@@ -43,6 +51,20 @@ export function extractSearchAdProductEvidence(rawPayload: Record<string, unknow
     categoryPath: readObjectString(referenceData, "fullMallCatNm"),
     mallProductUrl: readObjectString(referenceData, "mallProductUrl"),
     mallProductMobileUrl: readObjectString(referenceData, "mallProdMblUrl"),
+  };
+}
+
+export function extractSearchAdTextEvidence(rawPayload: Record<string, unknown> | null | undefined): SearchAdTextEvidence {
+  const ad = readObjectValue(rawPayload, "ad");
+  const pc = readObjectValue(ad, "pc") ?? readObjectValue(rawPayload, "pc");
+  const mobile = readObjectValue(ad, "mobile") ?? readObjectValue(rawPayload, "mobile");
+
+  return {
+    headline: readObjectString(ad, "headline") ?? readObjectString(rawPayload, "headline") ?? readObjectString(rawPayload, "name"),
+    description: readObjectString(ad, "description") ?? readObjectString(rawPayload, "description"),
+    pcDisplayUrl: readObjectString(pc, "display") ?? readObjectString(rawPayload, "pcDisplayUrl"),
+    mobileDisplayUrl: readObjectString(mobile, "display") ?? readObjectString(rawPayload, "mobileDisplayUrl"),
+    adType: readObjectString(rawPayload, "type") ?? readObjectString(rawPayload, "adType") ?? readObjectString(rawPayload, "adTp"),
   };
 }
 

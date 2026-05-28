@@ -17,6 +17,7 @@ import {
   getRuleResultExtensionMaterialDisplay,
   getRuleResultLandingLabel,
   getRuleResultPeriodLabel,
+  getRuleResultPowerlinkAdPreview,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
   getRuleResultShoppingAdPreview,
@@ -209,6 +210,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const extensionMaterial = getRuleResultExtensionMaterialDisplay(result);
         const landingLabel = getRuleResultLandingLabel(result);
         const productConnection = getRuleResultProductConnection(result);
+        const powerlinkAdPreview = getRuleResultPowerlinkAdPreview(result);
         const shoppingAdPreview = getRuleResultShoppingAdPreview(result);
         const shoppingProductId = getRuleResultShoppingProductId(result);
         const isAdMaterialTarget = result.targetType === "ad" || result.targetType === "ad_extension";
@@ -243,7 +245,9 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
             </div>
             <p className="rule-card-diagnosis">{getRuleResultDiagnosis(result)}</p>
             {group.breakdowns.length > 1 ? <RuleResultBreakdownPanel group={group} /> : null}
-            {shoppingAdPreview ? (
+            {powerlinkAdPreview ? (
+              <PowerlinkAdPreview density="compact" preview={powerlinkAdPreview} />
+            ) : shoppingAdPreview ? (
               <ShoppingAdPreview density="compact" preview={shoppingAdPreview} />
             ) : showAdMaterial ? (
               <div className="product-connection ad-material-preview is-compact">
@@ -401,6 +405,35 @@ type ShoppingAdPreviewProps = {
   density: "compact" | "detail";
   preview: NonNullable<ReturnType<typeof getRuleResultShoppingAdPreview>>;
 };
+
+type PowerlinkAdPreviewProps = {
+  density: "compact" | "detail";
+  preview: NonNullable<ReturnType<typeof getRuleResultPowerlinkAdPreview>>;
+};
+
+export function PowerlinkAdPreview({ density, preview }: PowerlinkAdPreviewProps) {
+  return (
+    <div className={`powerlink-ad-preview is-${density}`} aria-label="네이버 파워링크 재구성 미리보기">
+      <div className="naver-preview-heading">
+        <span>{preview.basisLabel}</span>
+      </div>
+      <div className="powerlink-preview-target">
+        <span className="inspection-corner-label">{preview.highlightLabel}</span>
+        <div className="powerlink-preview-copy">
+          <div className="powerlink-preview-meta">
+            <span className="naver-ad-badge">광고</span>
+            {preview.displayUrl ? <span>{preview.displayUrl}</span> : null}
+          </div>
+          <strong title={preview.headline}>{truncateDisplayText(preview.headline, density === "detail" ? 72 : 42)}</strong>
+          {preview.description ? <p title={preview.description}>{truncateDisplayText(preview.description, density === "detail" ? 108 : 72)}</p> : null}
+          {preview.adId ? <small>광고 ID {preview.adId}</small> : null}
+          {preview.finalUrl ? <small title={preview.finalUrl}>{truncateDisplayText(preview.finalUrl, density === "detail" ? 108 : 72)}</small> : null}
+        </div>
+      </div>
+      <p>실제 노출 위치, 순위, 확장소재 조합은 검색어, 기기, 입찰, 품질 상태에 따라 달라질 수 있습니다.</p>
+    </div>
+  );
+}
 
 export function ShoppingAdPreview({ density, preview }: ShoppingAdPreviewProps) {
   const metaItems = [preview.scoreLabel, preview.reviewLabel, preview.purchaseLabel].filter(Boolean);

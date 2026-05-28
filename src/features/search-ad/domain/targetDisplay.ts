@@ -37,6 +37,16 @@ export type SearchAdShoppingAdPreview = {
   basisLabel: string;
 };
 
+export type SearchAdPowerlinkAdPreview = {
+  headline: string;
+  description?: string;
+  displayUrl?: string;
+  finalUrl?: string;
+  highlightLabel: string;
+  adId?: string;
+  basisLabel: string;
+};
+
 const RULE_TARGET_TYPE_LABELS: Record<SearchAdRuleResult["targetType"], string> = {
   ad: "광고 소재",
   ad_extension: "확장소재",
@@ -246,6 +256,33 @@ export function getRuleResultShoppingAdPreview(result: SearchAdRuleResult): Sear
     ...(stringFromEvidence(result.evidencePacket.categoryPath) ? { categoryLabel: stringFromEvidence(result.evidencePacket.categoryPath) } : {}),
     ...(productConnection.landingLabel ? { landingLabel: productConnection.landingLabel } : {}),
     ...(mallProductId ? { mallProductId } : {}),
+    ...(getRuleResultRawTargetId(result) ? { adId: getRuleResultRawTargetId(result) } : {}),
+    basisLabel: "네이버 광고 API 원문 기반 재구성",
+  };
+}
+
+export function getRuleResultPowerlinkAdPreview(result: SearchAdRuleResult): SearchAdPowerlinkAdPreview | undefined {
+  if (result.adProductType !== "powerlink" || result.targetType !== "ad") {
+    return undefined;
+  }
+
+  const headline = nonTechnicalString(stringFromEvidence(result.evidencePacket.adHeadline)) ?? getRuleResultCreativeLabel(result);
+  const description = nonTechnicalString(stringFromEvidence(result.evidencePacket.adDescription));
+  const pcDisplayUrl = stringFromEvidence(result.evidencePacket.pcDisplayUrl);
+  const mobileDisplayUrl = stringFromEvidence(result.evidencePacket.mobileDisplayUrl);
+  const displayUrl = pcDisplayUrl ?? mobileDisplayUrl;
+  const landingLabel = getRuleResultLandingLabel(result);
+
+  if (!headline && !description && !displayUrl && !landingLabel) {
+    return undefined;
+  }
+
+  return {
+    headline: headline ?? "광고 문구 확인 필요",
+    ...(description ? { description } : {}),
+    ...(displayUrl ? { displayUrl } : {}),
+    ...(landingLabel ? { finalUrl: landingLabel } : {}),
+    highlightLabel: "파워링크 광고",
     ...(getRuleResultRawTargetId(result) ? { adId: getRuleResultRawTargetId(result) } : {}),
     basisLabel: "네이버 광고 API 원문 기반 재구성",
   };

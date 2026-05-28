@@ -29,7 +29,7 @@ import { normalizeRawRow } from "@/features/search-ad/domain/parseSearchAdReport
 import { buildSearchAdPeriodRuleResults } from "@/features/search-ad/domain/ruleEngine";
 import { sortSearchAdRuleCriteria } from "@/features/search-ad/domain/ruleCriteriaSettings";
 import { getSearchAdReportScheduleStatus } from "@/features/search-ad/domain/reportSchedule";
-import { extractSearchAdProductEvidence } from "@/features/search-ad/domain/adCreativeEvidence";
+import { extractSearchAdProductEvidence, extractSearchAdTextEvidence } from "@/features/search-ad/domain/adCreativeEvidence";
 import { extractSearchAdAdExtensionEvidence } from "@/features/search-ad/domain/adExtensionEvidence";
 import { getSearchAdMediaFallback, getSearchAdMediaNetworkLabel, listSearchAdMediaFallbackIds } from "@/features/search-ad/domain/mediaDisplay";
 import {
@@ -224,6 +224,10 @@ type BackfillRunRow = {
 type AdCreativeLookupValue = {
   adgroupId?: string;
   name?: string;
+  adType?: string;
+  adDescription?: string;
+  pcDisplayUrl?: string;
+  mobileDisplayUrl?: string;
   pcFinalUrl?: string;
   mobileFinalUrl?: string;
   productName?: string;
@@ -1325,6 +1329,10 @@ export async function backfillSearchAdRuleResultCreativeEvidence() {
         jsonb_strip_nulls(jsonb_build_object(
           'adDisplayLabel', name,
           'adHeadline', name,
+          'adType', raw_payload ->> 'type',
+          'adDescription', raw_payload #>> '{ad,description}',
+          'pcDisplayUrl', raw_payload #>> '{ad,pc,display}',
+          'mobileDisplayUrl', raw_payload #>> '{ad,mobile,display}',
           'pcFinalUrl', pc_final_url,
           'mobileFinalUrl', mobile_final_url,
           'productName', COALESCE(raw_payload #>> '{ad,productName}', raw_payload #>> '{ad,productTitle}', raw_payload #>> '{referenceData,productTitle}', raw_payload #>> '{referenceData,productName}'),
@@ -1341,7 +1349,6 @@ export async function backfillSearchAdRuleResultCreativeEvidence() {
           'categoryPath', raw_payload #>> '{referenceData,fullMallCatNm}',
           'mallProductUrl', raw_payload #>> '{referenceData,mallProductUrl}',
           'mallProductMobileUrl', raw_payload #>> '{referenceData,mallProdMblUrl}',
-          'adType', raw_payload ->> 'type',
           'adStatus', status,
           'adStatusReason', status_reason
         )) AS packet
@@ -3557,11 +3564,16 @@ async function listLatestAdCreativeLookup(adIds?: string[]): Promise<Map<string,
   return new Map(
     result.rows.map((row) => {
       const product = extractSearchAdProductEvidence(row.raw_payload);
+      const text = extractSearchAdTextEvidence(row.raw_payload);
       return [
         row.provider_ad_id,
         {
           adgroupId: row.provider_adgroup_id ?? undefined,
           name: row.name ?? undefined,
+          adType: text.adType,
+          adDescription: text.description,
+          pcDisplayUrl: text.pcDisplayUrl,
+          mobileDisplayUrl: text.mobileDisplayUrl,
           pcFinalUrl: row.pc_final_url ?? undefined,
           mobileFinalUrl: row.mobile_final_url ?? undefined,
           productName: product.productName,
@@ -3728,6 +3740,10 @@ async function enrichRuleResultsWithLatestDisplayContext(results: SearchAdRuleRe
           ? {
               adDisplayLabel: result.evidencePacket.adDisplayLabel ?? adCreative.productName ?? adCreative.name ?? null,
               adHeadline: result.evidencePacket.adHeadline ?? adCreative.name ?? null,
+              adType: result.evidencePacket.adType ?? adCreative.adType ?? null,
+              adDescription: result.evidencePacket.adDescription ?? adCreative.adDescription ?? null,
+              pcDisplayUrl: result.evidencePacket.pcDisplayUrl ?? adCreative.pcDisplayUrl ?? null,
+              mobileDisplayUrl: result.evidencePacket.mobileDisplayUrl ?? adCreative.mobileDisplayUrl ?? null,
               pcFinalUrl: result.evidencePacket.pcFinalUrl ?? adCreative.pcFinalUrl ?? null,
               mobileFinalUrl: result.evidencePacket.mobileFinalUrl ?? adCreative.mobileFinalUrl ?? null,
               productName: result.evidencePacket.productName ?? adCreative.productName ?? null,
@@ -3790,6 +3806,10 @@ function enrichRuleResultsWithEvidenceContext(
         dataCoverageLabel: result.evidencePacket.dataCoverageLabel ?? (coverage ? formatDataCoverageLabel(coverage, result.periodDays) : null),
         adDisplayLabel: result.evidencePacket.adDisplayLabel ?? adCreative?.productName ?? adCreative?.name ?? extensionOwnerCreative?.productName ?? extensionOwnerCreative?.name ?? null,
         adHeadline: result.evidencePacket.adHeadline ?? adCreative?.name ?? null,
+        adType: result.evidencePacket.adType ?? adCreative?.adType ?? null,
+        adDescription: result.evidencePacket.adDescription ?? adCreative?.adDescription ?? null,
+        pcDisplayUrl: result.evidencePacket.pcDisplayUrl ?? adCreative?.pcDisplayUrl ?? null,
+        mobileDisplayUrl: result.evidencePacket.mobileDisplayUrl ?? adCreative?.mobileDisplayUrl ?? null,
         pcFinalUrl: result.evidencePacket.pcFinalUrl ?? adCreative?.pcFinalUrl ?? null,
         mobileFinalUrl: result.evidencePacket.mobileFinalUrl ?? adCreative?.mobileFinalUrl ?? null,
         productName: result.evidencePacket.productName ?? adCreative?.productName ?? extensionOwnerCreative?.productName ?? null,

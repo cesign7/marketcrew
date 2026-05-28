@@ -1023,7 +1023,8 @@ table {
   font-size: 15px;
 }
 
-.naver-shopping-ad-preview {
+.naver-shopping-ad-preview,
+.powerlink-ad-preview {
   background: #f8fafc;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1032,7 +1033,8 @@ table {
   padding: 10px;
 }
 
-.naver-shopping-ad-preview.is-detail {
+.naver-shopping-ad-preview.is-detail,
+.powerlink-ad-preview.is-detail {
   margin: 0 0 16px;
 }
 
@@ -1064,6 +1066,16 @@ table {
   position: relative;
 }
 
+.powerlink-preview-target {
+  background: #fff;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  min-width: 0;
+  padding: 10px;
+  position: relative;
+}
+
 .naver-preview-target img,
 .naver-shopping-ad-preview .product-image-fallback {
   aspect-ratio: 1;
@@ -1080,27 +1092,30 @@ table {
   width: 96px;
 }
 
-.naver-preview-copy {
+.naver-preview-copy,
+.powerlink-preview-copy {
   display: grid;
   gap: 3px;
   min-width: 0;
   padding-right: 72px;
 }
 
-.naver-preview-meta {
+.naver-preview-meta,
+.powerlink-preview-meta {
   align-items: center;
   display: flex;
   gap: 6px;
   min-width: 0;
 }
 
-.naver-preview-meta span {
+.naver-preview-meta span,
+.powerlink-preview-meta span {
   color: #667085;
   font-size: 12px;
   font-weight: 850;
 }
 
-.naver-preview-meta .naver-ad-badge {
+.naver-ad-badge {
   background: #f2f4f7;
   border: 1px solid #d0d5dd;
   border-radius: 4px;
@@ -1112,7 +1127,10 @@ table {
 
 .naver-preview-copy strong,
 .naver-preview-copy b,
-.naver-preview-copy small {
+.naver-preview-copy small,
+.powerlink-preview-copy strong,
+.powerlink-preview-copy p,
+.powerlink-preview-copy small {
   display: block;
   min-width: 0;
   overflow: hidden;
@@ -1126,7 +1144,14 @@ table {
   font-weight: 950;
 }
 
-.naver-shopping-ad-preview.is-detail .naver-preview-copy strong {
+.powerlink-preview-copy strong {
+  color: #1d4ed8;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.naver-shopping-ad-preview.is-detail .naver-preview-copy strong,
+.powerlink-ad-preview.is-detail .powerlink-preview-copy strong {
   font-size: 16px;
 }
 
@@ -1136,12 +1161,20 @@ table {
 }
 
 .naver-preview-copy small,
-.naver-shopping-ad-preview p {
+.powerlink-preview-copy small,
+.powerlink-preview-copy p,
+.naver-shopping-ad-preview p,
+.powerlink-ad-preview > p {
   color: #475467;
   font-size: 12px;
 }
 
-.naver-shopping-ad-preview p {
+.powerlink-preview-copy p {
+  margin: 0;
+}
+
+.naver-shopping-ad-preview p,
+.powerlink-ad-preview > p {
   margin: 0;
 }
 

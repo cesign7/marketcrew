@@ -9,6 +9,7 @@ import {
   getRuleResultExtensionLabel,
   getRuleResultExtensionMaterialDisplay,
   getRuleResultPeriodLabel,
+  getRuleResultPowerlinkAdPreview,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
   getRuleResultShoppingAdPreview,
@@ -66,6 +67,46 @@ describe("rule result target display", () => {
       adId: "nad-a001-02-000000203421541",
       basisLabel: "네이버 광고 API 원문 기반 재구성",
     });
+  });
+
+  it("파워링크 광고는 실제 제목과 설명 영역을 점검 대상으로 재구성한다", () => {
+    const result = ruleResult({
+      adProductType: "powerlink",
+      targetType: "ad",
+      targetId: "nad-a001-01-000000069812547",
+      evidencePacket: {
+        adHeadline: "{keyword:추석선물카드} 전문 커피프린트",
+        adDescription: "추석선물카드제작! 기업맞춤 컬러로고 무료, 대량할인, 1일배송",
+        pcDisplayUrl: "http://www.coffeeprint.co.kr",
+        mobileDisplayUrl: "http://m.coffeeprint.co.kr",
+        pcFinalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=90",
+        mobileFinalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=90",
+      },
+    });
+
+    expect(getRuleResultPowerlinkAdPreview(result)).toEqual({
+      headline: "{keyword:추석선물카드} 전문 커피프린트",
+      description: "추석선물카드제작! 기업맞춤 컬러로고 무료, 대량할인, 1일배송",
+      displayUrl: "http://www.coffeeprint.co.kr",
+      finalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=90",
+      highlightLabel: "파워링크 광고",
+      adId: "nad-a001-01-000000069812547",
+      basisLabel: "네이버 광고 API 원문 기반 재구성",
+    });
+  });
+
+  it("파워링크 광고 제목이 기술 ID뿐이면 미리보기 제목으로 쓰지 않는다", () => {
+    const result = ruleResult({
+      adProductType: "powerlink",
+      targetType: "ad",
+      targetId: "nad-a001-01-000000069812547",
+      evidencePacket: {
+        adHeadline: "nad-a001-01-000000069812547",
+        adDescription: "커피쿠폰 제작 가능",
+      },
+    });
+
+    expect(getRuleResultPowerlinkAdPreview(result)?.headline).toBe("광고 문구 확인 필요");
   });
 
   it("기존 저장 결과의 타게팅 코드를 카드 제목에서 숨긴다", () => {
