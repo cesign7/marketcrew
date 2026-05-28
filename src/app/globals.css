@@ -1130,6 +1130,33 @@ table {
   font-weight: 800;
 }
 
+.keyword-section-status {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.keyword-group-actions,
+.incremental-load-sentinel {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.incremental-load-sentinel {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  justify-content: center;
+  margin-top: 12px;
+  min-height: 64px;
+  padding: 12px;
+}
+
 .keyword-preview-mini {
   background: #f8fafc;
   border: 1px solid var(--line);

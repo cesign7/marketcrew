@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { getAdProductLabel, getBrandLabel } from "@/features/search-ad/domain/reportTypes";
 import type {
   SearchAdActionLog,
@@ -17,6 +17,11 @@ type ApiPayload<T> = {
   data?: T;
   message?: string;
 };
+
+const INITIAL_DUPLICATE_GROUPS = 8;
+const DUPLICATE_GROUP_STEP = 8;
+const INITIAL_NO_CLICK_ROWS = 25;
+const NO_CLICK_ROW_STEP = 25;
 
 export function KeywordCleanupDashboard({ view }: { view: SearchAdKeywordCleanupView }) {
   return (
@@ -59,7 +64,7 @@ export function KeywordCleanupDashboard({ view }: { view: SearchAdKeywordCleanup
       <section className="content-panel">
         <div className="section-heading">
           <h2>중복 키워드</h2>
-          <p>브랜드와 광고유형 안에서 같은 키워드가 여러 운영 위치에 들어간 경우입니다.</p>
+          <p>처음에는 중요한 묶음만 보여주고, 아래로 스크롤하면 다음 묶음을 이어서 표시합니다.</p>
         </div>
         <DuplicateKeywordGroups groups={view.duplicateGroups} />
       </section>
@@ -67,9 +72,9 @@ export function KeywordCleanupDashboard({ view }: { view: SearchAdKeywordCleanup
       <section className="content-panel">
         <div className="section-heading">
           <h2>클릭 없는 키워드</h2>
-          <p>저장된 최근 성과 범위에서 클릭이 없는 키워드입니다. 신규/시즌 키워드는 바로 삭제하지 않습니다.</p>
+          <p>처음 {INITIAL_NO_CLICK_ROWS.toLocaleString("ko-KR")}개만 보여주고, 아래로 스크롤하면 순차적으로 더 표시합니다.</p>
         </div>
-        <KeywordCleanupTable candidates={view.noClickCandidates} />
+        <IncrementalKeywordCleanupTable candidates={view.noClickCandidates} />
       </section>
 
       <section className="content-panel">
@@ -94,43 +99,97 @@ export function KeywordCleanupDashboard({ view }: { view: SearchAdKeywordCleanup
 }
 
 function DuplicateKeywordGroups({ groups }: { groups: SearchAdDuplicateKeywordGroup[] }) {
+  const { loadMore, sentinelRef, visibleCount } = useIncrementalVisibleCount(groups.length, INITIAL_DUPLICATE_GROUPS, DUPLICATE_GROUP_STEP);
+  const visibleGroups = groups.slice(0, visibleCount);
+
   if (groups.length === 0) {
     return <p className="empty-text">현재 조건에서 중복 키워드가 없습니다.</p>;
   }
 
   return (
-    <div className="card-list">
-      {groups.map((group) => (
-        <article className="rule-card" key={group.id}>
-          <div className="rule-card-header">
-            <div className="rule-card-title-group">
-              <div className="rule-card-kicker">
-                <span className="severity severity-medium">중복 {group.duplicateCount.toLocaleString("ko-KR")}개</span>
-                <span className="target-chip">{getBrandLabel(group.brandKey)}</span>
-                <span className="target-chip">{getAdProductLabel(group.adProductType)}</span>
-              </div>
-              <strong className="rule-card-title">{group.keywordText}</strong>
-            </div>
+    <>
+      <div className="keyword-section-status" aria-live="polite">
+        중복 묶음 {visibleGroups.length.toLocaleString("ko-KR")} / {groups.length.toLocaleString("ko-KR")}건 표시
+      </div>
+      <div className="card-list">
+        {visibleGroups.map((group) => (
+          <DuplicateKeywordGroupCard group={group} key={group.id} />
+        ))}
+      </div>
+      <IncrementalLoadMore
+        label="중복 묶음"
+        loadMore={loadMore}
+        remainingCount={groups.length - visibleCount}
+        sentinelRef={sentinelRef}
+        step={DUPLICATE_GROUP_STEP}
+        totalCount={groups.length}
+        visibleCount={visibleCount}
+      />
+    </>
+  );
+}
+
+function DuplicateKeywordGroupCard({ group }: { group: SearchAdDuplicateKeywordGroup }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <article className="rule-card" key={group.id}>
+      <div className="rule-card-header">
+        <div className="rule-card-title-group">
+          <div className="rule-card-kicker">
+            <span className="severity severity-medium">중복 {group.duplicateCount.toLocaleString("ko-KR")}개</span>
+            <span className="target-chip">{getBrandLabel(group.brandKey)}</span>
+            <span className="target-chip">{getAdProductLabel(group.adProductType)}</span>
           </div>
-          <p className="rule-card-diagnosis">{group.recommendationSummary}</p>
-          <div className="metric-pill-row" aria-label="중복 묶음 성과">
-            <span className="metric-pill">
-              <span>켜진 키워드</span>
-              <strong>{group.activeCount.toLocaleString("ko-KR")}개</strong>
-            </span>
-            <span className="metric-pill">
-              <span>최근 클릭</span>
-              <strong>{group.totalClicks365.toLocaleString("ko-KR")}회</strong>
-            </span>
-            <span className="metric-pill">
-              <span>최근 비용</span>
-              <strong>{formatWon(group.totalCost365)}</strong>
-            </span>
-          </div>
-          <KeywordCleanupTable candidates={group.candidates} />
-        </article>
-      ))}
-    </div>
+          <strong className="rule-card-title">{group.keywordText}</strong>
+        </div>
+      </div>
+      <p className="rule-card-diagnosis">{group.recommendationSummary}</p>
+      <div className="metric-pill-row" aria-label="중복 묶음 성과">
+        <span className="metric-pill">
+          <span>켜진 키워드</span>
+          <strong>{group.activeCount.toLocaleString("ko-KR")}개</strong>
+        </span>
+        <span className="metric-pill">
+          <span>최근 클릭</span>
+          <strong>{group.totalClicks365.toLocaleString("ko-KR")}회</strong>
+        </span>
+        <span className="metric-pill">
+          <span>최근 비용</span>
+          <strong>{formatWon(group.totalCost365)}</strong>
+        </span>
+      </div>
+      <div className="keyword-group-actions">
+        <button aria-expanded={isOpen} className="primary-button secondary-button" onClick={() => setIsOpen((current) => !current)} type="button">
+          {isOpen ? "상세 접기" : `후보 ${group.candidates.length.toLocaleString("ko-KR")}개 보기`}
+        </button>
+        <span className="keyword-action-note">상세 후보는 클릭할 때만 화면에 올립니다.</span>
+      </div>
+      {isOpen ? <KeywordCleanupTable candidates={group.candidates} /> : null}
+    </article>
+  );
+}
+
+function IncrementalKeywordCleanupTable({ candidates }: { candidates: SearchAdKeywordCleanupCandidate[] }) {
+  const { loadMore, sentinelRef, visibleCount } = useIncrementalVisibleCount(candidates.length, INITIAL_NO_CLICK_ROWS, NO_CLICK_ROW_STEP);
+  const visibleCandidates = candidates.slice(0, visibleCount);
+
+  return (
+    <>
+      <div className="keyword-section-status" aria-live="polite">
+        클릭 없는 키워드 {visibleCandidates.length.toLocaleString("ko-KR")} / {candidates.length.toLocaleString("ko-KR")}개 표시
+      </div>
+      <KeywordCleanupTable candidates={visibleCandidates} />
+      <IncrementalLoadMore
+        label="클릭 없는 키워드"
+        loadMore={loadMore}
+        remainingCount={candidates.length - visibleCount}
+        sentinelRef={sentinelRef}
+        step={NO_CLICK_ROW_STEP}
+        totalCount={candidates.length}
+        visibleCount={visibleCount}
+      />
+    </>
   );
 }
 
@@ -192,6 +251,73 @@ function KeywordCleanupTable({ candidates }: { candidates: SearchAdKeywordCleanu
       </table>
     </div>
   );
+}
+
+function IncrementalLoadMore({
+  label,
+  loadMore,
+  remainingCount,
+  sentinelRef,
+  step,
+  totalCount,
+  visibleCount,
+}: {
+  label: string;
+  loadMore: () => void;
+  remainingCount: number;
+  sentinelRef: RefObject<HTMLDivElement | null>;
+  step: number;
+  totalCount: number;
+  visibleCount: number;
+}) {
+  if (remainingCount <= 0) {
+    return totalCount > 0 ? <p className="keyword-section-status">{label} 전체를 표시했습니다.</p> : null;
+  }
+
+  return (
+    <div className="incremental-load-sentinel" ref={sentinelRef}>
+      <span>
+        {label} {visibleCount.toLocaleString("ko-KR")} / {totalCount.toLocaleString("ko-KR")} 표시
+      </span>
+      <button className="primary-button secondary-button" onClick={loadMore} type="button">
+        다음 {Math.min(step, remainingCount).toLocaleString("ko-KR")}개 보기
+      </button>
+    </div>
+  );
+}
+
+function useIncrementalVisibleCount(totalCount: number, initialCount: number, step: number) {
+  const [visibleCount, setVisibleCount] = useState(() => Math.min(totalCount, initialCount));
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setVisibleCount((current) => Math.min(totalCount, Math.max(current, Math.min(totalCount, initialCount))));
+  }, [initialCount, totalCount]);
+
+  const loadMore = useCallback(() => {
+    setVisibleCount((current) => Math.min(totalCount, current + step));
+  }, [step, totalCount]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || visibleCount >= totalCount || typeof IntersectionObserver === "undefined") {
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          loadMore();
+        }
+      },
+      { rootMargin: "360px 0px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore, totalCount, visibleCount]);
+
+  return { loadMore, sentinelRef, visibleCount };
 }
 
 function KeywordCandidateActionCell({ candidate }: { candidate: SearchAdKeywordCleanupCandidate }) {
