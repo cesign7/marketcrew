@@ -47,6 +47,17 @@ export type SearchAdPowerlinkAdPreview = {
   basisLabel: string;
 };
 
+export type SearchAdPowerlinkExtensionPreview = {
+  headline: string;
+  description?: string;
+  displayUrl?: string;
+  finalUrl?: string;
+  extensionTypeLabel: string;
+  extensionImageUrl: string;
+  highlightLabel: string;
+  basisLabel: string;
+};
+
 const RULE_TARGET_TYPE_LABELS: Record<SearchAdRuleResult["targetType"], string> = {
   ad: "광고 소재",
   ad_extension: "확장소재",
@@ -288,6 +299,47 @@ export function getRuleResultPowerlinkAdPreview(result: SearchAdRuleResult): Sea
   };
 }
 
+export function getRuleResultPowerlinkExtensionPreview(result: SearchAdRuleResult): SearchAdPowerlinkExtensionPreview | undefined {
+  if (result.adProductType !== "powerlink" || result.targetType !== "ad_extension") {
+    return undefined;
+  }
+
+  const extensionMaterial = getRuleResultExtensionMaterialDisplay(result);
+  const extensionTypeLabel = extensionMaterial?.typeLabel ?? getRuleResultExtensionLabel(result);
+  if (extensionTypeLabel !== "파워링크 이미지") {
+    return undefined;
+  }
+
+  const extensionImageUrl =
+    stringFromEvidence(result.evidencePacket.extensionImageUrl) ??
+    toSearchAdImageUrl(stringFromEvidence(result.evidencePacket.extensionImagePath)) ??
+    getLegacyExtensionImageUrl(result);
+  if (!extensionImageUrl) {
+    return undefined;
+  }
+
+  const headline =
+    nonTechnicalString(stringFromEvidence(result.evidencePacket.adHeadline)) ??
+    nonTechnicalString(stringFromEvidence(result.evidencePacket.adDisplayLabel)) ??
+    nonTechnicalString(stringFromEvidence(result.evidencePacket.extensionOwnerLabel));
+  const description = nonTechnicalString(stringFromEvidence(result.evidencePacket.adDescription));
+  const pcDisplayUrl = stringFromEvidence(result.evidencePacket.pcDisplayUrl);
+  const mobileDisplayUrl = stringFromEvidence(result.evidencePacket.mobileDisplayUrl);
+  const displayUrl = pcDisplayUrl ?? mobileDisplayUrl;
+  const landingLabel = getRuleResultLandingLabel(result);
+
+  return {
+    headline: headline ?? "광고 문구 확인 필요",
+    ...(description ? { description } : {}),
+    ...(displayUrl ? { displayUrl } : {}),
+    ...(landingLabel ? { finalUrl: landingLabel } : {}),
+    extensionTypeLabel,
+    extensionImageUrl,
+    highlightLabel: extensionTypeLabel,
+    basisLabel: "네이버 광고 API 원문 기반 재구성",
+  };
+}
+
 export function getRuleResultExtensionLabel(result: SearchAdRuleResult) {
   const label =
     stringFromEvidence(result.evidencePacket.extensionDisplayLabel) ??
@@ -490,12 +542,12 @@ function sanitizeExtensionLabel(label: string | undefined, result: SearchAdRuleR
   const typeLabel = getSearchAdAdExtensionTypeLabel(extensionType ?? rawTypeLabel);
   const contentLabel = parts.slice(1).find((part) => isReadableExtensionContent(part));
 
-  if (contentLabel) {
-    return `${typeLabel} · ${contentLabel}`;
+  if (isImageExtensionLabel(rawTypeLabel) || isImageExtensionLabel(evidenceTypeLabel) || isImageExtensionLabel(extensionType)) {
+    return typeLabel;
   }
 
-  if (isImageExtensionLabel(rawTypeLabel) || isImageExtensionLabel(evidenceTypeLabel) || stringFromEvidence(result.evidencePacket.extensionImageUrl)) {
-    return `${typeLabel} · 이미지 소재`;
+  if (contentLabel) {
+    return `${typeLabel} · ${contentLabel}`;
   }
 
   if (isShoppingExtraExtensionLabel(extensionType) || isShoppingExtraExtensionLabel(rawTypeLabel) || isShoppingExtraExtensionLabel(evidenceTypeLabel)) {

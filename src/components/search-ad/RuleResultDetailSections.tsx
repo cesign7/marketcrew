@@ -11,6 +11,7 @@ import {
   getRuleResultLandingLabel,
   getRuleResultPeriodLabel,
   getRuleResultPowerlinkAdPreview,
+  getRuleResultPowerlinkExtensionPreview,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
   getRuleResultShoppingAdPreview,
@@ -29,7 +30,7 @@ import {
 } from "@/features/search-ad/domain/ruleResultPresentation";
 import { truncateDisplayText } from "@/features/search-ad/domain/displayText";
 import type { SearchAdRuleResultDetailView } from "@/features/search-ad/domain/types";
-import { formatDateTime, formatWon, PowerlinkAdPreview, SearchTermTable, ShoppingAdPreview } from "./SearchAdCards";
+import { formatDateTime, formatWon, PowerlinkAdPreview, PowerlinkExtensionPreview, SearchTermTable, ShoppingAdPreview } from "./SearchAdCards";
 
 export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDetailView }) {
   const { result } = view;
@@ -44,6 +45,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
   const landingLabel = getRuleResultLandingLabel(result);
   const productConnection = getRuleResultProductConnection(result);
   const powerlinkAdPreview = getRuleResultPowerlinkAdPreview(result);
+  const powerlinkExtensionPreview = getRuleResultPowerlinkExtensionPreview(result);
   const shoppingAdPreview = getRuleResultShoppingAdPreview(result);
   const shoppingProductId = getRuleResultShoppingProductId(result);
   const isAdMaterialTarget = result.targetType === "ad" || result.targetType === "ad_extension";
@@ -104,10 +106,11 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
         <MetricCard label="ROAS" value={formatPercent(metricNumber(result, "roas"))} />
       </div>
 
-      {powerlinkAdPreview ? <PowerlinkAdPreview density="detail" preview={powerlinkAdPreview} /> : null}
-      {!powerlinkAdPreview && shoppingAdPreview ? <ShoppingAdPreview density="detail" preview={shoppingAdPreview} /> : null}
+      {powerlinkExtensionPreview ? <PowerlinkExtensionPreview density="detail" preview={powerlinkExtensionPreview} /> : null}
+      {!powerlinkExtensionPreview && powerlinkAdPreview ? <PowerlinkAdPreview density="detail" preview={powerlinkAdPreview} /> : null}
+      {!powerlinkExtensionPreview && !powerlinkAdPreview && shoppingAdPreview ? <ShoppingAdPreview density="detail" preview={shoppingAdPreview} /> : null}
 
-      {!powerlinkAdPreview && !shoppingAdPreview && showProductConnection ? (
+      {!powerlinkExtensionPreview && !powerlinkAdPreview && !shoppingAdPreview && showProductConnection ? (
         <div className="product-connection is-detail">
           {productConnection.imageUrl ? (
             <img alt="" loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />
@@ -127,7 +130,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
         </div>
       ) : null}
 
-      {!powerlinkAdPreview && !shoppingAdPreview && showAdMaterial ? (
+      {!powerlinkExtensionPreview && !powerlinkAdPreview && !shoppingAdPreview && showAdMaterial ? (
         <div className="product-connection ad-material-preview is-detail">
           {productConnection.imageUrl ? (
             <img className="material-target-image" alt={`${materialTitle} 이미지`} loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />

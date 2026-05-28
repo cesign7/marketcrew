@@ -9,6 +9,7 @@ import {
   getRuleResultExtensionLabel,
   getRuleResultExtensionMaterialDisplay,
   getRuleResultPeriodLabel,
+  getRuleResultPowerlinkExtensionPreview,
   getRuleResultPowerlinkAdPreview,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
@@ -279,7 +280,7 @@ describe("rule result target display", () => {
     );
   });
 
-  it("기존 저장 결과의 파워링크 이미지 경로는 한글 소재명으로 보정한다", () => {
+  it("기존 저장 결과의 파워링크 이미지 경로는 한글 소재명과 이미지 URL로 보정한다", () => {
     const result = ruleResult({
       targetType: "ad_extension",
       targetId: "ext-a001-02-000000157571490",
@@ -291,9 +292,40 @@ describe("rule result target display", () => {
       },
     });
 
-    expect(getRuleResultExtensionLabel(result)).toBe("파워링크 이미지 · 이미지 소재");
-    expect(getRuleResultDisplayTargetLabel(result)).toBe("파워링크 이미지 · 이미지 소재 · 생일축하스티커 생일01 답례품 감사 소량 주문");
+    expect(getRuleResultExtensionLabel(result)).toBe("파워링크 이미지");
+    expect(getRuleResultDisplayTargetLabel(result)).toBe("파워링크 이미지 · 생일축하스티커 생일01 답례품 감사 소량 주문");
     expect(getRuleResultProductConnection(result).imageUrl).toBe("https://searchad-phinf.pstatic.net/MjAyMzA0MTRfMTc3/MDAxNjgxNDY0MjA0MTQ0.Zr8nch0RFw.jpg");
+  });
+
+  it("파워링크 이미지 확장소재는 광고 문구와 이미지 확장 위치를 함께 재구성한다", () => {
+    const result = ruleResult({
+      adProductType: "powerlink",
+      targetType: "ad_extension",
+      targetId: "ext-a001-01-000000016529685",
+      targetLabel: "30_초대장 확장소재",
+      evidencePacket: {
+        adHeadline: "{keyword:초대장} 전문 커피프린트",
+        adDescription: "NEW! 기업{keyword:초대장}! 기업맞춤 컬러로고무료, 대량할인",
+        pcDisplayUrl: "http://www.coffeeprint.co.kr",
+        pcFinalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=30",
+        extensionType: "POWER_LINK_IMAGE",
+        extensionTypeLabel: "파워링크 이미지",
+        extensionLabel: "이미지 소재 214x214",
+        extensionDisplayLabel: "파워링크 이미지 · 이미지 소재 214x214",
+        extensionImageUrl: "https://searchad-phinf.pstatic.net/image.jpg",
+      },
+    });
+
+    expect(getRuleResultPowerlinkExtensionPreview(result)).toEqual({
+      headline: "{keyword:초대장} 전문 커피프린트",
+      description: "NEW! 기업{keyword:초대장}! 기업맞춤 컬러로고무료, 대량할인",
+      displayUrl: "http://www.coffeeprint.co.kr",
+      finalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=30",
+      extensionTypeLabel: "파워링크 이미지",
+      extensionImageUrl: "https://searchad-phinf.pstatic.net/image.jpg",
+      highlightLabel: "파워링크 이미지",
+      basisLabel: "네이버 광고 API 원문 기반 재구성",
+    });
   });
 
   it("확장소재 종류와 실제 표시 내용을 분리해서 카드용 표시값을 만든다", () => {

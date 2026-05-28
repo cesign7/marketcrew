@@ -1076,6 +1076,47 @@ table {
   position: relative;
 }
 
+.powerlink-preview-composite {
+  align-items: start;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+  padding: 10px;
+}
+
+.powerlink-preview-composite .powerlink-preview-copy {
+  padding-right: 0;
+}
+
+.powerlink-extension-image-target {
+  align-self: start;
+  background: #fff;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  display: grid;
+  min-width: 0;
+  padding: 5px;
+  position: relative;
+}
+
+.powerlink-extension-image-target img {
+  aspect-ratio: 1;
+  border-radius: 5px;
+  height: 82px;
+  object-fit: cover;
+  width: 82px;
+}
+
+.powerlink-ad-preview.is-detail .powerlink-extension-image-target img {
+  height: 116px;
+  width: 116px;
+}
+
 .naver-preview-target img,
 .naver-shopping-ad-preview .product-image-fallback {
   aspect-ratio: 1;
@@ -2256,5 +2297,13 @@ table {
 
   .rule-breakdown-name {
     grid-column: 1 / -1;
+  }
+
+  .powerlink-preview-composite {
+    grid-template-columns: 1fr;
+  }
+
+  .powerlink-extension-image-target {
+    justify-self: start;
   }
 }
