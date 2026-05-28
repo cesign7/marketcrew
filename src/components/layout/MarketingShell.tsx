@@ -70,8 +70,8 @@ const NAV_AREAS: NavigationArea[] = [
     key: "settings",
     label: "설정",
     href: "/settings",
-    description: "연결과 복구",
-    tabs: [{ href: "/settings", label: "연결/복구" }],
+    description: "연결과 보관",
+    tabs: [{ href: "/settings", label: "연결/보고서" }],
   },
 ];
 

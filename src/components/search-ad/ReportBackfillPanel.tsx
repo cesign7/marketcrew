@@ -242,7 +242,7 @@ export function ReportBackfillPanel() {
           return;
         }
         if (!json.ok) {
-          setError(json.message || "보고서 복구 작업을 시작하지 못했습니다.");
+          setError(json.message || "보고서 점검 작업을 시작하지 못했습니다.");
           return;
         }
         setJobRun(json.data.run);
@@ -261,13 +261,13 @@ export function ReportBackfillPanel() {
       }
       setResponse(json);
       if (!json.ok) {
-        setError(json.message || "보고서 복구 상태를 확인하지 못했습니다.");
+        setError(json.message || "보고서 보관 상태를 확인하지 못했습니다.");
       }
     } catch {
       if (requestId !== requestSequence.current) {
         return;
       }
-      setError("보고서 복구 API 응답을 받지 못했습니다.");
+      setError("보고서 보관 API 응답을 받지 못했습니다.");
     } finally {
       if (requestId === requestSequence.current) {
         setLoadingMode(null);
@@ -280,13 +280,13 @@ export function ReportBackfillPanel() {
       <section className="content-panel">
         <div className="section-heading">
           <div>
-            <h2>전체 보고서 복구</h2>
-            <p>오늘 기준 받을 수 있는 가장 과거부터 전일까지, 전체 보고서 {form.reportTypes.length.toLocaleString("ko-KR")}종을 저장합니다. 이미 저장된 보고서는 건너뜁니다.</p>
+            <h2>보고서 보관 현황</h2>
+            <p>초기 백필이 끝난 뒤에는 전체를 다시 받지 않고, 누락되었거나 네이버 준비가 늦었던 보고서만 재점검합니다.</p>
           </div>
         </div>
-        <div className="backfill-range-card" aria-label="전체 복구 범위">
+        <div className="backfill-range-card" aria-label="보고서 보관 점검 범위">
           <div>
-            <span>복구 범위</span>
+            <span>점검 범위</span>
             <strong>
               {form.fromDate}부터 {form.toDate}까지
             </strong>
@@ -294,23 +294,23 @@ export function ReportBackfillPanel() {
           </div>
           <div>
             <span>저장 방식</span>
-            <strong>남은 보고서만 이어받기</strong>
-            <p>한 번 누를 때마다 다음 남은 구간을 처리하고, 네이버가 아직 준비 중인 보고서는 다음 실행에서 다시 확인합니다.</p>
+            <strong>누락 보고서만 재점검</strong>
+            <p>이미 저장된 보고서와 파일 없음으로 확정된 보고서는 다시 받지 않습니다.</p>
           </div>
         </div>
         <div className="backfill-fast-row">
           <div>
-            <strong>서버 자동 복구: 전체 기간을 긴 간격으로 이어받기</strong>
+            <strong>누락 보고서 재점검: 필요한 보고서만 이어받기</strong>
             <p>
-              한 번 시작하면 남은 전체 기간을 계획하고, 요청 간 대기 시간을 길게 둔 채 준비 완료 보고서 저장과 누락 보고서 생성 요청을 이어갑니다.
+              백필 완료 후에는 이 버튼으로 저장 누락, 준비 지연, 최근 전일 보고서만 확인합니다. 네이버 요청은 긴 간격으로 안전하게 보냅니다.
             </p>
           </div>
           <button className="primary-button" disabled={Boolean(loadingMode) || Boolean(activeJob) || quickLimits.selectedDates === 0} onClick={() => runBackfill("recover-all")} type="button">
-            {loadingMode === "recover-all" ? "작업 시작 중" : activeJob ? "서버에서 복구 중" : "전체 저장 / 이어받기"}
+            {loadingMode === "recover-all" ? "점검 시작 중" : activeJob ? "서버에서 점검 중" : "누락 보고서 재점검"}
           </button>
         </div>
-        <div className="backfill-safety-card" aria-label="네이버 API 안전 기준">
-          <span>네이버 API 안전 기준</span>
+        <div className="backfill-safety-card" aria-label="네이버 API 호출 기준">
+          <span>네이버 API 호출 기준</span>
           <strong>
             요청 사이 {formatSeconds(quickLimits.requestDelayMs)} 대기, 속도 제한 시 {formatMinutes(quickLimits.rateLimitBackoffMs)} 대기
           </strong>
@@ -320,7 +320,7 @@ export function ReportBackfillPanel() {
         {displayResponse?.ok ? <BackfillCompletionChecklist summary={displayResponse.data.summary} /> : null}
         <div className="backfill-actions">
           <button className="button secondary-button" disabled={Boolean(loadingMode) || quickLimits.selectedDates === 0} onClick={() => runBackfill("preview")} type="button">
-            {loadingMode === "preview" ? "확인 중" : "남은 보고서 확인"}
+            {loadingMode === "preview" ? "확인 중" : "보관 현황 새로 확인"}
           </button>
         </div>
         {error ? <p className="state-message is-error">{error}</p> : null}
@@ -334,9 +334,9 @@ export function ReportBackfillPanel() {
           <section className="content-panel">
             <div className="section-heading">
               <div>
-                <h2>보고서 상태</h2>
+                <h2>보고서 점검 상태</h2>
                 <p>
-                  {displayResponse.data.plan.fromDate}부터 {displayResponse.data.plan.toDate}까지 남은 {displayResponse.data.plan.totalItems.toLocaleString("ko-KR")}건을 확인했습니다.
+                  {displayResponse.data.plan.fromDate}부터 {displayResponse.data.plan.toDate}까지 재점검 대상 {displayResponse.data.plan.totalItems.toLocaleString("ko-KR")}건을 확인했습니다.
                 </p>
               </div>
             </div>
@@ -376,10 +376,10 @@ function BackfillCompletionChecklist({ summary }: { summary: SearchAdBackfillSum
   const items = getBackfillCompletionChecklist(summary);
 
   return (
-    <div className="backfill-next-panel" aria-label="백필 완료 후 확인 순서">
+    <div className="backfill-next-panel" aria-label="보고서 점검 후 확인 순서">
       <div className="backfill-next-heading">
-        <strong>백필 완료 후 확인 순서</strong>
-        <p>보고서가 쌓인 뒤 바로 확인할 운영 화면입니다.</p>
+        <strong>보고서 점검 후 확인 순서</strong>
+        <p>보관된 보고서를 기준으로 바로 확인할 운영 화면입니다.</p>
       </div>
       <div className="backfill-next-grid">
         {items.map((item) => (
@@ -397,10 +397,10 @@ function BackfillCompletionChecklist({ summary }: { summary: SearchAdBackfillSum
 function BackfillProgressOverview({ run, summary }: { run: BackfillJobRun; summary: SearchAdBackfillSummary }) {
   const progress = getBackfillProgressView(run, summary);
   return (
-    <div className={`backfill-progress-card is-${progress.tone}`} aria-label="보고서 복구 진행상황">
+    <div className={`backfill-progress-card is-${progress.tone}`} aria-label="보고서 보관 점검 진행상황">
       <div className="backfill-progress-head">
         <div>
-          <span>보고서 복구 진행상황 · {progress.label}</span>
+          <span>보고서 점검 진행상황 · {progress.label}</span>
           <strong>{progress.headline}</strong>
           <p>{progress.detail}</p>
         </div>
@@ -423,7 +423,7 @@ function BackfillProgressOverview({ run, summary }: { run: BackfillJobRun; summa
 
 function BackfillSummaryCards({ summary }: { summary: SearchAdBackfillSummary }) {
   const cards = [
-    { helper: "이번 실행 대상", label: "남은 보고서", value: summary.planned },
+    { helper: "이번 점검 대상", label: "재점검 대상", value: summary.planned },
     { helper: "다시 받지 않음", label: "이미 저장", value: summary.alreadySaved },
     { helper: "네이버에 생성 요청함", label: "생성 요청", value: summary.created },
     { helper: "네이버 생성 요청 필요", label: "생성 필요", value: summary.missing },
@@ -435,7 +435,7 @@ function BackfillSummaryCards({ summary }: { summary: SearchAdBackfillSummary })
   ];
 
   return (
-    <section className="summary-grid compact" aria-label="보고서 복구 요약">
+    <section className="summary-grid compact" aria-label="보고서 보관 요약">
       {cards.map((card) => (
         <article className="summary-card" key={card.label}>
           <span>{card.label}</span>
@@ -472,7 +472,7 @@ export function getBackfillCompletionChecklist(summary: SearchAdBackfillSummary)
       title: "검색어 성과 점검",
     },
     {
-      detail: hasOpenBackfillWork ? "아직 준비 중이거나 생성 요청한 보고서가 남아 있습니다. 서버 작업이 계속 이어받습니다." : "남은 보고서가 없으면 이후에는 매일 전일 보고서만 수집하면 됩니다.",
+      detail: hasOpenBackfillWork ? "아직 준비 중이거나 생성 요청한 보고서가 남아 있습니다. 서버 작업이 계속 이어받습니다." : "누락 보고서가 없으면 이후에는 매일 전일 보고서만 수집하면 됩니다.",
       label: hasOpenBackfillWork ? "진행 중" : "완료",
       status: hasOpenBackfillWork ? "waiting" : "done",
       title: "남은 보고서 처리",
@@ -494,7 +494,7 @@ export function getBackfillProgressView(run: BackfillJobRun, summary: SearchAdBa
   if (run.status === "failed") {
     return {
       completionPercent,
-      detail: run.errorMessage ?? "보고서 복구 작업에서 오류가 발생했습니다.",
+      detail: run.errorMessage ?? "보고서 점검 작업에서 오류가 발생했습니다.",
       doneCount,
       headline: "작업이 멈췄습니다",
       label: "실패",
@@ -510,7 +510,7 @@ export function getBackfillProgressView(run: BackfillJobRun, summary: SearchAdBa
       completionPercent: 100,
       detail: "선택 가능한 보고서가 모두 저장되었거나 재요청 제외 처리됐습니다.",
       doneCount: totalCount,
-      headline: "복구 완료",
+      headline: "점검 완료",
       label: "완료",
       remainingCount: 0,
       stale: false,
@@ -522,7 +522,7 @@ export function getBackfillProgressView(run: BackfillJobRun, summary: SearchAdBa
   if (stale) {
     return {
       completionPercent,
-      detail: `마지막 갱신 후 ${formatDuration(ageMs)} 지났습니다. DB 잠금이 없다면 전체 저장 / 이어받기로 남은 보고서부터 다시 시작할 수 있습니다.`,
+      detail: `마지막 갱신 후 ${formatDuration(ageMs)} 지났습니다. DB 잠금이 없다면 누락 보고서 재점검으로 남은 보고서부터 다시 시작할 수 있습니다.`,
       doneCount,
       headline: "멈춤 확인 필요",
       label: "점검 필요",
@@ -638,19 +638,19 @@ function getBackfillNextStep(summary: SearchAdBackfillSummary) {
     return "선택 가능한 전체 범위의 보고서가 이미 저장되어 있습니다.";
   }
   if (summary.created > 0 && summary.downloaded > 0) {
-    return "저장 가능한 보고서는 저장했고, 새로 요청한 보고서는 네이버 준비가 끝난 뒤 다시 전체 저장 / 이어받기로 저장합니다.";
+    return "저장 가능한 보고서는 저장했고, 새로 요청한 보고서는 네이버 준비가 끝난 뒤 다시 누락 보고서 재점검으로 저장합니다.";
   }
   if (summary.created > 0) {
-    return "누락 보고서 생성을 요청했습니다. 네이버 준비가 끝난 뒤 다시 전체 저장 / 이어받기를 누르면 저장됩니다.";
+    return "누락 보고서 생성을 요청했습니다. 네이버 준비가 끝난 뒤 다시 누락 보고서 재점검을 누르면 저장됩니다.";
   }
   if (summary.downloaded > 0) {
     return "준비 완료된 보고서를 저장했습니다. 남은 준비 중 보고서는 잠시 뒤 다시 확인하세요.";
   }
   if (summary.downloadable > 0) {
-    return "저장 가능한 보고서가 있습니다. 전체 저장 / 이어받기를 누르면 DB에 저장됩니다.";
+    return "저장 가능한 보고서가 있습니다. 누락 보고서 재점검을 누르면 DB에 저장됩니다.";
   }
   if (summary.missing > 0) {
-    return "생성 필요한 보고서가 있습니다. 전체 저장 / 이어받기를 누르면 네이버에 생성 요청을 보냅니다.";
+    return "생성 필요한 보고서가 있습니다. 누락 보고서 재점검을 누르면 네이버에 생성 요청을 보냅니다.";
   }
   if (summary.pending > 0) {
     return "네이버가 보고서를 생성 중입니다. 잠시 뒤 계획을 다시 확인하세요.";
@@ -699,19 +699,19 @@ function getBackfillJobMessage(run: BackfillJobRun) {
   const response = getBackfillResponseFromRun(run);
   const jobMeta = getBackfillJobMeta(run);
   if (run.status === "failed") {
-    return run.errorMessage ?? (response && !response.ok ? response.message : undefined) ?? "보고서 복구 작업이 실패했습니다.";
+    return run.errorMessage ?? (response && !response.ok ? response.message : undefined) ?? "보고서 점검 작업이 실패했습니다.";
   }
   if (run.status === "completed") {
-    return "전체 복구 작업이 끝났습니다. 이미 저장된 보고서는 중복 저장하지 않았습니다.";
+    return "보고서 점검이 끝났습니다. 이미 저장된 보고서는 중복 저장하지 않았습니다.";
   }
   if (isWaitingBackfillJobPastAttempt(run)) {
-    return "자동 대기 시간이 지났지만 서버 작업이 재개되지 않았습니다. 전체 저장 / 이어받기를 누르면 남은 보고서부터 다시 시작합니다.";
+    return "자동 대기 시간이 지났지만 서버 작업이 재개되지 않았습니다. 누락 보고서 재점검을 누르면 남은 보고서부터 다시 시작합니다.";
   }
   if (jobMeta?.message) {
     return `${getBackfillJobStatusLabel(run.status)}: ${jobMeta.message}`;
   }
   if (run.status === "waiting") {
-    return "자동 대기 중: 대기가 오래 이어지면 다시 전체 저장 / 이어받기로 남은 보고서부터 계속할 수 있습니다.";
+    return "자동 대기 중: 대기가 오래 이어지면 다시 누락 보고서 재점검으로 남은 보고서부터 계속할 수 있습니다.";
   }
   return `${getBackfillJobStatusLabel(run.status)}: 화면을 닫아도 서버가 남은 보고서를 계속 처리합니다.`;
 }

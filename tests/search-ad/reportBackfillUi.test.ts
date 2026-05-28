@@ -222,7 +222,7 @@ describe("report backfill UI helpers", () => {
     ).not.toHaveProperty("maxDailyCreates");
   });
 
-  it("보고서 복구는 설정 안에서만 관리하고 왼쪽 메뉴에는 노출하지 않는다", () => {
+  it("보고서 보관 점검은 설정 안에서만 관리하고 왼쪽 메뉴에는 노출하지 않는다", () => {
     expect(getMarketingNavItems()).not.toContainEqual({ href: "/reports/backfill", label: "보고서 복구" });
     expect(getMarketingNavItems()).toContainEqual({ href: "/settings", label: "설정" });
   });

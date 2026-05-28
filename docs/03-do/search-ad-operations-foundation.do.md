@@ -124,10 +124,10 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 ### follow-up 보고서 백필 작업기
 
 - `/api/search-ad/reports/backfill`을 추가했다.
-- `/settings` 안에 보고서 복구 섹션을 추가해 오늘 기준 받을 수 있는 전체 범위에서 남은 보고서만 이어받을 수 있게 했다.
-- 화면 기본 동작은 전체 보고서 10종, 최대 과거일~전일, `skipSaved=true`다. 이미 DB에 저장된 날짜/보고서 조합은 다시 다운로드하지 않는다.
+- `/settings` 안에 보고서 보관 현황 섹션을 두고, 초기 백필 완료 뒤에는 누락 보고서만 재점검하는 흐름으로 정리했다.
+- 화면 기본 동작은 전체 보고서 10종, 최대 과거일~전일, `skipSaved=true`다. 이미 DB에 저장된 날짜/보고서 조합과 파일 없음으로 확정된 항목은 다시 다운로드하지 않는다.
 - 보관 기간은 네이버 `stat-reports` 기준으로 `AD`/`EXPKEYWORD`/`AD_CONVERSION`/`ADEXTENSION`/`CRITERION`/`CRITERION_CONVERSION` 365일, `AD_DETAIL`/`SHOPPINGKEYWORD_DETAIL` 180일, `AD_CONVERSION_DETAIL`/`SHOPPINGKEYWORD_CONVERSION_DETAIL` 45일이다.
-- 남은 보고서 확인 요청:
+- 보관 현황 확인 요청:
 
 ```json
 {
@@ -137,7 +137,7 @@ designDoc: docs/02-design/features/search-ad-operations-foundation.design.md
 }
 ```
 
-- 실제 저장은 화면의 `전체 저장 / 이어받기` 버튼으로 실행한다. 누락 보고서 생성은 `createMissing=true`, 다운로드/저장은 `dryRun=false`일 때만 일어나며, 화면 실행 제한은 `maxDates=92`, `maxCreates=120`, `maxDownloads=60`이다.
+- 누락 저장은 화면의 `누락 보고서 재점검` 버튼으로 실행한다. 누락 보고서 생성은 `createMissing=true`, 다운로드/저장은 `dryRun=false`일 때만 일어나며, 이미 저장된 보고서는 중복 저장하지 않는다.
 
 ### follow-up 백필 기반 기간 판단
 

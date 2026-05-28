@@ -74,7 +74,7 @@ export async function startSearchAdReportBackfillJob(input: BackgroundBackfillIn
   } catch (error) {
     return {
       code: "SEARCH_AD_BACKFILL_JOB_FAILED",
-      message: error instanceof Error ? error.message : "보고서 복구 작업을 시작하지 못했습니다.",
+      message: error instanceof Error ? error.message : "보고서 점검 작업을 시작하지 못했습니다.",
       ok: false,
     };
   }
@@ -167,7 +167,7 @@ async function runBackgroundBackfill(runId: string, input: BackgroundBackfillInp
         ...(latestResult ?? {}),
         job: {
           ...(latestResult?.job ?? {}),
-          message: "장시간 작업 제한에 도달했습니다. 다시 전체 저장 / 이어받기를 누르면 남은 보고서부터 계속합니다.",
+          message: "장시간 작업 제한에 도달했습니다. 다시 누락 보고서 재점검을 누르면 남은 보고서부터 계속합니다.",
           updatedAt: new Date().toISOString(),
         },
       },
@@ -176,7 +176,7 @@ async function runBackgroundBackfill(runId: string, input: BackgroundBackfillInp
   } catch (error) {
     await failSearchAdBackfillRun(
       runId,
-      error instanceof Error ? error.message : "보고서 복구 작업 중 오류가 발생했습니다.",
+      error instanceof Error ? error.message : "보고서 점검 작업 중 오류가 발생했습니다.",
       latestResult as unknown as Record<string, unknown> | undefined,
     );
   } finally {
