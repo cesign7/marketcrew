@@ -12,6 +12,7 @@ import {
   getRuleResultPeriodLabel,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
+  getRuleResultShoppingProductId,
   getRuleResultSourceReportLabel,
   getRuleResultTargetDetailLabel,
 } from "@/features/search-ad/domain/targetDisplay";
@@ -40,8 +41,9 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
   const extensionMaterial = getRuleResultExtensionMaterialDisplay(result);
   const landingLabel = getRuleResultLandingLabel(result);
   const productConnection = getRuleResultProductConnection(result);
+  const shoppingProductId = getRuleResultShoppingProductId(result);
   const isAdMaterialTarget = result.targetType === "ad" || result.targetType === "ad_extension";
-  const materialLabel = extensionMaterial?.typeLabel ?? (result.targetType === "ad_extension" ? "확장소재" : "광고 소재");
+  const materialLabel = extensionMaterial?.typeLabel ?? (result.targetType === "ad_extension" ? "확장소재" : adLabel ?? "광고 소재");
   const materialTitle =
     result.targetType === "ad_extension"
       ? extensionMaterial?.contentLabel ?? extensionLabel ?? productConnection.productName ?? creativeLabel ?? "확장소재 확인 필요"
@@ -101,7 +103,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
       {showProductConnection ? (
         <div className="product-connection is-detail">
           {productConnection.imageUrl ? (
-            <img alt="" loading="lazy" src={productConnection.imageUrl} />
+            <img alt="" loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />
           ) : (
             <span className="product-image-fallback">상품</span>
           )}
@@ -113,6 +115,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
             {productConnection.landingLabel ? (
               <small title={productConnection.landingLabel}>{truncateDisplayText(productConnection.landingLabel, 72)}</small>
             ) : null}
+            {shoppingProductId ? <small>스마트스토어 상품번호 {shoppingProductId}</small> : null}
           </div>
         </div>
       ) : null}
@@ -120,7 +123,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
       {showAdMaterial ? (
         <div className="product-connection ad-material-preview is-detail">
           {productConnection.imageUrl ? (
-            <img alt={`${materialTitle} 이미지`} loading="lazy" src={productConnection.imageUrl} />
+            <img alt={`${materialTitle} 이미지`} loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />
           ) : (
             <span className="product-image-fallback">소재</span>
           )}
@@ -141,6 +144,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
             {productConnection.productName && productConnection.productName !== materialTitle ? (
               <small title={productConnection.productName}>{truncateDisplayText(`연결 상품 ${productConnection.productName}`, 72)}</small>
             ) : null}
+            {shoppingProductId ? <small>스마트스토어 상품번호 {shoppingProductId}</small> : null}
             {extensionContentStatusLabel ? <small>{extensionContentStatusLabel}</small> : null}
             {landingLabel ? <small title={landingLabel}>{truncateDisplayText(landingLabel, 84)}</small> : null}
           </div>
@@ -190,8 +194,20 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
         ))}
         {adLabel ? (
           <div>
-            <dt>광고 소재</dt>
+            <dt>{adLabel}</dt>
             <dd title={creativeLabel ?? adLabel}>{truncateDisplayText(creativeLabel ?? adLabel, 40)}</dd>
+          </div>
+        ) : null}
+        {shoppingProductId ? (
+          <div>
+            <dt>상품번호</dt>
+            <dd>{shoppingProductId}</dd>
+          </div>
+        ) : null}
+        {adLabel && rawTargetId ? (
+          <div>
+            <dt>네이버 광고 ID</dt>
+            <dd className="text-break">{rawTargetId}</dd>
           </div>
         ) : null}
         {creativeLabel && !adLabel ? (

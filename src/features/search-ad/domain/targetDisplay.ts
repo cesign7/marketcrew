@@ -51,12 +51,13 @@ export function describeSearchAdRuleTarget(row: SearchAdNormalizedRow): SearchAd
   if (isAdReport(row.reportType)) {
     const adId = row.adId ?? identifierLike(row.searchTerm, "nad-") ?? identifierLike(row.keywordText, "nad-");
     const connectedTargetLabel = row.adgroupName ?? row.campaignName ?? "연결 대상 확인 필요";
+    const targetTypeLabel = getAdTargetTypeLabel(row.adProductType);
 
     return {
       targetType: "ad",
       targetId: adId ?? row.keywordId ?? row.adgroupId ?? row.campaignId ?? row.id,
-      targetLabel: `${connectedTargetLabel} 광고 소재`,
-      targetTypeLabel: getRuleTargetTypeLabel("ad"),
+      targetLabel: `${connectedTargetLabel} ${targetTypeLabel}`,
+      targetTypeLabel,
       connectedTargetLabel,
       rawTargetId: adId,
     };
@@ -116,7 +117,11 @@ export function getRuleTargetTypeLabel(targetType: SearchAdRuleResult["targetTyp
 export function getRuleResultDisplayTargetTypeLabel(result: SearchAdRuleResult) {
   const inferredType = inferTechnicalTargetType(result.targetLabel) ?? inferTechnicalTargetType(result.targetId);
   if (inferredType) {
-    return getRuleTargetTypeLabel(inferredType);
+    return inferredType === "ad" ? getAdTargetTypeLabel(result.adProductType) : getRuleTargetTypeLabel(inferredType);
+  }
+
+  if (result.targetType === "ad") {
+    return getAdTargetTypeLabel(result.adProductType);
   }
 
   return stringFromEvidence(result.evidencePacket.targetTypeLabel) ?? getRuleTargetTypeLabel(result.targetType);
@@ -187,7 +192,11 @@ export function getRuleResultCreativeLabel(result: SearchAdRuleResult) {
 }
 
 export function getRuleResultAdLabel(result: SearchAdRuleResult) {
-  return result.targetType === "ad" ? "광고 소재" : undefined;
+  return result.targetType === "ad" ? getAdTargetTypeLabel(result.adProductType) : undefined;
+}
+
+export function getRuleResultShoppingProductId(result: SearchAdRuleResult) {
+  return stringFromEvidence(result.evidencePacket.mallProductId) ?? stringFromEvidence(result.evidencePacket.productId);
 }
 
 export function getRuleResultExtensionLabel(result: SearchAdRuleResult) {
@@ -432,7 +441,8 @@ function extractImageReference(value: string | undefined) {
 function getReadableTargetLabel(result: SearchAdRuleResult) {
   if (result.targetType === "ad") {
     const creativeLabel = nonTechnicalString(getRuleResultCreativeLabel(result));
-    return creativeLabel ? `${creativeLabel} 광고 소재` : getRuleResultAdLabel(result);
+    const adLabel = getRuleResultAdLabel(result);
+    return creativeLabel && adLabel ? `${creativeLabel} ${adLabel}` : adLabel;
   }
 
   if (result.targetType === "ad_extension") {
@@ -582,6 +592,10 @@ function inferTechnicalTargetType(value: string | undefined): SearchAdRuleResult
   }
 
   return undefined;
+}
+
+function getAdTargetTypeLabel(adProductType: SearchAdRuleResult["adProductType"] | SearchAdNormalizedRow["adProductType"]) {
+  return adProductType === "shopping_search" ? "상품 광고" : getRuleTargetTypeLabel("ad");
 }
 
 function isTechnicalTargetIdentifier(value: string | undefined) {

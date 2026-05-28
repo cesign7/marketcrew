@@ -11,6 +11,7 @@ import {
   getRuleResultPeriodLabel,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
+  getRuleResultShoppingProductId,
   getRuleResultTargetDetailLabel,
 } from "@/features/search-ad/domain/targetDisplay";
 import type { SearchAdRuleResult } from "@/features/search-ad/domain/types";
@@ -115,6 +116,27 @@ describe("rule result target display", () => {
 
     expect(getRuleResultAdLabel(result)).toBe("광고 소재");
     expect(getRuleResultDisplayTargetLabel(result)).toBe("생일축하스티커 생일01 답례품 감사 소량 주문 광고 소재");
+  });
+
+  it("쇼핑검색광고의 광고 ID는 상품 광고로 구분해서 보여준다", () => {
+    const result = ruleResult({
+      adProductType: "shopping_search",
+      targetType: "ad",
+      targetId: "nad-a001-02-000000203421541",
+      targetLabel: "M_감사/생일/답례 스티커 광고 소재",
+      evidencePacket: {
+        adDisplayLabel: "생일축하스티커 생일01 답례품 감사 소량 주문",
+        adgroupName: "M_감사/생일/답례 스티커",
+        mallProductId: "7237925448",
+        targetTypeLabel: "광고 소재",
+      },
+    });
+
+    expect(getRuleResultAdLabel(result)).toBe("상품 광고");
+    expect(getRuleResultDisplayTargetTypeLabel(result)).toBe("상품 광고");
+    expect(getRuleResultDisplayTargetLabel(result)).toBe("생일축하스티커 생일01 답례품 감사 소량 주문 상품 광고");
+    expect(getRuleResultShoppingProductId(result)).toBe("7237925448");
+    expect(getRuleResultRawTargetId(result)).toBe("nad-a001-02-000000203421541");
   });
 
   it("확장소재 카드 제목은 연결 소재와 확장소재 종류를 함께 보여준다", () => {
