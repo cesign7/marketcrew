@@ -10,6 +10,17 @@ export type SearchAdReportJob = {
   downloadUrl?: string;
 };
 
+export type SearchAdMasterReportItem = "Media";
+
+export type SearchAdMasterReportJob = {
+  id: string;
+  item: string;
+  fromTime?: string;
+  updateTime?: string;
+  status: SearchAdReportStatus;
+  downloadUrl?: string;
+};
+
 export async function listSearchAdReportJobs() {
   const jobs = await searchAdFetch<SearchAdReportJob[]>("/stat-reports");
   return jobs.filter((job) => isSearchAdReportType(job.reportTp));
@@ -27,4 +38,19 @@ export async function createSearchAdReportJob(reportType: SearchAdReportType, st
 
 export async function downloadSearchAdReport(downloadUrl: string) {
   return searchAdDownload(downloadUrl);
+}
+
+export async function listSearchAdMasterReportJobs() {
+  return searchAdFetch<SearchAdMasterReportJob[]>("/master-reports");
+}
+
+export async function createSearchAdMasterReportJob(item: SearchAdMasterReportItem) {
+  return searchAdFetch<SearchAdMasterReportJob>("/master-reports", {
+    body: JSON.stringify({ item }),
+    method: "POST",
+  });
+}
+
+export async function getSearchAdMasterReportJob(id: string) {
+  return searchAdFetch<SearchAdMasterReportJob>(`/master-reports/${encodeURIComponent(id)}`);
 }

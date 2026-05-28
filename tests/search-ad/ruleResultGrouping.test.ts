@@ -5,9 +5,36 @@ import type { SearchAdRuleResult } from "@/features/search-ad/domain/types";
 describe("groupRuleResultsForDisplay", () => {
   it("같은 광고 소재가 기기/매체별로 쪼개진 경우 합산 카드와 세부 분해를 만든다", () => {
     const groups = groupRuleResultsForDisplay([
-      result({ id: "mobile-main", device: "M", mediaId: "8753", clicks: 625, conversions: 218, cost: 707213, salesAmount: 2401400 }),
-      result({ id: "pc", device: "P", mediaId: "11068", clicks: 17, conversions: 7, cost: 19823, salesAmount: 71500 }),
-      result({ id: "mobile-sub", device: "M", mediaId: "341893", clicks: 44, conversions: 21, cost: 51688, salesAmount: 186400 }),
+      result({
+        id: "mobile-main",
+        device: "M",
+        mediaId: "8753",
+        mediaName: "네이버 모바일 통합검색",
+        clicks: 625,
+        conversions: 218,
+        cost: 707213,
+        salesAmount: 2401400,
+      }),
+      result({
+        id: "pc",
+        device: "P",
+        mediaId: "11068",
+        mediaName: "네이버 PC 통합검색",
+        clicks: 17,
+        conversions: 7,
+        cost: 19823,
+        salesAmount: 71500,
+      }),
+      result({
+        id: "mobile-sub",
+        device: "M",
+        mediaId: "341893",
+        mediaName: "모바일 제휴 검색",
+        clicks: 44,
+        conversions: 21,
+        cost: 51688,
+        salesAmount: 186400,
+      }),
     ]);
 
     expect(groups).toHaveLength(1);
@@ -17,7 +44,11 @@ describe("groupRuleResultsForDisplay", () => {
     expect(groups[0]?.result.metrics.clicks).toBe(686);
     expect(groups[0]?.result.metrics.conversions).toBe(246);
     expect(groups[0]?.result.metrics.conversionRate).toBeCloseTo(35.86, 2);
-    expect(groups[0]?.breakdowns.map((item) => item.label)).toEqual(["모바일 · 매체 8753", "모바일 · 매체 341893", "PC · 매체 11068"]);
+    expect(groups[0]?.breakdowns.map((item) => item.label)).toEqual([
+      "모바일 · 네이버 모바일 통합검색",
+      "모바일 · 모바일 제휴 검색",
+      "PC · 네이버 PC 통합검색",
+    ]);
   });
 
   it("같은 검색어라도 광고그룹이 다르면 다른 판단 카드로 남긴다", () => {
@@ -39,6 +70,7 @@ type ResultOverrides = Partial<SearchAdRuleResult> & {
   device?: string;
   impressions?: number;
   mediaId?: string;
+  mediaName?: string;
   salesAmount?: number;
 };
 
@@ -80,6 +112,8 @@ function result(overrides: ResultOverrides = {}): SearchAdRuleResult {
       device: overrides.device,
       deviceLabel: overrides.device ? (overrides.device === "P" ? "PC" : "모바일") : undefined,
       mediaId: overrides.mediaId,
+      mediaName: overrides.mediaName,
+      mediaDisplayLabel: overrides.mediaName,
       sourceRowIds: [`row-${overrides.id ?? "rule"}`],
       ...overrides.evidencePacket,
     },

@@ -68,6 +68,24 @@ export type SearchAdReportJobRecord = {
   summary: SearchAdMetricSummary;
 };
 
+export type SearchAdMediaMasterRow = {
+  id: string;
+  mediaId: string;
+  mediaType: string;
+  mediaName: string;
+  mediaUrl?: string;
+  naverAdNetwork: boolean | null;
+  portalSite: boolean | null;
+  pcMedia: boolean | null;
+  mobileMedia: boolean | null;
+  searchAdNetwork: boolean | null;
+  contentsAdNetwork: boolean | null;
+  groupId?: string;
+  contractedAt?: string;
+  revokedAt?: string;
+  rawRow: Record<string, string | boolean | null>;
+};
+
 export type SearchAdMetricSummary = {
   impressions: number;
   clicks: number;

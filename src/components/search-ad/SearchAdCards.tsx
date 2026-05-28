@@ -332,7 +332,7 @@ function RuleResultBreakdownPanel({ group }: { group: ReturnType<typeof groupRul
           <Link className="rule-breakdown-row" href={getRuleResultDetailHref(item.result)} key={item.id} prefetch={false}>
             <span className="rule-breakdown-name">
               <strong>{item.label}</strong>
-              <small>상세 근거 보기</small>
+              <small>{item.mediaNetworkLabel ? `${item.mediaNetworkLabel} · 상세 근거 보기` : "상세 근거 보기"}</small>
             </span>
             <span>
               <small>클릭</small>

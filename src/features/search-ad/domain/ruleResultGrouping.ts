@@ -7,6 +7,7 @@ export type RuleResultBreakdownItem = {
   label: string;
   deviceLabel: string;
   mediaLabel: string;
+  mediaNetworkLabel?: string;
   clicks: number;
   cost: number;
   conversions: number;
@@ -101,7 +102,7 @@ function buildAggregateResult(primary: SearchAdRuleResult, results: SearchAdRule
     evidencePacket: {
       ...primary.evidencePacket,
       deviceLabel: deviceLabels.size > 1 ? `${deviceLabels.size.toLocaleString("ko-KR")}개 기기` : Array.from(deviceLabels)[0] ?? primary.evidencePacket.deviceLabel,
-      mediaId: mediaLabels.size > 1 ? `${mediaLabels.size.toLocaleString("ko-KR")}개 매체` : primary.evidencePacket.mediaId,
+      mediaDisplayLabel: mediaLabels.size > 1 ? `${mediaLabels.size.toLocaleString("ko-KR")}개 매체` : Array.from(mediaLabels)[0] ?? primary.evidencePacket.mediaDisplayLabel,
       sourceRowIds,
       displayGroupedCount: results.length,
     },
@@ -111,6 +112,7 @@ function buildAggregateResult(primary: SearchAdRuleResult, results: SearchAdRule
 function buildBreakdownItem(result: SearchAdRuleResult): RuleResultBreakdownItem {
   const deviceLabel = getDeviceLabel(result);
   const mediaLabel = getMediaLabel(result);
+  const mediaNetworkLabel = stringFromEvidence(result.evidencePacket.mediaNetworkLabel);
   const clicks = metricNumber(result, "clicks");
   const cost = metricNumber(result, "cost");
   const conversions = metricNumber(result, "conversions");
@@ -124,6 +126,7 @@ function buildBreakdownItem(result: SearchAdRuleResult): RuleResultBreakdownItem
     label: `${deviceLabel} · ${mediaLabel}`,
     deviceLabel,
     mediaLabel,
+    mediaNetworkLabel,
     clicks,
     cost,
     conversions,
@@ -152,6 +155,11 @@ function getDeviceLabel(result: SearchAdRuleResult) {
 }
 
 function getMediaLabel(result: SearchAdRuleResult) {
+  const displayLabel = stringFromEvidence(result.evidencePacket.mediaDisplayLabel) ?? stringFromEvidence(result.evidencePacket.mediaName);
+  if (displayLabel) {
+    return displayLabel;
+  }
+
   const mediaId = stringFromEvidence(result.evidencePacket.mediaId);
   if (!mediaId) {
     return "매체 미상";
@@ -159,7 +167,7 @@ function getMediaLabel(result: SearchAdRuleResult) {
   if (mediaId.includes("개 매체")) {
     return mediaId;
   }
-  return `매체 ${mediaId}`;
+  return `매체 ID ${mediaId}`;
 }
 
 function sourceRowIdsFromResult(result: SearchAdRuleResult) {

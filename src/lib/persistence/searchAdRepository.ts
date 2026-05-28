@@ -57,6 +57,7 @@ import type {
   SearchAdNormalizedRow,
   SearchAdOperationsView,
   SearchAdRawReportRow,
+  SearchAdMediaMasterRow,
   SearchAdReportArchiveView,
   SearchAdReportDetailView,
   SearchAdReportJobRecord,
@@ -207,6 +208,16 @@ type AdCreativeLookupValue = {
   mallProductId?: string;
   status?: string;
   statusReason?: string;
+};
+
+type MediaLookupValue = {
+  mediaName: string;
+  mediaType?: string;
+  mediaUrl?: string;
+  pcMedia: boolean | null;
+  mobileMedia: boolean | null;
+  searchAdNetwork: boolean | null;
+  contentsAdNetwork: boolean | null;
 };
 
 export async function getSearchAdOperationsView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdOperationsView> {
@@ -984,6 +995,47 @@ export async function saveSearchAdTargetSnapshots(input: TargetSnapshotInput[], 
   return { collectedAt, saved: input.length };
 }
 
+export async function saveSearchAdMediaSnapshots(input: SearchAdMediaMasterRow[], collectedAt = new Date().toISOString()) {
+  if (!hasDatabaseUrl()) {
+    throw new Error("SEARCH_AD_DATABASE_MISSING");
+  }
+
+  await ensureSearchAdSchema();
+  for (const item of input) {
+    await query(
+      `
+        INSERT INTO search_ad_media_snapshots (
+          id, media_id, media_type, media_name, media_url, naver_ad_network, portal_site,
+          pc_media, mobile_media, search_ad_network, contents_ad_network, group_id,
+          contracted_at, revoked_at, raw_payload, collected_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        ON CONFLICT (id) DO NOTHING
+      `,
+      [
+        snapshotId("media", `${item.mediaType}-${item.mediaId}`, collectedAt),
+        item.mediaId,
+        item.mediaType,
+        item.mediaName,
+        item.mediaUrl ?? null,
+        item.naverAdNetwork,
+        item.portalSite,
+        item.pcMedia,
+        item.mobileMedia,
+        item.searchAdNetwork,
+        item.contentsAdNetwork,
+        item.groupId ?? null,
+        item.contractedAt ?? null,
+        item.revokedAt ?? null,
+        JSON.stringify(item.rawRow),
+        collectedAt,
+      ],
+    );
+  }
+
+  return { collectedAt, saved: input.length };
+}
+
 export async function rebuildAndSaveSearchAdRuleResults() {
   if (!hasDatabaseUrl()) {
     return { saved: 0, results: createSampleSearchTermsView(DEFAULT_SEARCH_AD_FILTERS).ruleResults };
@@ -995,7 +1047,8 @@ export async function rebuildAndSaveSearchAdRuleResults() {
     const rows = await listNormalizedRowsForRuleCriteria(criteria);
     const dataCoverage = await listNormalizedDataCoverage();
     const adLookup = await listLatestAdCreativeLookup();
-    const results = enrichRuleResultsWithEvidenceContext(buildSearchAdPeriodRuleResults(rows, criteria), dataCoverage, adLookup);
+    const mediaLookup = await listLatestSearchAdMediaLookup();
+    const results = enrichRuleResultsWithEvidenceContext(buildSearchAdPeriodRuleResults(rows, criteria), dataCoverage, adLookup, mediaLookup);
 
     await replaceSearchAdRuleResults(results);
 
@@ -1975,6 +2028,26 @@ async function ensureSearchAdSchemaUncached() {
       UNIQUE (provider_target_id, collected_at)
     );
 
+    CREATE TABLE IF NOT EXISTS search_ad_media_snapshots (
+      id TEXT PRIMARY KEY,
+      media_id TEXT NOT NULL,
+      media_type TEXT NOT NULL,
+      media_name TEXT NOT NULL,
+      media_url TEXT,
+      naver_ad_network BOOLEAN,
+      portal_site BOOLEAN,
+      pc_media BOOLEAN,
+      mobile_media BOOLEAN,
+      search_ad_network BOOLEAN,
+      contents_ad_network BOOLEAN,
+      group_id TEXT,
+      contracted_at TEXT,
+      revoked_at TEXT,
+      raw_payload JSONB NOT NULL,
+      collected_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      UNIQUE (media_id, media_type, collected_at)
+    );
+
     CREATE TABLE IF NOT EXISTS search_ad_rule_criteria (
       id TEXT PRIMARY KEY,
       brand_key TEXT NOT NULL CHECK (brand_key IN ('coffeeprint', 'stickersee')),
@@ -2091,6 +2164,9 @@ async function ensureSearchAdSchemaUncached() {
 
     CREATE INDEX IF NOT EXISTS search_ad_target_latest_idx
       ON search_ad_target_snapshots (provider_target_id, collected_at DESC);
+
+    CREATE INDEX IF NOT EXISTS search_ad_media_snapshots_latest_idx
+      ON search_ad_media_snapshots (media_id, media_type, collected_at DESC);
   `);
 
   await query(`
@@ -2957,15 +3033,51 @@ async function listLatestAdCreativeLookup(): Promise<Map<string, AdCreativeLooku
   );
 }
 
+async function listLatestSearchAdMediaLookup(): Promise<Map<string, MediaLookupValue>> {
+  const result = await query<{
+    media_id: string;
+    media_type: string;
+    media_name: string;
+    media_url: string | null;
+    pc_media: boolean | null;
+    mobile_media: boolean | null;
+    search_ad_network: boolean | null;
+    contents_ad_network: boolean | null;
+  }>(`
+    SELECT DISTINCT ON (media_id)
+      media_id, media_type, media_name, media_url, pc_media, mobile_media, search_ad_network, contents_ad_network
+    FROM search_ad_media_snapshots
+    ORDER BY media_id, CASE WHEN media_type = 'media' THEN 0 ELSE 1 END, collected_at DESC
+  `);
+
+  return new Map(
+    result.rows.map((row) => [
+      row.media_id,
+      {
+        mediaName: row.media_name,
+        mediaType: row.media_type,
+        mediaUrl: row.media_url ?? undefined,
+        pcMedia: row.pc_media,
+        mobileMedia: row.mobile_media,
+        searchAdNetwork: row.search_ad_network,
+        contentsAdNetwork: row.contents_ad_network,
+      },
+    ]),
+  );
+}
+
 function enrichRuleResultsWithEvidenceContext(
   results: SearchAdRuleResult[],
   coverageByScope: Map<string, DataCoverageRecord>,
   adCreativeById: Map<string, AdCreativeLookupValue>,
+  mediaById: Map<string, MediaLookupValue>,
 ): SearchAdRuleResult[] {
   return results.map((result) => {
     const coverage = coverageByScope.get(coverageKey(result.brandKey, result.adProductType));
     const adId = evidenceString(result.evidencePacket.adId) ?? (result.targetType === "ad" ? result.targetId : undefined);
     const adCreative = adId ? adCreativeById.get(adId) : undefined;
+    const mediaId = evidenceString(result.evidencePacket.mediaId);
+    const media = mediaId ? mediaById.get(mediaId) : undefined;
 
     return {
       ...result,
@@ -2985,9 +3097,37 @@ function enrichRuleResultsWithEvidenceContext(
         mallProductId: result.evidencePacket.mallProductId ?? adCreative?.mallProductId ?? null,
         adStatus: result.evidencePacket.adStatus ?? adCreative?.status ?? null,
         adStatusReason: result.evidencePacket.adStatusReason ?? adCreative?.statusReason ?? null,
+        mediaName: result.evidencePacket.mediaName ?? media?.mediaName ?? null,
+        mediaUrl: result.evidencePacket.mediaUrl ?? media?.mediaUrl ?? null,
+        mediaType: result.evidencePacket.mediaType ?? media?.mediaType ?? null,
+        mediaDisplayLabel: result.evidencePacket.mediaDisplayLabel ?? buildMediaDisplayLabel(mediaId, media),
+        mediaNetworkLabel: result.evidencePacket.mediaNetworkLabel ?? buildMediaNetworkLabel(media),
       },
     };
   });
+}
+
+function buildMediaDisplayLabel(mediaId: string | undefined, media: MediaLookupValue | undefined) {
+  if (media?.mediaName) {
+    return media.mediaName;
+  }
+  return mediaId ? `매체 ID ${mediaId}` : null;
+}
+
+function buildMediaNetworkLabel(media: MediaLookupValue | undefined) {
+  if (!media) {
+    return null;
+  }
+  if (media.searchAdNetwork && media.contentsAdNetwork) {
+    return "검색/콘텐츠 네트워크";
+  }
+  if (media.searchAdNetwork) {
+    return "검색 네트워크";
+  }
+  if (media.contentsAdNetwork) {
+    return "콘텐츠 네트워크";
+  }
+  return null;
 }
 
 function coverageKey(brandKey: BrandKey, adProductType: AdProductType) {
@@ -3782,7 +3922,7 @@ async function releaseOperationCalendarLock(targetId: string, log: SearchAdActio
   );
 }
 
-function snapshotId(targetType: SearchAdTargetType | "ad" | "target", providerId: string, collectedAt: string) {
+function snapshotId(targetType: SearchAdTargetType | "ad" | "target" | "media", providerId: string, collectedAt: string) {
   return `${targetType}-${providerId}-${collectedAt}`.replace(/[^a-zA-Z0-9_-]/g, "-");
 }
 
