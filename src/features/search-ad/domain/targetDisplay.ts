@@ -323,7 +323,7 @@ function getReadableTargetLabel(result: SearchAdRuleResult) {
       nonTechnicalString(getRuleResultConnectedTarget(result));
 
     if (extensionLabel && ownerLabel && ownerLabel !== "-") {
-      return `${ownerLabel} · ${extensionLabel}`;
+      return `${extensionLabel} · ${ownerLabel}`;
     }
 
     if (extensionLabel) {
