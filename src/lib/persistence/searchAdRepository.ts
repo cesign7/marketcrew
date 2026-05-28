@@ -1337,8 +1337,8 @@ export async function backfillSearchAdRuleResultCreativeEvidence() {
       SELECT
         *,
         CASE
-          WHEN jsonb_typeof(raw_payload -> 'adExtension') = 'object' THEN raw_payload -> 'adExtension'
-          WHEN jsonb_typeof(raw_payload -> 'adExtension') = 'string' AND left(raw_payload ->> 'adExtension', 1) = '{'
+          WHEN jsonb_typeof(raw_payload -> 'adExtension') IN ('object', 'array') THEN raw_payload -> 'adExtension'
+          WHEN jsonb_typeof(raw_payload -> 'adExtension') = 'string' AND left(raw_payload ->> 'adExtension', 1) IN ('{', '[')
             THEN (raw_payload ->> 'adExtension')::jsonb
           ELSE NULL
         END AS ad_extension_payload
@@ -1348,14 +1348,46 @@ export async function backfillSearchAdRuleResultCreativeEvidence() {
       SELECT
         *,
         COALESCE(
-          ad_extension_payload ->> 'imageUrl',
-          ad_extension_payload ->> 'imagePath',
-          ad_extension_payload ->> 'mobileImageUrl',
-          ad_extension_payload ->> 'mobileImagePath',
-          ad_extension_payload ->> 'pcImageUrl',
-          ad_extension_payload ->> 'pcImagePath',
-          ad_extension_payload ->> 'thumbnailUrl',
-          ad_extension_payload ->> 'thumbnailPath'
+          CASE
+            WHEN jsonb_typeof(ad_extension_payload) = 'object' THEN COALESCE(
+              ad_extension_payload ->> 'imageUrl',
+              ad_extension_payload ->> 'imagePath',
+              ad_extension_payload ->> 'mobileImageUrl',
+              ad_extension_payload ->> 'mobileImagePath',
+              ad_extension_payload ->> 'pcImageUrl',
+              ad_extension_payload ->> 'pcImagePath',
+              ad_extension_payload ->> 'thumbnailUrl',
+              ad_extension_payload ->> 'thumbnailPath'
+            )
+            ELSE NULL
+          END,
+          CASE
+            WHEN jsonb_typeof(ad_extension_payload) = 'array' THEN (
+              SELECT COALESCE(
+                item ->> 'imageUrl',
+                item ->> 'imagePath',
+                item ->> 'mobileImageUrl',
+                item ->> 'mobileImagePath',
+                item ->> 'pcImageUrl',
+                item ->> 'pcImagePath',
+                item ->> 'thumbnailUrl',
+                item ->> 'thumbnailPath'
+              )
+              FROM jsonb_array_elements(ad_extension_payload) AS item
+              WHERE COALESCE(
+                item ->> 'imageUrl',
+                item ->> 'imagePath',
+                item ->> 'mobileImageUrl',
+                item ->> 'mobileImagePath',
+                item ->> 'pcImageUrl',
+                item ->> 'pcImagePath',
+                item ->> 'thumbnailUrl',
+                item ->> 'thumbnailPath'
+              ) IS NOT NULL
+              LIMIT 1
+            )
+            ELSE NULL
+          END
         ) AS image_reference
       FROM extension_payloads
     ),
@@ -1367,9 +1399,15 @@ export async function backfillSearchAdRuleResultCreativeEvidence() {
           'extensionOwnerLabel', owner_name,
           'extensionOwnerType', owner_type,
           'extensionType', extension_type,
-          'extensionTypeLabel', extension_type_label,
+          'extensionTypeLabel', CASE
+            WHEN extension_type = 'IMAGE_SUB_LINKS' THEN '이미지 추가 링크'
+            ELSE extension_type_label
+          END,
           'extensionLabel', extension_label,
-          'extensionDisplayLabel', extension_display_label,
+          'extensionDisplayLabel', CASE
+            WHEN extension_type = 'IMAGE_SUB_LINKS' THEN CONCAT_WS(' · ', '이미지 추가 링크', NULLIF(extension_label, ''))
+            ELSE extension_display_label
+          END,
           'extensionImagePath', CASE
             WHEN image_reference IS NULL THEN NULL
             WHEN image_reference LIKE 'http%' THEN NULL

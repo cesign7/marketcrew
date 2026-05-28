@@ -16,6 +16,7 @@ const EXTENSION_TYPE_LABELS: Record<string, string> = {
   DESCRIPTION: "설명 확장",
   DESCRIPTION_EXTRA: "추가 설명",
   HEADLINE: "제목 확장",
+  IMAGE_SUB_LINKS: "이미지 추가 링크",
   LOCATION: "위치",
   PHONE: "전화",
   POWER_LINK_IMAGE: "파워링크 이미지",

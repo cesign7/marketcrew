@@ -5,6 +5,7 @@ describe("search ad ad extension evidence", () => {
   it("네이버 확장소재 종류를 한국어로 보여준다", () => {
     expect(getSearchAdAdExtensionTypeLabel("SHOPPING_EXTRA")).toBe("쇼핑 부가정보");
     expect(getSearchAdAdExtensionTypeLabel("POWER_LINK_IMAGE")).toBe("파워링크 이미지");
+    expect(getSearchAdAdExtensionTypeLabel("IMAGE_SUB_LINKS")).toBe("이미지 추가 링크");
     expect(getSearchAdAdExtensionTypeLabel("TALK")).toBe("네이버 톡톡");
   });
 
@@ -54,6 +55,34 @@ describe("search ad ad extension evidence", () => {
       extensionImageUrl: "https://searchad-phinf.pstatic.net/MjAyMzA0MTRfMTc3/MDAxNjgxNDY0MjA0MTQ0.Zr8nch0RFw.jpg",
       extensionLabel: "이미지 소재 214x214",
       extensionTypeLabel: "파워링크 이미지",
+    });
+  });
+
+  it("이미지 추가 링크 확장소재는 배열형 원문에서 이름과 이미지를 함께 뽑는다", () => {
+    expect(
+      extractSearchAdAdExtensionEvidence({
+        nccAdExtensionId: "ext-a001-01-000000315151873",
+        type: "IMAGE_SUB_LINKS",
+        adExtension: [
+          {
+            name: "디자인초대장",
+            final: "https://coffeeprint.co.kr/shop/list.php?ca_id=3010",
+            imagePath: "/MjAyNTA4MjJfOTEg/MDAxNzU1ODQ5NjEzNDUx.jpg",
+          },
+          {
+            name: "사진초대장",
+            final: "https://coffeeprint.co.kr/shop/list.php?ca_id=3020",
+            imagePath: "/MjAyNTA4MjJfMzgg/MDAxNzU1ODQ5NjEzNDYz.jpg",
+          },
+        ],
+      }),
+    ).toMatchObject({
+      extensionContentLabel: "디자인초대장",
+      extensionDisplayLabel: "이미지 추가 링크 · 디자인초대장",
+      extensionImagePath: "/MjAyNTA4MjJfOTEg/MDAxNzU1ODQ5NjEzNDUx.jpg",
+      extensionImageUrl: "https://searchad-phinf.pstatic.net/MjAyNTA4MjJfOTEg/MDAxNzU1ODQ5NjEzNDUx.jpg",
+      extensionLabel: "디자인초대장",
+      extensionTypeLabel: "이미지 추가 링크",
     });
   });
 });
