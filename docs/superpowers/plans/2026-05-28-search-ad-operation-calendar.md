@@ -52,6 +52,6 @@
 - Test: `tests/search-ad/operationCalendar.test.ts`
 - Existing tests: full suite
 
-- [ ] `npm run typecheck`, `npm test -- --run`, `npm run build`를 실행한다.
-- [ ] 로컬 화면 `/rules?brand=coffeeprint`에서 운영 캘린더 패널을 확인한다.
-- [ ] 커밋/푸시 후 운영 배포와 `npm run smoke:prod`를 확인한다.
+- [x] `npm run typecheck`, `npm test -- --run`, `npm run build`를 실행한다.
+- [x] 로컬 화면 `/rules?brand=coffeeprint`에서 운영 캘린더 패널을 확인한다.
+- [x] 커밋/푸시 후 운영 배포와 `npm run smoke:prod`를 확인한다.
