@@ -22,6 +22,7 @@ async function buildBackendHealthResponse() {
     searchAd: Boolean(process.env.NAVER_SEARCH_AD_ACCESS_LICENSE && process.env.NAVER_SEARCH_AD_SECRET_KEY && process.env.NAVER_SEARCH_AD_CUSTOMER_ID),
     smartstore: Boolean(process.env.NAVER_COMMERCE_CLIENT_ID && process.env.NAVER_COMMERCE_CLIENT_SECRET),
     datalab: Boolean(process.env.NAVER_DATALAB_CLIENT_ID && process.env.NAVER_DATALAB_CLIENT_SECRET),
+    publicHoliday: Boolean(process.env.KOREA_PUBLIC_HOLIDAY_SERVICE_KEY || process.env.KOREA_HOLIDAY_API_KEY || process.env.DATA_GO_KR_SERVICE_KEY),
     youngcart: Boolean(process.env.YOUNGCART_BRIDGE_URL && process.env.YOUNGCART_BRIDGE_TOKEN),
     llm: Boolean(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY),
   };
