@@ -1043,6 +1043,39 @@ export async function saveSearchAdMediaSnapshots(input: SearchAdMediaMasterRow[]
   return { collectedAt, saved: input.length };
 }
 
+export async function backfillSearchAdRuleResultMediaEvidence() {
+  if (!hasDatabaseUrl()) {
+    throw new Error("SEARCH_AD_DATABASE_MISSING");
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query(`
+    WITH latest_media AS (
+      SELECT DISTINCT ON (media_id)
+        media_id, media_type, media_name, media_url, search_ad_network, contents_ad_network
+      FROM search_ad_media_snapshots
+      ORDER BY media_id, CASE WHEN media_type = 'media' THEN 0 ELSE 1 END, collected_at DESC
+    )
+    UPDATE search_ad_rule_results r
+    SET evidence_packet = r.evidence_packet || jsonb_build_object(
+      'mediaName', m.media_name,
+      'mediaDisplayLabel', m.media_name,
+      'mediaType', m.media_type,
+      'mediaUrl', m.media_url,
+      'mediaNetworkLabel', CASE
+        WHEN m.search_ad_network AND m.contents_ad_network THEN '검색/콘텐츠 네트워크'
+        WHEN m.search_ad_network THEN '검색 네트워크'
+        WHEN m.contents_ad_network THEN '콘텐츠 네트워크'
+        ELSE NULL
+      END
+    )
+    FROM latest_media m
+    WHERE r.evidence_packet ->> 'mediaId' = m.media_id
+  `);
+
+  return { updated: result.rowCount ?? 0 };
+}
+
 export async function rebuildAndSaveSearchAdRuleResults() {
   if (!hasDatabaseUrl()) {
     return { saved: 0, results: createSampleSearchTermsView(DEFAULT_SEARCH_AD_FILTERS).ruleResults };
