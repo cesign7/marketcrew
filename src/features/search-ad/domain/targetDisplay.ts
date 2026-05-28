@@ -177,6 +177,16 @@ export function getRuleResultCreativeLabel(result: SearchAdRuleResult) {
   return isTechnicalTargetIdentifier(label) ? undefined : label;
 }
 
+export function getRuleResultAdLabel(result: SearchAdRuleResult) {
+  const rawTargetId = result.targetType === "ad" ? getRuleResultRawTargetId(result) : undefined;
+  const shortId = shortTechnicalId(rawTargetId);
+  if (shortId) {
+    return `광고 소재 · 고유번호 ${shortId}`;
+  }
+
+  return result.targetType === "ad" ? "광고 소재" : undefined;
+}
+
 export function getRuleResultExtensionLabel(result: SearchAdRuleResult) {
   const label =
     stringFromEvidence(result.evidencePacket.extensionDisplayLabel) ??
@@ -310,7 +320,11 @@ function nonTechnicalString(value: string | undefined) {
 function getReadableTargetLabel(result: SearchAdRuleResult) {
   if (result.targetType === "ad") {
     const creativeLabel = nonTechnicalString(getRuleResultCreativeLabel(result));
-    return creativeLabel ? `${creativeLabel} 광고 소재` : undefined;
+    const adLabel = getRuleResultAdLabel(result);
+    if (adLabel && creativeLabel) {
+      return `${adLabel} · ${creativeLabel}`;
+    }
+    return creativeLabel ? `${creativeLabel} 광고 소재` : adLabel;
   }
 
   if (result.targetType === "ad_extension") {
@@ -376,6 +390,11 @@ function isTechnicalTargetIdentifier(value: string | undefined) {
 
 function rawCodeFromTechnicalId(value: string | undefined) {
   return value?.includes("~") ? value.split("~")[1] : undefined;
+}
+
+function shortTechnicalId(value: string | undefined) {
+  const match = value?.match(/(\d{6,})$/);
+  return match ? match[1].slice(-6) : undefined;
 }
 
 function translateTargetCode(code: string | undefined) {

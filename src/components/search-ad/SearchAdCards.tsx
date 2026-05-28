@@ -8,6 +8,7 @@ import {
   getRuleResultCreativeLabel,
   getNormalizedRowDisplayTarget,
   getRuleResultConnectedTarget,
+  getRuleResultAdLabel,
   getRuleResultDisplayTargetLabel,
   getRuleResultDisplayTargetTypeLabel,
   getRuleResultDetailHref,
@@ -197,6 +198,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const targetLabel = getRuleResultDisplayTargetLabel(result);
         const targetTypeLabel = getRuleResultDisplayTargetTypeLabel(result);
         const targetDetailLabel = getRuleResultTargetDetailLabel(result);
+        const adLabel = getRuleResultAdLabel(result);
         const creativeLabel = getRuleResultCreativeLabel(result);
         const extensionLabel = getRuleResultExtensionLabel(result);
         const landingLabel = getRuleResultLandingLabel(result);
@@ -284,9 +286,15 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
                   <dd>{badge.value}</dd>
                 </div>
               ))}
+              {adLabel ? (
+                <div>
+                  <dt>광고 소재</dt>
+                  <dd title={adLabel}>{adLabel}</dd>
+                </div>
+              ) : null}
               {creativeLabel ? (
                 <div>
-                  <dt>소재</dt>
+                  <dt>{adLabel ? "소재명" : "소재"}</dt>
                   <dd title={creativeLabel}>{truncateDisplayText(creativeLabel, 30)}</dd>
                 </div>
               ) : null}

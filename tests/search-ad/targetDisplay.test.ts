@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getRuleResultAdLabel,
   getRuleResultCreativeLabel,
   getRuleResultDisplayTargetLabel,
   getRuleResultDisplayTargetTypeLabel,
@@ -99,7 +100,7 @@ describe("rule result target display", () => {
     expect(getRuleResultCreativeLabel(result)).toBe("생일 스티커");
   });
 
-  it("광고 소재 카드 제목은 광고그룹 대신 실제 소재명을 우선 보여준다", () => {
+  it("광고 소재 카드 제목은 소재 고유번호와 실제 소재명을 함께 보여준다", () => {
     const result = ruleResult({
       targetType: "ad",
       targetId: "nad-a001-02-000000203421541",
@@ -110,7 +111,8 @@ describe("rule result target display", () => {
       },
     });
 
-    expect(getRuleResultDisplayTargetLabel(result)).toBe("생일축하스티커 생일01 답례품 감사 소량 주문 광고 소재");
+    expect(getRuleResultAdLabel(result)).toBe("광고 소재 · 고유번호 421541");
+    expect(getRuleResultDisplayTargetLabel(result)).toBe("광고 소재 · 고유번호 421541 · 생일축하스티커 생일01 답례품 감사 소량 주문");
   });
 
   it("확장소재 카드 제목은 연결 소재와 확장소재 종류를 함께 보여준다", () => {

@@ -1,5 +1,6 @@
 import { getAdProductLabel, getBrandLabel, RULE_CATEGORY_LABELS } from "@/features/search-ad/domain/reportTypes";
 import {
+  getRuleResultAdLabel,
   getRuleResultConnectedTarget,
   getRuleResultCreativeLabel,
   getRuleResultDisplayTargetLabel,
@@ -30,6 +31,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
   const targetLabel = getRuleResultDisplayTargetLabel(result);
   const targetTypeLabel = getRuleResultDisplayTargetTypeLabel(result);
   const detailLabel = getRuleResultTargetDetailLabel(result);
+  const adLabel = getRuleResultAdLabel(result);
   const creativeLabel = getRuleResultCreativeLabel(result);
   const extensionLabel = getRuleResultExtensionLabel(result);
   const landingLabel = getRuleResultLandingLabel(result);
@@ -145,9 +147,15 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
             <dd>{badge.value}</dd>
           </div>
         ))}
+        {adLabel ? (
+          <div>
+            <dt>광고 소재</dt>
+            <dd title={adLabel}>{adLabel}</dd>
+          </div>
+        ) : null}
         {creativeLabel ? (
           <div>
-            <dt>소재</dt>
+            <dt>{adLabel ? "소재명" : "소재"}</dt>
             <dd title={creativeLabel}>{truncateDisplayText(creativeLabel, 34)}</dd>
           </div>
         ) : null}
