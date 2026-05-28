@@ -258,6 +258,106 @@ describe("buildSearchAdPeriodRuleResults", () => {
     expect(results).toHaveLength(0);
   });
 
+  it("같은 상품 광고의 광고성과 보고서가 있으면 광고성과 상세 보고서를 별도 저효율로 중복 판단하지 않는다", () => {
+    const shoppingCriteria: SearchAdRuleCriteria[] = [
+      {
+        ...criteria[0],
+        brandKey: "stickersee",
+        adProductType: "shopping_search",
+        targetCpa: 10000,
+        targetRoas: 200,
+      },
+    ];
+
+    const results = buildSearchAdPeriodRuleResults(
+      [
+        row({
+          id: "shopping-ad-performance",
+          brandKey: "stickersee",
+          adProductType: "shopping_search",
+          reportType: "AD",
+          campaignId: "cmp-shopping",
+          adgroupId: "grp-birthday",
+          adgroupName: "M_감사/생일/답례 스티커",
+          adId: "nad-birthday",
+          device: "M",
+          mediaId: "8753",
+          searchTerm: undefined,
+          keywordText: undefined,
+          clicks: 625,
+          cost: 707213,
+          conversions: 218,
+          salesAmount: 2401400,
+        }),
+        row({
+          id: "shopping-ad-detail-zero-conversion",
+          brandKey: "stickersee",
+          adProductType: "shopping_search",
+          reportType: "AD_DETAIL",
+          campaignId: "cmp-shopping",
+          adgroupId: "grp-birthday",
+          adgroupName: "M_감사/생일/답례 스티커",
+          adId: "nad-birthday",
+          device: "M",
+          mediaId: "8753",
+          searchTerm: undefined,
+          keywordText: undefined,
+          clicks: 625,
+          cost: 707242,
+          conversions: 0,
+          salesAmount: 0,
+        }),
+      ],
+      shoppingCriteria,
+      "2026-05-26T08:00:00+09:00",
+    );
+
+    const birthdayResults = results.filter((result) => result.targetId === "nad-birthday");
+
+    expect(birthdayResults).toHaveLength(1);
+    expect(birthdayResults[0]?.category).toBe("good_performance");
+    expect(birthdayResults[0]?.metrics.clicks).toBe(625);
+    expect(birthdayResults[0]?.metrics.conversions).toBe(218);
+    expect(results.some((result) => result.category === "low_efficiency")).toBe(false);
+  });
+
+  it("광고성과 상세 보고서만 있으면 전환이 없다고 단정하지 않고 자동 후보를 만들지 않는다", () => {
+    const shoppingCriteria: SearchAdRuleCriteria[] = [
+      {
+        ...criteria[0],
+        brandKey: "stickersee",
+        adProductType: "shopping_search",
+      },
+    ];
+
+    const results = buildSearchAdPeriodRuleResults(
+      [
+        row({
+          id: "shopping-ad-detail-only",
+          brandKey: "stickersee",
+          adProductType: "shopping_search",
+          reportType: "AD_DETAIL",
+          campaignId: "cmp-shopping",
+          adgroupId: "grp-birthday",
+          adgroupName: "M_감사/생일/답례 스티커",
+          adId: "nad-only-detail",
+          device: "P",
+          mediaId: "11068",
+          searchTerm: undefined,
+          keywordText: undefined,
+          clicks: 20,
+          cost: 20000,
+          conversions: 0,
+          salesAmount: 0,
+        }),
+      ],
+      shoppingCriteria,
+      "2026-05-26T08:00:00+09:00",
+    );
+
+    expect(results).toHaveLength(0);
+  });
+
   it("타게팅 성과와 타게팅 전환을 합산해 기기/연령대 조정 후보를 판단한다", () => {
     const results = buildSearchAdPeriodRuleResults(
       [

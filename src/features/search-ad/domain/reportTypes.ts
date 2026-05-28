@@ -51,10 +51,10 @@ export const REPORT_TYPE_GUIDES: Record<SearchAdReportType, SearchAdReportTypeGu
     useFor: "캠페인이나 광고그룹 전체 예산, 입찰, 노출 상태 점검",
   },
   AD_DETAIL: {
-    caution: "세부 코드가 많아 원문 ID보다 연결 대상 이름과 함께 해석해야 합니다.",
-    focus: "광고 성과를 세부 구분으로 나눠 원인을 좁혀 봅니다.",
+    caution: "전환 성과 보고서가 아니므로 0전환/ROAS 판단 근거로 단독 사용하지 않습니다.",
+    focus: "광고 성과를 세부 구분으로 나눠 원인을 좁혀 보는 보조 근거입니다.",
     includes: "세부 구분, 세부 코드, 매체, 기기, 비용, 클릭",
-    useFor: "특정 소재, 매체, 기기 쪽에서 비용이 새는지 확인",
+    useFor: "특정 소재, 매체, 기기 쪽에서 비용이 새는지 확인하되 최종 판단은 광고성과/전환 보고서와 맞춰 봅니다.",
   },
   AD_CONVERSION: {
     caution: "전환 추적이 누락되면 실제 주문이 있어도 0으로 보일 수 있습니다.",

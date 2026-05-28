@@ -19,6 +19,10 @@ export function buildSearchAdRuleResults(rows: SearchAdNormalizedRow[], criteria
       continue;
     }
 
+    if (hasSupplementalAdDetailMeasurement(row)) {
+      continue;
+    }
+
     const target = describeSearchAdRuleTarget(row);
     const cpa = row.conversions > 0 ? row.cost / row.conversions : null;
     const roas = row.cost > 0 ? (row.salesAmount / row.cost) * 100 : null;
@@ -321,6 +325,10 @@ function hasUnsupportedExtensionPerformanceMeasurement(row: SearchAdNormalizedRo
   return row.adProductType === "shopping_search" && row.reportType === "ADEXTENSION";
 }
 
+function hasSupplementalAdDetailMeasurement(row: SearchAdNormalizedRow) {
+  return row.reportType === "AD_DETAIL";
+}
+
 function getMeasurementStatus(brandKey: SearchAdNormalizedRow["brandKey"]) {
   return CONVERSION_UNCONFIRMED_BRANDS.has(brandKey) ? "conversion_unconfirmed" : "confirmed";
 }
@@ -353,12 +361,15 @@ function groupPeriodRows(rows: SearchAdNormalizedRow[], periodDays: number) {
 }
 
 function periodGroupKey(row: SearchAdNormalizedRow, periodDays: number) {
+  return [periodDays, row.brandKey, row.adProductType, ruleReportFamily(row.reportType), periodTargetSegmentKey(row, periodDays)].join("|");
+}
+
+function periodTargetSegmentKey(row: SearchAdNormalizedRow, periodDays: number) {
   const target = describeSearchAdRuleTarget(row);
   return [
     periodDays,
     row.brandKey,
     row.adProductType,
-    ruleReportFamily(row.reportType),
     row.campaignId ?? row.campaignName ?? "",
     row.adgroupId ?? row.adgroupName ?? "",
     target.targetType,

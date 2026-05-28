@@ -575,6 +575,9 @@ function ShoppingExtensionTarget({ density, preview }: ShoppingAdPreviewProps) {
 function RuleResultBreakdownPanel({ group }: { group: ReturnType<typeof groupRuleResultsForDisplay>[number] }) {
   const visibleBreakdowns = group.breakdowns.slice(0, 6);
   const hiddenCount = Math.max(0, group.breakdowns.length - visibleBreakdowns.length);
+  const totalCost = group.breakdowns.reduce((sum, item) => sum + item.cost, 0);
+  const sourceReportLabel = getRuleResultSourceReportLabel(group.result);
+  const isAdSegmentDecision = group.result.targetType === "ad";
 
   return (
     <section className="rule-breakdown-panel" aria-label="세부 분해">
@@ -588,6 +591,11 @@ function RuleResultBreakdownPanel({ group }: { group: ReturnType<typeof groupRul
         </div>
         <span className="rule-breakdown-badge">합산 카드</span>
       </div>
+      {isAdSegmentDecision ? (
+        <p className="rule-breakdown-note">
+          같은 광고를 {sourceReportLabel} 기준으로 기기/매체별로 나눈 판단입니다. 비용 비중이 큰 구간부터 입찰과 노출 가중치를 조정합니다.
+        </p>
+      ) : null}
       <div className="rule-breakdown-list">
         {visibleBreakdowns.map((item) => (
           <Link className="rule-breakdown-row" href={getRuleResultDetailHref(item.result)} key={item.id} prefetch={false}>
@@ -614,6 +622,10 @@ function RuleResultBreakdownPanel({ group }: { group: ReturnType<typeof groupRul
             <span>
               <small>ROAS</small>
               <strong>{formatPercent(item.roas)}</strong>
+            </span>
+            <span>
+              <small>비용 비중</small>
+              <strong>{formatPercent(totalCost > 0 ? (item.cost / totalCost) * 100 : null)}</strong>
             </span>
           </Link>
         ))}

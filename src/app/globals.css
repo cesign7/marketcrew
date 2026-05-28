@@ -692,6 +692,17 @@ table {
   padding: 5px 9px;
 }
 
+.rule-breakdown-note {
+  background: #fff8e8;
+  border-left: 3px solid #d98b00;
+  color: #6f4300 !important;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.55;
+  margin: 0;
+  padding: 8px 10px;
+}
+
 .rule-breakdown-list {
   display: grid;
   gap: 6px;
@@ -705,7 +716,7 @@ table {
   color: var(--text);
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(140px, 1.4fr) repeat(5, minmax(70px, 0.65fr));
+  grid-template-columns: minmax(140px, 1.4fr) repeat(6, minmax(68px, 0.62fr));
   padding: 9px 10px;
   text-decoration: none;
 }
