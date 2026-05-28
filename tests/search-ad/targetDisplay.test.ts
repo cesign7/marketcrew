@@ -127,10 +127,42 @@ describe("rule result target display", () => {
       },
     });
 
-    expect(getRuleResultExtensionLabel(result)).toBe("쇼핑 부가정보");
+    expect(getRuleResultExtensionLabel(result)).toBe("쇼핑 부가정보 · 생일축하스티커 생일01 답례품 감사 소량 주문");
     expect(getRuleResultDisplayTargetLabel(result)).toBe("쇼핑 부가정보 · 생일축하스티커 생일01 답례품 감사 소량 주문");
     expect(getRuleResultDisplayTargetTypeLabel(result)).toBe("확장소재");
     expect(getRuleResultRawTargetId(result)).toBe("ext-a001-02-000000124735420");
+  });
+
+  it("부가정보 본문이 비어 있는 쇼핑 부가정보는 연결 상품명으로 내용을 보완한다", () => {
+    const result = ruleResult({
+      targetType: "ad_extension",
+      targetId: "ext-a001-02-000000146359903",
+      targetLabel: "M_감사/생일/답례 스티커 확장소재",
+      evidencePacket: {
+        productName: "결혼식 답례품스티커 웨딩01 감사 결혼 간식 대절버스 스티커 주문제작",
+        extensionDisplayLabel: "쇼핑 부가정보 · 고유번호 359903",
+        extensionTypeLabel: "SHOPPING_EXTRA",
+      },
+    });
+
+    expect(getRuleResultExtensionLabel(result)).toBe("쇼핑 부가정보 · 결혼식 답례품스티커 웨딩01 감사 결혼 간식 대절버스 스티커 주문제작");
+    expect(getRuleResultDisplayTargetLabel(result)).toBe("쇼핑 부가정보 · 결혼식 답례품스티커 웨딩01 감사 결혼 간식 대절버스 스티커 주문제작");
+  });
+
+  it("쇼핑 부가정보 본문이 있으면 연결 상품명보다 본문을 먼저 보여준다", () => {
+    const result = ruleResult({
+      targetType: "ad_extension",
+      targetId: "ext-a001-02-000000146359903",
+      targetLabel: "M_감사/생일/답례 스티커 확장소재",
+      evidencePacket: {
+        productName: "결혼식 답례품스티커 웨딩01 감사 결혼 간식 대절버스 스티커 주문제작",
+        extensionDisplayLabel: "쇼핑 부가정보 · 오늘 주문 가능",
+        extensionTypeLabel: "SHOPPING_EXTRA",
+      },
+    });
+
+    expect(getRuleResultExtensionLabel(result)).toBe("쇼핑 부가정보 · 오늘 주문 가능");
+    expect(getRuleResultDisplayTargetLabel(result)).toBe("쇼핑 부가정보 · 오늘 주문 가능 · 결혼식 답례품스티커 웨딩01 감사 결혼 간식 대절버스 스티커 주문제작");
   });
 
   it("기존 저장 결과의 파워링크 이미지 경로는 한글 소재명으로 보정한다", () => {

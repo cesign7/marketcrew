@@ -338,6 +338,11 @@ function sanitizeExtensionLabel(label: string | undefined, result: SearchAdRuleR
     return `${typeLabel} · 이미지 소재`;
   }
 
+  const ownerContentLabel = getExtensionOwnerContentLabel(result);
+  if (isShoppingExtraExtensionLabel(extensionType) || isShoppingExtraExtensionLabel(rawTypeLabel) || isShoppingExtraExtensionLabel(evidenceTypeLabel)) {
+    return ownerContentLabel ? `${typeLabel} · ${ownerContentLabel}` : typeLabel;
+  }
+
   if (parts.length === 1 && rawTypeLabel) {
     return getSearchAdAdExtensionTypeLabel(rawTypeLabel);
   }
@@ -355,6 +360,10 @@ function isExtensionImagePathLike(value: string) {
 
 function isImageExtensionLabel(value: string | undefined) {
   return value?.toUpperCase() === "POWER_LINK_IMAGE" || value === "파워링크 이미지";
+}
+
+function isShoppingExtraExtensionLabel(value: string | undefined) {
+  return value?.toUpperCase() === "SHOPPING_EXTRA" || value === "쇼핑 부가정보";
 }
 
 function isExtensionShortIdLabel(value: string) {
@@ -393,6 +402,9 @@ function getReadableTargetLabel(result: SearchAdRuleResult) {
       nonTechnicalString(getRuleResultConnectedTarget(result));
 
     if (extensionLabel && ownerLabel && ownerLabel !== "-") {
+      if (extensionLabel.includes(ownerLabel)) {
+        return extensionLabel;
+      }
       return `${extensionLabel} · ${ownerLabel}`;
     }
 
@@ -406,6 +418,16 @@ function getReadableTargetLabel(result: SearchAdRuleResult) {
   }
 
   return undefined;
+}
+
+function getExtensionOwnerContentLabel(result: SearchAdRuleResult) {
+  const ownerLabel =
+    nonTechnicalString(stringFromEvidence(result.evidencePacket.productName)) ??
+    nonTechnicalString(stringFromEvidence(result.evidencePacket.adDisplayLabel)) ??
+    nonTechnicalString(stringFromEvidence(result.evidencePacket.adHeadline)) ??
+    nonTechnicalString(stringFromEvidence(result.evidencePacket.extensionOwnerLabel));
+
+  return ownerLabel && ownerLabel !== "-" ? ownerLabel : undefined;
 }
 
 function inferTechnicalTargetType(value: string | undefined): SearchAdRuleResult["targetType"] | undefined {
