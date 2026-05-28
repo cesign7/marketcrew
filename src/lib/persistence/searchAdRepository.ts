@@ -36,6 +36,13 @@ import {
   sortSearchAdOperationStrategies,
   type SearchAdOperationStrategy,
 } from "@/features/search-ad/domain/operationStrategies";
+import {
+  buildSearchAdOperationCalendarPreview,
+  normalizeCalendarDate,
+  type SearchAdHoliday,
+  type SearchAdOperationCalendarPreview,
+} from "@/features/search-ad/domain/operationCalendar";
+import { fetchKoreanPublicHolidaysForDate } from "@/lib/integrations/korea/holidays";
 import { updateSearchAdAdgroupUserLock, updateSearchAdCampaignUserLock, updateSearchAdKeywordUserLock } from "@/lib/integrations/search-ad/management";
 import type {
   AdProductType,
@@ -150,6 +157,14 @@ type DataCoverageRecord = {
   startDate: string;
   endDate: string;
   actualDays: number;
+};
+
+export type SearchAdOperationCalendarRunResult = {
+  appliedLogs: SearchAdActionLog[];
+  automationEnabled: boolean;
+  createdPreviews: SearchAdActionPreview[];
+  dryRun: boolean;
+  preview: SearchAdOperationCalendarPreview;
 };
 
 export type SearchAdBackfillRunStatus = "queued" | "running" | "waiting" | "completed" | "failed";
@@ -688,6 +703,50 @@ export async function getSearchAdStateView(filters = DEFAULT_SEARCH_AD_FILTERS):
 
     throw error;
   }
+}
+
+export async function getSearchAdOperationCalendarPreview(input: { date?: string; holidays?: SearchAdHoliday[] } = {}): Promise<SearchAdOperationCalendarPreview> {
+  const date = normalizeCalendarDate(input.date);
+  const state = await getSearchAdStateView(DEFAULT_SEARCH_AD_FILTERS);
+  return buildSearchAdOperationCalendarPreview({
+    adgroups: state.adgroups,
+    automationEnabled: isSearchAdOperationAutomationEnabled(),
+    date,
+    holidays: input.holidays ?? (await loadOperationCalendarHolidays(date)),
+    writeEnabled: isSearchAdWriteEnabled(),
+  });
+}
+
+export async function runSearchAdOperationCalendar(input: { date?: string; dryRun?: boolean; holidays?: SearchAdHoliday[] } = {}): Promise<SearchAdOperationCalendarRunResult> {
+  const automationEnabled = isSearchAdOperationAutomationEnabled();
+  const dryRun = input.dryRun ?? !automationEnabled;
+  const preview = await getSearchAdOperationCalendarPreview({ date: input.date, holidays: input.holidays });
+  const createdPreviews: SearchAdActionPreview[] = [];
+  const appliedLogs: SearchAdActionLog[] = [];
+
+  if (dryRun || !automationEnabled) {
+    return { appliedLogs, automationEnabled, createdPreviews, dryRun: true, preview };
+  }
+
+  for (const decision of preview.decisions) {
+    if (!decision.shouldCreatePreview || (decision.requestedAction !== "turn_off" && decision.requestedAction !== "turn_on")) {
+      continue;
+    }
+
+    const actionPreview = await createSearchAdActionPreview({
+      requestedAction: decision.requestedAction,
+      targetId: decision.targetId,
+      targetType: decision.targetType,
+    });
+    if (!actionPreview) {
+      continue;
+    }
+
+    createdPreviews.push(actionPreview);
+    appliedLogs.push(await applySearchAdActionPreview(actionPreview.id));
+  }
+
+  return { appliedLogs, automationEnabled, createdPreviews, dryRun: false, preview };
 }
 
 export async function getSearchAdSearchTermsView(filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdSearchTermsView> {
@@ -3592,6 +3651,18 @@ function getActionLogReason(status: SearchAdActionStatus, targetType: SearchAdTa
 
 function isSearchAdWriteEnabled() {
   return process.env.SEARCH_AD_WRITE_ENABLED === "1" || process.env.NAVER_SEARCH_AD_WRITE_ENABLED === "1";
+}
+
+function isSearchAdOperationAutomationEnabled() {
+  return process.env.MARKETCREW_OPERATION_AUTOMATION_ENABLED === "1" || process.env.SEARCH_AD_OPERATION_AUTOMATION_ENABLED === "1";
+}
+
+async function loadOperationCalendarHolidays(date: string): Promise<SearchAdHoliday[]> {
+  try {
+    return await fetchKoreanPublicHolidaysForDate(date);
+  } catch {
+    return [];
+  }
 }
 
 function snapshotId(targetType: SearchAdTargetType | "ad" | "target", providerId: string, collectedAt: string) {

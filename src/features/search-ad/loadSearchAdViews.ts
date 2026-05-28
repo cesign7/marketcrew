@@ -8,10 +8,12 @@ import {
   getSearchAdRuleResultsView,
   getSearchAdSearchTermsView,
   getSearchAdKeywordCleanupView,
+  getSearchAdOperationCalendarPreview,
   getSearchAdStateView,
   listSearchAdRuleCriteria,
   listSearchAdOperationStrategies,
 } from "@/lib/persistence/searchAdRepository";
+import type { SearchAdOperationCalendarPreview } from "./domain/operationCalendar";
 import type { SearchAdOperationStrategy } from "./domain/operationStrategies";
 import type { AdProductFilter, BrandFilter, SearchAdActionLogsView, SearchAdFilters, SearchAdReportArchiveView, SearchAdReportDetailView, SearchAdRuleResultDetailView, SearchAdRuleResultsView, SearchAdKeywordCleanupView, SearchAdSearchTermsView, SearchAdStateView } from "./domain/types";
 import type { SearchAdOperationsView, SearchAdRuleCriteria, SearchAdRuleResultFilters } from "./domain/types";
@@ -94,6 +96,15 @@ export async function loadSearchAdOperationStrategies(): Promise<SearchAdOperati
   }
 
   return listSearchAdOperationStrategies();
+}
+
+export async function loadSearchAdOperationCalendarPreview(): Promise<SearchAdOperationCalendarPreview> {
+  const remote = await fetchBackendJson<SearchAdOperationCalendarPreview>("/api/search-ad/operation-calendar/preview", { failClosed: false });
+  if (remote) {
+    return remote;
+  }
+
+  return getSearchAdOperationCalendarPreview();
 }
 
 export async function loadSearchAdStateView(filters: SearchAdFilters): Promise<SearchAdStateView> {

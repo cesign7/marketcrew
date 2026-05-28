@@ -387,6 +387,11 @@ table {
   margin: 0;
 }
 
+.section-heading h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
 .section-heading p {
   color: var(--muted);
   font-size: 13px;
@@ -1293,6 +1298,118 @@ table {
   gap: 6px;
 }
 
+.operation-calendar-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.operation-calendar-status {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.operation-calendar-status > div {
+  background: #f7fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+}
+
+.operation-calendar-status span,
+.operation-policy-grid span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.operation-calendar-status strong,
+.operation-policy-grid strong {
+  font-size: 16px;
+}
+
+.operation-calendar-status p,
+.operation-policy-grid p,
+.operation-calendar-help {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.operation-policy-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.operation-policy-grid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.operation-policy-grid dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.operation-policy-grid dl div {
+  align-items: center;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+}
+
+.operation-policy-grid dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.operation-policy-grid dd {
+  font-size: 13px;
+  margin: 0;
+}
+
+.operation-calendar-table td:last-child {
+  min-width: 280px;
+  white-space: normal;
+}
+
+.operation-action-badge {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  padding: 7px 9px;
+  white-space: nowrap;
+}
+
+.operation-action-badge.is-turn_off {
+  background: #fff1f0;
+  border-color: #ffccc7;
+  color: #a8071a;
+}
+
+.operation-action-badge.is-turn_on {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #237804;
+}
+
+.operation-action-badge.is-keep {
+  background: #f2f5f8;
+  color: #344054;
+}
+
 .rule-rebuild-panel strong {
   font-size: 17px;
 }
@@ -1681,6 +1798,8 @@ table {
   .action-plan-grid,
   .report-guide-detail,
   .report-guide-grid,
+  .operation-calendar-status,
+  .operation-policy-grid,
   .rule-guide-grid,
   .rule-period-grid,
   .recommendation-panel,

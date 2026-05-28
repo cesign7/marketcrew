@@ -1014,6 +1014,9 @@ import type { SearchAdReportType } from "./types";
 | `NAVER_SEARCH_AD_CUSTOMER_ID` | Railway API only | advertiser/customer id |
 | `SEARCH_AD_WRITE_ENABLED` | Railway API only | Search Ad provider write gate |
 | `NAVER_SEARCH_AD_WRITE_ENABLED` | Railway API only | Search Ad provider write gate alias |
+| `MARKETCREW_OPERATION_AUTOMATION_ENABLED` | Railway API only | Calendar-based operation automation gate |
+| `SEARCH_AD_OPERATION_AUTOMATION_ENABLED` | Railway API only | Calendar automation gate alias |
+| `KOREA_PUBLIC_HOLIDAY_SERVICE_KEY` or `DATA_GO_KR_SERVICE_KEY` | Railway API only | Korean official/substitute holiday lookup |
 
 ### 10.4 This Feature's Conventions
 

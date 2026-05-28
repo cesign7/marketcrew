@@ -1,11 +1,12 @@
 import { MarketingShell } from "@/components/layout/MarketingShell";
+import { OperationCalendarPanel } from "@/components/search-ad/OperationCalendarPanel";
 import { OperationStrategyEditor } from "@/components/search-ad/OperationStrategyEditor";
 import { RuleCriteriaEditor } from "@/components/search-ad/RuleCriteriaEditor";
 import { RuleRebuildPanel } from "@/components/search-ad/RuleRebuildPanel";
 import { APPROVAL_DELEGATION_POLICIES, getOperationStrategySummary } from "@/features/search-ad/domain/operationStrategies";
 import { RULE_ACTION_GUIDE_ITEMS, RULE_CATEGORY_GUIDES, RULE_EXECUTION_GUIDE_ITEMS, RULE_PERIOD_GUIDE_ITEMS } from "@/features/search-ad/domain/ruleCriteriaGuides";
 import { API_AND_REPORT_CHECK_GUIDE_ITEMS, BRAND_OPERATION_GUIDE_ITEMS, OPERATION_TIME_POLICY_ITEMS } from "@/features/search-ad/domain/targetSettings";
-import { loadSearchAdOperationStrategies, loadSearchAdRuleCriteria, parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
+import { loadSearchAdOperationCalendarPreview, loadSearchAdOperationStrategies, loadSearchAdRuleCriteria, parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
 import type { SearchAdFilters } from "@/features/search-ad/domain/types";
 
 type RulesPageProps = {
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export default async function RulesPage({ searchParams }: RulesPageProps) {
   const filters = parseSearchAdFilters(await searchParams);
-  const [criteria, operationStrategies] = await Promise.all([loadSearchAdRuleCriteria(), loadSearchAdOperationStrategies()]);
+  const [criteria, operationStrategies, operationCalendarPreview] = await Promise.all([loadSearchAdRuleCriteria(), loadSearchAdOperationStrategies(), loadSearchAdOperationCalendarPreview()]);
   const filteredCriteria = filterBySearchAdFilters(criteria, filters);
   const filteredStrategies = filterBySearchAdFilters(operationStrategies, filters);
 
@@ -139,6 +140,13 @@ export default async function RulesPage({ searchParams }: RulesPageProps) {
               </article>
             ))}
           </div>
+        </div>
+        <div className="content-panel">
+          <div className="section-heading">
+            <h2>자동운영 캘린더</h2>
+            <p>커피프린트 휴무일 OFF 기준과 스티커씨 상시 운영 기준을 오늘 광고그룹 상태에 대입합니다.</p>
+          </div>
+          <OperationCalendarPanel filters={filters} preview={operationCalendarPreview} />
         </div>
         <div className="content-panel">
           <div className="section-heading">
