@@ -1066,6 +1066,28 @@ table {
   position: relative;
 }
 
+.naver-preview-target .naver-preview-product-row {
+  display: contents;
+}
+
+.naver-preview-composite {
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.naver-preview-product-row {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+}
+
 .powerlink-preview-target {
   background: #fff;
   border: 2px solid #2563eb;
@@ -1200,6 +1222,61 @@ table {
 .powerlink-extension-target.is-powerlink-image .powerlink-extension-copy strong {
   color: #1d4ed8;
   font-size: 11px;
+}
+
+.shopping-extension-target {
+  align-self: start;
+  background: #fff;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+  display: flex;
+  gap: 9px;
+  min-width: 0;
+  padding: 8px;
+  position: relative;
+}
+
+.shopping-extension-target.has-image {
+  align-items: center;
+}
+
+.shopping-extension-target img {
+  aspect-ratio: 1;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  height: 54px;
+  object-fit: cover;
+  width: 54px;
+}
+
+.naver-shopping-ad-preview.is-detail .shopping-extension-target img {
+  height: 70px;
+  width: 70px;
+}
+
+.shopping-extension-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shopping-extension-copy span {
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.shopping-extension-copy strong {
+  color: #101828;
+  display: block;
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.3;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .naver-preview-target img,

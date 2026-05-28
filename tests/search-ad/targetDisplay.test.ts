@@ -70,6 +70,38 @@ describe("rule result target display", () => {
     });
   });
 
+  it("쇼핑검색 확장소재는 상품 광고 안의 확장소재 영역을 점검 대상으로 재구성한다", () => {
+    const result = ruleResult({
+      adProductType: "shopping_search",
+      targetType: "ad_extension",
+      targetId: "ext-a001-02-000000146359903",
+      evidencePacket: {
+        productName: "생일축하스티커 생일01 답례품 감사 소량 주문",
+        productImageUrl: "https://shopping-phinf.pstatic.net/main_8478242/84782425770.3.jpg",
+        mallName: "스티커씨",
+        mallProductId: "7237925448",
+        lowPrice: "2500",
+        extensionType: "SHOPPING_EXTRA",
+        extensionTypeLabel: "쇼핑 부가정보",
+        extensionDisplayLabel: "쇼핑 부가정보 · 오늘 주문 가능",
+      },
+    });
+
+    expect(getRuleResultShoppingAdPreview(result)).toEqual({
+      productName: "생일축하스티커 생일01 답례품 감사 소량 주문",
+      imageUrl: "https://shopping-phinf.pstatic.net/main_8478242/84782425770.3.jpg",
+      mallName: "스티커씨",
+      highlightLabel: "쇼핑 상품 부가 정보",
+      extensionTypeLabel: "쇼핑 상품 부가 정보",
+      extensionContentLabel: "오늘 주문 가능",
+      extensionTone: "shopping-extra",
+      priceLabel: "2,500원",
+      mallProductId: "7237925448",
+      adId: "ext-a001-02-000000146359903",
+      basisLabel: "네이버 광고 API 원문 기반 재구성",
+    });
+  });
+
   it("파워링크 광고는 실제 제목과 설명 영역을 점검 대상으로 재구성한다", () => {
     const result = ruleResult({
       adProductType: "powerlink",

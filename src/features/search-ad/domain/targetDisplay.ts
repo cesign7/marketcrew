@@ -25,6 +25,10 @@ export type SearchAdShoppingAdPreview = {
   imageUrl?: string;
   mallName?: string;
   highlightLabel: string;
+  extensionTypeLabel?: string;
+  extensionContentLabel?: string;
+  extensionTone?: SearchAdExtensionMaterialTone;
+  extensionImageUrl?: string;
   priceLabel?: string;
   reviewLabel?: string;
   purchaseLabel?: string;
@@ -240,7 +244,7 @@ export function getRuleResultShoppingProductId(result: SearchAdRuleResult) {
 }
 
 export function getRuleResultShoppingAdPreview(result: SearchAdRuleResult): SearchAdShoppingAdPreview | undefined {
-  if (result.adProductType !== "shopping_search" || result.targetType !== "ad") {
+  if (result.adProductType !== "shopping_search" || (result.targetType !== "ad" && result.targetType !== "ad_extension")) {
     return undefined;
   }
 
@@ -255,12 +259,24 @@ export function getRuleResultShoppingAdPreview(result: SearchAdRuleResult): Sear
   const score = stringFromEvidence(result.evidencePacket.scoreInfo);
   const deliveryFee = stringFromEvidence(result.evidencePacket.deliveryFee);
   const mallProductId = getRuleResultShoppingProductId(result);
+  const extensionMaterial = result.targetType === "ad_extension" ? getRuleResultExtensionMaterialDisplay(result) : undefined;
+  const extensionTypeLabel = extensionMaterial?.typeLabel ?? (result.targetType === "ad_extension" ? getRuleResultExtensionLabel(result) : undefined);
+  const extensionImageUrl =
+    result.targetType === "ad_extension"
+      ? stringFromEvidence(result.evidencePacket.extensionImageUrl) ??
+        toSearchAdImageUrl(stringFromEvidence(result.evidencePacket.extensionImagePath)) ??
+        getLegacyExtensionImageUrl(result)
+      : undefined;
 
   return {
     productName: productConnection.productName,
     ...(productConnection.imageUrl ? { imageUrl: productConnection.imageUrl } : {}),
     ...(stringFromEvidence(result.evidencePacket.mallName) ? { mallName: stringFromEvidence(result.evidencePacket.mallName) } : {}),
-    highlightLabel: getAdTargetTypeLabel(result.adProductType),
+    highlightLabel: extensionTypeLabel ?? getAdTargetTypeLabel(result.adProductType),
+    ...(extensionTypeLabel ? { extensionTypeLabel } : {}),
+    ...(extensionTypeLabel ? { extensionContentLabel: getShoppingExtensionPreviewContentLabel(result, extensionMaterial, extensionTypeLabel) } : {}),
+    ...(extensionMaterial ? { extensionTone: extensionMaterial.tone } : {}),
+    ...(extensionImageUrl ? { extensionImageUrl } : {}),
     ...(price ? { priceLabel: formatWonText(price) } : {}),
     ...(reviewCount ? { reviewLabel: `리뷰 ${formatCountText(reviewCount)}` } : {}),
     ...(purchaseCount ? { purchaseLabel: `구매 ${formatCountText(purchaseCount)}` } : {}),
@@ -376,6 +392,28 @@ function getPowerlinkExtensionPreviewContentLabel(
 
   if (extensionTypeLabel === "파워링크 이미지") {
     return "이미지 확장소재";
+  }
+
+  return extensionMaterial?.contentLabel ?? (extensionTypeLabel === "확장소재" ? "확장소재 확인 필요" : extensionTypeLabel);
+}
+
+function getShoppingExtensionPreviewContentLabel(
+  result: SearchAdRuleResult,
+  extensionMaterial: SearchAdExtensionMaterialDisplay | undefined,
+  extensionTypeLabel: string,
+) {
+  const explicitContent = stringFromEvidence(result.evidencePacket.extensionContentLabel);
+  if (explicitContent && isReadableExtensionContent(explicitContent) && !isGenericImageMaterialLabel(explicitContent)) {
+    return explicitContent;
+  }
+
+  const rawLabel =
+    stringFromEvidence(result.evidencePacket.extensionDisplayLabel) ??
+    stringFromEvidence(result.evidencePacket.extensionLabel) ??
+    stringFromEvidence(result.evidencePacket.extensionTypeLabel);
+  const contentFromLabel = readableExtensionContentFromLabel(rawLabel);
+  if (contentFromLabel && !isGenericImageMaterialLabel(contentFromLabel)) {
+    return contentFromLabel;
   }
 
   return extensionMaterial?.contentLabel ?? (extensionTypeLabel === "확장소재" ? "확장소재 확인 필요" : extensionTypeLabel);

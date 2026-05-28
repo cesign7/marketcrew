@@ -496,36 +496,78 @@ function PowerlinkExtensionTarget({ density, preview }: PowerlinkExtensionPrevie
 
 export function ShoppingAdPreview({ density, preview }: ShoppingAdPreviewProps) {
   const metaItems = [preview.scoreLabel, preview.reviewLabel, preview.purchaseLabel].filter(Boolean);
+  const isExtensionTarget = Boolean(preview.extensionTypeLabel);
 
   return (
     <div className={`naver-shopping-ad-preview is-${density}`} aria-label="네이버 쇼핑검색광고 재구성 미리보기">
       <div className="naver-preview-heading">
         <span>{preview.basisLabel}</span>
       </div>
-      <div className="naver-preview-target">
-        <span className="inspection-corner-label">{preview.highlightLabel}</span>
-        {preview.imageUrl ? (
-          <img alt={`${preview.productName} 상품 이미지`} loading="lazy" referrerPolicy="no-referrer" src={preview.imageUrl} />
-        ) : (
-          <span className="product-image-fallback">상품</span>
-        )}
-        <div className="naver-preview-copy">
-          <div className="naver-preview-meta">
-            <span className="naver-ad-badge">광고</span>
-            {preview.mallName ? <span>{preview.mallName}</span> : null}
-          </div>
-          <strong title={preview.productName}>{truncateDisplayText(preview.productName, density === "detail" ? 74 : 46)}</strong>
-          {preview.priceLabel ? <b>{preview.priceLabel}</b> : null}
-          {metaItems.length ? <small>{metaItems.join(" · ")}</small> : null}
-          {preview.deliveryLabel || preview.categoryLabel ? (
-            <small title={preview.categoryLabel}>{[preview.deliveryLabel, preview.categoryLabel].filter(Boolean).join(" · ")}</small>
-          ) : null}
-          {preview.mallProductId || preview.adId ? (
-            <small>{[preview.mallProductId ? `상품번호 ${preview.mallProductId}` : undefined, preview.adId ? `광고 ID ${preview.adId}` : undefined].filter(Boolean).join(" · ")}</small>
-          ) : null}
+      {isExtensionTarget ? (
+        <div className="naver-preview-composite has-inline-extension">
+          <ShoppingProductPreviewBody density={density} metaItems={metaItems} preview={preview} />
+          <ShoppingExtensionTarget density={density} preview={preview} />
         </div>
-      </div>
+      ) : (
+        <div className="naver-preview-target">
+          <span className="inspection-corner-label">{preview.highlightLabel}</span>
+          <ShoppingProductPreviewBody density={density} metaItems={metaItems} preview={preview} />
+        </div>
+      )}
       <p>실제 노출 위치, 순위, 주변 상품은 검색어, 기기, 입찰, 개인화 상태에 따라 달라질 수 있습니다.</p>
+    </div>
+  );
+}
+
+function ShoppingProductPreviewBody({
+  density,
+  metaItems,
+  preview,
+}: ShoppingAdPreviewProps & {
+  metaItems: Array<string | undefined>;
+}) {
+  return (
+    <div className="naver-preview-product-row">
+      {preview.imageUrl ? (
+        <img alt={`${preview.productName} 상품 이미지`} loading="lazy" referrerPolicy="no-referrer" src={preview.imageUrl} />
+      ) : (
+        <span className="product-image-fallback">상품</span>
+      )}
+      <div className="naver-preview-copy">
+        <div className="naver-preview-meta">
+          <span className="naver-ad-badge">광고</span>
+          {preview.mallName ? <span>{preview.mallName}</span> : null}
+        </div>
+        <strong title={preview.productName}>{truncateDisplayText(preview.productName, density === "detail" ? 74 : 46)}</strong>
+        {preview.priceLabel ? <b>{preview.priceLabel}</b> : null}
+        {metaItems.length ? <small>{metaItems.join(" · ")}</small> : null}
+        {preview.deliveryLabel || preview.categoryLabel ? (
+          <small title={preview.categoryLabel}>{[preview.deliveryLabel, preview.categoryLabel].filter(Boolean).join(" · ")}</small>
+        ) : null}
+        {preview.mallProductId || preview.adId ? (
+          <small>{[preview.mallProductId ? `상품번호 ${preview.mallProductId}` : undefined, preview.adId ? `광고 ID ${preview.adId}` : undefined].filter(Boolean).join(" · ")}</small>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ShoppingExtensionTarget({ density, preview }: ShoppingAdPreviewProps) {
+  const labelLimit = density === "detail" ? 64 : 38;
+  const tone = preview.extensionTone ?? "default";
+
+  return (
+    <div className={`shopping-extension-target is-${tone} ${preview.extensionImageUrl ? "has-image" : ""}`}>
+      <span className="inspection-corner-label">{preview.highlightLabel}</span>
+      {preview.extensionImageUrl ? (
+        <img alt={`${preview.extensionContentLabel ?? preview.highlightLabel} 이미지`} loading="lazy" referrerPolicy="no-referrer" src={preview.extensionImageUrl} />
+      ) : null}
+      <div className="shopping-extension-copy">
+        <span>{preview.extensionTypeLabel ?? "확장소재"}</span>
+        <strong title={preview.extensionContentLabel ?? preview.highlightLabel}>
+          {truncateDisplayText(preview.extensionContentLabel ?? preview.highlightLabel, labelLimit)}
+        </strong>
+      </div>
     </div>
   );
 }
