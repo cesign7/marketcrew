@@ -15,6 +15,10 @@ export function buildSearchAdRuleResults(rows: SearchAdNormalizedRow[], criteria
       continue;
     }
 
+    if (hasUnsupportedExtensionPerformanceMeasurement(row)) {
+      continue;
+    }
+
     const target = describeSearchAdRuleTarget(row);
     const cpa = row.conversions > 0 ? row.cost / row.conversions : null;
     const roas = row.cost > 0 ? (row.salesAmount / row.cost) * 100 : null;
@@ -311,6 +315,10 @@ function formatPercent(value: number) {
 
 function hasUnconfirmedConversionMeasurement(row: SearchAdNormalizedRow) {
   return CONVERSION_UNCONFIRMED_BRANDS.has(row.brandKey);
+}
+
+function hasUnsupportedExtensionPerformanceMeasurement(row: SearchAdNormalizedRow) {
+  return row.adProductType === "shopping_search" && row.reportType === "ADEXTENSION";
 }
 
 function getMeasurementStatus(brandKey: SearchAdNormalizedRow["brandKey"]) {

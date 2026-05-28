@@ -28,7 +28,7 @@ export const REPORT_TYPE_DESCRIPTIONS: Record<SearchAdReportType, string> = {
   AD_DETAIL: "광고 성과를 더 세밀하게 나눠 원인을 점검합니다.",
   AD_CONVERSION: "전환 유형별 구매와 행동 흐름을 확인합니다.",
   AD_CONVERSION_DETAIL: "전환을 더 자세히 나눠 구매 근거를 확인합니다.",
-  ADEXTENSION: "확장소재별 클릭과 전환 흐름을 확인합니다.",
+  ADEXTENSION: "확장소재별 노출, 클릭, 비용 흐름을 확인합니다.",
   EXPKEYWORD: "파워링크 확장 검색어 흐름을 확인합니다. 네이버 API reportTp는 EXPKEYWORD입니다.",
   SHOPPINGKEYWORD_DETAIL: "쇼핑검색광고에서 실제 유입된 검색어 성과를 확인합니다.",
   SHOPPINGKEYWORD_CONVERSION_DETAIL: "쇼핑검색광고 검색어별 전환과 매출을 확인합니다.",
@@ -69,10 +69,10 @@ export const REPORT_TYPE_GUIDES: Record<SearchAdReportType, SearchAdReportTypeGu
     useFor: "전환은 있으나 어떤 조건에서 발생했는지 확인",
   },
   ADEXTENSION: {
-    caution: "확장소재는 보조 노출이므로 단독 성과보다 본 광고 성과와 같이 봅니다.",
-    focus: "전화, 추가 링크 같은 확장소재 성과를 봅니다.",
+    caution: "쇼핑검색광고 확장소재는 이 보고서만으로 비효율을 판단하지 않고 확장소재 전환 보고서가 연결된 뒤 봅니다.",
+    focus: "전화, 추가 링크 같은 확장소재의 노출, 클릭, 비용 흐름을 봅니다.",
     includes: "확장소재, 노출, 클릭, 비용, 평균 순위",
-    useFor: "확장소재 유지, 교체, 문구 점검",
+    useFor: "파워링크 확장소재 점검, 쇼핑검색광고 확장소재는 참고 지표 확인",
   },
   EXPKEYWORD: {
     caution: "파워링크 검색어 보고서입니다. 쇼핑검색광고 검색어와 섞어 판단하지 않습니다.",

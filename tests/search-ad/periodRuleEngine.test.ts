@@ -211,6 +211,53 @@ describe("buildSearchAdPeriodRuleResults", () => {
     expect(results[0]?.evidencePacket.sourceRowIds).toEqual(expect.arrayContaining([expect.stringContaining("shopping-clicks"), expect.stringContaining("shopping-conversions")]));
   });
 
+  it("쇼핑검색 확장소재 성과 보고서는 기간 합산 후에도 비효율 후보로 올리지 않는다", () => {
+    const shoppingCriteria: SearchAdRuleCriteria[] = [
+      {
+        ...criteria[0],
+        brandKey: "stickersee",
+        adProductType: "shopping_search",
+        minImpressions: 100,
+        minClicks: 10,
+        minCost: 10000,
+      },
+    ];
+
+    const results = buildSearchAdPeriodRuleResults(
+      [
+        row({
+          id: "shopping-extension-1",
+          brandKey: "stickersee",
+          adProductType: "shopping_search",
+          reportType: "ADEXTENSION",
+          campaignId: "cmp-shopping",
+          adgroupId: "grp-shopping",
+          extensionId: "ext-shopping-talk",
+          impressions: 2000,
+          clicks: 0,
+          cost: 0,
+        }),
+        row({
+          id: "shopping-extension-2",
+          brandKey: "stickersee",
+          adProductType: "shopping_search",
+          reportType: "ADEXTENSION",
+          campaignId: "cmp-shopping",
+          adgroupId: "grp-shopping",
+          extensionId: "ext-shopping-talk",
+          sourceDate: "2026-05-24",
+          impressions: 1200,
+          clicks: 0,
+          cost: 0,
+        }),
+      ],
+      shoppingCriteria,
+      "2026-05-26T08:00:00+09:00",
+    );
+
+    expect(results).toHaveLength(0);
+  });
+
   it("타게팅 성과와 타게팅 전환을 합산해 기기/연령대 조정 후보를 판단한다", () => {
     const results = buildSearchAdPeriodRuleResults(
       [

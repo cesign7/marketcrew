@@ -70,6 +70,26 @@ describe("buildSearchAdRuleResults", () => {
     expect(results[0]?.evidencePacket.actionIntentLabel).toBe("소재·랜딩 점검 후보");
   });
 
+  it("쇼핑검색 확장소재 성과 보고서는 전환 보고서 연결 전까지 비효율 후보로 올리지 않는다", () => {
+    const results = buildSearchAdRuleResults(
+      [
+        row({
+          id: "row-shopping-extension",
+          brandKey: "stickersee",
+          adProductType: "shopping_search",
+          reportType: "ADEXTENSION",
+          extensionId: "ext-shopping-talk",
+          impressions: 3000,
+          clicks: 0,
+          cost: 0,
+        }),
+      ],
+      [{ ...criteria[0], brandKey: "stickersee", adProductType: "shopping_search" }],
+    );
+
+    expect(results).toHaveLength(0);
+  });
+
   it("최소 표본에 못 미치면 판단하지 않는다", () => {
     const results = buildSearchAdRuleResults([row({ id: "row-small", impressions: 10, clicks: 1, cost: 900, conversions: 0, salesAmount: 0 })], criteria);
 
