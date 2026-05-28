@@ -50,6 +50,18 @@ describe("rule result presentation", () => {
     ]);
   });
 
+  it("확장소재 종류 배지는 네이버 원문 코드를 한글로 바꿔 보여준다", () => {
+    const result = {
+      ...SAMPLE_RULE_RESULTS[0],
+      targetType: "ad_extension" as const,
+      evidencePacket: {
+        extensionTypeLabel: "POWER_LINK_IMAGE",
+      },
+    };
+
+    expect(getRuleResultContextBadges(result)).toEqual([{ label: "확장소재 종류", value: "파워링크 이미지" }]);
+  });
+
   it("전환 점검 후보는 추적 설정 확인을 먼저 안내한다", () => {
     const result = {
       ...SAMPLE_RULE_RESULTS[0],

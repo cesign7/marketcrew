@@ -30,6 +30,7 @@ import { buildSearchAdPeriodRuleResults } from "@/features/search-ad/domain/rule
 import { sortSearchAdRuleCriteria } from "@/features/search-ad/domain/ruleCriteriaSettings";
 import { getSearchAdReportScheduleStatus } from "@/features/search-ad/domain/reportSchedule";
 import { extractSearchAdProductEvidence } from "@/features/search-ad/domain/adCreativeEvidence";
+import { extractSearchAdAdExtensionEvidence } from "@/features/search-ad/domain/adExtensionEvidence";
 import {
   DEFAULT_SEARCH_AD_OPERATION_STRATEGIES,
   normalizeSearchAdOperationStrategyInput,
@@ -249,6 +250,8 @@ type AdExtensionLookupValue = {
   extensionTypeLabel: string;
   extensionLabel: string;
   extensionDisplayLabel: string;
+  extensionImagePath?: string;
+  extensionImageUrl?: string;
   userLock?: boolean | null;
   status?: string;
   statusReason?: string;
@@ -1322,9 +1325,35 @@ export async function backfillSearchAdRuleResultCreativeEvidence() {
     WITH latest_extensions AS (
       SELECT DISTINCT ON (provider_extension_id)
         provider_extension_id, owner_id, owner_name, owner_type, extension_type, extension_type_label,
-        extension_label, extension_display_label, user_lock, status, status_reason, inspect_status, enable
+        extension_label, extension_display_label, user_lock, status, status_reason, inspect_status, enable, raw_payload
       FROM search_ad_ad_extension_snapshots
       ORDER BY provider_extension_id, collected_at DESC
+    ),
+    extension_payloads AS (
+      SELECT
+        *,
+        CASE
+          WHEN jsonb_typeof(raw_payload -> 'adExtension') = 'object' THEN raw_payload -> 'adExtension'
+          WHEN jsonb_typeof(raw_payload -> 'adExtension') = 'string' AND left(raw_payload ->> 'adExtension', 1) = '{'
+            THEN (raw_payload ->> 'adExtension')::jsonb
+          ELSE NULL
+        END AS ad_extension_payload
+      FROM latest_extensions
+    ),
+    extension_images AS (
+      SELECT
+        *,
+        COALESCE(
+          ad_extension_payload ->> 'imageUrl',
+          ad_extension_payload ->> 'imagePath',
+          ad_extension_payload ->> 'mobileImageUrl',
+          ad_extension_payload ->> 'mobileImagePath',
+          ad_extension_payload ->> 'pcImageUrl',
+          ad_extension_payload ->> 'pcImagePath',
+          ad_extension_payload ->> 'thumbnailUrl',
+          ad_extension_payload ->> 'thumbnailPath'
+        ) AS image_reference
+      FROM extension_payloads
     ),
     extension_evidence AS (
       SELECT
@@ -1337,13 +1366,24 @@ export async function backfillSearchAdRuleResultCreativeEvidence() {
           'extensionTypeLabel', extension_type_label,
           'extensionLabel', extension_label,
           'extensionDisplayLabel', extension_display_label,
+          'extensionImagePath', CASE
+            WHEN image_reference IS NULL THEN NULL
+            WHEN image_reference LIKE 'http%' THEN NULL
+            ELSE image_reference
+          END,
+          'extensionImageUrl', CASE
+            WHEN image_reference IS NULL THEN NULL
+            WHEN image_reference LIKE 'http%' THEN image_reference
+            WHEN image_reference LIKE '/%' THEN 'https://searchad-phinf.pstatic.net' || image_reference
+            ELSE 'https://searchad-phinf.pstatic.net/' || image_reference
+          END,
           'extensionUserLock', user_lock,
           'extensionStatus', status,
           'extensionStatusReason', status_reason,
           'extensionInspectStatus', inspect_status,
           'extensionEnable', enable
         )) AS packet
-      FROM latest_extensions
+      FROM extension_images
     )
     UPDATE search_ad_rule_results r
     SET evidence_packet = r.evidence_packet || e.packet
@@ -3430,33 +3470,39 @@ async function listLatestAdExtensionLookup(): Promise<Map<string, AdExtensionLoo
     status_reason: string | null;
     inspect_status: string | null;
     enable: boolean | null;
+    raw_payload: Record<string, unknown> | null;
   }>(`
     SELECT DISTINCT ON (provider_extension_id)
       provider_extension_id, owner_id, owner_name, owner_type, extension_type, extension_type_label,
-      extension_label, extension_display_label, user_lock, status, status_reason, inspect_status, enable
+      extension_label, extension_display_label, user_lock, status, status_reason, inspect_status, enable, raw_payload
     FROM search_ad_ad_extension_snapshots
     ORDER BY provider_extension_id, collected_at DESC
   `);
 
   return new Map(
-    result.rows.map((row) => [
-      row.provider_extension_id,
-      {
-        providerExtensionId: row.provider_extension_id,
-        ownerId: row.owner_id ?? undefined,
-        ownerName: row.owner_name ?? undefined,
-        ownerType: row.owner_type ?? undefined,
-        extensionType: row.extension_type ?? undefined,
-        extensionTypeLabel: row.extension_type_label,
-        extensionLabel: row.extension_label,
-        extensionDisplayLabel: row.extension_display_label,
-        userLock: row.user_lock,
-        status: row.status ?? undefined,
-        statusReason: row.status_reason ?? undefined,
-        inspectStatus: row.inspect_status ?? undefined,
-        enable: row.enable,
-      },
-    ]),
+    result.rows.map((row) => {
+      const evidence = extractSearchAdAdExtensionEvidence(row.raw_payload);
+      return [
+        row.provider_extension_id,
+        {
+          providerExtensionId: row.provider_extension_id,
+          ownerId: row.owner_id ?? undefined,
+          ownerName: row.owner_name ?? undefined,
+          ownerType: row.owner_type ?? undefined,
+          extensionType: evidence.extensionType ?? row.extension_type ?? undefined,
+          extensionTypeLabel: evidence.extensionTypeLabel ?? row.extension_type_label,
+          extensionLabel: evidence.extensionLabel ?? row.extension_label,
+          extensionDisplayLabel: evidence.extensionDisplayLabel ?? row.extension_display_label,
+          extensionImagePath: evidence.extensionImagePath,
+          extensionImageUrl: evidence.extensionImageUrl,
+          userLock: row.user_lock,
+          status: row.status ?? undefined,
+          statusReason: row.status_reason ?? undefined,
+          inspectStatus: row.inspect_status ?? undefined,
+          enable: row.enable,
+        },
+      ];
+    }),
   );
 }
 
@@ -3503,6 +3549,8 @@ function enrichRuleResultsWithEvidenceContext(
         extensionTypeLabel: result.evidencePacket.extensionTypeLabel ?? adExtension?.extensionTypeLabel ?? null,
         extensionLabel: result.evidencePacket.extensionLabel ?? adExtension?.extensionLabel ?? null,
         extensionDisplayLabel: result.evidencePacket.extensionDisplayLabel ?? adExtension?.extensionDisplayLabel ?? null,
+        extensionImagePath: result.evidencePacket.extensionImagePath ?? adExtension?.extensionImagePath ?? null,
+        extensionImageUrl: result.evidencePacket.extensionImageUrl ?? adExtension?.extensionImageUrl ?? null,
         extensionUserLock: result.evidencePacket.extensionUserLock ?? adExtension?.userLock ?? null,
         extensionStatus: result.evidencePacket.extensionStatus ?? adExtension?.status ?? null,
         extensionStatusReason: result.evidencePacket.extensionStatusReason ?? adExtension?.statusReason ?? null,

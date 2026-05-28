@@ -1,11 +1,15 @@
 export type SearchAdAdExtensionEvidence = {
   extensionContentLabel?: string;
   extensionDisplayLabel: string;
+  extensionImagePath?: string;
+  extensionImageUrl?: string;
   extensionLabel: string;
   extensionShortId?: string;
   extensionType?: string;
   extensionTypeLabel: string;
 };
+
+const SEARCH_AD_IMAGE_BASE_URL = "https://searchad-phinf.pstatic.net";
 
 const EXTENSION_TYPE_LABELS: Record<string, string> = {
   BOOKING: "예약",
@@ -14,6 +18,7 @@ const EXTENSION_TYPE_LABELS: Record<string, string> = {
   HEADLINE: "제목 확장",
   LOCATION: "위치",
   PHONE: "전화",
+  POWER_LINK_IMAGE: "파워링크 이미지",
   PRICE_LINKS: "가격 링크",
   PROMOTION: "프로모션",
   SHOPPING_EXTRA: "쇼핑 부가정보",
@@ -35,6 +40,8 @@ const CONTENT_KEYS = new Set([
   "title",
 ]);
 
+const IMAGE_REFERENCE_KEYS = new Set(["imagePath", "imageUrl", "mobileImagePath", "mobileImageUrl", "pcImagePath", "pcImageUrl", "thumbnailPath", "thumbnailUrl"]);
+
 export function getSearchAdAdExtensionTypeLabel(type: string | undefined) {
   if (!type) {
     return "확장소재";
@@ -49,13 +56,24 @@ export function extractSearchAdAdExtensionEvidence(rawPayload: Record<string, un
   const extensionTypeLabel = getSearchAdAdExtensionTypeLabel(extensionType);
   const payload = parseExtensionPayload(rawPayload?.adExtension);
   const extensionContentLabel = firstReadableContent(payload);
+  const extensionImagePath = firstImageReference(payload);
+  const extensionImageUrl = toSearchAdImageUrl(extensionImagePath);
+  const imageLabel = extensionImageUrl ? buildImageLabel(payload) : undefined;
   const extensionShortId = shortExtensionId(readString(rawPayload, "nccAdExtensionId"));
-  const extensionLabel = extensionContentLabel ?? extensionTypeLabel;
-  const extensionDisplayLabel = extensionContentLabel ? `${extensionTypeLabel} · ${extensionContentLabel}` : extensionShortId ? `${extensionTypeLabel} · ${extensionShortId}` : extensionTypeLabel;
+  const extensionLabel = extensionContentLabel ?? imageLabel ?? extensionTypeLabel;
+  const extensionDisplayLabel = extensionContentLabel
+    ? `${extensionTypeLabel} · ${extensionContentLabel}`
+    : imageLabel
+      ? `${extensionTypeLabel} · ${imageLabel}`
+      : extensionShortId
+        ? `${extensionTypeLabel} · ${extensionShortId}`
+        : extensionTypeLabel;
 
   return {
     ...(extensionContentLabel ? { extensionContentLabel } : {}),
     extensionDisplayLabel,
+    ...(extensionImagePath ? { extensionImagePath } : {}),
+    ...(extensionImageUrl ? { extensionImageUrl } : {}),
     extensionLabel,
     ...(extensionShortId ? { extensionShortId } : {}),
     ...(extensionType ? { extensionType } : {}),
@@ -115,13 +133,94 @@ function firstReadableContent(value: unknown): string | undefined {
   return undefined;
 }
 
+function firstImageReference(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const imageReference = firstImageReference(item);
+      if (imageReference) {
+        return imageReference;
+      }
+    }
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  for (const [key, item] of Object.entries(record)) {
+    if (!IMAGE_REFERENCE_KEYS.has(key) || typeof item !== "string") {
+      continue;
+    }
+    const imageReference = item.trim();
+    if (imageReference) {
+      return imageReference;
+    }
+  }
+
+  for (const item of Object.values(record)) {
+    const imageReference = firstImageReference(item);
+    if (imageReference) {
+      return imageReference;
+    }
+  }
+
+  return undefined;
+}
+
 function cleanReadableText(value: string) {
   const trimmed = value.trim();
-  if (!trimmed || /^https?:\/\//i.test(trimmed)) {
+  if (!trimmed || /^https?:\/\//i.test(trimmed) || isImagePathLike(trimmed)) {
     return undefined;
   }
 
   return trimmed;
+}
+
+export function toSearchAdImageUrl(value: string | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `${SEARCH_AD_IMAGE_BASE_URL}${trimmed.startsWith("/") ? trimmed : `/${trimmed}`}`;
+}
+
+function buildImageLabel(payload: unknown) {
+  const sizeLabel = readImageSize(payload);
+  return sizeLabel ? `이미지 소재 ${sizeLabel}` : "이미지 소재";
+}
+
+function readImageSize(value: unknown): string | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const width = readNumberLike(record.imageWidth);
+  const height = readNumberLike(record.imageHeight);
+  return width && height ? `${width}x${height}` : undefined;
+}
+
+function readNumberLike(value: unknown): string | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return String(value);
+  }
+
+  if (typeof value === "string" && /^\d+$/.test(value)) {
+    return value;
+  }
+
+  return undefined;
+}
+
+function isImagePathLike(value: string) {
+  return value.startsWith("/") || /\.(?:jpe?g|png|gif|webp)(?:\?|$)/i.test(value);
 }
 
 function shortExtensionId(value: string | undefined) {

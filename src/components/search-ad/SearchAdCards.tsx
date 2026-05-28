@@ -203,7 +203,13 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const extensionLabel = getRuleResultExtensionLabel(result);
         const landingLabel = getRuleResultLandingLabel(result);
         const productConnection = getRuleResultProductConnection(result);
-        const showAdMaterial = result.targetType === "ad" && Boolean(creativeLabel || productConnection.hasConnection || landingLabel);
+        const isAdMaterialTarget = result.targetType === "ad" || result.targetType === "ad_extension";
+        const materialLabel = result.targetType === "ad_extension" ? "확장소재" : "광고 소재";
+        const materialTitle =
+          result.targetType === "ad_extension"
+            ? extensionLabel ?? productConnection.productName ?? creativeLabel ?? "확장소재 확인 필요"
+            : creativeLabel ?? productConnection.productName ?? "소재명 확인 필요";
+        const showAdMaterial = isAdMaterialTarget && Boolean(creativeLabel || extensionLabel || productConnection.hasConnection || landingLabel);
         const showProductConnection = result.adProductType === "shopping_search" && productConnection.hasConnection && !showAdMaterial;
         const coverageLabel = getCoverageDecisionLabel(result);
         const metricBadges = getRuleResultMetricBadges(result);
@@ -232,16 +238,14 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
             {showAdMaterial ? (
               <div className="product-connection ad-material-preview is-compact">
                 {productConnection.imageUrl ? (
-                  <img alt={`${creativeLabel ?? productConnection.productName ?? "광고 소재"} 이미지`} loading="lazy" src={productConnection.imageUrl} />
+                  <img alt={`${materialTitle} 이미지`} loading="lazy" src={productConnection.imageUrl} />
                 ) : (
                   <span className="product-image-fallback">소재</span>
                 )}
                 <div>
-                  <span>광고 소재</span>
-                  <strong title={creativeLabel ?? productConnection.productName ?? "소재명 확인 필요"}>
-                    {truncateDisplayText(creativeLabel ?? productConnection.productName ?? "소재명 확인 필요", 34)}
-                  </strong>
-                  {productConnection.productName && productConnection.productName !== creativeLabel ? (
+                  <span>{materialLabel}</span>
+                  <strong title={materialTitle}>{truncateDisplayText(materialTitle, 34)}</strong>
+                  {productConnection.productName && productConnection.productName !== materialTitle ? (
                     <small title={productConnection.productName}>{truncateDisplayText(`연결 상품 ${productConnection.productName}`, 44)}</small>
                   ) : null}
                   {landingLabel ? <small title={landingLabel}>{truncateDisplayText(landingLabel, 52)}</small> : null}

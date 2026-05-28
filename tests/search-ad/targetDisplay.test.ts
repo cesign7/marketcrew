@@ -133,6 +133,23 @@ describe("rule result target display", () => {
     expect(getRuleResultRawTargetId(result)).toBe("ext-a001-02-000000124735420");
   });
 
+  it("기존 저장 결과의 파워링크 이미지 경로는 한글 소재명으로 보정한다", () => {
+    const result = ruleResult({
+      targetType: "ad_extension",
+      targetId: "ext-a001-02-000000157571490",
+      targetLabel: "M_감사/생일/답례 스티커 확장소재",
+      evidencePacket: {
+        adDisplayLabel: "생일축하스티커 생일01 답례품 감사 소량 주문",
+        extensionDisplayLabel: "POWER_LINK_IMAGE · /MjAyMzA0MTRfMTc3/MDAxNjgxNDY0MjA0MTQ0.Zr8nch0RFw.jpg",
+        extensionTypeLabel: "POWER_LINK_IMAGE",
+      },
+    });
+
+    expect(getRuleResultExtensionLabel(result)).toBe("파워링크 이미지 · 이미지 소재");
+    expect(getRuleResultDisplayTargetLabel(result)).toBe("파워링크 이미지 · 이미지 소재 · 생일축하스티커 생일01 답례품 감사 소량 주문");
+    expect(getRuleResultProductConnection(result).imageUrl).toBe("https://searchad-phinf.pstatic.net/MjAyMzA0MTRfMTc3/MDAxNjgxNDY0MjA0MTQ0.Zr8nch0RFw.jpg");
+  });
+
   it("실제 검색어는 그대로 보여준다", () => {
     const result = ruleResult({
       targetLabel: "초대장디자인",
@@ -185,6 +202,20 @@ describe("rule result target display", () => {
 
     expect(getRuleResultProductConnection(result)).toEqual({
       imageUrl: "https://shopping-phinf.pstatic.net/main_8453022/84530220617.1.jpg",
+      hasConnection: true,
+    });
+  });
+
+  it("확장소재 이미지 URL을 소재 미리보기 이미지로 쓴다", () => {
+    const result = ruleResult({
+      targetType: "ad_extension",
+      evidencePacket: {
+        extensionImagePath: "/MjAyMzA0MTRfMTc3/MDAxNjgxNDY0MjA0MTQ0.Zr8nch0RFw.jpg",
+      },
+    });
+
+    expect(getRuleResultProductConnection(result)).toEqual({
+      imageUrl: "https://searchad-phinf.pstatic.net/MjAyMzA0MTRfMTc3/MDAxNjgxNDY0MjA0MTQ0.Zr8nch0RFw.jpg",
       hasConnection: true,
     });
   });

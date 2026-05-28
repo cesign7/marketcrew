@@ -4,6 +4,7 @@ import { extractSearchAdAdExtensionEvidence, getSearchAdAdExtensionTypeLabel } f
 describe("search ad ad extension evidence", () => {
   it("네이버 확장소재 종류를 한국어로 보여준다", () => {
     expect(getSearchAdAdExtensionTypeLabel("SHOPPING_EXTRA")).toBe("쇼핑 부가정보");
+    expect(getSearchAdAdExtensionTypeLabel("POWER_LINK_IMAGE")).toBe("파워링크 이미지");
     expect(getSearchAdAdExtensionTypeLabel("TALK")).toBe("네이버 톡톡");
   });
 
@@ -33,6 +34,26 @@ describe("search ad ad extension evidence", () => {
       extensionContentLabel: "오늘 주문 가능",
       extensionDisplayLabel: "설명 확장 · 오늘 주문 가능",
       extensionLabel: "오늘 주문 가능",
+    });
+  });
+
+  it("파워링크 이미지 확장소재는 원문 경로 대신 이미지 소재로 보여준다", () => {
+    expect(
+      extractSearchAdAdExtensionEvidence({
+        nccAdExtensionId: "ext-a001-02-000000157571490",
+        type: "POWER_LINK_IMAGE",
+        adExtension: JSON.stringify({
+          imagePath: "/MjAyMzA0MTRfMTc3/MDAxNjgxNDY0MjA0MTQ0.Zr8nch0RFw.jpg",
+          imageWidth: 214,
+          imageHeight: 214,
+        }),
+      }),
+    ).toMatchObject({
+      extensionDisplayLabel: "파워링크 이미지 · 이미지 소재 214x214",
+      extensionImagePath: "/MjAyMzA0MTRfMTc3/MDAxNjgxNDY0MjA0MTQ0.Zr8nch0RFw.jpg",
+      extensionImageUrl: "https://searchad-phinf.pstatic.net/MjAyMzA0MTRfMTc3/MDAxNjgxNDY0MjA0MTQ0.Zr8nch0RFw.jpg",
+      extensionLabel: "이미지 소재 214x214",
+      extensionTypeLabel: "파워링크 이미지",
     });
   });
 });

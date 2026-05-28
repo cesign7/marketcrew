@@ -1,4 +1,5 @@
 import type { SearchAdNormalizedRow, SearchAdReportType, SearchAdRuleActionTarget, SearchAdRuleResult } from "./types";
+import { getSearchAdAdExtensionTypeLabel, toSearchAdImageUrl } from "./adExtensionEvidence";
 
 export type SearchAdRuleTargetDescriptor = {
   targetType: SearchAdRuleResult["targetType"];
@@ -187,7 +188,7 @@ export function getRuleResultExtensionLabel(result: SearchAdRuleResult) {
     stringFromEvidence(result.evidencePacket.extensionLabel) ??
     stringFromEvidence(result.evidencePacket.extensionTypeLabel);
 
-  return isTechnicalTargetIdentifier(label) ? undefined : label;
+  return sanitizeExtensionLabel(label, result);
 }
 
 export function getRuleResultLandingLabel(result: SearchAdRuleResult) {
@@ -217,7 +218,10 @@ export function getRuleResultProductConnection(result: SearchAdRuleResult) {
     stringFromEvidence(result.evidencePacket.imageUrl) ??
     stringFromEvidence(result.evidencePacket.thumbnailUrl) ??
     stringFromEvidence(result.evidencePacket.productThumbnailUrl) ??
-    stringFromEvidence(result.evidencePacket.representativeImageUrl);
+    stringFromEvidence(result.evidencePacket.representativeImageUrl) ??
+    stringFromEvidence(result.evidencePacket.extensionImageUrl) ??
+    toSearchAdImageUrl(stringFromEvidence(result.evidencePacket.extensionImagePath)) ??
+    getLegacyExtensionImageUrl(result);
   const landingLabel = getRuleResultLandingLabel(result);
 
   return {
@@ -309,6 +313,64 @@ function stringFromEvidence(value: unknown) {
 
 function nonTechnicalString(value: string | undefined) {
   return isTechnicalTargetIdentifier(value) ? undefined : value;
+}
+
+function sanitizeExtensionLabel(label: string | undefined, result: SearchAdRuleResult) {
+  if (!label || isTechnicalTargetIdentifier(label)) {
+    return undefined;
+  }
+
+  const extensionType = stringFromEvidence(result.evidencePacket.extensionType);
+  const evidenceTypeLabel = stringFromEvidence(result.evidencePacket.extensionTypeLabel);
+  const parts = label
+    .split("·")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const rawTypeLabel = parts[0] ?? evidenceTypeLabel ?? extensionType;
+  const typeLabel = getSearchAdAdExtensionTypeLabel(extensionType ?? rawTypeLabel);
+  const contentLabel = parts.slice(1).find((part) => isReadableExtensionContent(part));
+
+  if (contentLabel) {
+    return `${typeLabel} · ${contentLabel}`;
+  }
+
+  if (isImageExtensionLabel(rawTypeLabel) || isImageExtensionLabel(evidenceTypeLabel) || stringFromEvidence(result.evidencePacket.extensionImageUrl)) {
+    return `${typeLabel} · 이미지 소재`;
+  }
+
+  if (parts.length === 1 && rawTypeLabel) {
+    return getSearchAdAdExtensionTypeLabel(rawTypeLabel);
+  }
+
+  return label;
+}
+
+function isReadableExtensionContent(value: string) {
+  return !isExtensionImagePathLike(value) && !isTechnicalTargetIdentifier(value);
+}
+
+function isExtensionImagePathLike(value: string) {
+  return value.startsWith("/") || /^https?:\/\//i.test(value) || /\.(?:jpe?g|png|gif|webp)(?:\?|$)/i.test(value);
+}
+
+function isImageExtensionLabel(value: string | undefined) {
+  return value?.toUpperCase() === "POWER_LINK_IMAGE" || value === "파워링크 이미지";
+}
+
+function getLegacyExtensionImageUrl(result: SearchAdRuleResult) {
+  const reference =
+    extractImageReference(stringFromEvidence(result.evidencePacket.extensionDisplayLabel)) ??
+    extractImageReference(stringFromEvidence(result.evidencePacket.extensionLabel));
+
+  return toSearchAdImageUrl(reference);
+}
+
+function extractImageReference(value: string | undefined) {
+  if (!value) {
+    return undefined;
+  }
+
+  return value.match(/https?:\/\/\S+\.(?:jpe?g|png|gif|webp)(?:\?\S*)?/i)?.[0] ?? value.match(/\/\S+\.(?:jpe?g|png|gif|webp)(?:\?\S*)?/i)?.[0];
 }
 
 function getReadableTargetLabel(result: SearchAdRuleResult) {

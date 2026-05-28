@@ -1,5 +1,6 @@
 import { getApprovalDelegationPolicy } from "./operationStrategies";
 import { getRuleResultActionIntentKey } from "./ruleActionIntents";
+import { getSearchAdAdExtensionTypeLabel } from "./adExtensionEvidence";
 import { getRuleResultDisplayTargetLabel } from "./targetDisplay";
 import type { SearchAdRuleResult } from "./types";
 
@@ -74,6 +75,7 @@ export function getRuleResultContextBadges(result: SearchAdRuleResult): RuleResu
   const seasonHint = stringFromEvidence(result.evidencePacket.seasonHint);
   const measurementStatusLabel = stringFromEvidence(result.evidencePacket.measurementStatusLabel);
   const adStatusLabel = translateSearchAdStatus(stringFromEvidence(result.evidencePacket.adStatus), stringFromEvidence(result.evidencePacket.adStatusReason));
+  const extensionType = stringFromEvidence(result.evidencePacket.extensionType);
   const extensionTypeLabel = stringFromEvidence(result.evidencePacket.extensionTypeLabel);
   const extensionStatusLabel = translateSearchAdStatus(
     stringFromEvidence(result.evidencePacket.extensionStatus),
@@ -93,7 +95,7 @@ export function getRuleResultContextBadges(result: SearchAdRuleResult): RuleResu
   }
 
   if (extensionTypeLabel) {
-    badges.push({ label: "확장소재 종류", value: extensionTypeLabel });
+    badges.push({ label: "확장소재 종류", value: getSearchAdAdExtensionTypeLabel(extensionType ?? extensionTypeLabel) });
   }
 
   if (extensionStatusLabel) {
