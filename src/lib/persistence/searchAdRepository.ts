@@ -31,6 +31,7 @@ import { sortSearchAdRuleCriteria } from "@/features/search-ad/domain/ruleCriter
 import { getSearchAdReportScheduleStatus } from "@/features/search-ad/domain/reportSchedule";
 import { extractSearchAdProductEvidence } from "@/features/search-ad/domain/adCreativeEvidence";
 import { extractSearchAdAdExtensionEvidence } from "@/features/search-ad/domain/adExtensionEvidence";
+import { getSearchAdMediaFallback, getSearchAdMediaNetworkLabel, listSearchAdMediaFallbackIds } from "@/features/search-ad/domain/mediaDisplay";
 import {
   DEFAULT_SEARCH_AD_OPERATION_STRATEGIES,
   normalizeSearchAdOperationStrategyInput,
@@ -1163,6 +1164,13 @@ export async function listReferencedSearchAdMediaIds() {
     SELECT DISTINCT evidence_packet ->> 'mediaId' AS media_id
     FROM search_ad_rule_results
     WHERE evidence_packet ->> 'mediaId' IS NOT NULL AND evidence_packet ->> 'mediaId' <> ''
+    UNION
+    SELECT DISTINCT nested_media.media_id
+    FROM search_ad_rule_results r
+    CROSS JOIN LATERAL (
+      SELECT jsonb_path_query(r.evidence_packet, '$.**.mediaId') #>> '{}' AS media_id
+    ) nested_media
+    WHERE nested_media.media_id IS NOT NULL AND nested_media.media_id <> ''
   `);
 
   return new Set(result.rows.map((row) => row.media_id));
@@ -2748,7 +2756,7 @@ async function listSearchAdRuleResultsFromDb(
     values,
   );
 
-  return result.rows.map(mapRuleResultRow);
+  return enrichRuleResultsWithLatestMediaContext(result.rows.map(mapRuleResultRow));
 }
 
 async function getSearchAdRuleResultById(id: string): Promise<SearchAdRuleResult | undefined> {
@@ -2761,7 +2769,12 @@ async function getSearchAdRuleResultById(id: string): Promise<SearchAdRuleResult
     [id],
   );
 
-  return result.rows[0] ? mapRuleResultRow(result.rows[0]) : undefined;
+  if (!result.rows[0]) {
+    return undefined;
+  }
+
+  const [enriched] = await enrichRuleResultsWithLatestMediaContext([mapRuleResultRow(result.rows[0])]);
+  return enriched;
 }
 
 async function listLatestStateSnapshots(targetType: SearchAdTargetType, filters: SearchAdFilters): Promise<SearchAdStateRecord[]> {
@@ -3534,7 +3547,14 @@ async function listLatestAdCreativeLookup(): Promise<Map<string, AdCreativeLooku
   );
 }
 
-async function listLatestSearchAdMediaLookup(): Promise<Map<string, MediaLookupValue>> {
+async function listLatestSearchAdMediaLookup(mediaIds?: string[]): Promise<Map<string, MediaLookupValue>> {
+  const scopedMediaIds = mediaIds ? Array.from(new Set(mediaIds.filter(Boolean))) : undefined;
+  const values: unknown[] = [];
+  const where = scopedMediaIds && scopedMediaIds.length > 0 ? `WHERE media_id = ANY($1)` : "";
+  if (scopedMediaIds && scopedMediaIds.length > 0) {
+    values.push(scopedMediaIds);
+  }
+
   const result = await query<{
     media_id: string;
     media_type: string;
@@ -3548,10 +3568,11 @@ async function listLatestSearchAdMediaLookup(): Promise<Map<string, MediaLookupV
     SELECT DISTINCT ON (media_id)
       media_id, media_type, media_name, media_url, pc_media, mobile_media, search_ad_network, contents_ad_network
     FROM search_ad_media_snapshots
+    ${where}
     ORDER BY media_id, CASE WHEN media_type = 'media' THEN 0 ELSE 1 END, collected_at DESC
-  `);
+  `, values);
 
-  return new Map(
+  const lookup = new Map(
     result.rows.map((row) => [
       row.media_id,
       {
@@ -3565,6 +3586,28 @@ async function listLatestSearchAdMediaLookup(): Promise<Map<string, MediaLookupV
       },
     ]),
   );
+
+  const fallbackIds = scopedMediaIds && scopedMediaIds.length > 0 ? scopedMediaIds : listSearchAdMediaFallbackIds();
+  for (const mediaId of fallbackIds) {
+    if (lookup.has(mediaId)) {
+      continue;
+    }
+    const fallback = getSearchAdMediaFallback(mediaId);
+    if (!fallback) {
+      continue;
+    }
+    lookup.set(mediaId, {
+      mediaName: fallback.mediaName,
+      mediaType: "media",
+      mediaUrl: fallback.mediaUrl,
+      pcMedia: fallback.pcMedia,
+      mobileMedia: fallback.mobileMedia,
+      searchAdNetwork: fallback.searchAdNetwork,
+      contentsAdNetwork: fallback.contentsAdNetwork,
+    });
+  }
+
+  return lookup;
 }
 
 async function listLatestAdExtensionLookup(): Promise<Map<string, AdExtensionLookupValue>> {
@@ -3616,6 +3659,38 @@ async function listLatestAdExtensionLookup(): Promise<Map<string, AdExtensionLoo
       ];
     }),
   );
+}
+
+async function enrichRuleResultsWithLatestMediaContext(results: SearchAdRuleResult[]) {
+  if (results.length === 0) {
+    return results;
+  }
+
+  const mediaIds = results.map((result) => evidenceString(result.evidencePacket.mediaId)).filter((value): value is string => Boolean(value));
+  if (mediaIds.length === 0) {
+    return results;
+  }
+
+  const mediaById = await listLatestSearchAdMediaLookup(mediaIds);
+  return results.map((result) => {
+    const mediaId = evidenceString(result.evidencePacket.mediaId);
+    const media = mediaId ? mediaById.get(mediaId) : undefined;
+    if (!mediaId || !media) {
+      return result;
+    }
+
+    return {
+      ...result,
+      evidencePacket: {
+        ...result.evidencePacket,
+        mediaName: result.evidencePacket.mediaName ?? media.mediaName,
+        mediaUrl: result.evidencePacket.mediaUrl ?? media.mediaUrl ?? null,
+        mediaType: result.evidencePacket.mediaType ?? media.mediaType ?? null,
+        mediaDisplayLabel: result.evidencePacket.mediaDisplayLabel ?? buildMediaDisplayLabel(mediaId, media),
+        mediaNetworkLabel: result.evidencePacket.mediaNetworkLabel ?? buildMediaNetworkLabel(media),
+      },
+    };
+  });
 }
 
 function enrichRuleResultsWithEvidenceContext(
@@ -3682,23 +3757,15 @@ function buildMediaDisplayLabel(mediaId: string | undefined, media: MediaLookupV
   if (media?.mediaName) {
     return media.mediaName;
   }
+  const fallback = getSearchAdMediaFallback(mediaId);
+  if (fallback?.mediaName) {
+    return fallback.mediaName;
+  }
   return mediaId ? `매체 ID ${mediaId}` : null;
 }
 
 function buildMediaNetworkLabel(media: MediaLookupValue | undefined) {
-  if (!media) {
-    return null;
-  }
-  if (media.searchAdNetwork && media.contentsAdNetwork) {
-    return "검색/콘텐츠 네트워크";
-  }
-  if (media.searchAdNetwork) {
-    return "검색 네트워크";
-  }
-  if (media.contentsAdNetwork) {
-    return "콘텐츠 네트워크";
-  }
-  return null;
+  return getSearchAdMediaNetworkLabel(media);
 }
 
 function coverageKey(brandKey: BrandKey, adProductType: AdProductType) {

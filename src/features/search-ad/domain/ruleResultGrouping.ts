@@ -1,4 +1,5 @@
 import { getSearchAdDeviceLabel } from "./targetDisplay";
+import { getSearchAdMediaFallback, getSearchAdMediaNetworkLabel } from "./mediaDisplay";
 import type { SearchAdRuleResult, RuleSeverity } from "./types";
 
 export type RuleResultBreakdownItem = {
@@ -112,7 +113,8 @@ function buildAggregateResult(primary: SearchAdRuleResult, results: SearchAdRule
 function buildBreakdownItem(result: SearchAdRuleResult): RuleResultBreakdownItem {
   const deviceLabel = getDeviceLabel(result);
   const mediaLabel = getMediaLabel(result);
-  const mediaNetworkLabel = stringFromEvidence(result.evidencePacket.mediaNetworkLabel);
+  const fallbackMedia = getSearchAdMediaFallback(stringFromEvidence(result.evidencePacket.mediaId));
+  const mediaNetworkLabel = stringFromEvidence(result.evidencePacket.mediaNetworkLabel) ?? getSearchAdMediaNetworkLabel(fallbackMedia) ?? undefined;
   const clicks = metricNumber(result, "clicks");
   const cost = metricNumber(result, "cost");
   const conversions = metricNumber(result, "conversions");
@@ -155,12 +157,13 @@ function getDeviceLabel(result: SearchAdRuleResult) {
 }
 
 function getMediaLabel(result: SearchAdRuleResult) {
-  const displayLabel = stringFromEvidence(result.evidencePacket.mediaDisplayLabel) ?? stringFromEvidence(result.evidencePacket.mediaName);
+  const mediaId = stringFromEvidence(result.evidencePacket.mediaId);
+  const fallbackMedia = getSearchAdMediaFallback(mediaId);
+  const displayLabel = stringFromEvidence(result.evidencePacket.mediaDisplayLabel) ?? stringFromEvidence(result.evidencePacket.mediaName) ?? fallbackMedia?.mediaName;
   if (displayLabel) {
     return displayLabel;
   }
 
-  const mediaId = stringFromEvidence(result.evidencePacket.mediaId);
   if (!mediaId) {
     return "매체 미상";
   }

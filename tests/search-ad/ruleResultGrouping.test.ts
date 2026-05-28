@@ -59,6 +59,13 @@ describe("groupRuleResultsForDisplay", () => {
 
     expect(groups).toHaveLength(2);
   });
+
+  it("매체 마스터 저장 전이어도 알려진 매체 ID는 이름으로 보여준다", () => {
+    const groups = groupRuleResultsForDisplay([result({ id: "fallback-media", device: "M", mediaId: "684924" })]);
+
+    expect(groups[0]?.breakdowns[0]?.label).toBe("모바일 · 네이버 통합검색 네이버플러스 스토어 - 모바일");
+    expect(groups[0]?.breakdowns[0]?.mediaNetworkLabel).toBe("검색 네트워크");
+  });
 });
 
 type ResultOverrides = Partial<SearchAdRuleResult> & {
