@@ -127,8 +127,8 @@ describe("rule result target display", () => {
       },
     });
 
-    expect(getRuleResultExtensionLabel(result)).toBe("쇼핑 부가정보 · 고유번호 735420");
-    expect(getRuleResultDisplayTargetLabel(result)).toBe("쇼핑 부가정보 · 고유번호 735420 · 생일축하스티커 생일01 답례품 감사 소량 주문");
+    expect(getRuleResultExtensionLabel(result)).toBe("쇼핑 부가정보");
+    expect(getRuleResultDisplayTargetLabel(result)).toBe("쇼핑 부가정보 · 생일축하스티커 생일01 답례품 감사 소량 주문");
     expect(getRuleResultDisplayTargetTypeLabel(result)).toBe("확장소재");
     expect(getRuleResultRawTargetId(result)).toBe("ext-a001-02-000000124735420");
   });

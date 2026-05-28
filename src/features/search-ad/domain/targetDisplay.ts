@@ -342,11 +342,11 @@ function sanitizeExtensionLabel(label: string | undefined, result: SearchAdRuleR
     return getSearchAdAdExtensionTypeLabel(rawTypeLabel);
   }
 
-  return label;
+  return rawTypeLabel ? typeLabel : label;
 }
 
 function isReadableExtensionContent(value: string) {
-  return !isExtensionImagePathLike(value) && !isTechnicalTargetIdentifier(value);
+  return !isExtensionImagePathLike(value) && !isExtensionShortIdLabel(value) && !isTechnicalTargetIdentifier(value);
 }
 
 function isExtensionImagePathLike(value: string) {
@@ -355,6 +355,10 @@ function isExtensionImagePathLike(value: string) {
 
 function isImageExtensionLabel(value: string | undefined) {
   return value?.toUpperCase() === "POWER_LINK_IMAGE" || value === "파워링크 이미지";
+}
+
+function isExtensionShortIdLabel(value: string) {
+  return /^고유번호\s*\d+$/i.test(value.trim());
 }
 
 function getLegacyExtensionImageUrl(result: SearchAdRuleResult) {

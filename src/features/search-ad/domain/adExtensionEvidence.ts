@@ -65,9 +65,7 @@ export function extractSearchAdAdExtensionEvidence(rawPayload: Record<string, un
     ? `${extensionTypeLabel} · ${extensionContentLabel}`
     : imageLabel
       ? `${extensionTypeLabel} · ${imageLabel}`
-      : extensionShortId
-        ? `${extensionTypeLabel} · ${extensionShortId}`
-        : extensionTypeLabel;
+      : extensionTypeLabel;
 
   return {
     ...(extensionContentLabel ? { extensionContentLabel } : {}),

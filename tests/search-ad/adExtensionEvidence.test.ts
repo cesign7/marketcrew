@@ -8,7 +8,7 @@ describe("search ad ad extension evidence", () => {
     expect(getSearchAdAdExtensionTypeLabel("TALK")).toBe("네이버 톡톡");
   });
 
-  it("확장소재 내용이 없으면 종류와 짧은 고유번호로 구분한다", () => {
+  it("확장소재 내용이 없으면 화면 라벨에는 종류만 보여주고 고유번호는 별도 값으로 남긴다", () => {
     expect(
       extractSearchAdAdExtensionEvidence({
         nccAdExtensionId: "ext-a001-02-000000124735420",
@@ -16,7 +16,7 @@ describe("search ad ad extension evidence", () => {
         adExtension: null,
       }),
     ).toMatchObject({
-      extensionDisplayLabel: "쇼핑 부가정보 · 고유번호 735420",
+      extensionDisplayLabel: "쇼핑 부가정보",
       extensionLabel: "쇼핑 부가정보",
       extensionShortId: "고유번호 735420",
       extensionTypeLabel: "쇼핑 부가정보",
