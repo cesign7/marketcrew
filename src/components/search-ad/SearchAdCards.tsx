@@ -426,7 +426,6 @@ export function PowerlinkAdPreview({ density, preview }: PowerlinkAdPreviewProps
           </div>
           <strong title={preview.headline}>{truncateDisplayText(preview.headline, density === "detail" ? 72 : 42)}</strong>
           {preview.description ? <p title={preview.description}>{truncateDisplayText(preview.description, density === "detail" ? 108 : 72)}</p> : null}
-          {preview.adId ? <small>광고 ID {preview.adId}</small> : null}
           {preview.finalUrl ? <small title={preview.finalUrl}>{truncateDisplayText(preview.finalUrl, density === "detail" ? 108 : 72)}</small> : null}
         </div>
       </div>
