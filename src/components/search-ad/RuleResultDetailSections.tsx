@@ -132,7 +132,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
             <span className="product-image-fallback material-target-image">소재</span>
           )}
           <div className="material-target-copy">
-            <span className="inspection-corner-label">{materialLabel}</span>
+            <span className="inspection-corner-label">점검 대상</span>
             <div className="ad-material-meta">
               {extensionMaterial ? (
                 <>
