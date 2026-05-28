@@ -1043,6 +1043,25 @@ export async function saveSearchAdMediaSnapshots(input: SearchAdMediaMasterRow[]
   return { collectedAt, saved: input.length };
 }
 
+export async function listReferencedSearchAdMediaIds() {
+  if (!hasDatabaseUrl()) {
+    return new Set<string>();
+  }
+
+  await ensureSearchAdSchema();
+  const result = await query<{ media_id: string }>(`
+    SELECT DISTINCT media_id
+    FROM search_ad_report_normalized_rows
+    WHERE media_id IS NOT NULL AND media_id <> ''
+    UNION
+    SELECT DISTINCT evidence_packet ->> 'mediaId' AS media_id
+    FROM search_ad_rule_results
+    WHERE evidence_packet ->> 'mediaId' IS NOT NULL AND evidence_packet ->> 'mediaId' <> ''
+  `);
+
+  return new Set(result.rows.map((row) => row.media_id));
+}
+
 export async function backfillSearchAdRuleResultMediaEvidence() {
   if (!hasDatabaseUrl()) {
     throw new Error("SEARCH_AD_DATABASE_MISSING");

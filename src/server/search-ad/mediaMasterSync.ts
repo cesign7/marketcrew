@@ -8,7 +8,7 @@ import {
   type SearchAdMasterReportJob,
 } from "@/lib/integrations/search-ad/reports";
 import { hasDatabaseUrl } from "@/lib/persistence/postgres";
-import { backfillSearchAdRuleResultMediaEvidence, saveSearchAdMediaSnapshots } from "@/lib/persistence/searchAdRepository";
+import { backfillSearchAdRuleResultMediaEvidence, listReferencedSearchAdMediaIds, saveSearchAdMediaSnapshots } from "@/lib/persistence/searchAdRepository";
 
 const MEDIA_MASTER_ITEM = "Media";
 
@@ -45,7 +45,9 @@ export async function syncSearchAdMediaMaster(input: MediaMasterSyncInput = {}) 
 
   const download = await downloadSearchAdReport(job.downloadUrl);
   const parsed = parseSearchAdMediaMaster(download.text);
-  const saved = await saveSearchAdMediaSnapshots(parsed.rows);
+  const referencedMediaIds = await listReferencedSearchAdMediaIds();
+  const rowsToSave = referencedMediaIds.size > 0 ? parsed.rows.filter((row) => referencedMediaIds.has(row.mediaId)) : [];
+  const saved = await saveSearchAdMediaSnapshots(rowsToSave);
   const ruleBackfill = await backfillSearchAdRuleResultMediaEvidence();
 
   return {
@@ -54,6 +56,7 @@ export async function syncSearchAdMediaMaster(input: MediaMasterSyncInput = {}) 
       jobId: job.id,
       sourceStatus: job.status,
       mediaRows: parsed.rows.length,
+      referencedMediaIds: referencedMediaIds.size,
       saved: saved.saved,
       collectedAt: saved.collectedAt,
       ruleResults: ruleBackfill.updated,
