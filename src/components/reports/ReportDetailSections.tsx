@@ -133,7 +133,7 @@ export function ReportEasyTable({ view }: { view: SearchAdReportDetailView }) {
             ))}
             {view.easyRows.length === 0 ? (
               <tr>
-                <td colSpan={9}>정규화된 행이 없습니다.</td>
+                <td colSpan={9}>현재 필터에 맞는 정리 행이 없습니다.</td>
               </tr>
             ) : null}
           </tbody>
@@ -146,18 +146,18 @@ export function ReportEasyTable({ view }: { view: SearchAdReportDetailView }) {
 export function RawReportPreview({ view }: { view: SearchAdReportDetailView }) {
   return (
     <section className="content-panel">
-      <div className="section-heading">
-        <h2>원본 보기</h2>
-        <p>네이버 보고서 원문을 행 단위 JSON으로 보관합니다. 화면에서는 첫 100행만 미리 보여줍니다.</p>
-      </div>
-      <div className="raw-list">
-        {view.rawPreviewRows.map((row) => (
-          <pre key={row.id}>
-            <code>{JSON.stringify(row.rawRow, null, 2)}</code>
-          </pre>
-        ))}
-        {view.rawPreviewRows.length === 0 ? <p className="empty-text">표시할 원본 행이 없습니다.</p> : null}
-      </div>
+      <details className="technical-details raw-report-details">
+        <summary>원문 점검</summary>
+        <p>네이버에서 받은 원문입니다. 일반 판단은 위의 요약, 쉽게 보기, 규칙 결과를 기준으로 확인합니다.</p>
+        <div className="raw-list">
+          {view.rawPreviewRows.map((row) => (
+            <pre key={row.id}>
+              <code>{JSON.stringify(row.rawRow, null, 2)}</code>
+            </pre>
+          ))}
+          {view.rawPreviewRows.length === 0 ? <p className="empty-text">현재 필터에 맞는 원문 행이 없습니다.</p> : null}
+        </div>
+      </details>
     </section>
   );
 }

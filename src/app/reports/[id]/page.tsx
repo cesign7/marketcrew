@@ -2,18 +2,19 @@ import { notFound } from "next/navigation";
 import { MarketingShell } from "@/components/layout/MarketingShell";
 import { RuleResultList } from "@/components/search-ad/SearchAdCards";
 import { ColumnDescriptionTable, RawReportPreview, ReportEasyTable, ReportSummaryPanel, ReportTypeGuidePanel } from "@/components/reports/ReportDetailSections";
-import { DEFAULT_SEARCH_AD_FILTERS } from "@/features/search-ad/domain/sampleData";
-import { loadSearchAdReportDetailView } from "@/features/search-ad/loadSearchAdViews";
+import { loadSearchAdReportDetailView, parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
 
 type ReportDetailPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportDetailPage({ params }: ReportDetailPageProps) {
+export default async function ReportDetailPage({ params, searchParams }: ReportDetailPageProps) {
   const { id } = await params;
-  const view = await loadSearchAdReportDetailView(id);
+  const filters = parseSearchAdFilters(await searchParams);
+  const view = await loadSearchAdReportDetailView(id, filters);
   if (!view) {
     notFound();
   }
@@ -21,8 +22,9 @@ export default async function ReportDetailPage({ params }: ReportDetailPageProps
   return (
     <MarketingShell
       activePath="/reports"
-      description="보고서 원본과 대표가 바로 읽을 수 있는 요약을 함께 확인합니다."
-      filters={DEFAULT_SEARCH_AD_FILTERS}
+      description="보고서 요약과 대표가 바로 읽을 수 있는 정리 표를 확인합니다."
+      filterPath={`/reports/${encodeURIComponent(id)}`}
+      filters={filters}
       title={view.report.displayName}
     >
       <div className="page-stack">

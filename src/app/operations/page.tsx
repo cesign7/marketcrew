@@ -29,7 +29,7 @@ export default async function OperationsPage({ searchParams }: OperationsPagePro
             <h2>최근 보고서</h2>
             <p>네이버 보고서 원본을 보관하고 쉽게 볼 수 있게 정리합니다.</p>
           </div>
-          <ReportListTable reports={view.recentReports} />
+          <ReportListTable filters={filters} reports={view.recentReports} />
         </section>
 
         <section className="content-panel">

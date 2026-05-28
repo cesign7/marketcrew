@@ -58,14 +58,14 @@ export async function loadSearchAdRuleResultsView(filters: SearchAdRuleResultFil
   return getSearchAdRuleResultsView(filters);
 }
 
-export async function loadSearchAdReportDetailView(id: string): Promise<SearchAdReportDetailView | undefined> {
+export async function loadSearchAdReportDetailView(id: string, filters: SearchAdFilters): Promise<SearchAdReportDetailView | undefined> {
   const normalizedId = normalizeRouteParam(id);
-  const remote = await fetchBackendJson<SearchAdReportDetailView>(`/api/search-ad/reports/${encodeURIComponent(normalizedId)}`);
+  const remote = await fetchBackendJson<SearchAdReportDetailView>(`/api/search-ad/reports/${encodeURIComponent(normalizedId)}?${toQuery(filters)}`);
   if (remote) {
     return remote;
   }
 
-  return getSearchAdReportDetailView(normalizedId);
+  return getSearchAdReportDetailView(normalizedId, filters);
 }
 
 export async function loadSearchAdRuleResultDetailView(id: string): Promise<SearchAdRuleResultDetailView | undefined> {

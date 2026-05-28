@@ -28,7 +28,7 @@ export default async function ReportsPage({ searchParams }: ReportsPageProps) {
             <h2>수집된 보고서</h2>
             <p>전일 확정 성과를 기준으로 저장된 보고서입니다.</p>
           </div>
-          <ReportListTable reports={archive.reports} />
+          <ReportListTable filters={filters} reports={archive.reports} />
         </section>
       </div>
     </MarketingShell>

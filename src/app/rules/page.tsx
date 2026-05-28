@@ -5,16 +5,23 @@ import { RuleRebuildPanel } from "@/components/search-ad/RuleRebuildPanel";
 import { APPROVAL_DELEGATION_POLICIES, getOperationStrategySummary } from "@/features/search-ad/domain/operationStrategies";
 import { RULE_ACTION_GUIDE_ITEMS, RULE_CATEGORY_GUIDES, RULE_EXECUTION_GUIDE_ITEMS, RULE_PERIOD_GUIDE_ITEMS } from "@/features/search-ad/domain/ruleCriteriaGuides";
 import { API_AND_REPORT_CHECK_GUIDE_ITEMS, BRAND_OPERATION_GUIDE_ITEMS, OPERATION_TIME_POLICY_ITEMS } from "@/features/search-ad/domain/targetSettings";
-import { DEFAULT_SEARCH_AD_FILTERS } from "@/features/search-ad/domain/sampleData";
-import { loadSearchAdOperationStrategies, loadSearchAdRuleCriteria } from "@/features/search-ad/loadSearchAdViews";
+import { loadSearchAdOperationStrategies, loadSearchAdRuleCriteria, parseSearchAdFilters } from "@/features/search-ad/loadSearchAdViews";
+import type { SearchAdFilters } from "@/features/search-ad/domain/types";
+
+type RulesPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 export const dynamic = "force-dynamic";
 
-export default async function RulesPage() {
+export default async function RulesPage({ searchParams }: RulesPageProps) {
+  const filters = parseSearchAdFilters(await searchParams);
   const [criteria, operationStrategies] = await Promise.all([loadSearchAdRuleCriteria(), loadSearchAdOperationStrategies()]);
+  const filteredCriteria = filterBySearchAdFilters(criteria, filters);
+  const filteredStrategies = filterBySearchAdFilters(operationStrategies, filters);
 
   return (
-    <MarketingShell activePath="/rules" description="저효율, 무클릭, 우수 후보를 나누는 기준을 확인합니다." filters={DEFAULT_SEARCH_AD_FILTERS} title="성과 기준">
+    <MarketingShell activePath="/rules" description="저효율, 무클릭, 우수 후보를 나누는 기준을 확인합니다." filters={filters} title="성과 기준">
       <section className="page-stack">
         <div className="content-panel">
           <RuleRebuildPanel />
@@ -139,7 +146,7 @@ export default async function RulesPage() {
             <p>시즌 그룹은 먼저 넓게 열고, 충분한 데이터가 쌓이면 시간대와 기기를 좁히는 방식으로 봅니다.</p>
           </div>
           <div className="rule-guide-grid">
-            {operationStrategies.map((strategy) => (
+            {filteredStrategies.map((strategy) => (
               <article key={strategy.id}>
                 <div>
                   <span>{strategy.scopeLabel}</span>
@@ -191,9 +198,17 @@ export default async function RulesPage() {
             <h2>브랜드별 기준</h2>
             <p>브랜드와 광고유형별 최소 데이터가 쌓인 항목만 판단합니다. 저장한 값은 다음 규칙 재계산부터 적용됩니다.</p>
           </div>
-          <RuleCriteriaEditor criteria={criteria} />
+          <RuleCriteriaEditor criteria={filteredCriteria} />
         </div>
       </section>
     </MarketingShell>
   );
+}
+
+function filterBySearchAdFilters<T extends { brandKey: string; adProductType: string }>(items: T[], filters: SearchAdFilters) {
+  return items.filter((item) => {
+    const brandMatched = filters.brand === "all" || item.brandKey === filters.brand;
+    const adProductMatched = filters.adProduct === "all" || item.adProductType === filters.adProduct;
+    return brandMatched && adProductMatched;
+  });
 }

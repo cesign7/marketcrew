@@ -298,9 +298,9 @@ export async function getSearchAdRuleResultsView(filters = DEFAULT_SEARCH_AD_RUL
   }
 }
 
-export async function getSearchAdReportDetailView(id: string): Promise<SearchAdReportDetailView | undefined> {
+export async function getSearchAdReportDetailView(id: string, filters = DEFAULT_SEARCH_AD_FILTERS): Promise<SearchAdReportDetailView | undefined> {
   if (!hasDatabaseUrl()) {
-    return createSampleReportDetailView(id);
+    return createSampleReportDetailView(id, filters);
   }
 
   try {
@@ -311,16 +311,19 @@ export async function getSearchAdReportDetailView(id: string): Promise<SearchAdR
       return undefined;
     }
 
-    const easyRows = await listNormalizedRowsForReport(report.id);
-    const rawPreviewRows = await listRawRowsForReport(report.id);
-    const ruleResults = await listSearchAdRuleResultsFromDb(DEFAULT_SEARCH_AD_FILTERS, 100);
-    const cpa = report.summary.conversions > 0 ? report.summary.cost / report.summary.conversions : null;
-    const roas = report.summary.cost > 0 ? (report.summary.salesAmount / report.summary.cost) * 100 : null;
+    const easyRows = await listNormalizedRowsForReport(report.id, filters);
+    const rawPreviewRows = await listRawRowsForReport(report.id, filters);
+    const ruleResults = await listSearchAdRuleResultsFromDb(filters, 100);
+    const filteredSummary = summarizeNormalizedRows(easyRows);
+    const cpa = filteredSummary.conversions > 0 ? filteredSummary.cost / filteredSummary.conversions : null;
+    const roas = filteredSummary.cost > 0 ? (filteredSummary.salesAmount / filteredSummary.cost) * 100 : null;
 
     return {
       report,
       summary: {
-        ...report.summary,
+        ...filteredSummary,
+        lowEfficiencyCount: ruleResults.filter((rule) => rule.evidencePacket.reportId === report.id && rule.category !== "good_performance").length,
+        goodPerformanceCount: ruleResults.filter((rule) => rule.evidencePacket.reportId === report.id && rule.category === "good_performance").length,
         cpa,
         roas,
       },
@@ -332,7 +335,7 @@ export async function getSearchAdReportDetailView(id: string): Promise<SearchAdR
     };
   } catch (error) {
     if (canUseSampleFallback()) {
-      return createSampleReportDetailView(id);
+      return createSampleReportDetailView(id, filters);
     }
 
     throw error;
@@ -3099,7 +3102,18 @@ async function listSearchAdActionLogsFromDb(limit: number): Promise<SearchAdActi
   };
 }
 
-async function listNormalizedRowsForReport(reportId: string): Promise<SearchAdNormalizedRow[]> {
+async function listNormalizedRowsForReport(reportId: string, filters: SearchAdFilters): Promise<SearchAdNormalizedRow[]> {
+  const values: unknown[] = [reportId];
+  const clauses = ["f.report_job_id = $1"];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`n.brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`n.ad_product_type = $${values.length}`);
+  }
+
   const result = await query<{
     id: string;
     report_row_id: string;
@@ -3130,11 +3144,11 @@ async function listNormalizedRowsForReport(reportId: string): Promise<SearchAdNo
       FROM search_ad_report_normalized_rows n
       JOIN search_ad_report_rows r ON r.id = n.report_row_id
       JOIN search_ad_report_files f ON f.id = r.report_file_id
-      WHERE f.report_job_id = $1
+      WHERE ${clauses.join(" AND ")}
       ORDER BY n.cost DESC, n.clicks DESC
       LIMIT 100
     `,
-    [reportId],
+    values,
   );
 
   return result.rows.map((row) => ({
@@ -3142,7 +3156,18 @@ async function listNormalizedRowsForReport(reportId: string): Promise<SearchAdNo
   }));
 }
 
-async function listRawRowsForReport(reportId: string): Promise<SearchAdRawReportRow[]> {
+async function listRawRowsForReport(reportId: string, filters: SearchAdFilters): Promise<SearchAdRawReportRow[]> {
+  const values: unknown[] = [reportId];
+  const clauses = ["f.report_job_id = $1"];
+  if (filters.brand !== "all") {
+    values.push(filters.brand);
+    clauses.push(`r.brand_key = $${values.length}`);
+  }
+  if (filters.adProduct !== "all") {
+    values.push(filters.adProduct);
+    clauses.push(`r.ad_product_type = $${values.length}`);
+  }
+
   const result = await query<{
     id: string;
     report_file_id: string;
@@ -3156,11 +3181,11 @@ async function listRawRowsForReport(reportId: string): Promise<SearchAdRawReport
       SELECT r.id, r.report_file_id, r.row_number, r.raw_row, r.brand_key, r.ad_product_type, r.mapping_status
       FROM search_ad_report_rows r
       JOIN search_ad_report_files f ON f.id = r.report_file_id
-      WHERE f.report_job_id = $1
+      WHERE ${clauses.join(" AND ")}
       ORDER BY r.row_number
-      LIMIT 100
+      LIMIT 30
     `,
-    [reportId],
+    values,
   );
 
   return result.rows.map((row) => ({
@@ -3172,6 +3197,19 @@ async function listRawRowsForReport(reportId: string): Promise<SearchAdRawReport
     adProductType: row.ad_product_type ?? undefined,
     mappingStatus: row.mapping_status,
   }));
+}
+
+function summarizeNormalizedRows(rows: SearchAdNormalizedRow[]) {
+  return rows.reduce(
+    (summary, row) => ({
+      impressions: summary.impressions + row.impressions,
+      clicks: summary.clicks + row.clicks,
+      cost: summary.cost + row.cost,
+      conversions: summary.conversions + row.conversions,
+      salesAmount: summary.salesAmount + row.salesAmount,
+    }),
+    { impressions: 0, clicks: 0, cost: 0, conversions: 0, salesAmount: 0 },
+  );
 }
 
 async function getSyncStatusFromDb() {

@@ -484,23 +484,27 @@ export function createSampleReportArchiveView(filters = DEFAULT_SEARCH_AD_FILTER
   };
 }
 
-export function createSampleReportDetailView(id: string): SearchAdReportDetailView | undefined {
+export function createSampleReportDetailView(id: string, filters = DEFAULT_SEARCH_AD_FILTERS): SearchAdReportDetailView | undefined {
   const report = SAMPLE_REPORTS.find((item) => item.id === id || item.providerReportJobId === id);
   if (!report) {
     return undefined;
   }
 
-  const easyRows = SAMPLE_NORMALIZED_ROWS.filter((row) => row.reportType === report.reportType);
+  const easyRows = filterNormalizedRows(SAMPLE_NORMALIZED_ROWS.filter((row) => row.reportType === report.reportType), filters);
   const rawPreviewRows = SAMPLE_RAW_ROWS.filter((row) => easyRows.some((easyRow) => easyRow.reportRowId === row.id));
-  const problemCandidates = SAMPLE_RULE_RESULTS.filter((rule) => rule.evidencePacket.reportId === report.id && rule.category !== "good_performance");
-  const goodCandidates = SAMPLE_RULE_RESULTS.filter((rule) => rule.evidencePacket.reportId === report.id && rule.category === "good_performance");
-  const cpa = report.summary.conversions > 0 ? report.summary.cost / report.summary.conversions : null;
-  const roas = report.summary.cost > 0 ? (report.summary.salesAmount / report.summary.cost) * 100 : null;
+  const filteredRules = filterRuleResults(SAMPLE_RULE_RESULTS, filters);
+  const problemCandidates = filteredRules.filter((rule) => rule.evidencePacket.reportId === report.id && rule.category !== "good_performance");
+  const goodCandidates = filteredRules.filter((rule) => rule.evidencePacket.reportId === report.id && rule.category === "good_performance");
+  const summary = summarizeNormalizedRows(easyRows);
+  const cpa = summary.conversions > 0 ? summary.cost / summary.conversions : null;
+  const roas = summary.cost > 0 ? (summary.salesAmount / summary.cost) * 100 : null;
 
   return {
     report,
     summary: {
-      ...report.summary,
+      ...summary,
+      lowEfficiencyCount: problemCandidates.length,
+      goodPerformanceCount: goodCandidates.length,
       cpa,
       roas,
     },
@@ -677,6 +681,19 @@ function filterNormalizedRows(rows: SearchAdNormalizedRow[], filters: SearchAdFi
     const adProductMatched = filters.adProduct === "all" || row.adProductType === filters.adProduct;
     return brandMatched && adProductMatched;
   });
+}
+
+function summarizeNormalizedRows(rows: SearchAdNormalizedRow[]) {
+  return rows.reduce(
+    (summary, row) => ({
+      impressions: summary.impressions + row.impressions,
+      clicks: summary.clicks + row.clicks,
+      cost: summary.cost + row.cost,
+      conversions: summary.conversions + row.conversions,
+      salesAmount: summary.salesAmount + row.salesAmount,
+    }),
+    { impressions: 0, clicks: 0, cost: 0, conversions: 0, salesAmount: 0 },
+  );
 }
 
 function formatWon(value: number) {

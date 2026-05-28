@@ -175,15 +175,28 @@ table {
 .side-nav__links a {
   border-radius: 8px;
   color: #344054;
+  display: grid;
   font-size: 14px;
   font-weight: 700;
+  gap: 3px;
   padding: 10px 12px;
   text-decoration: none;
+}
+
+.side-nav__links a small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .side-nav__links a:hover,
 .side-nav__links a.is-active {
   background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.side-nav__links a:hover small,
+.side-nav__links a.is-active small {
   color: var(--brand-strong);
 }
 
@@ -206,6 +219,30 @@ table {
   letter-spacing: 0;
   line-height: 1.25;
   margin: 6px 0 8px;
+}
+
+.work-tabs {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 auto 10px;
+  max-width: 1180px;
+}
+
+.work-tabs a {
+  border-bottom: 2px solid transparent;
+  color: #344054;
+  font-size: 14px;
+  font-weight: 900;
+  padding: 8px 4px 9px;
+  text-decoration: none;
+}
+
+.work-tabs a:hover,
+.work-tabs a.is-active {
+  border-bottom-color: var(--brand);
+  color: var(--brand-strong);
 }
 
 .filter-bar {
@@ -1129,6 +1166,16 @@ table {
 .raw-list code {
   background: transparent;
   color: inherit;
+}
+
+.raw-report-details {
+  display: grid;
+  gap: 12px;
+}
+
+.raw-report-details p {
+  color: var(--muted);
+  margin: 10px 0 0;
 }
 
 .settings-grid {

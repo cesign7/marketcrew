@@ -11,7 +11,7 @@ export default async function SettingsPage() {
   const reportSchedule = view.syncStatus.reportSchedule ?? getSearchAdReportScheduleStatus();
 
   return (
-    <MarketingShell activePath="/settings" description="검색광고 연결, 실행 권한, 보고서 복구를 관리합니다." filters={DEFAULT_SEARCH_AD_FILTERS} title="설정">
+    <MarketingShell activePath="/settings" description="검색광고 연결, 실행 권한, 보고서 복구를 관리합니다." title="설정">
       <section className="page-stack">
         <div className="content-panel">
           <div className="section-heading">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buildSearchAdFilterHref } from "@/features/search-ad/domain/filterLinks";
 import { RULE_ACTION_INTENTS, getRuleActionIntentLabel } from "@/features/search-ad/domain/ruleActionIntents";
 import { getSearchAdReportScheduleStatus } from "@/features/search-ad/domain/reportSchedule";
 import { getAdProductLabel, getBrandLabel, getReportTypeLabel, RULE_CATEGORY_LABELS } from "@/features/search-ad/domain/reportTypes";
@@ -30,6 +31,7 @@ import type {
   SearchAdNormalizedRow,
   SearchAdOperationsView,
   SearchAdReportJobRecord,
+  SearchAdFilters,
   SearchAdRuleResult,
   SearchAdRuleResultFilters,
   SearchAdStateRecord,
@@ -113,7 +115,7 @@ export function BrandSummaryTable({ view }: { view: SearchAdOperationsView }) {
   );
 }
 
-export function ReportListTable({ reports }: { reports: SearchAdReportJobRecord[] }) {
+export function ReportListTable({ filters, reports }: { filters?: SearchAdFilters; reports: SearchAdReportJobRecord[] }) {
   return (
     <div className="table-wrap">
       <table>
@@ -133,9 +135,9 @@ export function ReportListTable({ reports }: { reports: SearchAdReportJobRecord[
             <tr key={report.id}>
               <td>{report.statDate}</td>
               <td>
-                <Link className="table-link" href={`/reports/${report.id}`}>
+                <a className="table-link" href={buildSearchAdFilterHref(`/reports/${report.id}`, filters)}>
                   {getReportTypeLabel(report.reportType)}
-                </Link>
+                </a>
               </td>
               <td>{report.providerReportJobId}</td>
               <td>{report.parseStatus}</td>
