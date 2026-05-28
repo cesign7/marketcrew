@@ -1088,23 +1088,56 @@ table {
   padding: 10px;
 }
 
+.powerlink-preview-composite.has-inline-extension {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.powerlink-preview-main {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
 .powerlink-preview-composite .powerlink-preview-copy {
   padding-right: 0;
 }
 
-.powerlink-extension-image-target {
+.powerlink-extension-target {
   align-self: start;
   background: #fff;
   border: 2px solid #2563eb;
   border-radius: 8px;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
-  display: grid;
+  display: flex;
+  gap: 9px;
   min-width: 0;
-  padding: 5px;
+  padding: 8px;
   position: relative;
 }
 
-.powerlink-extension-image-target img {
+.powerlink-extension-target.has-image {
+  align-items: center;
+}
+
+.powerlink-extension-target.is-powerlink-image {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  min-width: 0;
+  padding: 5px;
+  width: max-content;
+}
+
+.powerlink-extension-target img {
+  aspect-ratio: 1;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  height: 54px;
+  object-fit: cover;
+  width: 54px;
+}
+
+.powerlink-extension-target.is-powerlink-image img {
   aspect-ratio: 1;
   border-radius: 5px;
   height: 82px;
@@ -1112,9 +1145,61 @@ table {
   width: 82px;
 }
 
-.powerlink-ad-preview.is-detail .powerlink-extension-image-target img {
+.powerlink-ad-preview.is-detail .powerlink-extension-target img {
+  height: 70px;
+  width: 70px;
+}
+
+.powerlink-ad-preview.is-detail .powerlink-extension-target.is-powerlink-image img {
   height: 116px;
   width: 116px;
+}
+
+.powerlink-extension-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.powerlink-extension-copy span {
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.powerlink-extension-copy strong {
+  color: #101828;
+  display: block;
+  font-size: 13px;
+  font-weight: 950;
+  line-height: 1.3;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.powerlink-extension-target.is-text .powerlink-extension-copy strong {
+  color: #1d4ed8;
+}
+
+.powerlink-extension-target.is-link .powerlink-extension-copy strong::after {
+  content: " 〉";
+  color: #2563eb;
+}
+
+.powerlink-extension-target.is-powerlink-image .powerlink-extension-copy {
+  max-width: 116px;
+  text-align: center;
+}
+
+.powerlink-extension-target.is-powerlink-image .powerlink-extension-copy span {
+  display: none;
+}
+
+.powerlink-extension-target.is-powerlink-image .powerlink-extension-copy strong {
+  color: #1d4ed8;
+  font-size: 11px;
 }
 
 .naver-preview-target img,
@@ -2303,7 +2388,7 @@ table {
     grid-template-columns: 1fr;
   }
 
-  .powerlink-extension-image-target {
+  .powerlink-extension-target.is-powerlink-image {
     justify-self: start;
   }
 }

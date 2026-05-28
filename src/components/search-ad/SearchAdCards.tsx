@@ -444,27 +444,52 @@ export function PowerlinkAdPreview({ density, preview }: PowerlinkAdPreviewProps
 }
 
 export function PowerlinkExtensionPreview({ density, preview }: PowerlinkExtensionPreviewProps) {
+  const isSideImageExtension = preview.extensionTypeLabel === "파워링크 이미지" && Boolean(preview.extensionImageUrl);
+
   return (
     <div className={`powerlink-ad-preview is-${density}`} aria-label="네이버 파워링크 확장소재 재구성 미리보기">
       <div className="naver-preview-heading">
         <span>{preview.basisLabel}</span>
       </div>
-      <div className="powerlink-preview-composite">
-        <div className="powerlink-preview-copy">
-          <div className="powerlink-preview-meta">
-            <span className="naver-ad-badge">광고</span>
-            {preview.displayUrl ? <span>{preview.displayUrl}</span> : null}
+      <div className={`powerlink-preview-composite ${isSideImageExtension ? "has-side-extension" : "has-inline-extension"}`}>
+        <div className="powerlink-preview-main">
+          <div className="powerlink-preview-copy">
+            <div className="powerlink-preview-meta">
+              <span className="naver-ad-badge">광고</span>
+              {preview.displayUrl ? <span>{preview.displayUrl}</span> : null}
+            </div>
+            <strong title={preview.headline}>{truncateDisplayText(preview.headline, density === "detail" ? 72 : 42)}</strong>
+            {preview.description ? <p title={preview.description}>{truncateDisplayText(preview.description, density === "detail" ? 108 : 72)}</p> : null}
+            {preview.finalUrl ? <small title={preview.finalUrl}>{truncateDisplayText(preview.finalUrl, density === "detail" ? 108 : 72)}</small> : null}
           </div>
-          <strong title={preview.headline}>{truncateDisplayText(preview.headline, density === "detail" ? 72 : 42)}</strong>
-          {preview.description ? <p title={preview.description}>{truncateDisplayText(preview.description, density === "detail" ? 108 : 72)}</p> : null}
-          {preview.finalUrl ? <small title={preview.finalUrl}>{truncateDisplayText(preview.finalUrl, density === "detail" ? 108 : 72)}</small> : null}
+          {!isSideImageExtension ? <PowerlinkExtensionTarget density={density} preview={preview} /> : null}
         </div>
-        <div className="powerlink-extension-image-target">
-          <span className="inspection-corner-label">{preview.highlightLabel}</span>
-          <img alt={`${preview.extensionTypeLabel} 이미지`} loading="eager" referrerPolicy="no-referrer" src={preview.extensionImageUrl} />
-        </div>
+        {isSideImageExtension ? <PowerlinkExtensionTarget density={density} preview={preview} /> : null}
       </div>
       <p>실제 노출 위치, 순위, 확장소재 조합은 검색어, 기기, 입찰, 품질 상태에 따라 달라질 수 있습니다.</p>
+    </div>
+  );
+}
+
+function PowerlinkExtensionTarget({ density, preview }: PowerlinkExtensionPreviewProps) {
+  const hasImage = Boolean(preview.extensionImageUrl);
+  const isPowerlinkImage = preview.extensionTypeLabel === "파워링크 이미지" && hasImage;
+  const labelLimit = density === "detail" ? 56 : 34;
+
+  return (
+    <div
+      className={`powerlink-extension-target is-${preview.extensionTone} ${hasImage ? "has-image" : ""} ${
+        isPowerlinkImage ? "is-powerlink-image" : ""
+      }`}
+    >
+      <span className="inspection-corner-label">{preview.highlightLabel}</span>
+      {preview.extensionImageUrl ? (
+        <img alt={`${preview.extensionContentLabel} 이미지`} loading="eager" referrerPolicy="no-referrer" src={preview.extensionImageUrl} />
+      ) : null}
+      <div className="powerlink-extension-copy">
+        <span>{preview.extensionTypeLabel}</span>
+        <strong title={preview.extensionContentLabel}>{truncateDisplayText(preview.extensionContentLabel, labelLimit)}</strong>
+      </div>
     </div>
   );
 }

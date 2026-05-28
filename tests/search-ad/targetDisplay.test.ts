@@ -322,8 +322,99 @@ describe("rule result target display", () => {
       displayUrl: "http://www.coffeeprint.co.kr",
       finalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=30",
       extensionTypeLabel: "파워링크 이미지",
+      extensionContentLabel: "이미지 확장소재",
+      extensionTone: "image",
       extensionImageUrl: "https://searchad-phinf.pstatic.net/image.jpg",
       highlightLabel: "파워링크 이미지",
+      basisLabel: "네이버 광고 API 원문 기반 재구성",
+    });
+  });
+
+  it("파워링크 이미지 추가 링크 확장소재는 광고 아래 이미지 링크 영역을 점검 대상으로 재구성한다", () => {
+    const result = ruleResult({
+      adProductType: "powerlink",
+      targetType: "ad_extension",
+      targetId: "ext-a001-01-000000315153393",
+      targetLabel: "30_초대장 확장소재",
+      evidencePacket: {
+        adHeadline: "{keyword:초대장} 전문 커피프린트",
+        pcDisplayUrl: "http://www.coffeeprint.co.kr",
+        pcFinalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=30",
+        extensionType: "IMAGE_SUB_LINKS",
+        extensionTypeLabel: "이미지 추가 링크",
+        extensionLabel: "디자인초대장",
+        extensionDisplayLabel: "이미지 추가 링크 · 디자인초대장",
+        extensionImageUrl: "https://searchad-phinf.pstatic.net/image-sub-link.jpg",
+      },
+    });
+
+    expect(getRuleResultPowerlinkExtensionPreview(result)).toEqual({
+      headline: "{keyword:초대장} 전문 커피프린트",
+      displayUrl: "http://www.coffeeprint.co.kr",
+      finalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=30",
+      extensionTypeLabel: "이미지 추가 링크",
+      extensionContentLabel: "디자인초대장",
+      extensionTone: "image",
+      extensionImageUrl: "https://searchad-phinf.pstatic.net/image-sub-link.jpg",
+      highlightLabel: "이미지 추가 링크",
+      basisLabel: "네이버 광고 API 원문 기반 재구성",
+    });
+  });
+
+  it("파워링크 추가 링크 확장소재는 광고 아래 링크 영역을 점검 대상으로 재구성한다", () => {
+    const result = ruleResult({
+      adProductType: "powerlink",
+      targetType: "ad_extension",
+      targetId: "ext-a001-01-000000285945443",
+      targetLabel: "30_초대장 확장소재",
+      evidencePacket: {
+        adHeadline: "{keyword:초대장} 전문 커피프린트",
+        pcDisplayUrl: "http://www.coffeeprint.co.kr",
+        pcFinalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=30",
+        extensionType: "SUB_LINKS",
+        extensionTypeLabel: "추가 링크",
+        extensionLabel: "디자인초대장",
+        extensionDisplayLabel: "추가 링크 · 디자인초대장",
+      },
+    });
+
+    expect(getRuleResultPowerlinkExtensionPreview(result)).toEqual({
+      headline: "{keyword:초대장} 전문 커피프린트",
+      displayUrl: "http://www.coffeeprint.co.kr",
+      finalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=30",
+      extensionTypeLabel: "추가 링크",
+      extensionContentLabel: "디자인초대장",
+      extensionTone: "link",
+      highlightLabel: "추가 링크",
+      basisLabel: "네이버 광고 API 원문 기반 재구성",
+    });
+  });
+
+  it("파워링크 제목 확장소재는 광고 문구 안의 확장 제목 위치를 점검 대상으로 재구성한다", () => {
+    const result = ruleResult({
+      adProductType: "powerlink",
+      targetType: "ad_extension",
+      targetId: "ext-a001-01-000000050217073",
+      targetLabel: "30_초대장 확장소재",
+      evidencePacket: {
+        adHeadline: "{keyword:초대장} 전문 커피프린트",
+        pcDisplayUrl: "http://www.coffeeprint.co.kr",
+        pcFinalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=30",
+        extensionType: "HEADLINE",
+        extensionTypeLabel: "제목 확장",
+        extensionLabel: "50매부터 많아질수록 할인!",
+        extensionDisplayLabel: "제목 확장 · 50매부터 많아질수록 할인!",
+      },
+    });
+
+    expect(getRuleResultPowerlinkExtensionPreview(result)).toEqual({
+      headline: "{keyword:초대장} 전문 커피프린트",
+      displayUrl: "http://www.coffeeprint.co.kr",
+      finalUrl: "https://coffeeprint.co.kr/shop/list.php?ca_id=30",
+      extensionTypeLabel: "제목 확장",
+      extensionContentLabel: "50매부터 많아질수록 할인!",
+      extensionTone: "text",
+      highlightLabel: "제목 확장",
       basisLabel: "네이버 광고 API 원문 기반 재구성",
     });
   });

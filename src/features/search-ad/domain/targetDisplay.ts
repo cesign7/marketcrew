@@ -53,7 +53,9 @@ export type SearchAdPowerlinkExtensionPreview = {
   displayUrl?: string;
   finalUrl?: string;
   extensionTypeLabel: string;
-  extensionImageUrl: string;
+  extensionContentLabel: string;
+  extensionTone: SearchAdExtensionMaterialTone;
+  extensionImageUrl?: string;
   highlightLabel: string;
   basisLabel: string;
 };
@@ -306,7 +308,7 @@ export function getRuleResultPowerlinkExtensionPreview(result: SearchAdRuleResul
 
   const extensionMaterial = getRuleResultExtensionMaterialDisplay(result);
   const extensionTypeLabel = extensionMaterial?.typeLabel ?? getRuleResultExtensionLabel(result);
-  if (extensionTypeLabel !== "파워링크 이미지") {
+  if (!extensionTypeLabel) {
     return undefined;
   }
 
@@ -314,9 +316,7 @@ export function getRuleResultPowerlinkExtensionPreview(result: SearchAdRuleResul
     stringFromEvidence(result.evidencePacket.extensionImageUrl) ??
     toSearchAdImageUrl(stringFromEvidence(result.evidencePacket.extensionImagePath)) ??
     getLegacyExtensionImageUrl(result);
-  if (!extensionImageUrl) {
-    return undefined;
-  }
+  const extensionContentLabel = getPowerlinkExtensionPreviewContentLabel(result, extensionMaterial, extensionTypeLabel);
 
   const headline =
     nonTechnicalString(stringFromEvidence(result.evidencePacket.adHeadline)) ??
@@ -328,13 +328,19 @@ export function getRuleResultPowerlinkExtensionPreview(result: SearchAdRuleResul
   const displayUrl = pcDisplayUrl ?? mobileDisplayUrl;
   const landingLabel = getRuleResultLandingLabel(result);
 
+  if (!headline && !description && !displayUrl && !landingLabel && !extensionContentLabel && !extensionImageUrl) {
+    return undefined;
+  }
+
   return {
     headline: headline ?? "광고 문구 확인 필요",
     ...(description ? { description } : {}),
     ...(displayUrl ? { displayUrl } : {}),
     ...(landingLabel ? { finalUrl: landingLabel } : {}),
     extensionTypeLabel,
-    extensionImageUrl,
+    extensionContentLabel,
+    extensionTone: extensionMaterial?.tone ?? "default",
+    ...(extensionImageUrl ? { extensionImageUrl } : {}),
     highlightLabel: extensionTypeLabel,
     basisLabel: "네이버 광고 API 원문 기반 재구성",
   };
@@ -347,6 +353,32 @@ export function getRuleResultExtensionLabel(result: SearchAdRuleResult) {
     stringFromEvidence(result.evidencePacket.extensionTypeLabel);
 
   return sanitizeExtensionLabel(label, result);
+}
+
+function getPowerlinkExtensionPreviewContentLabel(
+  result: SearchAdRuleResult,
+  extensionMaterial: SearchAdExtensionMaterialDisplay | undefined,
+  extensionTypeLabel: string,
+) {
+  const explicitContent = stringFromEvidence(result.evidencePacket.extensionContentLabel);
+  if (explicitContent && isReadableExtensionContent(explicitContent) && !isGenericImageMaterialLabel(explicitContent)) {
+    return explicitContent;
+  }
+
+  const rawLabel =
+    stringFromEvidence(result.evidencePacket.extensionDisplayLabel) ??
+    stringFromEvidence(result.evidencePacket.extensionLabel) ??
+    stringFromEvidence(result.evidencePacket.extensionTypeLabel);
+  const contentFromLabel = readableExtensionContentFromLabel(rawLabel);
+  if (contentFromLabel && !isGenericImageMaterialLabel(contentFromLabel)) {
+    return contentFromLabel;
+  }
+
+  if (extensionTypeLabel === "파워링크 이미지") {
+    return "이미지 확장소재";
+  }
+
+  return extensionMaterial?.contentLabel ?? (extensionTypeLabel === "확장소재" ? "확장소재 확인 필요" : extensionTypeLabel);
 }
 
 export function getRuleResultExtensionContentStatusLabel(result: SearchAdRuleResult) {
@@ -571,6 +603,10 @@ function isExtensionImagePathLike(value: string) {
 
 function isImageExtensionLabel(value: string | undefined) {
   return value?.toUpperCase() === "POWER_LINK_IMAGE" || value === "파워링크 이미지";
+}
+
+function isGenericImageMaterialLabel(value: string) {
+  return /^이미지\s*소재(?:\s*\d+\s*x\s*\d+)?$/i.test(value.trim());
 }
 
 function isShoppingExtraExtensionLabel(value: string | undefined) {
