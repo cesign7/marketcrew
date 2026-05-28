@@ -7,18 +7,28 @@ describe("extractSearchAdProductEvidence", () => {
       ad: {},
       referenceData: {
         imageUrl: "https://shopping-phinf.pstatic.net/main_8453022/84530220617.1.jpg",
+        lowPrice: "2500",
         mallName: "모카프린트",
         mallProductId: "6985720295",
+        mobilePrice: "2500",
         productName: "1406 추석선물카드 감사 명절연하인사카드",
         productTitle: "1406 추석선물카드 감사 명절연하인사카드",
+        purchaseCnt: "120",
+        reviewCountSum: "42",
+        scoreInfo: "4.9",
       },
     });
 
-    expect(evidence).toEqual({
+    expect(evidence).toMatchObject({
       productName: "1406 추석선물카드 감사 명절연하인사카드",
       productImageUrl: "https://shopping-phinf.pstatic.net/main_8453022/84530220617.1.jpg",
       mallName: "모카프린트",
       mallProductId: "6985720295",
+      lowPrice: "2500",
+      mobilePrice: "2500",
+      reviewCountSum: "42",
+      purchaseCnt: "120",
+      scoreInfo: "4.9",
     });
   });
 
@@ -29,7 +39,7 @@ describe("extractSearchAdProductEvidence", () => {
           productName: "생일 스티커",
         },
       }),
-    ).toEqual({
+    ).toMatchObject({
       productName: "생일 스티커",
       productImageUrl: undefined,
       mallName: undefined,

@@ -984,6 +984,132 @@ table {
   font-size: 15px;
 }
 
+.naver-shopping-ad-preview {
+  background: #fff;
+  border: 2px solid #2563eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+}
+
+.naver-shopping-ad-preview.is-detail {
+  margin: 0 0 16px;
+}
+
+.naver-preview-heading {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.naver-preview-heading span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.naver-preview-heading strong {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  color: #1d4ed8;
+  font-size: 11px;
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+
+.naver-preview-frame {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+}
+
+.naver-preview-frame img,
+.naver-shopping-ad-preview .product-image-fallback {
+  aspect-ratio: 1;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  height: 72px;
+  object-fit: cover;
+  width: 72px;
+}
+
+.naver-shopping-ad-preview.is-detail .naver-preview-frame img,
+.naver-shopping-ad-preview.is-detail .product-image-fallback {
+  height: 96px;
+  width: 96px;
+}
+
+.naver-preview-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.naver-preview-meta {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.naver-preview-meta span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.naver-preview-meta .naver-ad-badge {
+  background: #f2f4f7;
+  border: 1px solid #d0d5dd;
+  border-radius: 4px;
+  color: #344054;
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 5px;
+}
+
+.naver-preview-copy strong,
+.naver-preview-copy b,
+.naver-preview-copy small {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.naver-preview-copy strong {
+  color: #101828;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.naver-shopping-ad-preview.is-detail .naver-preview-copy strong {
+  font-size: 16px;
+}
+
+.naver-preview-copy b {
+  color: #111827;
+  font-size: 14px;
+}
+
+.naver-preview-copy small,
+.naver-shopping-ad-preview p {
+  color: #475467;
+  font-size: 12px;
+}
+
+.naver-shopping-ad-preview p {
+  margin: 0;
+}
+
 .detail-grid {
   display: grid;
   gap: 10px 18px;

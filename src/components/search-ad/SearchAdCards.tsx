@@ -19,6 +19,7 @@ import {
   getRuleResultPeriodLabel,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
+  getRuleResultShoppingAdPreview,
   getRuleResultShoppingProductId,
   getRuleResultSourceReportLabel,
   getRuleResultTargetDetailLabel,
@@ -208,6 +209,7 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const extensionMaterial = getRuleResultExtensionMaterialDisplay(result);
         const landingLabel = getRuleResultLandingLabel(result);
         const productConnection = getRuleResultProductConnection(result);
+        const shoppingAdPreview = getRuleResultShoppingAdPreview(result);
         const shoppingProductId = getRuleResultShoppingProductId(result);
         const isAdMaterialTarget = result.targetType === "ad" || result.targetType === "ad_extension";
         const materialLabel = extensionMaterial?.typeLabel ?? (result.targetType === "ad_extension" ? "확장소재" : adLabel ?? "광고 소재");
@@ -241,7 +243,9 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
             </div>
             <p className="rule-card-diagnosis">{getRuleResultDiagnosis(result)}</p>
             {group.breakdowns.length > 1 ? <RuleResultBreakdownPanel group={group} /> : null}
-            {showAdMaterial ? (
+            {shoppingAdPreview ? (
+              <ShoppingAdPreview density="compact" preview={shoppingAdPreview} />
+            ) : showAdMaterial ? (
               <div className="product-connection ad-material-preview is-compact">
                 {productConnection.imageUrl ? (
                   <img alt={`${materialTitle} 이미지`} loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />
@@ -388,6 +392,47 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         );
       })}
       {results.length === 0 ? <p className="empty-text">해당 조건에 걸린 규칙 결과가 없습니다.</p> : null}
+    </div>
+  );
+}
+
+type ShoppingAdPreviewProps = {
+  density: "compact" | "detail";
+  preview: NonNullable<ReturnType<typeof getRuleResultShoppingAdPreview>>;
+};
+
+export function ShoppingAdPreview({ density, preview }: ShoppingAdPreviewProps) {
+  const metaItems = [preview.scoreLabel, preview.reviewLabel, preview.purchaseLabel].filter(Boolean);
+
+  return (
+    <div className={`naver-shopping-ad-preview is-${density}`} aria-label="네이버 쇼핑검색광고 재구성 미리보기">
+      <div className="naver-preview-heading">
+        <span>{preview.basisLabel}</span>
+        <strong>성과 점검 대상</strong>
+      </div>
+      <div className="naver-preview-frame">
+        {preview.imageUrl ? (
+          <img alt={`${preview.productName} 상품 이미지`} loading="lazy" referrerPolicy="no-referrer" src={preview.imageUrl} />
+        ) : (
+          <span className="product-image-fallback">상품</span>
+        )}
+        <div className="naver-preview-copy">
+          <div className="naver-preview-meta">
+            <span className="naver-ad-badge">광고</span>
+            {preview.mallName ? <span>{preview.mallName}</span> : null}
+          </div>
+          <strong title={preview.productName}>{truncateDisplayText(preview.productName, density === "detail" ? 74 : 46)}</strong>
+          {preview.priceLabel ? <b>{preview.priceLabel}</b> : null}
+          {metaItems.length ? <small>{metaItems.join(" · ")}</small> : null}
+          {preview.deliveryLabel || preview.categoryLabel ? (
+            <small title={preview.categoryLabel}>{[preview.deliveryLabel, preview.categoryLabel].filter(Boolean).join(" · ")}</small>
+          ) : null}
+          {preview.mallProductId || preview.adId ? (
+            <small>{[preview.mallProductId ? `상품번호 ${preview.mallProductId}` : undefined, preview.adId ? `광고 ID ${preview.adId}` : undefined].filter(Boolean).join(" · ")}</small>
+          ) : null}
+        </div>
+      </div>
+      <p>실제 노출 위치, 순위, 주변 상품은 검색어, 기기, 입찰, 개인화 상태에 따라 달라질 수 있습니다.</p>
     </div>
   );
 }

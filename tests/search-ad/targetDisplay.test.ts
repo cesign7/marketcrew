@@ -11,6 +11,7 @@ import {
   getRuleResultPeriodLabel,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
+  getRuleResultShoppingAdPreview,
   getRuleResultShoppingProductId,
   getRuleResultTargetDetailLabel,
 } from "@/features/search-ad/domain/targetDisplay";
@@ -29,6 +30,41 @@ describe("rule result target display", () => {
     expect(getRuleResultDisplayTargetTypeLabel(result)).toBe("광고 소재");
     expect(getRuleResultDisplayTargetLabel(result)).toBe("M_감사/생일/답례 스티커 광고 소재");
     expect(getRuleResultRawTargetId(result)).toBe("nad-a001-02-000000203421541");
+  });
+
+  it("쇼핑검색 상품 광고는 네이버 화면 재구성용 표시 정보를 만든다", () => {
+    const result = ruleResult({
+      adProductType: "shopping_search",
+      targetType: "ad",
+      targetId: "nad-a001-02-000000203421541",
+      evidencePacket: {
+        productName: "생일축하스티커 생일01 답례품 감사 소량 주문",
+        productImageUrl: "https://shopping-phinf.pstatic.net/main_8478242/84782425770.3.jpg",
+        mallName: "스티커씨",
+        mallProductId: "7237925448",
+        lowPrice: "2500",
+        reviewCountSum: "2272",
+        purchaseCnt: "2264",
+        scoreInfo: "4.94",
+        deliveryFee: "3000",
+        categoryPath: "생활/건강>문구/사무용품>스티커>주문제작스티커",
+      },
+    });
+
+    expect(getRuleResultShoppingAdPreview(result)).toEqual({
+      productName: "생일축하스티커 생일01 답례품 감사 소량 주문",
+      imageUrl: "https://shopping-phinf.pstatic.net/main_8478242/84782425770.3.jpg",
+      mallName: "스티커씨",
+      priceLabel: "2,500원",
+      reviewLabel: "리뷰 2,272",
+      purchaseLabel: "구매 2,264",
+      scoreLabel: "평점 4.94",
+      deliveryLabel: "배송비 3,000원",
+      categoryLabel: "생활/건강>문구/사무용품>스티커>주문제작스티커",
+      mallProductId: "7237925448",
+      adId: "nad-a001-02-000000203421541",
+      basisLabel: "네이버 광고 API 원문 기반 재구성",
+    });
   });
 
   it("기존 저장 결과의 타게팅 코드를 카드 제목에서 숨긴다", () => {

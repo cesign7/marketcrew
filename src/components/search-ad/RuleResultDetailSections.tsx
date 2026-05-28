@@ -12,6 +12,7 @@ import {
   getRuleResultPeriodLabel,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
+  getRuleResultShoppingAdPreview,
   getRuleResultShoppingProductId,
   getRuleResultSourceReportLabel,
   getRuleResultTargetDetailLabel,
@@ -27,7 +28,7 @@ import {
 } from "@/features/search-ad/domain/ruleResultPresentation";
 import { truncateDisplayText } from "@/features/search-ad/domain/displayText";
 import type { SearchAdRuleResultDetailView } from "@/features/search-ad/domain/types";
-import { formatDateTime, formatWon, SearchTermTable } from "./SearchAdCards";
+import { formatDateTime, formatWon, SearchTermTable, ShoppingAdPreview } from "./SearchAdCards";
 
 export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDetailView }) {
   const { result } = view;
@@ -41,6 +42,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
   const extensionMaterial = getRuleResultExtensionMaterialDisplay(result);
   const landingLabel = getRuleResultLandingLabel(result);
   const productConnection = getRuleResultProductConnection(result);
+  const shoppingAdPreview = getRuleResultShoppingAdPreview(result);
   const shoppingProductId = getRuleResultShoppingProductId(result);
   const isAdMaterialTarget = result.targetType === "ad" || result.targetType === "ad_extension";
   const materialLabel = extensionMaterial?.typeLabel ?? (result.targetType === "ad_extension" ? "확장소재" : adLabel ?? "광고 소재");
@@ -100,7 +102,9 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
         <MetricCard label="ROAS" value={formatPercent(metricNumber(result, "roas"))} />
       </div>
 
-      {showProductConnection ? (
+      {shoppingAdPreview ? <ShoppingAdPreview density="detail" preview={shoppingAdPreview} /> : null}
+
+      {!shoppingAdPreview && showProductConnection ? (
         <div className="product-connection is-detail">
           {productConnection.imageUrl ? (
             <img alt="" loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />
@@ -120,7 +124,7 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
         </div>
       ) : null}
 
-      {showAdMaterial ? (
+      {!shoppingAdPreview && showAdMaterial ? (
         <div className="product-connection ad-material-preview is-detail">
           {productConnection.imageUrl ? (
             <img alt={`${materialTitle} 이미지`} loading="lazy" referrerPolicy="no-referrer" src={productConnection.imageUrl} />

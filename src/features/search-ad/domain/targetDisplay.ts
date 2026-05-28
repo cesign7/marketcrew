@@ -20,6 +20,22 @@ export type SearchAdExtensionMaterialDisplay = {
   tone: SearchAdExtensionMaterialTone;
 };
 
+export type SearchAdShoppingAdPreview = {
+  productName: string;
+  imageUrl?: string;
+  mallName?: string;
+  priceLabel?: string;
+  reviewLabel?: string;
+  purchaseLabel?: string;
+  scoreLabel?: string;
+  deliveryLabel?: string;
+  categoryLabel?: string;
+  landingLabel?: string;
+  mallProductId?: string;
+  adId?: string;
+  basisLabel: string;
+};
+
 const RULE_TARGET_TYPE_LABELS: Record<SearchAdRuleResult["targetType"], string> = {
   ad: "광고 소재",
   ad_extension: "확장소재",
@@ -199,6 +215,40 @@ export function getRuleResultShoppingProductId(result: SearchAdRuleResult) {
   return stringFromEvidence(result.evidencePacket.mallProductId) ?? stringFromEvidence(result.evidencePacket.productId);
 }
 
+export function getRuleResultShoppingAdPreview(result: SearchAdRuleResult): SearchAdShoppingAdPreview | undefined {
+  if (result.adProductType !== "shopping_search" || result.targetType !== "ad") {
+    return undefined;
+  }
+
+  const productConnection = getRuleResultProductConnection(result);
+  if (!productConnection.productName) {
+    return undefined;
+  }
+
+  const price = stringFromEvidence(result.evidencePacket.lowPrice) ?? stringFromEvidence(result.evidencePacket.mobilePrice);
+  const reviewCount = stringFromEvidence(result.evidencePacket.reviewCountSum);
+  const purchaseCount = stringFromEvidence(result.evidencePacket.purchaseCnt);
+  const score = stringFromEvidence(result.evidencePacket.scoreInfo);
+  const deliveryFee = stringFromEvidence(result.evidencePacket.deliveryFee);
+  const mallProductId = getRuleResultShoppingProductId(result);
+
+  return {
+    productName: productConnection.productName,
+    ...(productConnection.imageUrl ? { imageUrl: productConnection.imageUrl } : {}),
+    ...(stringFromEvidence(result.evidencePacket.mallName) ? { mallName: stringFromEvidence(result.evidencePacket.mallName) } : {}),
+    ...(price ? { priceLabel: formatWonText(price) } : {}),
+    ...(reviewCount ? { reviewLabel: `리뷰 ${formatCountText(reviewCount)}` } : {}),
+    ...(purchaseCount ? { purchaseLabel: `구매 ${formatCountText(purchaseCount)}` } : {}),
+    ...(score ? { scoreLabel: `평점 ${score}` } : {}),
+    ...(deliveryFee ? { deliveryLabel: Number(deliveryFee) > 0 ? `배송비 ${formatWonText(deliveryFee)}` : "무료배송" } : {}),
+    ...(stringFromEvidence(result.evidencePacket.categoryPath) ? { categoryLabel: stringFromEvidence(result.evidencePacket.categoryPath) } : {}),
+    ...(productConnection.landingLabel ? { landingLabel: productConnection.landingLabel } : {}),
+    ...(mallProductId ? { mallProductId } : {}),
+    ...(getRuleResultRawTargetId(result) ? { adId: getRuleResultRawTargetId(result) } : {}),
+    basisLabel: "네이버 광고 API 원문 기반 재구성",
+  };
+}
+
 export function getRuleResultExtensionLabel(result: SearchAdRuleResult) {
   const label =
     stringFromEvidence(result.evidencePacket.extensionDisplayLabel) ??
@@ -366,6 +416,24 @@ function stringFromEvidence(value: unknown) {
 
 function nonTechnicalString(value: string | undefined) {
   return isTechnicalTargetIdentifier(value) ? undefined : value;
+}
+
+function formatWonText(value: string) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return value;
+  }
+
+  return `${numeric.toLocaleString("ko-KR")}원`;
+}
+
+function formatCountText(value: string) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return value;
+  }
+
+  return numeric.toLocaleString("ko-KR");
 }
 
 function sanitizeExtensionLabel(label: string | undefined, result: SearchAdRuleResult) {

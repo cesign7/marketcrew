@@ -3,6 +3,16 @@ export type SearchAdProductEvidence = {
   productImageUrl?: string;
   mallName?: string;
   mallProductId?: string;
+  lowPrice?: string;
+  mobilePrice?: string;
+  priceUnit?: string;
+  reviewCountSum?: string;
+  purchaseCnt?: string;
+  deliveryFee?: string;
+  scoreInfo?: string;
+  categoryPath?: string;
+  mallProductUrl?: string;
+  mallProductMobileUrl?: string;
 };
 
 export function extractSearchAdProductEvidence(rawPayload: Record<string, unknown> | null | undefined): SearchAdProductEvidence {
@@ -23,6 +33,16 @@ export function extractSearchAdProductEvidence(rawPayload: Record<string, unknow
       readObjectString(ad, "thumbnailUrl"),
     mallName: readObjectString(referenceData, "mallName"),
     mallProductId: readObjectString(referenceData, "mallProductId"),
+    lowPrice: readObjectString(referenceData, "lowPrice"),
+    mobilePrice: readObjectString(referenceData, "mobilePrice"),
+    priceUnit: readObjectString(referenceData, "priceUnit"),
+    reviewCountSum: readObjectString(referenceData, "reviewCountSum"),
+    purchaseCnt: readObjectString(referenceData, "purchaseCnt"),
+    deliveryFee: readObjectString(referenceData, "dvlryFeeCont"),
+    scoreInfo: readObjectString(referenceData, "scoreInfo"),
+    categoryPath: readObjectString(referenceData, "fullMallCatNm"),
+    mallProductUrl: readObjectString(referenceData, "mallProductUrl"),
+    mallProductMobileUrl: readObjectString(referenceData, "mallProdMblUrl"),
   };
 }
 

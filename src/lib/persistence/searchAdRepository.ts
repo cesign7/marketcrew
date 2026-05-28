@@ -230,6 +230,16 @@ type AdCreativeLookupValue = {
   productImageUrl?: string;
   mallName?: string;
   mallProductId?: string;
+  lowPrice?: string;
+  mobilePrice?: string;
+  priceUnit?: string;
+  reviewCountSum?: string;
+  purchaseCnt?: string;
+  deliveryFee?: string;
+  scoreInfo?: string;
+  categoryPath?: string;
+  mallProductUrl?: string;
+  mallProductMobileUrl?: string;
   status?: string;
   statusReason?: string;
 };
@@ -1321,6 +1331,17 @@ export async function backfillSearchAdRuleResultCreativeEvidence() {
           'productImageUrl', COALESCE(raw_payload #>> '{referenceData,imageUrl}', raw_payload #>> '{referenceData,thumbnailUrl}', raw_payload #>> '{referenceData,productImageUrl}', raw_payload #>> '{ad,imageUrl}', raw_payload #>> '{ad,thumbnailUrl}'),
           'mallName', raw_payload #>> '{referenceData,mallName}',
           'mallProductId', raw_payload #>> '{referenceData,mallProductId}',
+          'lowPrice', raw_payload #>> '{referenceData,lowPrice}',
+          'mobilePrice', raw_payload #>> '{referenceData,mobilePrice}',
+          'priceUnit', raw_payload #>> '{referenceData,priceUnit}',
+          'reviewCountSum', raw_payload #>> '{referenceData,reviewCountSum}',
+          'purchaseCnt', raw_payload #>> '{referenceData,purchaseCnt}',
+          'deliveryFee', raw_payload #>> '{referenceData,dvlryFeeCont}',
+          'scoreInfo', raw_payload #>> '{referenceData,scoreInfo}',
+          'categoryPath', raw_payload #>> '{referenceData,fullMallCatNm}',
+          'mallProductUrl', raw_payload #>> '{referenceData,mallProductUrl}',
+          'mallProductMobileUrl', raw_payload #>> '{referenceData,mallProdMblUrl}',
+          'adType', raw_payload ->> 'type',
           'adStatus', status,
           'adStatusReason', status_reason
         )) AS packet
@@ -2756,7 +2777,7 @@ async function listSearchAdRuleResultsFromDb(
     values,
   );
 
-  return enrichRuleResultsWithLatestMediaContext(result.rows.map(mapRuleResultRow));
+  return enrichRuleResultsWithLatestDisplayContext(result.rows.map(mapRuleResultRow));
 }
 
 async function getSearchAdRuleResultById(id: string): Promise<SearchAdRuleResult | undefined> {
@@ -2773,7 +2794,7 @@ async function getSearchAdRuleResultById(id: string): Promise<SearchAdRuleResult
     return undefined;
   }
 
-  const [enriched] = await enrichRuleResultsWithLatestMediaContext([mapRuleResultRow(result.rows[0])]);
+  const [enriched] = await enrichRuleResultsWithLatestDisplayContext([mapRuleResultRow(result.rows[0])]);
   return enriched;
 }
 
@@ -3508,7 +3529,14 @@ async function listNormalizedDataCoverage(): Promise<Map<string, DataCoverageRec
   );
 }
 
-async function listLatestAdCreativeLookup(): Promise<Map<string, AdCreativeLookupValue>> {
+async function listLatestAdCreativeLookup(adIds?: string[]): Promise<Map<string, AdCreativeLookupValue>> {
+  const scopedAdIds = adIds ? Array.from(new Set(adIds.filter(Boolean))) : undefined;
+  const values: unknown[] = [];
+  const where = scopedAdIds && scopedAdIds.length > 0 ? `WHERE provider_ad_id = ANY($1)` : "";
+  if (scopedAdIds && scopedAdIds.length > 0) {
+    values.push(scopedAdIds);
+  }
+
   const result = await query<{
     provider_ad_id: string;
     provider_adgroup_id: string | null;
@@ -3522,8 +3550,9 @@ async function listLatestAdCreativeLookup(): Promise<Map<string, AdCreativeLooku
     SELECT DISTINCT ON (provider_ad_id)
       provider_ad_id, provider_adgroup_id, name, pc_final_url, mobile_final_url, raw_payload, status, status_reason
     FROM search_ad_ad_snapshots
+    ${where}
     ORDER BY provider_ad_id, collected_at DESC
-  `);
+  `, values);
 
   return new Map(
     result.rows.map((row) => {
@@ -3539,6 +3568,16 @@ async function listLatestAdCreativeLookup(): Promise<Map<string, AdCreativeLooku
           productImageUrl: product.productImageUrl,
           mallName: product.mallName,
           mallProductId: product.mallProductId,
+          lowPrice: product.lowPrice,
+          mobilePrice: product.mobilePrice,
+          priceUnit: product.priceUnit,
+          reviewCountSum: product.reviewCountSum,
+          purchaseCnt: product.purchaseCnt,
+          deliveryFee: product.deliveryFee,
+          scoreInfo: product.scoreInfo,
+          categoryPath: product.categoryPath,
+          mallProductUrl: product.mallProductUrl,
+          mallProductMobileUrl: product.mallProductMobileUrl,
           status: row.status ?? undefined,
           statusReason: row.status_reason ?? undefined,
         },
@@ -3661,33 +3700,63 @@ async function listLatestAdExtensionLookup(): Promise<Map<string, AdExtensionLoo
   );
 }
 
-async function enrichRuleResultsWithLatestMediaContext(results: SearchAdRuleResult[]) {
+async function enrichRuleResultsWithLatestDisplayContext(results: SearchAdRuleResult[]) {
   if (results.length === 0) {
     return results;
   }
 
   const mediaIds = results.map((result) => evidenceString(result.evidencePacket.mediaId)).filter((value): value is string => Boolean(value));
-  if (mediaIds.length === 0) {
-    return results;
-  }
+  const adIds = results
+    .map((result) => evidenceString(result.evidencePacket.adId) ?? (result.targetType === "ad" ? result.targetId : undefined))
+    .filter((value): value is string => Boolean(value));
+  const [mediaById, adCreativeById] = await Promise.all([
+    mediaIds.length > 0 ? listLatestSearchAdMediaLookup(mediaIds) : Promise.resolve(new Map<string, MediaLookupValue>()),
+    adIds.length > 0 ? listLatestAdCreativeLookup(adIds) : Promise.resolve(new Map<string, AdCreativeLookupValue>()),
+  ]);
 
-  const mediaById = await listLatestSearchAdMediaLookup(mediaIds);
   return results.map((result) => {
     const mediaId = evidenceString(result.evidencePacket.mediaId);
     const media = mediaId ? mediaById.get(mediaId) : undefined;
-    if (!mediaId || !media) {
-      return result;
-    }
+    const adId = evidenceString(result.evidencePacket.adId) ?? (result.targetType === "ad" ? result.targetId : undefined);
+    const adCreative = adId ? adCreativeById.get(adId) : undefined;
 
     return {
       ...result,
       evidencePacket: {
         ...result.evidencePacket,
-        mediaName: result.evidencePacket.mediaName ?? media.mediaName,
-        mediaUrl: result.evidencePacket.mediaUrl ?? media.mediaUrl ?? null,
-        mediaType: result.evidencePacket.mediaType ?? media.mediaType ?? null,
-        mediaDisplayLabel: result.evidencePacket.mediaDisplayLabel ?? buildMediaDisplayLabel(mediaId, media),
-        mediaNetworkLabel: result.evidencePacket.mediaNetworkLabel ?? buildMediaNetworkLabel(media),
+        ...(adCreative
+          ? {
+              adDisplayLabel: result.evidencePacket.adDisplayLabel ?? adCreative.productName ?? adCreative.name ?? null,
+              adHeadline: result.evidencePacket.adHeadline ?? adCreative.name ?? null,
+              pcFinalUrl: result.evidencePacket.pcFinalUrl ?? adCreative.pcFinalUrl ?? null,
+              mobileFinalUrl: result.evidencePacket.mobileFinalUrl ?? adCreative.mobileFinalUrl ?? null,
+              productName: result.evidencePacket.productName ?? adCreative.productName ?? null,
+              productImageUrl: result.evidencePacket.productImageUrl ?? adCreative.productImageUrl ?? null,
+              mallName: result.evidencePacket.mallName ?? adCreative.mallName ?? null,
+              mallProductId: result.evidencePacket.mallProductId ?? adCreative.mallProductId ?? null,
+              lowPrice: result.evidencePacket.lowPrice ?? adCreative.lowPrice ?? null,
+              mobilePrice: result.evidencePacket.mobilePrice ?? adCreative.mobilePrice ?? null,
+              priceUnit: result.evidencePacket.priceUnit ?? adCreative.priceUnit ?? null,
+              reviewCountSum: result.evidencePacket.reviewCountSum ?? adCreative.reviewCountSum ?? null,
+              purchaseCnt: result.evidencePacket.purchaseCnt ?? adCreative.purchaseCnt ?? null,
+              deliveryFee: result.evidencePacket.deliveryFee ?? adCreative.deliveryFee ?? null,
+              scoreInfo: result.evidencePacket.scoreInfo ?? adCreative.scoreInfo ?? null,
+              categoryPath: result.evidencePacket.categoryPath ?? adCreative.categoryPath ?? null,
+              mallProductUrl: result.evidencePacket.mallProductUrl ?? adCreative.mallProductUrl ?? null,
+              mallProductMobileUrl: result.evidencePacket.mallProductMobileUrl ?? adCreative.mallProductMobileUrl ?? null,
+              adStatus: result.evidencePacket.adStatus ?? adCreative.status ?? null,
+              adStatusReason: result.evidencePacket.adStatusReason ?? adCreative.statusReason ?? null,
+            }
+          : {}),
+        ...(mediaId && media
+          ? {
+              mediaName: result.evidencePacket.mediaName ?? media.mediaName,
+              mediaUrl: result.evidencePacket.mediaUrl ?? media.mediaUrl ?? null,
+              mediaType: result.evidencePacket.mediaType ?? media.mediaType ?? null,
+              mediaDisplayLabel: result.evidencePacket.mediaDisplayLabel ?? buildMediaDisplayLabel(mediaId, media),
+              mediaNetworkLabel: result.evidencePacket.mediaNetworkLabel ?? buildMediaNetworkLabel(media),
+            }
+          : {}),
       },
     };
   });
@@ -3727,6 +3796,16 @@ function enrichRuleResultsWithEvidenceContext(
         productImageUrl: result.evidencePacket.productImageUrl ?? adCreative?.productImageUrl ?? extensionOwnerCreative?.productImageUrl ?? null,
         mallName: result.evidencePacket.mallName ?? adCreative?.mallName ?? extensionOwnerCreative?.mallName ?? null,
         mallProductId: result.evidencePacket.mallProductId ?? adCreative?.mallProductId ?? extensionOwnerCreative?.mallProductId ?? null,
+        lowPrice: result.evidencePacket.lowPrice ?? adCreative?.lowPrice ?? extensionOwnerCreative?.lowPrice ?? null,
+        mobilePrice: result.evidencePacket.mobilePrice ?? adCreative?.mobilePrice ?? extensionOwnerCreative?.mobilePrice ?? null,
+        priceUnit: result.evidencePacket.priceUnit ?? adCreative?.priceUnit ?? extensionOwnerCreative?.priceUnit ?? null,
+        reviewCountSum: result.evidencePacket.reviewCountSum ?? adCreative?.reviewCountSum ?? extensionOwnerCreative?.reviewCountSum ?? null,
+        purchaseCnt: result.evidencePacket.purchaseCnt ?? adCreative?.purchaseCnt ?? extensionOwnerCreative?.purchaseCnt ?? null,
+        deliveryFee: result.evidencePacket.deliveryFee ?? adCreative?.deliveryFee ?? extensionOwnerCreative?.deliveryFee ?? null,
+        scoreInfo: result.evidencePacket.scoreInfo ?? adCreative?.scoreInfo ?? extensionOwnerCreative?.scoreInfo ?? null,
+        categoryPath: result.evidencePacket.categoryPath ?? adCreative?.categoryPath ?? extensionOwnerCreative?.categoryPath ?? null,
+        mallProductUrl: result.evidencePacket.mallProductUrl ?? adCreative?.mallProductUrl ?? extensionOwnerCreative?.mallProductUrl ?? null,
+        mallProductMobileUrl: result.evidencePacket.mallProductMobileUrl ?? adCreative?.mallProductMobileUrl ?? extensionOwnerCreative?.mallProductMobileUrl ?? null,
         adStatus: result.evidencePacket.adStatus ?? adCreative?.status ?? null,
         adStatusReason: result.evidencePacket.adStatusReason ?? adCreative?.statusReason ?? null,
         extensionOwnerId: result.evidencePacket.extensionOwnerId ?? adExtension?.ownerId ?? null,
