@@ -870,6 +870,15 @@ table {
   font-size: 12px;
 }
 
+.ad-material-preview {
+  background: #fff;
+  border-color: #b9dafc;
+}
+
+.ad-material-preview span {
+  color: #175cd3;
+}
+
 .product-connection.is-detail {
   margin: 0 0 16px;
 }

@@ -36,7 +36,8 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
   const extensionLabel = getRuleResultExtensionLabel(result);
   const landingLabel = getRuleResultLandingLabel(result);
   const productConnection = getRuleResultProductConnection(result);
-  const showProductConnection = result.adProductType === "shopping_search" && productConnection.hasConnection;
+  const showAdMaterial = result.targetType === "ad" && Boolean(creativeLabel || productConnection.hasConnection || landingLabel);
+  const showProductConnection = result.adProductType === "shopping_search" && productConnection.hasConnection && !showAdMaterial;
   const rawTargetId = getRuleResultRawTargetId(result);
   const metricBadges = getRuleResultMetricBadges(result);
   const actionCandidate = getRuleResultActionCandidate(result);
@@ -106,6 +107,26 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
         </div>
       ) : null}
 
+      {showAdMaterial ? (
+        <div className="product-connection ad-material-preview is-detail">
+          {productConnection.imageUrl ? (
+            <img alt={`${creativeLabel ?? productConnection.productName ?? "광고 소재"} 이미지`} loading="lazy" src={productConnection.imageUrl} />
+          ) : (
+            <span className="product-image-fallback">소재</span>
+          )}
+          <div>
+            <span>광고 소재</span>
+            <strong title={creativeLabel ?? productConnection.productName ?? "소재명 확인 필요"}>
+              {truncateDisplayText(creativeLabel ?? productConnection.productName ?? "소재명 확인 필요", 56)}
+            </strong>
+            {productConnection.productName && productConnection.productName !== creativeLabel ? (
+              <small title={productConnection.productName}>{truncateDisplayText(`연결 상품 ${productConnection.productName}`, 72)}</small>
+            ) : null}
+            {landingLabel ? <small title={landingLabel}>{truncateDisplayText(landingLabel, 84)}</small> : null}
+          </div>
+        </div>
+      ) : null}
+
       <dl className="detail-grid">
         <div>
           <dt>대상</dt>
@@ -150,12 +171,12 @@ export function RuleResultDetailSummary({ view }: { view: SearchAdRuleResultDeta
         {adLabel ? (
           <div>
             <dt>광고 소재</dt>
-            <dd title={adLabel}>{adLabel}</dd>
+            <dd title={creativeLabel ?? adLabel}>{truncateDisplayText(creativeLabel ?? adLabel, 40)}</dd>
           </div>
         ) : null}
-        {creativeLabel ? (
+        {creativeLabel && !adLabel ? (
           <div>
-            <dt>{adLabel ? "소재명" : "소재"}</dt>
+            <dt>소재</dt>
             <dd title={creativeLabel}>{truncateDisplayText(creativeLabel, 34)}</dd>
           </div>
         ) : null}

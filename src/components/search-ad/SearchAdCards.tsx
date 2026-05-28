@@ -203,7 +203,8 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
         const extensionLabel = getRuleResultExtensionLabel(result);
         const landingLabel = getRuleResultLandingLabel(result);
         const productConnection = getRuleResultProductConnection(result);
-        const showProductConnection = result.adProductType === "shopping_search" && productConnection.hasConnection;
+        const showAdMaterial = result.targetType === "ad" && Boolean(creativeLabel || productConnection.hasConnection || landingLabel);
+        const showProductConnection = result.adProductType === "shopping_search" && productConnection.hasConnection && !showAdMaterial;
         const coverageLabel = getCoverageDecisionLabel(result);
         const metricBadges = getRuleResultMetricBadges(result);
         const actionCandidate = getRuleResultActionCandidate(result);
@@ -228,6 +229,25 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
             </div>
             <p className="rule-card-diagnosis">{getRuleResultDiagnosis(result)}</p>
             {group.breakdowns.length > 1 ? <RuleResultBreakdownPanel group={group} /> : null}
+            {showAdMaterial ? (
+              <div className="product-connection ad-material-preview is-compact">
+                {productConnection.imageUrl ? (
+                  <img alt={`${creativeLabel ?? productConnection.productName ?? "광고 소재"} 이미지`} loading="lazy" src={productConnection.imageUrl} />
+                ) : (
+                  <span className="product-image-fallback">소재</span>
+                )}
+                <div>
+                  <span>광고 소재</span>
+                  <strong title={creativeLabel ?? productConnection.productName ?? "소재명 확인 필요"}>
+                    {truncateDisplayText(creativeLabel ?? productConnection.productName ?? "소재명 확인 필요", 34)}
+                  </strong>
+                  {productConnection.productName && productConnection.productName !== creativeLabel ? (
+                    <small title={productConnection.productName}>{truncateDisplayText(`연결 상품 ${productConnection.productName}`, 44)}</small>
+                  ) : null}
+                  {landingLabel ? <small title={landingLabel}>{truncateDisplayText(landingLabel, 52)}</small> : null}
+                </div>
+              </div>
+            ) : null}
             {showProductConnection ? (
               <div className="product-connection is-compact">
                 {productConnection.imageUrl ? (
@@ -289,12 +309,12 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
               {adLabel ? (
                 <div>
                   <dt>광고 소재</dt>
-                  <dd title={adLabel}>{adLabel}</dd>
+                  <dd title={creativeLabel ?? adLabel}>{truncateDisplayText(creativeLabel ?? adLabel, 30)}</dd>
                 </div>
               ) : null}
-              {creativeLabel ? (
+              {creativeLabel && !adLabel ? (
                 <div>
-                  <dt>{adLabel ? "소재명" : "소재"}</dt>
+                  <dt>소재</dt>
                   <dd title={creativeLabel}>{truncateDisplayText(creativeLabel, 30)}</dd>
                 </div>
               ) : null}
