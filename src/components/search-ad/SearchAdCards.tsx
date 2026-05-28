@@ -275,70 +275,73 @@ export function RuleResultList({ results }: { results: SearchAdRuleResult[] }) {
               ))}
             </div>
             <p className="rule-card-action">조치 후보: {actionCandidate.description}</p>
-            <dl>
-              <div>
-                <dt>연결 위치</dt>
-                <dd title={getRuleResultConnectedTarget(result)}>{truncateDisplayText(getRuleResultConnectedTarget(result), 30)}</dd>
-              </div>
-              <div>
-                <dt>근거 보고서</dt>
-                <dd>{getRuleResultSourceReportLabel(result)}</dd>
-              </div>
-              <div>
-                <dt>판단 기준</dt>
-                <dd>{getRuleResultPeriodLabel(result)}</dd>
-              </div>
-              {coverageLabel ? (
+            <details className="rule-card-more">
+              <summary>판단 정보 보기</summary>
+              <dl>
                 <div>
-                  <dt>판단 상태</dt>
-                  <dd>{coverageLabel}</dd>
+                  <dt>연결 위치</dt>
+                  <dd title={getRuleResultConnectedTarget(result)}>{truncateDisplayText(getRuleResultConnectedTarget(result), 30)}</dd>
                 </div>
-              ) : null}
-              {targetDetailLabel ? (
                 <div>
-                  <dt>세부 대상</dt>
-                  <dd>{targetDetailLabel}</dd>
+                  <dt>근거 보고서</dt>
+                  <dd>{getRuleResultSourceReportLabel(result)}</dd>
                 </div>
-              ) : null}
-              {contextBadges.map((badge) => (
-                <div key={`${result.id}-${badge.label}`}>
-                  <dt>{badge.label}</dt>
-                  <dd>{badge.value}</dd>
-                </div>
-              ))}
-              {adLabel ? (
                 <div>
-                  <dt>광고 소재</dt>
-                  <dd title={creativeLabel ?? adLabel}>{truncateDisplayText(creativeLabel ?? adLabel, 30)}</dd>
+                  <dt>판단 기준</dt>
+                  <dd>{getRuleResultPeriodLabel(result)}</dd>
                 </div>
+                {coverageLabel ? (
+                  <div>
+                    <dt>판단 상태</dt>
+                    <dd>{coverageLabel}</dd>
+                  </div>
+                ) : null}
+                {targetDetailLabel ? (
+                  <div>
+                    <dt>세부 대상</dt>
+                    <dd>{targetDetailLabel}</dd>
+                  </div>
+                ) : null}
+                {contextBadges.map((badge) => (
+                  <div key={`${result.id}-${badge.label}`}>
+                    <dt>{badge.label}</dt>
+                    <dd>{badge.value}</dd>
+                  </div>
+                ))}
+                {adLabel ? (
+                  <div>
+                    <dt>광고 소재</dt>
+                    <dd title={creativeLabel ?? adLabel}>{truncateDisplayText(creativeLabel ?? adLabel, 30)}</dd>
+                  </div>
+                ) : null}
+                {creativeLabel && !adLabel ? (
+                  <div>
+                    <dt>소재</dt>
+                    <dd title={creativeLabel}>{truncateDisplayText(creativeLabel, 30)}</dd>
+                  </div>
+                ) : null}
+                {extensionLabel ? (
+                  <div>
+                    <dt>확장소재</dt>
+                    <dd title={extensionLabel}>{truncateDisplayText(extensionLabel, 30)}</dd>
+                  </div>
+                ) : null}
+                {landingLabel ? (
+                  <div>
+                    <dt>랜딩</dt>
+                    <dd className="text-clip" title={landingLabel}>
+                      {landingLabel}
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+              {rawTargetId ? (
+                <details className="technical-details">
+                  <summary>원문 ID 보기</summary>
+                  <code>{rawTargetId}</code>
+                </details>
               ) : null}
-              {creativeLabel && !adLabel ? (
-                <div>
-                  <dt>소재</dt>
-                  <dd title={creativeLabel}>{truncateDisplayText(creativeLabel, 30)}</dd>
-                </div>
-              ) : null}
-              {extensionLabel ? (
-                <div>
-                  <dt>확장소재</dt>
-                  <dd title={extensionLabel}>{truncateDisplayText(extensionLabel, 30)}</dd>
-                </div>
-              ) : null}
-              {landingLabel ? (
-                <div>
-                  <dt>랜딩</dt>
-                  <dd className="text-clip" title={landingLabel}>
-                    {landingLabel}
-                  </dd>
-                </div>
-              ) : null}
-            </dl>
-            {rawTargetId ? (
-              <details className="technical-details">
-                <summary>원문 ID 보기</summary>
-                <code>{rawTargetId}</code>
-              </details>
-            ) : null}
+            </details>
           </article>
         );
       })}

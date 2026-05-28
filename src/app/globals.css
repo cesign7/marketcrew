@@ -807,6 +807,29 @@ table {
   white-space: nowrap;
 }
 
+.rule-card-more {
+  border-top: 1px solid var(--line);
+  color: var(--text);
+  min-width: 0;
+  padding-top: 8px;
+}
+
+.rule-card-more > summary {
+  color: var(--brand-strong);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.rule-card-more[open] > summary {
+  margin-bottom: 10px;
+}
+
+.rule-card-more .technical-details {
+  margin-top: 8px;
+}
+
 .product-connection {
   align-items: center;
   background: #f8fafc;
