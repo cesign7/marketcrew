@@ -902,6 +902,74 @@ table {
   color: #175cd3;
 }
 
+.product-connection .ad-material-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.product-connection span.extension-type-badge {
+  border: 1px solid #d0d5dd;
+  border-radius: 999px;
+  color: #344054;
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1.2;
+  max-width: 100%;
+  padding: 3px 8px;
+  width: fit-content;
+}
+
+.product-connection span.extension-type-shopping-extra {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+
+.product-connection span.extension-type-promotion {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+
+.product-connection span.extension-type-talk {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #047857;
+}
+
+.product-connection span.extension-type-image {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.product-connection span.extension-type-link {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+.product-connection span.extension-type-text {
+  background: #f0f9ff;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+.product-connection span.material-kind-label,
+.product-connection span.material-type-label {
+  color: #667085;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.product-connection .extension-content-title {
+  color: #101828;
+  font-weight: 950;
+}
+
 .product-connection.is-detail {
   margin: 0 0 16px;
 }

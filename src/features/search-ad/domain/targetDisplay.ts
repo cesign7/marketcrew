@@ -12,6 +12,14 @@ export type SearchAdRuleTargetDescriptor = {
   targetDetailLabel?: string;
 };
 
+export type SearchAdExtensionMaterialTone = "default" | "image" | "link" | "promotion" | "shopping-extra" | "talk" | "text";
+
+export type SearchAdExtensionMaterialDisplay = {
+  typeLabel: string;
+  contentLabel: string;
+  tone: SearchAdExtensionMaterialTone;
+};
+
 const RULE_TARGET_TYPE_LABELS: Record<SearchAdRuleResult["targetType"], string> = {
   ad: "광고 소재",
   ad_extension: "확장소재",
@@ -203,6 +211,28 @@ export function getRuleResultExtensionContentStatusLabel(result: SearchAdRuleRes
   const contentLabel = readableExtensionContentFromLabel(label);
 
   return contentLabel ? undefined : "세부 항목은 네이버 API 원문에 제공되지 않음";
+}
+
+export function getRuleResultExtensionMaterialDisplay(result: SearchAdRuleResult): SearchAdExtensionMaterialDisplay | undefined {
+  if (result.targetType !== "ad_extension") {
+    return undefined;
+  }
+
+  const extensionLabel = getRuleResultExtensionLabel(result);
+  const rawTypeLabel =
+    stringFromEvidence(result.evidencePacket.extensionType) ??
+    firstExtensionLabelPart(stringFromEvidence(result.evidencePacket.extensionTypeLabel)) ??
+    firstExtensionLabelPart(stringFromEvidence(result.evidencePacket.extensionDisplayLabel)) ??
+    firstExtensionLabelPart(stringFromEvidence(result.evidencePacket.extensionLabel)) ??
+    firstExtensionLabelPart(extensionLabel);
+  const typeLabel = getSearchAdAdExtensionTypeLabel(rawTypeLabel);
+  const contentLabel = getExtensionMaterialContentLabel(extensionLabel, typeLabel) ?? getFallbackExtensionMaterialContentLabel(typeLabel);
+
+  return {
+    contentLabel,
+    tone: getExtensionMaterialTone(rawTypeLabel, typeLabel),
+    typeLabel,
+  };
 }
 
 export function getRuleResultLandingLabel(result: SearchAdRuleResult) {
@@ -448,6 +478,78 @@ function readableExtensionContentFromLabel(label: string | undefined) {
     .filter(Boolean);
 
   return parts?.slice(1).find((part) => isReadableExtensionContent(part));
+}
+
+function firstExtensionLabelPart(value: string | undefined) {
+  return value
+    ?.split("·")
+    .map((part) => part.trim())
+    .find(Boolean);
+}
+
+function getExtensionMaterialContentLabel(label: string | undefined, typeLabel: string) {
+  const parts = label
+    ?.split("·")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (!parts?.length) {
+    return undefined;
+  }
+
+  const normalizedType = getSearchAdAdExtensionTypeLabel(parts[0]);
+  if (normalizedType === typeLabel && parts.length > 1) {
+    return parts.slice(1).join(" · ");
+  }
+
+  if (parts[0] !== typeLabel) {
+    return parts.join(" · ");
+  }
+
+  return undefined;
+}
+
+function getFallbackExtensionMaterialContentLabel(typeLabel: string) {
+  if (typeLabel === "네이버 톡톡") {
+    return "톡톡 연결";
+  }
+  if (typeLabel === "파워링크 이미지") {
+    return "이미지 소재";
+  }
+  if (typeLabel === "이미지 추가 링크") {
+    return "이미지 링크";
+  }
+  if (typeLabel === "프로모션") {
+    return "프로모션 문구";
+  }
+  if (typeLabel === "쇼핑 상품 부가 정보") {
+    return "세부 항목 미제공";
+  }
+
+  return typeLabel === "확장소재" ? "확장소재 확인 필요" : typeLabel;
+}
+
+function getExtensionMaterialTone(rawTypeLabel: string | undefined, typeLabel: string): SearchAdExtensionMaterialTone {
+  const normalized = rawTypeLabel?.toUpperCase();
+  if (normalized === "SHOPPING_EXTRA" || typeLabel === "쇼핑 상품 부가 정보") {
+    return "shopping-extra";
+  }
+  if (normalized === "PROMOTION" || typeLabel === "프로모션") {
+    return "promotion";
+  }
+  if (normalized === "TALK" || typeLabel === "네이버 톡톡") {
+    return "talk";
+  }
+  if (normalized?.includes("IMAGE") || typeLabel.includes("이미지")) {
+    return "image";
+  }
+  if (normalized?.includes("LINK") || ["가격 링크", "쇼핑 웹사이트", "웹사이트 정보", "추가 링크"].includes(typeLabel)) {
+    return "link";
+  }
+  if (["설명 확장", "제목 확장", "추가 설명"].includes(typeLabel)) {
+    return "text";
+  }
+
+  return "default";
 }
 
 function inferTechnicalTargetType(value: string | undefined): SearchAdRuleResult["targetType"] | undefined {

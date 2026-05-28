@@ -7,6 +7,7 @@ import {
   getRuleResultDetailHref,
   getRuleResultExtensionContentStatusLabel,
   getRuleResultExtensionLabel,
+  getRuleResultExtensionMaterialDisplay,
   getRuleResultPeriodLabel,
   getRuleResultProductConnection,
   getRuleResultRawTargetId,
@@ -130,6 +131,11 @@ describe("rule result target display", () => {
 
     expect(getRuleResultExtensionLabel(result)).toBe("쇼핑 상품 부가 정보 · 세부 항목 미제공");
     expect(getRuleResultExtensionContentStatusLabel(result)).toBe("세부 항목은 네이버 API 원문에 제공되지 않음");
+    expect(getRuleResultExtensionMaterialDisplay(result)).toEqual({
+      contentLabel: "세부 항목 미제공",
+      tone: "shopping-extra",
+      typeLabel: "쇼핑 상품 부가 정보",
+    });
     expect(getRuleResultDisplayTargetLabel(result)).toBe("쇼핑 상품 부가 정보 · 세부 항목 미제공 · 생일축하스티커 생일01 답례품 감사 소량 주문");
     expect(getRuleResultDisplayTargetTypeLabel(result)).toBe("확장소재");
     expect(getRuleResultRawTargetId(result)).toBe("ext-a001-02-000000124735420");
@@ -188,6 +194,46 @@ describe("rule result target display", () => {
     expect(getRuleResultExtensionLabel(result)).toBe("파워링크 이미지 · 이미지 소재");
     expect(getRuleResultDisplayTargetLabel(result)).toBe("파워링크 이미지 · 이미지 소재 · 생일축하스티커 생일01 답례품 감사 소량 주문");
     expect(getRuleResultProductConnection(result).imageUrl).toBe("https://searchad-phinf.pstatic.net/MjAyMzA0MTRfMTc3/MDAxNjgxNDY0MjA0MTQ0.Zr8nch0RFw.jpg");
+  });
+
+  it("확장소재 종류와 실제 표시 내용을 분리해서 카드용 표시값을 만든다", () => {
+    const promotion = ruleResult({
+      targetType: "ad_extension",
+      evidencePacket: {
+        extensionDisplayLabel: "프로모션 · 50%할인 이벤트",
+        extensionTypeLabel: "PROMOTION",
+      },
+    });
+    const talk = ruleResult({
+      targetType: "ad_extension",
+      evidencePacket: {
+        extensionDisplayLabel: "네이버 톡톡",
+        extensionTypeLabel: "TALK",
+      },
+    });
+    const imageSubLinks = ruleResult({
+      targetType: "ad_extension",
+      evidencePacket: {
+        extensionDisplayLabel: "IMAGE_SUB_LINKS · 디자인초대장 · NEW",
+        extensionTypeLabel: "IMAGE_SUB_LINKS",
+      },
+    });
+
+    expect(getRuleResultExtensionMaterialDisplay(promotion)).toEqual({
+      contentLabel: "50%할인 이벤트",
+      tone: "promotion",
+      typeLabel: "프로모션",
+    });
+    expect(getRuleResultExtensionMaterialDisplay(talk)).toEqual({
+      contentLabel: "톡톡 연결",
+      tone: "talk",
+      typeLabel: "네이버 톡톡",
+    });
+    expect(getRuleResultExtensionMaterialDisplay(imageSubLinks)).toEqual({
+      contentLabel: "디자인초대장",
+      tone: "image",
+      typeLabel: "이미지 추가 링크",
+    });
   });
 
   it("실제 검색어는 그대로 보여준다", () => {
