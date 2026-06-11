@@ -5,6 +5,9 @@ import {
   PRODUCT_IMAGE_STUDIO_TABLE_NAMES,
   createInMemoryProductImageStudioRepository,
 } from "@/lib/persistence/productImageStudioRepository";
+import { createPostgresProductImageStudioRepository } from "@/lib/persistence/productImageStudioPostgresRepository";
+import type { ProductImageStudioSqlQuery } from "@/lib/persistence/productImageStudioPostgresSchema";
+import { selectProductImageStudioRepositoryStorageMode } from "@/features/product-image-studio/server/projectApi";
 import { manualProductionSettings } from "./manualProductionSettings";
 
 describe("product image studio repository contract", () => {
@@ -23,6 +26,54 @@ describe("product image studio repository contract", () => {
     for (const tableName of expectedTableNames) {
       expect(workflowSql).toContain(`CREATE TABLE IF NOT EXISTS ${tableName}`);
     }
+    expect(workflowSql).toContain("production_settings JSONB NOT NULL");
+  });
+
+  it("selects Postgres metadata storage only when production-like database configuration exists", () => {
+    expect(selectProductImageStudioRepositoryStorageMode({})).toBe("memory");
+    expect(selectProductImageStudioRepositoryStorageMode({ DATABASE_URL: "postgres://test" })).toBe("memory");
+    expect(
+      selectProductImageStudioRepositoryStorageMode({
+        DATABASE_URL: "postgres://test",
+        VERCEL: "1",
+      }),
+    ).toBe("postgres");
+    expect(
+      selectProductImageStudioRepositoryStorageMode({
+        DATABASE_URL: "postgres://test",
+        PRODUCT_IMAGE_STUDIO_METADATA_STORE: "postgres",
+      }),
+    ).toBe("postgres");
+  });
+
+  it("stores a project lifecycle through the Postgres repository contract", async () => {
+    const queryFake = createProductImageStudioQueryFake();
+    const generatedIds = [
+      "project-1",
+      "asset-1",
+      "generation-1",
+      "result-1",
+      "bundle-1",
+      "usage-1",
+    ];
+    const repository = createPostgresProductImageStudioRepository({
+      createId: () => generatedIds.shift() ?? "fallback-id",
+      query: queryFake.query,
+    });
+
+    const project = await repository.createProject({
+      cardFormat: "folded_card",
+      name: "봄 초대장 세트",
+      productType: "card_envelope_seal_set",
+      productionSettings: manualProductionSettings("folded_card"),
+      qualityMode: "draft",
+      ratios: ["1:1", "4:5"],
+      requestedCardPoses: ["folded_closed", "folded_open_spread"],
+      requestedOutputs: ["set_combined", "card_single"],
+    });
+
+    expect(await repository.getProject(project.id)).toEqual(project);
+    expect(JSON.stringify(queryFake.values)).toContain("specSource");
   });
 
   it("stores a folded-card project lifecycle without Search Ad repository coupling", async () => {
@@ -110,3 +161,57 @@ describe("product image studio repository contract", () => {
     expect(sourceText).not.toContain("SearchAd");
   });
 });
+
+function createProductImageStudioQueryFake(): {
+  readonly query: ProductImageStudioSqlQuery;
+  readonly values: readonly unknown[];
+} {
+  const projects = new Map<string, Readonly<Record<string, unknown>>>();
+  const values: unknown[] = [];
+  const query: ProductImageStudioSqlQuery = async (text, queryValues = []) => {
+    values.push(...queryValues);
+
+    if (text.includes("CREATE ") || text.includes("ALTER TABLE") || text.includes("CREATE INDEX")) {
+      return { rows: [] };
+    }
+
+    if (text.includes("INSERT INTO product_image_studio_projects")) {
+      const row = {
+        card_format: readStringValue(queryValues[3]),
+        created_at: "2026-06-11T00:00:00.000Z",
+        id: readStringValue(queryValues[0]),
+        name: readStringValue(queryValues[1]),
+        product_type: readStringValue(queryValues[2]),
+        production_settings: parseJsonValue(queryValues[4]),
+        quality_mode: readStringValue(queryValues[8]),
+        ratios: parseJsonValue(queryValues[7]),
+        requested_card_poses: parseJsonValue(queryValues[5]),
+        requested_outputs: parseJsonValue(queryValues[6]),
+        updated_at: "2026-06-11T00:00:00.000Z",
+      } satisfies Readonly<Record<string, unknown>>;
+      projects.set(row.id, row);
+      return { rows: [row] };
+    }
+
+    if (text.includes("SELECT * FROM product_image_studio_projects")) {
+      const id = queryValues[0];
+      const row = typeof id === "string" ? projects.get(id) : undefined;
+      return { rows: row ? [row] : [] };
+    }
+
+    return { rows: [] };
+  };
+
+  return { query, values };
+}
+
+function readStringValue(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  throw new Error("expected string query value");
+}
+
+function parseJsonValue(value: unknown): unknown {
+  return typeof value === "string" ? JSON.parse(value) : value;
+}

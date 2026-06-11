@@ -1,7 +1,9 @@
 import { ProductImageStudioShell } from "@/components/product-image-studio/ProductImageStudioShell";
 import { ProductImageStudioStatusPanel } from "@/components/product-image-studio/ProductImageStudioStatusPanel";
 import { ProductImageStudioWizard } from "@/components/product-image-studio/ProductImageStudioWizard";
+import { getProductImageStudioFileStorageMode } from "@/features/product-image-studio/server/assetUploadApi";
 import { getProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
+import { getProductImageStudioRepositoryStorageMode } from "@/features/product-image-studio/server/projectApi";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +15,11 @@ export default function ProductImageStudioPage() {
       title="상품 이미지 스튜디오"
     >
       <section className="page-stack">
-        <ProductImageStudioStatusPanel status={getProductImageStudioProviderStatus()} storageMode="local" />
+        <ProductImageStudioStatusPanel
+          fileStorageMode={getProductImageStudioFileStorageMode()}
+          metadataStorageMode={getProductImageStudioRepositoryStorageMode()}
+          status={getProductImageStudioProviderStatus()}
+        />
         <ProductImageStudioWizard />
       </section>
     </ProductImageStudioShell>

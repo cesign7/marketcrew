@@ -264,6 +264,7 @@ CREATE TABLE IF NOT EXISTS product_image_studio_projects (
   name TEXT NOT NULL,
   product_type TEXT NOT NULL CHECK (product_type IN ('card_envelope_seal_set')),
   card_format TEXT NOT NULL CHECK (card_format IN ('folded_card', 'postcard_flat')),
+  production_settings JSONB NOT NULL DEFAULT '{}'::jsonb,
   requested_card_poses JSONB NOT NULL DEFAULT '[]'::jsonb,
   requested_outputs JSONB NOT NULL DEFAULT '[]'::jsonb,
   ratios JSONB NOT NULL DEFAULT '[]'::jsonb,

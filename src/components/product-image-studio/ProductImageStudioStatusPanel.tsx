@@ -1,12 +1,13 @@
+import type { ProductImageStudioFileStorageMode } from "@/features/product-image-studio/server/assetUploadApi";
+import type { ProductImageStudioRepositoryStorageMode } from "@/features/product-image-studio/server/projectApi";
 import type { ProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
 import styles from "./ProductImageStudioStatusPanel.module.css";
 
 type ProductImageStudioStatusPanelProps = {
+  readonly fileStorageMode: ProductImageStudioFileStorageMode;
+  readonly metadataStorageMode: ProductImageStudioRepositoryStorageMode;
   readonly status: ProductImageStudioProviderStatus;
-  readonly storageMode: ProductImageStudioStorageMode;
 };
-
-type ProductImageStudioStorageMode = "local";
 
 type StatusCard = {
   readonly label: string;
@@ -15,11 +16,16 @@ type StatusCard = {
   readonly value: string;
 };
 
-export function ProductImageStudioStatusPanel({ status, storageMode }: ProductImageStudioStatusPanelProps) {
+export function ProductImageStudioStatusPanel({
+  fileStorageMode,
+  metadataStorageMode,
+  status,
+}: ProductImageStudioStatusPanelProps) {
   const cards = [
     toGenerationCard(status),
     toProviderCard(status),
-    toStorageCard(storageMode),
+    toFileStorageCard(fileStorageMode),
+    toMetadataStorageCard(metadataStorageMode),
     {
       label: "내보내기",
       summary: "생성 결과가 준비되면 개별 이미지와 ZIP 파일을 내려받을 수 있습니다.",
@@ -84,14 +90,40 @@ function toProviderCard(status: ProductImageStudioProviderStatus): StatusCard {
   };
 }
 
-function toStorageCard(storageMode: ProductImageStudioStorageMode): StatusCard {
+function toFileStorageCard(storageMode: ProductImageStudioFileStorageMode): StatusCard {
   switch (storageMode) {
+    case "blob":
+      return {
+        label: "파일 저장소",
+        summary: "업로드와 생성 결과 이미지를 Vercel Blob에 보관합니다.",
+        tone: "ready",
+        value: "Vercel Blob 저장소",
+      };
     case "local":
       return {
         label: "파일 저장소",
-        summary: "개발 환경에서는 업로드 파일을 로컬 저장소에 보관합니다.",
+        summary: "개발 환경에서는 업로드와 생성 결과 이미지를 로컬 저장소에 보관합니다.",
         tone: "neutral",
         value: "로컬 개발 저장소",
+      };
+  }
+}
+
+function toMetadataStorageCard(storageMode: ProductImageStudioRepositoryStorageMode): StatusCard {
+  switch (storageMode) {
+    case "postgres":
+      return {
+        label: "작업 기록",
+        summary: "프로젝트, 업로드, 생성 결과 기록을 운영 DB에 보관합니다.",
+        tone: "ready",
+        value: "운영 DB 저장소",
+      };
+    case "memory":
+      return {
+        label: "작업 기록",
+        summary: "DB 설정 전에는 현재 실행 중인 서버 메모리에만 작업 기록을 보관합니다.",
+        tone: "neutral",
+        value: "임시 메모리 저장소",
       };
   }
 }

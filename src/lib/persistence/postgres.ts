@@ -4,11 +4,11 @@ const { Pool } = pg;
 
 let pool: pg.Pool | undefined;
 
-export function getDatabaseUrl(env: NodeJS.ProcessEnv = process.env) {
+export function getDatabaseUrl(env: Readonly<Record<string, string | undefined>> = process.env) {
   return env.MARKETCREW_DATABASE_URL ?? env.DATABASE_URL;
 }
 
-export function hasDatabaseUrl(env: NodeJS.ProcessEnv = process.env) {
+export function hasDatabaseUrl(env: Readonly<Record<string, string | undefined>> = process.env) {
   return Boolean(getDatabaseUrl(env));
 }
 

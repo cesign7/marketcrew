@@ -21,6 +21,8 @@ import {
   type ProductImageStudioProjectRecord,
   type ProductImageStudioRepository,
 } from "@/lib/persistence/productImageStudioRepository";
+import { createPostgresProductImageStudioRepository } from "@/lib/persistence/productImageStudioPostgresRepository";
+import { hasDatabaseUrl } from "@/lib/persistence/postgres";
 
 export type ProductImageStudioApiError = {
   readonly code: string;
@@ -37,10 +39,16 @@ export type ProductImageStudioCreateProjectResult =
       readonly ok: false;
     };
 
-const projectRepository = createInMemoryProductImageStudioRepository();
+export type ProductImageStudioRepositoryStorageMode = "memory" | "postgres";
+
+const projectRepository = createDefaultProductImageStudioProjectRepository();
 
 export function getProductImageStudioProjectRepository(): ProductImageStudioRepository {
   return projectRepository;
+}
+
+export function getProductImageStudioRepositoryStorageMode(): ProductImageStudioRepositoryStorageMode {
+  return selectProductImageStudioRepositoryStorageMode();
 }
 
 export async function createProductImageStudioProjectFromPayload(
@@ -136,6 +144,24 @@ function parseCreateProjectPayload(
     },
     ok: true,
   };
+}
+
+export function selectProductImageStudioRepositoryStorageMode(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): ProductImageStudioRepositoryStorageMode {
+  if (env.PRODUCT_IMAGE_STUDIO_METADATA_STORE === "memory") {
+    return "memory";
+  }
+  if (env.PRODUCT_IMAGE_STUDIO_METADATA_STORE === "postgres") {
+    return hasDatabaseUrl(env) ? "postgres" : "memory";
+  }
+  return env.VERCEL === "1" && hasDatabaseUrl(env) ? "postgres" : "memory";
+}
+
+function createDefaultProductImageStudioProjectRepository(): ProductImageStudioRepository {
+  return selectProductImageStudioRepositoryStorageMode() === "postgres"
+    ? createPostgresProductImageStudioRepository()
+    : createInMemoryProductImageStudioRepository();
 }
 
 function invalidPayload(code: string, message: string): { readonly error: ProductImageStudioApiError; readonly ok: false } {

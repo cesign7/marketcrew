@@ -49,6 +49,8 @@ const DEFAULT_UPLOAD_MAX_BYTES = 20 * 1024 * 1024;
 const DEFAULT_ASSET_ROOT_DIRECTORY = join(tmpdir(), "marketcrew-product-image-studio-assets");
 let defaultFileStore: ProductImageFileStore | null = null;
 
+export type ProductImageStudioFileStorageMode = "blob" | "local";
+
 export async function uploadProductImageStudioAssetFromFormData(
   input: ProductImageStudioAssetUploadInput,
 ): Promise<ProductImageStudioAssetUploadResult> {
@@ -101,10 +103,10 @@ export async function uploadProductImageStudioAssetFromFormData(
 export function getDefaultProductImageStudioFileStore(): ProductImageFileStore {
   if (!defaultFileStore) {
     const maxBytes = parsePositiveInteger(process.env.PRODUCT_IMAGE_STUDIO_MAX_UPLOAD_BYTES, DEFAULT_UPLOAD_MAX_BYTES);
-    defaultFileStore = process.env.BLOB_READ_WRITE_TOKEN
+    defaultFileStore = getProductImageStudioFileStorageMode() === "blob"
       ? createBlobProductImageFileStore({
           maxBytes,
-          token: process.env.BLOB_READ_WRITE_TOKEN,
+          token: process.env.BLOB_READ_WRITE_TOKEN ?? "",
         })
       : createLocalProductImageFileStore({
           maxBytes,
@@ -114,6 +116,12 @@ export function getDefaultProductImageStudioFileStore(): ProductImageFileStore {
   }
 
   return defaultFileStore;
+}
+
+export function getProductImageStudioFileStorageMode(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): ProductImageStudioFileStorageMode {
+  return env.BLOB_READ_WRITE_TOKEN ? "blob" : "local";
 }
 
 function parseAssetRole(value: unknown): ProductImageStudioAssetRole | null {
