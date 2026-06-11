@@ -1,4 +1,3 @@
-import { Buffer } from "node:buffer";
 import type { ProductImageStudioConceptRecommendation } from "@/features/product-image-studio/domain/concepts";
 import type {
   CardDisplayPose,
@@ -141,12 +140,12 @@ export function resolveProductImageStudioImageProvider(
 }
 
 function createFakeImageResult(
-  operation: string,
+  _operation: string,
   promptContext: ProductImageStudioPromptContext,
 ): ProductImageStudioProviderImageResult {
-  const payload = [operation, promptContext.ratio, promptContext.qualityMode, promptContext.prompt].join("\n");
   return {
-    b64Json: Buffer.from(payload, "utf8").toString("base64"),
+    b64Json:
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
     contentType: "image/png",
     height: promptContext.ratio === "16:9" ? 1024 : 1200,
     model: "fake-product-image-studio",

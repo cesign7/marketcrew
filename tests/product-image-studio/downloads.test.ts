@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { GET as downloadZip } from "@/app/api/product-image-studio/projects/[id]/downloads.zip/route";
+import { GET as downloadResult } from "@/app/api/product-image-studio/projects/[id]/results/[resultId]/download/route";
 import { POST as createProject } from "@/app/api/product-image-studio/projects/route";
 import { POST as startGeneration } from "@/app/api/product-image-studio/projects/[id]/generations/route";
 import {
@@ -137,6 +138,25 @@ describe("product image studio downloads", () => {
     expect(bodyText).toContain("card_single");
     expect(bodyText).toContain("envelope_single");
     expect(bodyText).toContain("seal_sticker_single");
+  });
+
+  it("returns stored generated image bytes from the individual download route", async () => {
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_FAKE_PROVIDER_ENABLED", "1");
+    const projectId = await createGeneratedProjectId();
+    const result = (await getProductImageStudioProjectRepository().listResults(projectId))[0];
+    if (!result) {
+      throw new Error("generated result missing");
+    }
+
+    const response = await downloadResult(
+      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/results/${result.id}/download`),
+      { params: Promise.resolve({ id: projectId, resultId: result.id }) },
+    );
+    const bytes = new Uint8Array(await response.arrayBuffer());
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("image/png");
+    expect([...bytes.slice(0, 8)]).toEqual([137, 80, 78, 71, 13, 10, 26, 10]);
   });
 });
 

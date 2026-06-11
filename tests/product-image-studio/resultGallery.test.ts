@@ -63,6 +63,21 @@ describe("product image studio result gallery", () => {
     expect(html).toContain("아직 봉합스티커 결과가 없습니다.");
   });
 
+  it("renders result preview images when the generation response includes preview URLs", () => {
+    const wizardState = createInitialProductImageStudioWizardState();
+    const results = [
+      {
+        ...resultPreview("card-1", "generation-1", "card_single", "folded_closed"),
+        previewUrl: "/api/product-image-studio/projects/project-1/results/card-1/preview",
+      },
+    ] satisfies readonly ProductImageStudioGalleryResult[];
+
+    const html = renderToStaticMarkup(createElement(ProductImageStudioResultGallery, { results, wizardState }));
+
+    expect(html).toContain('src="/api/product-image-studio/projects/project-1/results/card-1/preview"');
+    expect(html).toContain('alt="card_single 원본안"');
+  });
+
   it("keeps generation metadata needed by the result gallery when reading API responses", () => {
     const state = readProductImageStudioGenerationResponse({
       data: {
@@ -72,6 +87,7 @@ describe("product image studio result gallery", () => {
           generationRequestId: "generation-1",
           id: `result-${outputType}`,
           outputType,
+          previewUrl: `/api/product-image-studio/projects/project-1/results/result-${outputType}/preview`,
           ratio: "1:1",
         })),
       },
@@ -85,6 +101,9 @@ describe("product image studio result gallery", () => {
       "generation-1",
     ]);
     expect(state.results.find((result) => result.outputType === "card_single")?.cardPose).toBe("folded_closed");
+    expect(state.results.find((result) => result.outputType === "card_single")?.previewUrl).toBe(
+      "/api/product-image-studio/projects/project-1/results/result-card_single/preview",
+    );
   });
 });
 

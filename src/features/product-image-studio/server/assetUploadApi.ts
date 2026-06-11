@@ -5,6 +5,7 @@ import {
   PRODUCT_IMAGE_STUDIO_ASSET_ROLES,
   type ProductImageStudioAssetRole,
 } from "@/features/product-image-studio/domain/types";
+import { createBlobProductImageFileStore } from "@/features/product-image-studio/server/blobFileStore";
 import {
   ProductImageStudioFileStoreError,
   createLocalProductImageFileStore,
@@ -99,11 +100,17 @@ export async function uploadProductImageStudioAssetFromFormData(
 
 export function getDefaultProductImageStudioFileStore(): ProductImageFileStore {
   if (!defaultFileStore) {
-    defaultFileStore = createLocalProductImageFileStore({
-      maxBytes: parsePositiveInteger(process.env.PRODUCT_IMAGE_STUDIO_MAX_UPLOAD_BYTES, DEFAULT_UPLOAD_MAX_BYTES),
-      publicBasePath: process.env.PRODUCT_IMAGE_STUDIO_ASSET_PUBLIC_BASE_PATH ?? "/studio-assets",
-      rootDirectory: process.env.PRODUCT_IMAGE_STUDIO_ASSET_ROOT ?? DEFAULT_ASSET_ROOT_DIRECTORY,
-    });
+    const maxBytes = parsePositiveInteger(process.env.PRODUCT_IMAGE_STUDIO_MAX_UPLOAD_BYTES, DEFAULT_UPLOAD_MAX_BYTES);
+    defaultFileStore = process.env.BLOB_READ_WRITE_TOKEN
+      ? createBlobProductImageFileStore({
+          maxBytes,
+          token: process.env.BLOB_READ_WRITE_TOKEN,
+        })
+      : createLocalProductImageFileStore({
+          maxBytes,
+          publicBasePath: process.env.PRODUCT_IMAGE_STUDIO_ASSET_PUBLIC_BASE_PATH ?? "/studio-assets",
+          rootDirectory: process.env.PRODUCT_IMAGE_STUDIO_ASSET_ROOT ?? DEFAULT_ASSET_ROOT_DIRECTORY,
+        });
   }
 
   return defaultFileStore;

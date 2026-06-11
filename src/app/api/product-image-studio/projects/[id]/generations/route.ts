@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { listCardSetConceptRecommendations } from "@/features/product-image-studio/domain/concepts";
+import { getDefaultProductImageStudioFileStore } from "@/features/product-image-studio/server/assetUploadApi";
 import {
   buildProductImageStudioPromptContext,
+  createFakeProductImageStudioImageProvider,
   resolveProductImageStudioImageProvider,
 } from "@/features/product-image-studio/server/imageProvider";
-import { getProductImageStudioDimensionsForRatio } from "@/features/product-image-studio/server/downloads";
+import {
+  createStoredProductImageStudioGenerationResults,
+  readProductImageStudioReferenceImages,
+} from "@/features/product-image-studio/server/generationRunner";
+import { toProductImageStudioResultPreviewResponse } from "@/features/product-image-studio/server/generationResultPreview";
+import { OpenAiImageProviderError } from "@/features/product-image-studio/server/openAiImageProvider";
 import {
   getProductImageStudioGenerationOutputBlockReason,
   parseProductImageStudioGenerationPayload,
@@ -56,21 +63,12 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
   }
 
   const projectForGeneration = { ...project, productionSettings: parsed.payload.productionSettings };
-  const promptContext = buildProductImageStudioPromptContext({
-    assetRoles,
-    cardPose: project.requestedCardPoses[0],
-    concept,
-    outputType: parsed.payload.outputs[0] ?? "set_combined",
-    project: projectForGeneration,
-    qualityMode: parsed.payload.qualityMode,
-    ratio: project.ratios[0] ?? "1:1",
-  });
   if (isFakeGenerationEnabled()) {
     const generation = await repository.createGenerationRequest({
       conceptId: concept.id,
       projectId: project.id,
       providerRequestSummary: {
-        assetRoleCount: promptContext.assetRoles.length,
+        assetRoleCount: assetRoles.length,
         outputCount: parsed.payload.outputs.length,
         provider: "fake",
       },
@@ -78,22 +76,17 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
       requestedCardPoses: project.requestedCardPoses,
       requestedOutputs: parsed.payload.outputs,
     });
-    const ratio = project.ratios[0] ?? "1:1";
-    const dimensions = getProductImageStudioDimensionsForRatio(ratio);
-    const results = await Promise.all(
-      parsed.payload.outputs.map((outputType) =>
-        repository.addResult({
-          cardPose: outputType === "set_combined" || outputType === "card_single" ? project.requestedCardPoses[0] : undefined,
-          generationRequestId: generation.id,
-          height: dimensions.height,
-          outputType,
-          projectId: project.id,
-          ratio,
-          storageKey: `product-image-studio/${project.id}/results/${generation.id}/${outputType}-${ratio.replace(":", "x")}.png`,
-          width: dimensions.width,
-        }),
-      ),
-    );
+    const results = await createStoredProductImageStudioGenerationResults({
+      assets,
+      concept,
+      fileStore: getDefaultProductImageStudioFileStore(),
+      generation,
+      project: projectForGeneration,
+      provider: createFakeProductImageStudioImageProvider(),
+      referenceImages: [],
+      repository,
+      requestedOutputs: parsed.payload.outputs,
+    });
 
     return NextResponse.json({
       data: {
@@ -101,7 +94,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
           id: generation.id,
           status: "ready",
         },
-        results,
+        results: results.map((result) => toProductImageStudioResultPreviewResponse(project.id, result)),
       },
       ok: true,
     });
@@ -109,6 +102,15 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
 
   const resolvedProvider = resolveProductImageStudioImageProvider();
   if (resolvedProvider.kind === "blocked") {
+    const promptContext = buildProductImageStudioPromptContext({
+      assetRoles,
+      cardPose: project.requestedCardPoses[0],
+      concept,
+      outputType: parsed.payload.outputs[0] ?? "set_combined",
+      project: projectForGeneration,
+      qualityMode: parsed.payload.qualityMode,
+      ratio: project.ratios[0] ?? "1:1",
+    });
     return NextResponse.json(
       {
         data: {
@@ -133,7 +135,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     conceptId: concept.id,
     projectId: project.id,
     providerRequestSummary: {
-      assetRoleCount: promptContext.assetRoles.length,
+      assetRoleCount: assetRoles.length,
       outputCount: parsed.payload.outputs.length,
       provider: resolvedProvider.provider.name,
     },
@@ -142,15 +144,51 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     requestedOutputs: parsed.payload.outputs,
   });
 
-  return NextResponse.json({
-    data: {
-      generation: {
-        id: generation.id,
-        status: generation.status,
+  const fileStore = getDefaultProductImageStudioFileStore();
+  const referenceImages = await readProductImageStudioReferenceImages(assets, fileStore);
+  if (!referenceImages.ok) {
+    return NextResponse.json({ error: referenceImages.error, ok: false }, { status: 400 });
+  }
+
+  try {
+    const results = await createStoredProductImageStudioGenerationResults({
+      assets,
+      concept,
+      fileStore,
+      generation,
+      project: projectForGeneration,
+      provider: resolvedProvider.provider,
+      referenceImages: referenceImages.images,
+      repository,
+      requestedOutputs: parsed.payload.outputs,
+    });
+
+    return NextResponse.json({
+      data: {
+        generation: {
+          id: generation.id,
+          status: "ready",
+        },
+        results: results.map((result) => toProductImageStudioResultPreviewResponse(project.id, result)),
       },
-    },
-    ok: true,
-  });
+      ok: true,
+    });
+  } catch (error) {
+    if (error instanceof OpenAiImageProviderError) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "IMAGE_PROVIDER_FAILED",
+            message: error.message,
+            requestId: error.requestId,
+          },
+          ok: false,
+        },
+        { status: 502 },
+      );
+    }
+    throw error;
+  }
 }
 
 async function readJsonPayload(request: Request): Promise<unknown> {

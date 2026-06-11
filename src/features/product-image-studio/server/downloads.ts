@@ -4,6 +4,7 @@ import type {
   ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
 import { createStoredZipArchive, type ProductImageStudioZipEntry } from "@/features/product-image-studio/server/zipArchive";
+import type { ProductImageFileStore } from "@/features/product-image-studio/server/fileStore";
 import type {
   ProductImageStudioProjectRecord,
   ProductImageStudioRepository,
@@ -101,6 +102,32 @@ export function createProductImageStudioZipArchive(
 
   return {
     bytes: createStoredZipArchive(entries),
+    fileName: `${sanitizeFileSegment(project.id)}-product-image-studio.zip`,
+    manifest,
+  };
+}
+
+export async function createProductImageStudioZipArchiveFromStore(
+  project: ProductImageStudioProjectRecord,
+  results: readonly ProductImageStudioResultRecord[],
+  fileStore: ProductImageFileStore,
+): Promise<ProductImageStudioZipArchive> {
+  const manifest = buildProductImageStudioDownloadManifest(project, results);
+  const manifestBytes = Buffer.from(JSON.stringify(manifest, null, 2), "utf8");
+  const imageEntries = await Promise.all(
+    manifest.files.map(async (file) => {
+      const storedImage = await fileStore.readImage(file.storageKey);
+      if (!storedImage) {
+        throw new ProductImageStudioDownloadError("RESULT_FILE_NOT_FOUND", "생성 이미지 파일을 찾지 못했습니다.");
+      }
+      return {
+        bytes: storedImage.bytes,
+        path: `files/${file.fileName}`,
+      };
+    }),
+  );
+  return {
+    bytes: createStoredZipArchive([{ bytes: manifestBytes, path: "manifest.json" }, ...imageEntries]),
     fileName: `${sanitizeFileSegment(project.id)}-product-image-studio.zip`,
     manifest,
   };

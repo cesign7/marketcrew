@@ -4,24 +4,22 @@ import {
   toArrayBuffer,
 } from "@/features/product-image-studio/server/resultImageResponse";
 
-type ProductImageStudioResultDownloadRouteContext = {
+type ProductImageStudioResultPreviewRouteContext = {
   readonly params: Promise<{ readonly id: string; readonly resultId: string }>;
 };
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, context: ProductImageStudioResultDownloadRouteContext) {
+export async function GET(_request: Request, context: ProductImageStudioResultPreviewRouteContext) {
   const { id, resultId } = await context.params;
-  const projectId = normalizeRouteParam(id);
-  const selectedResultId = normalizeRouteParam(resultId);
-  const resultImage = await readProductImageStudioResultImage(projectId, selectedResultId);
+  const resultImage = await readProductImageStudioResultImage(normalizeRouteParam(id), normalizeRouteParam(resultId));
   if (!resultImage.ok) {
     return NextResponse.json({ error: resultImage.error, ok: false }, { status: resultImage.status });
   }
 
   return new Response(toArrayBuffer(resultImage.image.bytes), {
     headers: {
-      "content-disposition": `attachment; filename="${resultImage.fileName}"`,
+      "content-disposition": `inline; filename="${resultImage.fileName}"`,
       "content-type": resultImage.image.contentType,
     },
     status: 200,

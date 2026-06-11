@@ -5,6 +5,7 @@ import {
   regenerateProductImageStudioRatio,
 } from "@/features/product-image-studio/server/downloads";
 import { PRODUCT_IMAGE_STUDIO_RATIO_PRESETS, type ProductImageStudioRatioPreset } from "@/features/product-image-studio/domain/types";
+import { toProductImageStudioResultPreviewResponse } from "@/features/product-image-studio/server/generationResultPreview";
 import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
 
 type ProductImageStudioRegenerateRatioRouteContext = {
@@ -47,7 +48,7 @@ export async function POST(request: Request, context: ProductImageStudioRegenera
           id: result.generationRequestId,
           status: "ready",
         },
-        results: [result],
+        results: [toProductImageStudioResultPreviewResponse(project.id, result)],
       },
       ok: true,
     });

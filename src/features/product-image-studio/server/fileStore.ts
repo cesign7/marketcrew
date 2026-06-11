@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import type { ProductImageStudioAssetRole } from "@/features/product-image-studio/domain/types";
+import type {
+  ProductImageStudioAssetRole,
+  ProductImageStudioOutputType,
+  ProductImageStudioRatioPreset,
+} from "@/features/product-image-studio/domain/types";
 
 export const PRODUCT_IMAGE_STUDIO_ALLOWED_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
 
@@ -15,8 +19,17 @@ export type SaveProductImageInput = {
   readonly role: ProductImageStudioAssetRole;
 };
 
+export type SaveGeneratedProductImageInput = {
+  readonly bytes: Uint8Array;
+  readonly contentType: ProductImageStudioImageMimeType;
+  readonly generationRequestId: string;
+  readonly outputType: ProductImageStudioOutputType;
+  readonly projectId: string;
+  readonly ratio: ProductImageStudioRatioPreset;
+};
+
 export type SavedProductImageFile = {
-  readonly absolutePath: string;
+  readonly absolutePath?: string;
   readonly byteSize: number;
   readonly contentType: ProductImageStudioImageMimeType;
   readonly originalFileName: string;
@@ -24,8 +37,15 @@ export type SavedProductImageFile = {
   readonly storageKey: string;
 };
 
+export type StoredProductImageFile = {
+  readonly bytes: Uint8Array;
+  readonly contentType: ProductImageStudioImageMimeType;
+};
+
 export interface ProductImageFileStore {
   saveImage(input: SaveProductImageInput): Promise<SavedProductImageFile>;
+  saveGeneratedImage(input: SaveGeneratedProductImageInput): Promise<SavedProductImageFile>;
+  readImage(storageKey: string): Promise<StoredProductImageFile | null>;
 }
 
 export type LocalProductImageFileStoreOptions = {
@@ -112,22 +132,71 @@ class LocalProductImageFileStore implements ProductImageFileStore {
     const safeProjectId = toSafePathSegment(input.projectId);
     const safeRole = toSafePathSegment(input.role);
     const fileName = `${toSafePathSegment(this.createId())}.${extension}`;
-    const absolutePath = join(this.rootDirectory, safeProjectId, safeRole, fileName);
-    await mkdir(join(this.rootDirectory, safeProjectId, safeRole), { recursive: true });
+    return this.writeImage({
+      bytes: input.bytes,
+      contentType,
+      originalFileName: sanitizeOriginalFileName(input.originalFileName),
+      storageKey: buildStorageKey(safeProjectId, safeRole, fileName),
+    });
+  }
+
+  async saveGeneratedImage(input: SaveGeneratedProductImageInput): Promise<SavedProductImageFile> {
+    const safeProjectId = toSafePathSegment(input.projectId);
+    const safeGenerationId = toSafePathSegment(input.generationRequestId);
+    const fileName = `${toSafePathSegment(input.outputType)}-${toSafePathSegment(input.ratio.replace(":", "x"))}.png`;
+    return this.writeImage({
+      bytes: input.bytes,
+      contentType: input.contentType,
+      originalFileName: fileName,
+      storageKey: buildStorageKey(safeProjectId, "results", safeGenerationId, fileName),
+    });
+  }
+
+  async readImage(storageKey: string): Promise<StoredProductImageFile | null> {
+    const relativePath = toRelativeStoragePath(storageKey);
+    if (!relativePath) {
+      return null;
+    }
+
+    try {
+      return {
+        bytes: await readFile(join(this.rootDirectory, relativePath)),
+        contentType: parseImageMimeTypeFromStorageKey(storageKey),
+      };
+    } catch (error) {
+      if (isNodeErrorCode(error, "ENOENT")) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  private async writeImage(input: {
+    readonly bytes: Uint8Array;
+    readonly contentType: ProductImageStudioImageMimeType;
+    readonly originalFileName: string;
+    readonly storageKey: string;
+  }): Promise<SavedProductImageFile> {
+    const relativePath = toRelativeStoragePath(input.storageKey);
+    if (!relativePath) {
+      throw new ProductImageStudioFileStoreError("UNSUPPORTED_IMAGE_TYPE", "이미지 저장 경로가 올바르지 않습니다.");
+    }
+    const absolutePath = join(this.rootDirectory, relativePath);
+    await mkdir(join(absolutePath, ".."), { recursive: true });
     await writeFile(absolutePath, input.bytes);
 
     return {
       absolutePath,
       byteSize: input.bytes.byteLength,
-      contentType,
-      originalFileName: sanitizeOriginalFileName(input.originalFileName),
-      previewUrl: `${this.publicBasePath}/${safeProjectId}/${safeRole}/${fileName}`,
-      storageKey: `product-image-studio/${safeProjectId}/${safeRole}/${fileName}`,
+      contentType: input.contentType,
+      originalFileName: input.originalFileName,
+      previewUrl: `${this.publicBasePath}/${relativePath}`,
+      storageKey: input.storageKey,
     };
   }
 }
 
-function parseImageMimeType(contentType: string): ProductImageStudioImageMimeType {
+export function parseImageMimeType(contentType: string): ProductImageStudioImageMimeType {
   switch (contentType) {
     case "image/png":
     case "image/jpeg":
@@ -138,7 +207,7 @@ function parseImageMimeType(contentType: string): ProductImageStudioImageMimeTyp
   }
 }
 
-function getExtensionForContentType(contentType: ProductImageStudioImageMimeType): string {
+export function getExtensionForContentType(contentType: ProductImageStudioImageMimeType): string {
   switch (contentType) {
     case "image/png":
       return "png";
@@ -149,16 +218,55 @@ function getExtensionForContentType(contentType: ProductImageStudioImageMimeType
   }
 }
 
-function sanitizeOriginalFileName(originalFileName: string): string {
+export function sanitizeOriginalFileName(originalFileName: string): string {
   const fileName = basename(originalFileName).replaceAll(/[^A-Za-z0-9._-]/g, "-");
   return fileName || "upload";
 }
 
-function toSafePathSegment(value: string): string {
-  const segment = value.replaceAll(/[^A-Za-z0-9_-]/g, "-");
+export function toSafePathSegment(value: string): string {
+  const segment = value.replaceAll(/[^A-Za-z0-9._-]/g, "-");
+  if (segment === "." || segment === "..") {
+    return "item";
+  }
   return segment || "item";
 }
 
 function trimTrailingSlash(value: string): string {
   return value.endsWith("/") ? value.slice(0, -1) : value;
+}
+
+export function buildStorageKey(...segments: readonly string[]): string {
+  return ["product-image-studio", ...segments.map(toSafePathSegment)].join("/");
+}
+
+export function toRelativeStoragePath(storageKey: string): string | null {
+  const prefix = "product-image-studio/";
+  if (!storageKey.startsWith(prefix)) {
+    return null;
+  }
+
+  const relativePath = storageKey.slice(prefix.length);
+  const segments = relativePath.split("/");
+  if (
+    segments.length === 0 ||
+    segments.some((segment) => segment.length === 0 || segment === "." || segment === ".." || toSafePathSegment(segment) !== segment)
+  ) {
+    return null;
+  }
+
+  return relativePath;
+}
+
+function parseImageMimeTypeFromStorageKey(storageKey: string): ProductImageStudioImageMimeType {
+  if (storageKey.endsWith(".jpg") || storageKey.endsWith(".jpeg")) {
+    return "image/jpeg";
+  }
+  if (storageKey.endsWith(".webp")) {
+    return "image/webp";
+  }
+  return "image/png";
+}
+
+function isNodeErrorCode(error: unknown, code: string): boolean {
+  return error instanceof Error && "code" in error && error.code === code;
 }

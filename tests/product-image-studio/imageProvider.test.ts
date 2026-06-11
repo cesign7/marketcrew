@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { GET as downloadResult } from "@/app/api/product-image-studio/projects/[id]/results/[resultId]/download/route";
+import { POST as uploadAsset } from "@/app/api/product-image-studio/projects/[id]/assets/route";
 import { POST as createProject } from "@/app/api/product-image-studio/projects/route";
 import { POST as startGeneration } from "@/app/api/product-image-studio/projects/[id]/generations/route";
 import { listCardSetConceptRecommendations } from "@/features/product-image-studio/domain/concepts";
@@ -21,7 +23,9 @@ import {
 
 describe("product image studio image provider", () => {
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
   });
 
   it("returns deterministic fake provider output for local blocked mode", async () => {
@@ -129,6 +133,61 @@ describe("product image studio image provider", () => {
     expect(bodyText).not.toContain("OPENAI_API_KEY");
     expect(bodyText).not.toContain("secret");
   });
+
+  it("stores OpenAI generated image bytes and returns ready results when the provider is enabled", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "secret-test-key");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "1");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_OPENAI_IMAGE_MODEL", "gpt-image-2");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_PROVIDER", "openai");
+    vi.stubGlobal(
+      "fetch",
+      async () =>
+        new Response(JSON.stringify({ data: [{ b64_json: Buffer.from("openai generated png").toString("base64") }] }), {
+          headers: { "content-type": "application/json", "x-request-id": "req-generated" },
+          status: 200,
+        }),
+    );
+    const projectId = await createProjectId("folded_card");
+    const uploadResponse = await uploadAsset(uploadRequest(projectId, "folded_card_outer_front"), {
+      params: Promise.resolve({ id: projectId }),
+    });
+    expect(uploadResponse.status).toBe(201);
+
+    const response = await startGeneration(
+      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/generations`, {
+        body: JSON.stringify({
+          conceptId: "minimal-studio",
+          outputs: ["card_single"],
+          productionSettings: manualCardOnlyProductionSettings(),
+          qualityMode: "draft",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }),
+      { params: Promise.resolve({ id: projectId }) },
+    );
+    const bodyJson: unknown = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(bodyJson).toMatchObject({
+      data: {
+        generation: { status: "ready" },
+        results: [{ outputType: "card_single", ratio: "1:1" }],
+      },
+      ok: true,
+    });
+    const results = await getProductImageStudioProjectRepository().listResults(projectId);
+    const generated = results[0];
+    if (!generated) {
+      throw new Error("generated result missing");
+    }
+
+    const downloadResponse = await downloadResult(
+      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/results/${generated.id}/download`),
+      { params: Promise.resolve({ id: projectId, resultId: generated.id }) },
+    );
+    expect(new TextDecoder().decode(await downloadResponse.arrayBuffer())).toBe("openai generated png");
+  });
 });
 
 function foldedPromptContext(assetRoles: readonly ProductImageStudioAssetRole[]) {
@@ -202,4 +261,15 @@ function readConcept(id: string) {
     throw new Error(`concept missing: ${id}`);
   }
   return concept;
+}
+
+function uploadRequest(projectId: string, role: ProductImageStudioAssetRole): Request {
+  const formData = new FormData();
+  formData.set("role", role);
+  formData.set("file", new File([Buffer.from("uploaded card bytes")], "card-front.png", { type: "image/png" }));
+
+  return new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/assets`, {
+    body: formData,
+    method: "POST",
+  });
 }

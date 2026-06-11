@@ -35,6 +35,13 @@ export function ProductImageStudioResultGallery({ results, wizardState }: Produc
               <div className={styles.resultList}>
                 {group.items.map((item) => (
                   <article className={styles.resultCard} key={item.result.id}>
+                    {item.result.previewUrl ? (
+                      <img
+                        alt={`${item.result.outputType} ${item.versionLabel}`}
+                        className={styles.previewImage}
+                        src={item.result.previewUrl}
+                      />
+                    ) : null}
                     <div>
                       <strong>{item.result.label}</strong>
                       <span>{item.versionLabel}</span>

@@ -23,6 +23,7 @@ export type ProductImageStudioGenerationResultPreview = {
   readonly id: string;
   readonly label: string;
   readonly outputType: ProductImageStudioOutputType;
+  readonly previewUrl?: string;
   readonly ratio: ProductImageStudioRatioPreset;
 };
 
@@ -194,10 +195,15 @@ function readResultPreviews(value: unknown, fallbackGenerationId: string): reado
         id,
         label: getOutputLabel(outputType),
         outputType,
+        previewUrl: parsePreviewUrl(item["previewUrl"]),
         ratio: parseRatio(item["ratio"]),
       },
     ];
   });
+}
+
+function parsePreviewUrl(value: unknown): string | undefined {
+  return typeof value === "string" && value.startsWith("/api/product-image-studio/") ? value : undefined;
 }
 
 function getOutputLabel(outputType: ProductImageStudioOutputType): string {
