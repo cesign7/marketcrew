@@ -9,6 +9,7 @@ import {
   regenerateProductImageStudioRatio,
   toProductImageStudioDownloadItems,
 } from "@/features/product-image-studio/server/downloads";
+import { createDefaultProductImageStudioProductionSettings } from "@/features/product-image-studio/domain/productionSettings";
 import { createInMemoryProductImageStudioRepository } from "@/lib/persistence/productImageStudioRepository";
 import type {
   CardDisplayPose,
@@ -152,6 +153,7 @@ function projectInput() {
     cardFormat: "folded_card",
     name: "봄 초대장 세트/../",
     productType: "card_envelope_seal_set",
+    productionSettings: createDefaultProductImageStudioProductionSettings("folded_card"),
     qualityMode: "draft",
     ratios: ["1:1", "4:5"],
     requestedCardPoses: ["folded_closed", "folded_open_spread"],

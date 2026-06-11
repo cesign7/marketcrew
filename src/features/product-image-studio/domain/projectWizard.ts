@@ -4,6 +4,10 @@ import {
   listOutputContracts,
 } from "@/features/product-image-studio/domain/outputContracts";
 import {
+  createDefaultProductImageStudioProductionSettings,
+  type ProductImageStudioProductionSettings,
+} from "@/features/product-image-studio/domain/productionSettings";
+import {
   PRODUCT_IMAGE_STUDIO_OUTPUT_TYPES,
   type CardDisplayPose,
   type CardFormat,
@@ -15,6 +19,7 @@ import {
 
 export type ProductImageStudioWizardState = {
   readonly cardFormat: CardFormat;
+  readonly productionSettings: ProductImageStudioProductionSettings;
   readonly projectName: string;
   readonly qualityMode: ProductImageStudioQualityMode;
   readonly ratios: readonly ProductImageStudioRatioPreset[];
@@ -43,6 +48,7 @@ export type ProductImageStudioOutputChoice = {
 export type ProductImageStudioCreateProjectPayload = {
   readonly cardFormat: CardFormat;
   readonly name: string;
+  readonly productionSettings: ProductImageStudioProductionSettings;
   readonly productType: "card_envelope_seal_set";
   readonly qualityMode: ProductImageStudioQualityMode;
   readonly ratios: readonly ProductImageStudioRatioPreset[];
@@ -108,6 +114,7 @@ const POSE_LABELS = {
 export function createInitialProductImageStudioWizardState(): ProductImageStudioWizardState {
   return {
     cardFormat: "folded_card",
+    productionSettings: createDefaultProductImageStudioProductionSettings("folded_card"),
     projectName: "",
     qualityMode: "draft",
     ratios: DEFAULT_RATIOS,
@@ -144,6 +151,7 @@ export function changeProductImageStudioCardFormat(
   return {
     ...state,
     cardFormat,
+    productionSettings: createDefaultProductImageStudioProductionSettings(cardFormat),
     selectedCardPoses: getDefaultPoses(cardFormat),
     uploadedRoles: allowedUploadedRoles,
   };
@@ -219,6 +227,7 @@ export function buildProductImageStudioCreateProjectPayload(
   return {
     cardFormat: state.cardFormat,
     name: state.projectName.trim(),
+    productionSettings: state.productionSettings,
     productType: "card_envelope_seal_set",
     qualityMode: state.qualityMode,
     ratios: state.ratios,

@@ -7,6 +7,10 @@ import type {
   ProductImageStudioQualityMode,
   ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
+import {
+  buildProductImageStudioProductionPromptLines,
+  buildProductImageStudioValidationChecklist,
+} from "@/features/product-image-studio/domain/productionSettings";
 import { parseProductImageStudioProviderConfig, type ProductImageStudioProviderEnv } from "@/features/product-image-studio/server/providerConfig";
 import { createOpenAiImageProvider } from "@/features/product-image-studio/server/openAiImageProvider";
 import type { ProductImageStudioProjectRecord } from "@/lib/persistence/productImageStudioRepository";
@@ -87,6 +91,8 @@ export function buildProductImageStudioPromptContext(
     `conceptSummary=${input.concept.summary}`,
     `scene=${outputPrompt?.scenePrompt ?? ""}`,
     `geometry=${posePrompt?.prompt ?? getCardFormatFallbackGeometry(input.project.cardFormat)}`,
+    ...buildProductImageStudioProductionPromptLines(input.project.productionSettings),
+    `validationRules=${buildProductImageStudioValidationChecklist(input.project.productionSettings).join(" | ")}`,
     "Preserve the uploaded print design exactly; only adapt perspective, lighting, paper thickness, and contact shadows.",
   ].join("\n");
 

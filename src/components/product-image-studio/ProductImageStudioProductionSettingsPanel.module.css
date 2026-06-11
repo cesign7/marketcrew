@@ -1,0 +1,186 @@
+.panel {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 14px;
+  padding-top: 18px;
+}
+
+.heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.heading h3,
+.checklist h4 {
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.heading h3 {
+  font-size: 16px;
+}
+
+.heading p,
+.preset small,
+.selectedPreset small,
+.method small,
+.selectedMethod small,
+.checklist li {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.heading > span {
+  background: #eef4f6;
+  border-radius: 999px;
+  color: var(--brand-strong);
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 7px 10px;
+}
+
+.presetGroup,
+.methodGroup {
+  border: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.presetGroup legend,
+.methodGroup legend,
+.selectField span,
+.specList dt {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.preset,
+.selectedPreset,
+.method,
+.selectedMethod {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  gap: 5px;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-width: 0;
+  padding: 11px;
+}
+
+.preset input,
+.selectedPreset input,
+.method input,
+.selectedMethod input {
+  margin-top: 2px;
+}
+
+.preset span,
+.selectedPreset span,
+.method span,
+.selectedMethod span {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.preset small,
+.selectedPreset small,
+.method small,
+.selectedMethod small {
+  grid-column: 2;
+}
+
+.selectedPreset,
+.selectedMethod {
+  background: var(--brand-soft);
+  border-color: #9ccdd8;
+}
+
+.specList {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.specList div {
+  background: #f8fafb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.specList dd {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.controlGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.selectField {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.selectField select {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  min-height: 40px;
+  padding: 0 10px;
+}
+
+.checklist {
+  background: #f8fafb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.checklist h4 {
+  color: #344054;
+  font-size: 14px;
+}
+
+.checklist ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+@media (max-width: 720px) {
+  .heading,
+  .controlGrid,
+  .specList {
+    grid-template-columns: 1fr;
+  }
+
+  .heading {
+    display: grid;
+  }
+}

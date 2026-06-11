@@ -12,6 +12,10 @@ import {
 } from "@/features/product-image-studio/domain/types";
 import { getAllowedCardPosesForFormat } from "@/features/product-image-studio/domain/outputContracts";
 import {
+  createDefaultProductImageStudioProductionSettings,
+  parseProductImageStudioProductionSettings,
+} from "@/features/product-image-studio/domain/productionSettings";
+import {
   createInMemoryProductImageStudioRepository,
   type CreateProductImageStudioProjectInput,
   type ProductImageStudioProjectRecord,
@@ -111,10 +115,19 @@ function parseCreateProjectPayload(
     return invalidPayload("INVALID_QUALITY_MODE", "생성 품질을 선택해 주세요.");
   }
 
+  const productionSettings = parseProductImageStudioProductionSettings(
+    payload["productionSettings"] ?? createDefaultProductImageStudioProductionSettings(cardFormat),
+    cardFormat,
+  );
+  if (!productionSettings.ok) {
+    return productionSettings;
+  }
+
   return {
     input: {
       cardFormat,
       name: name.trim(),
+      productionSettings: productionSettings.settings,
       productType: "card_envelope_seal_set",
       qualityMode: payload["qualityMode"],
       ratios: ratios satisfies readonly ProductImageStudioRatioPreset[],

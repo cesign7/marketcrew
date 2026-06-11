@@ -2,8 +2,8 @@
 feature: product-image-studio
 phase: check
 status: checked
-matchRate: 96
-checkedAt: 2026-06-11T17:30:00+09:00
+matchRate: 97
+checkedAt: 2026-06-11T19:40:00+09:00
 planDoc: docs/01-plan/features/product-image-studio.plan.md
 ---
 
@@ -17,6 +17,7 @@ planDoc: docs/01-plan/features/product-image-studio.plan.md
 |------|:---:|------|
 | 별도 route/context | 충족 | `/product-image-studio`와 `/api/product-image-studio/*`가 Search Ad와 분리되어 있다. |
 | 카드 형식 지원 | 충족 | 접이식 카드와 엽서형 카드 선택, 형식별 자세/업로드 슬롯이 구현됐다. |
+| 상품 사양 입력 | 충족 | 카드, 봉투, 봉합스티커의 실제 크기 프리셋과 목업 합성 우선 설정이 프로젝트 payload와 provider prompt에 포함된다. |
 | 필수 출력 | 충족 | 세트컷, 카드 단독컷, 봉투 단독컷, 봉합스티커 단독컷 네 그룹을 결과 갤러리와 ZIP manifest에서 확인했다. |
 | provider gate | 충족 | 기본값은 실제 provider 호출 차단이며 생성 API는 차단 상태를 한국어로 표시한다. |
 | 다운로드/비율 변경 | 충족 | preset/custom 비율 변경 생성과 개별/ZIP 다운로드 route가 구현됐다. |
@@ -27,6 +28,7 @@ planDoc: docs/01-plan/features/product-image-studio.plan.md
 | 검증 | 결과 |
 |------|------|
 | `npm test -- --run tests/product-image-studio/docsContract.test.ts` | 문서 계약 확인 |
+| `npm test -- --run tests/product-image-studio/productionSettings.test.ts` | 상품 사양, 프롬프트 라인, 자동 검수 기준 확인 |
 | `npm test -- --run tests/product-image-studio/smokeContract.test.ts` | route/API 인증 계약 확인 |
 | 브라우저 E2E QA | fake provider에서 업로드, 생성, 비율 변경, ZIP manifest 확인 |
 | 브라우저 데스크톱/모바일 QA | 네 가지 결과 그룹과 다운로드 UI가 겹침 없이 표시됨 |
@@ -45,7 +47,7 @@ planDoc: docs/01-plan/features/product-image-studio.plan.md
 | 등급 | 항목 | 설명 | 권장 조치 |
 |------|------|------|-----------|
 | Important | 실제 이미지 품질 검증 | 현재 완료 기준은 fake provider와 gate/flow 검증이다. 실제 OpenAI 이미지 품질과 디자인 보존력은 아직 검증하지 않았다. | 비용 승인 후 낮은 수량의 live provider smoke를 별도 실행한다. |
-| Important | 업로드 디자인 합성 정밀도 | MVP는 디자인 보존 prompt/metadata와 fake 결과 흐름을 갖췄지만, 실제 목업 합성 품질은 provider 결과에 의존한다. | 다음 단계에서 마스크/프레임 기반 합성 adapter를 분리 설계한다. |
+| Important | 업로드 디자인 합성 정밀도 | MVP는 실제 크기, 목업 합성 우선, 자동 검수 기준을 prompt에 포함하지만 실제 합성 품질은 provider 결과에 의존한다. | 다음 단계에서 마스크/프레임 기반 합성 adapter를 분리 설계한다. |
 | Minor | 프로젝트 목록/보관함 route | 현재 첫 화면 workflow와 결과 다운로드 중심이다. 별도 프로젝트 목록 화면은 nav만 준비됐다. | 생성 이력이 쌓인 뒤 목록/검색/삭제 정책을 추가한다. |
 
 ## 5. Next Step

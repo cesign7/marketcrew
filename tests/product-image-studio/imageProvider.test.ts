@@ -8,6 +8,7 @@ import {
   resolveProductImageStudioImageProvider,
 } from "@/features/product-image-studio/server/imageProvider";
 import { createOpenAiImageProvider } from "@/features/product-image-studio/server/openAiImageProvider";
+import { createDefaultProductImageStudioProductionSettings } from "@/features/product-image-studio/domain/productionSettings";
 import type {
   CardDisplayPose,
   CardFormat,
@@ -48,6 +49,11 @@ describe("product image studio image provider", () => {
     expect(folded.prompt).toContain("cardFormat=folded_card");
     expect(folded.prompt).toContain("requestedCardPoses=folded_closed,folded_open_spread,folded_standing");
     expect(folded.prompt).toContain("assetRoles=folded_card_outer_front,folded_card_fold_metadata,envelope_front");
+    expect(folded.prompt).toContain("generationMethod=mockup_composite_first");
+    expect(folded.prompt).toContain("cardFoldedSize=100x150mm");
+    expect(folded.prompt).toContain("envelopeSize=110x160mm");
+    expect(folded.prompt).toContain("designPreservation=exact_composite");
+    expect(folded.prompt).toContain("카드와 봉투의 상대 크기가 실제 사양과 맞아야 합니다.");
     expect(folded.prompt).toContain("접힌 축");
     expect(postcard.prompt).toContain("cardFormat=postcard_flat");
     expect(postcard.prompt).toContain("assetRoles=postcard_front,envelope_front,seal_sticker");
@@ -144,6 +150,7 @@ function project(cardFormat: CardFormat, requestedCardPoses: readonly CardDispla
     name: "봄 초대장 세트",
     productType: "card_envelope_seal_set",
     qualityMode: "draft",
+    productionSettings: createDefaultProductImageStudioProductionSettings(cardFormat),
     ratios: ["1:1", "4:5"],
     requestedCardPoses,
     requestedOutputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],

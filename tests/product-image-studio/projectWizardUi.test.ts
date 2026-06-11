@@ -23,6 +23,9 @@ describe("product image studio project wizard UI", () => {
     expect(html).toContain("엽서형 카드");
     expect(html).toContain("카드 자세");
     expect(html).toContain("디자인 업로드");
+    expect(html).toContain("상품 사양");
+    expect(html).toContain("목업 합성 우선");
+    expect(html).toContain("자동 검수 기준");
     expect(html).toContain("콘셉트 추천");
     expect(html).toMatch(/<button[^>]*disabled/);
     expect(html).not.toContain("네이버 검색광고");
@@ -86,6 +89,13 @@ describe("product image studio project wizard UI", () => {
     expect(payload.name).toBe("봄 초대장 세트");
     expect(payload.productType).toBe("card_envelope_seal_set");
     expect(payload.cardFormat).toBe("folded_card");
+    expect(payload.productionSettings.card.format).toBe("folded_card");
+    if (payload.productionSettings.card.format !== "folded_card") {
+      throw new Error("folded card payload expected");
+    }
+    expect(payload.productionSettings.card.foldedSizeMm).toEqual({ height: 150, width: 100 });
+    expect(payload.productionSettings.envelope.sizeMm).toEqual({ height: 160, width: 110 });
+    expect(payload.productionSettings.scene.generationMethod).toBe("mockup_composite_first");
     expect(Object.prototype.hasOwnProperty.call(payload, "projectName")).toBe(false);
   });
 

@@ -9,6 +9,7 @@ import type {
   ProductImageStudioQualityMode,
   ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
+import type { ProductImageStudioProductionSettings } from "@/features/product-image-studio/domain/productionSettings";
 
 export const PRODUCT_IMAGE_STUDIO_TABLE_NAMES = [
   "product_image_studio_projects",
@@ -28,6 +29,7 @@ export type ProductImageStudioProjectRecord = {
   readonly name: string;
   readonly productType: ProductImageStudioProductType;
   readonly cardFormat: CardFormat;
+  readonly productionSettings: ProductImageStudioProductionSettings;
   readonly requestedCardPoses: readonly CardDisplayPose[];
   readonly requestedOutputs: readonly ProductImageStudioOutputType[];
   readonly ratios: readonly ProductImageStudioRatioPreset[];

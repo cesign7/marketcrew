@@ -26,6 +26,7 @@ import {
 } from "@/features/product-image-studio/domain/projectWizard";
 import { ProductImageStudioGenerationPanel } from "./ProductImageStudioGenerationPanel";
 import { ProductImageStudioOutputControls } from "./ProductImageStudioOutputControls";
+import { ProductImageStudioProductionSettingsPanel } from "./ProductImageStudioProductionSettingsPanel";
 import { ProductImageStudioProjectSettings } from "./ProductImageStudioProjectSettings";
 import { ProductImageStudioQualityOption } from "./ProductImageStudioQualityOption";
 import { ProductImageStudioUploadSection } from "./ProductImageStudioUploadSection";
@@ -72,6 +73,7 @@ export function ProductImageStudioWizard() {
         </div>
 
         <ProductImageStudioProjectSettings setState={setWizardState} state={state} />
+        <ProductImageStudioProductionSettingsPanel setState={setWizardState} state={state} />
         <ProductImageStudioUploadSection busyRole={busyRole} onUpload={handleUpload} state={state} />
       </section>
 
