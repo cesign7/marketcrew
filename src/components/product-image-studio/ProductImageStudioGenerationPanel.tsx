@@ -1,10 +1,12 @@
-import { PRODUCT_IMAGE_STUDIO_OUTPUT_TYPES } from "@/features/product-image-studio/domain/types";
 import {
   describeProductImageStudioGenerationPoseSummary,
   type ProductImageStudioGenerationResultPreview,
   type ProductImageStudioGenerationState,
 } from "@/features/product-image-studio/domain/generationWorkflow";
-import { getProductImageStudioOutputChoices, type ProductImageStudioWizardState } from "@/features/product-image-studio/domain/projectWizard";
+import {
+  getProductImageStudioAvailableOutputChoices,
+  type ProductImageStudioWizardState,
+} from "@/features/product-image-studio/domain/projectWizard";
 import { ProductImageStudioDownloadPanel } from "./ProductImageStudioDownloadPanel";
 import { ProductImageStudioResultGallery } from "./ProductImageStudioResultGallery";
 import styles from "./ProductImageStudioGenerationPanel.module.css";
@@ -39,14 +41,15 @@ export function ProductImageStudioGenerationPanel({
   projectId,
   wizardState,
 }: ProductImageStudioGenerationPanelProps) {
-  const canGenerate = generationState.selectedConceptId !== null && generationState.phase !== "generating";
+  const outputChoices = getProductImageStudioAvailableOutputChoices(wizardState);
+  const canGenerate = generationState.selectedConceptId !== null && generationState.phase !== "generating" && outputChoices.length > 0;
   const statusClassName = getStatusClassName(generationState.phase);
 
   return (
     <section className={styles.panel} aria-label="콘셉트와 생성 설정">
       <div className={styles.heading}>
         <h3>콘셉트 선택</h3>
-        <p>선택한 콘셉트로 네 가지 기본 출력 이미지를 함께 생성합니다.</p>
+        <p>선택한 콘셉트로 현재 준비된 구성품의 출력 이미지를 생성합니다.</p>
       </div>
 
       <div className={styles.conceptList}>
@@ -71,13 +74,14 @@ export function ProductImageStudioGenerationPanel({
         <p>{describeProductImageStudioGenerationPoseSummary(wizardState)}</p>
       </div>
       <div className={styles.outputList}>
-        {getProductImageStudioOutputChoices().map((choice) => (
+        {outputChoices.map((choice) => (
           <label className={styles.outputItem} key={choice.outputType}>
-            <input checked={PRODUCT_IMAGE_STUDIO_OUTPUT_TYPES.some((outputType) => outputType === choice.outputType)} disabled readOnly type="checkbox" />
+            <input checked disabled readOnly type="checkbox" />
             <span>{choice.label}</span>
           </label>
         ))}
       </div>
+      {outputChoices.length === 0 ? <p className={styles.summary}>생성 가능한 출력이 아직 없습니다.</p> : null}
 
       <div className={styles.actionBox}>
         <p className={`${styles.status} ${statusClassName}`}>{generationState.message}</p>

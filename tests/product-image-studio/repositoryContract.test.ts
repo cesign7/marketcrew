@@ -5,7 +5,7 @@ import {
   PRODUCT_IMAGE_STUDIO_TABLE_NAMES,
   createInMemoryProductImageStudioRepository,
 } from "@/lib/persistence/productImageStudioRepository";
-import { createDefaultProductImageStudioProductionSettings } from "@/features/product-image-studio/domain/productionSettings";
+import { manualProductionSettings } from "./manualProductionSettings";
 
 describe("product image studio repository contract", () => {
   it("declares the expected persistence tables in the workflow schema", () => {
@@ -43,7 +43,7 @@ describe("product image studio repository contract", () => {
       cardFormat: "folded_card",
       name: "봄 초대장 세트",
       productType: "card_envelope_seal_set",
-      productionSettings: createDefaultProductImageStudioProductionSettings("folded_card"),
+      productionSettings: manualProductionSettings("folded_card"),
       qualityMode: "draft",
       ratios: ["1:1", "4:5"],
       requestedCardPoses: ["folded_closed", "folded_open_spread"],

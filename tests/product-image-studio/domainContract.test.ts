@@ -54,22 +54,22 @@ describe("product image studio domain contract", () => {
     expect(postcardPoses.some((pose) => pose.startsWith("folded_"))).toBe(false);
   });
 
-  it("uses card-format-specific required asset roles", () => {
-    // Given: each card format needs different artwork slots.
+  it("keeps card-front uploads as the only baseline requirement", () => {
+    // Given: each card format needs a different front artwork slot.
     const foldedRoles = getAssetRolesForCardFormat("folded_card");
 
     // When: the postcard asset contract is requested.
     const postcardRoles = getAssetRolesForCardFormat("postcard_flat");
 
-    // Then: folded cards require fold metadata while postcards do not accept inside-spread artwork.
-    expect(foldedRoles.required).toEqual([
-      "folded_card_outer_front",
-      "folded_card_fold_metadata",
-      "envelope_front",
-      "seal_sticker",
-    ]);
+    // Then: card-only generation can start from a card front while set materials stay optional.
+    expect(foldedRoles.required).toEqual(["folded_card_outer_front"]);
+    expect(foldedRoles.optional).toContain("folded_card_fold_metadata");
     expect(foldedRoles.optional).toContain("folded_card_inner_spread");
-    expect(postcardRoles.required).toEqual(["postcard_front", "envelope_front", "seal_sticker"]);
+    expect(foldedRoles.optional).toContain("envelope_front");
+    expect(foldedRoles.optional).toContain("seal_sticker");
+    expect(postcardRoles.required).toEqual(["postcard_front"]);
+    expect(postcardRoles.optional).toContain("envelope_front");
+    expect(postcardRoles.optional).toContain("seal_sticker");
     expect(postcardRoles.optional).not.toContain("folded_card_inner_spread");
     expect(postcardRoles.optional).not.toContain("folded_card_fold_metadata");
   });

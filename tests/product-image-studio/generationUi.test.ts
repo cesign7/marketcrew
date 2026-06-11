@@ -14,14 +14,22 @@ import {
 } from "@/features/product-image-studio/domain/generationWorkflow";
 import {
   createInitialProductImageStudioWizardState,
+  recordProductImageStudioUploadedRole,
   setProductImageStudioQualityMode,
   setProductImageStudioProjectName,
 } from "@/features/product-image-studio/domain/projectWizard";
+import { manualCardOnlyProductionSettings } from "./manualProductionSettings";
 
 describe("product image studio generation UI", () => {
-  it("keeps all four outputs in the selected concept generation payload", () => {
+  it("keeps only available outputs in the selected concept generation payload", () => {
     const wizardState = setProductImageStudioQualityMode(
-      setProductImageStudioProjectName(createInitialProductImageStudioWizardState(), "봄 초대장 세트"),
+      recordProductImageStudioUploadedRole(
+        {
+          ...setProductImageStudioProjectName(createInitialProductImageStudioWizardState(), "봄 초대장 세트"),
+          productionSettings: manualCardOnlyProductionSettings(),
+        },
+        "folded_card_outer_front",
+      ),
       "high",
     );
     const generationState = selectProductImageStudioConcept(
@@ -33,7 +41,8 @@ describe("product image studio generation UI", () => {
 
     expect(payload).toEqual({
       conceptId: "minimal-studio",
-      outputs: PRODUCT_IMAGE_STUDIO_OUTPUT_TYPES,
+      outputs: ["card_single"],
+      productionSettings: manualCardOnlyProductionSettings(),
       qualityMode: "high",
     });
   });

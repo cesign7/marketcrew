@@ -9,9 +9,11 @@ import {
   type ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
 import {
+  getProductImageStudioAvailableOutputs,
   getProductImageStudioPoseOptions,
   type ProductImageStudioWizardState,
 } from "@/features/product-image-studio/domain/projectWizard";
+import type { ProductImageStudioProductionSettings } from "@/features/product-image-studio/domain/productionSettings";
 
 export type ProductImageStudioGenerationPhase = "idle" | "generating" | "blocked" | "ready" | "failed";
 
@@ -35,6 +37,7 @@ export type ProductImageStudioGenerationState = {
 export type ProductImageStudioGenerationPayload = {
   readonly conceptId: string;
   readonly outputs: readonly ProductImageStudioOutputType[];
+  readonly productionSettings: ProductImageStudioProductionSettings;
   readonly qualityMode: ProductImageStudioWizardState["qualityMode"];
 };
 
@@ -105,10 +108,15 @@ export function buildProductImageStudioGenerationPayload(
   if (!generationState.selectedConceptId) {
     return null;
   }
+  const outputs = getProductImageStudioAvailableOutputs(wizardState);
+  if (outputs.length === 0) {
+    return null;
+  }
 
   return {
     conceptId: generationState.selectedConceptId,
-    outputs: PRODUCT_IMAGE_STUDIO_OUTPUT_TYPES,
+    outputs,
+    productionSettings: wizardState.productionSettings,
     qualityMode: wizardState.qualityMode,
   };
 }

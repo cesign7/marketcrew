@@ -8,12 +8,16 @@ import {
   resolveProductImageStudioImageProvider,
 } from "@/features/product-image-studio/server/imageProvider";
 import { createOpenAiImageProvider } from "@/features/product-image-studio/server/openAiImageProvider";
-import { createDefaultProductImageStudioProductionSettings } from "@/features/product-image-studio/domain/productionSettings";
+import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
 import type {
   CardDisplayPose,
   CardFormat,
   ProductImageStudioAssetRole,
 } from "@/features/product-image-studio/domain/types";
+import {
+  manualCardOnlyProductionSettings,
+  manualProductionSettings,
+} from "./manualProductionSettings";
 
 describe("product image studio image provider", () => {
   afterEach(() => {
@@ -91,11 +95,20 @@ describe("product image studio image provider", () => {
   it("returns a blocked generation response without provider billing in default env", async () => {
     vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "0");
     const projectId = await createProjectId("folded_card");
+    await getProductImageStudioProjectRepository().addAsset({
+      byteSize: 1024,
+      contentType: "image/png",
+      originalFileName: "card-front.png",
+      projectId,
+      role: "folded_card_outer_front",
+      storageKey: `product-image-studio/${projectId}/card-front.png`,
+    });
     const response = await startGeneration(
       new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/generations`, {
         body: JSON.stringify({
           conceptId: "minimal-studio",
-          outputs: ["set_combined"],
+          outputs: ["card_single"],
+          productionSettings: manualCardOnlyProductionSettings(),
           qualityMode: "high",
         }),
         headers: { "content-type": "application/json" },
@@ -150,7 +163,7 @@ function project(cardFormat: CardFormat, requestedCardPoses: readonly CardDispla
     name: "봄 초대장 세트",
     productType: "card_envelope_seal_set",
     qualityMode: "draft",
-    productionSettings: createDefaultProductImageStudioProductionSettings(cardFormat),
+    productionSettings: manualProductionSettings(cardFormat),
     ratios: ["1:1", "4:5"],
     requestedCardPoses,
     requestedOutputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],
@@ -166,6 +179,7 @@ async function createProjectId(cardFormat: CardFormat): Promise<string> {
         name: "봄 초대장 세트",
         productType: "card_envelope_seal_set",
         qualityMode: "draft",
+        productionSettings: manualProductionSettings(cardFormat),
         ratios: ["1:1"],
         requestedCardPoses: cardFormat === "folded_card" ? ["folded_closed"] : ["postcard_front_flat"],
         requestedOutputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],

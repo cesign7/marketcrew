@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GET } from "@/app/api/product-image-studio/projects/[id]/route";
 import { POST } from "@/app/api/product-image-studio/projects/route";
-import { createDefaultProductImageStudioProductionSettings } from "@/features/product-image-studio/domain/productionSettings";
+import { manualProductionSettings } from "./manualProductionSettings";
 
 describe("product image studio project API", () => {
   it("creates and reads a folded-card project without SmartStore id", async () => {
@@ -11,7 +11,7 @@ describe("product image studio project API", () => {
         name: "봄 초대장 세트",
         productType: "card_envelope_seal_set",
         qualityMode: "draft",
-        productionSettings: createDefaultProductImageStudioProductionSettings("folded_card"),
+        productionSettings: manualProductionSettings("folded_card"),
         ratios: ["1:1", "4:5"],
         requestedCardPoses: ["folded_closed", "folded_open_spread", "folded_standing"],
         requestedOutputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],
@@ -80,7 +80,6 @@ describe("product image studio project API", () => {
             paperWeightGsm: 300,
           },
           envelope: { flapDirection: "top_flap", sizeMm: { height: 140, width: 90 } },
-          presetId: "folded-100x150-envelope-110x160-seal-35",
           scene: {
             designPreservation: "exact_composite",
             generationMethod: "mockup_composite_first",
@@ -88,6 +87,7 @@ describe("product image studio project API", () => {
             shotAngle: "front_45",
           },
           sealSticker: { placement: "envelope_flap_center", shape: "circle", sizeMm: { diameter: 35 } },
+          specSource: "manual_input",
         },
         ratios: ["1:1"],
         requestedCardPoses: ["folded_closed"],
@@ -106,7 +106,7 @@ describe("product image studio project API", () => {
         cardFormat: "postcard_flat",
         name: "엽서 세트",
         productType: "card_envelope_seal_set",
-        productionSettings: createDefaultProductImageStudioProductionSettings("postcard_flat"),
+        productionSettings: manualProductionSettings("postcard_flat"),
         qualityMode: "draft",
         ratios: ["1:1"],
         requestedCardPoses: ["postcard_front_flat"],
@@ -118,7 +118,7 @@ describe("product image studio project API", () => {
         cardFormat: "postcard_flat",
         name: "엽서 세트",
         productType: "card_envelope_seal_set",
-        productionSettings: createDefaultProductImageStudioProductionSettings("postcard_flat"),
+        productionSettings: manualProductionSettings("postcard_flat"),
         qualityMode: "draft",
         ratios: ["1:1"],
         requestedCardPoses: ["folded_closed"],

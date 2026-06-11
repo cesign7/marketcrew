@@ -9,7 +9,7 @@ import {
   regenerateProductImageStudioRatio,
   toProductImageStudioDownloadItems,
 } from "@/features/product-image-studio/server/downloads";
-import { createDefaultProductImageStudioProductionSettings } from "@/features/product-image-studio/domain/productionSettings";
+import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
 import { createInMemoryProductImageStudioRepository } from "@/lib/persistence/productImageStudioRepository";
 import type {
   CardDisplayPose,
@@ -17,6 +17,7 @@ import type {
   ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
 import type { ProductImageStudioProjectRecord, ProductImageStudioResultRecord } from "@/lib/persistence/productImageStudioRepository";
+import { manualProductionSettings } from "./manualProductionSettings";
 
 describe("product image studio downloads", () => {
   afterEach(() => {
@@ -153,7 +154,7 @@ function projectInput() {
     cardFormat: "folded_card",
     name: "봄 초대장 세트/../",
     productType: "card_envelope_seal_set",
-    productionSettings: createDefaultProductImageStudioProductionSettings("folded_card"),
+    productionSettings: manualProductionSettings("folded_card"),
     qualityMode: "draft",
     ratios: ["1:1", "4:5"],
     requestedCardPoses: ["folded_closed", "folded_open_spread"],
@@ -198,6 +199,7 @@ async function createGeneratedProjectId(): Promise<string> {
         name: "봄 초대장 세트",
         productType: "card_envelope_seal_set",
         qualityMode: "draft",
+        productionSettings: manualProductionSettings("folded_card"),
         ratios: ["1:1"],
         requestedCardPoses: ["folded_closed", "folded_open_spread"],
         requestedOutputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],
@@ -207,11 +209,38 @@ async function createGeneratedProjectId(): Promise<string> {
     }),
   );
   const projectId = readId(await createResponse.json());
+  await Promise.all([
+    getProductImageStudioProjectRepository().addAsset({
+      byteSize: 1024,
+      contentType: "image/png",
+      originalFileName: "card-front.png",
+      projectId,
+      role: "folded_card_outer_front",
+      storageKey: `product-image-studio/${projectId}/card-front.png`,
+    }),
+    getProductImageStudioProjectRepository().addAsset({
+      byteSize: 1024,
+      contentType: "image/png",
+      originalFileName: "envelope-front.png",
+      projectId,
+      role: "envelope_front",
+      storageKey: `product-image-studio/${projectId}/envelope-front.png`,
+    }),
+    getProductImageStudioProjectRepository().addAsset({
+      byteSize: 1024,
+      contentType: "image/png",
+      originalFileName: "seal.png",
+      projectId,
+      role: "seal_sticker",
+      storageKey: `product-image-studio/${projectId}/seal.png`,
+    }),
+  ]);
   await startGeneration(
     new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/generations`, {
       body: JSON.stringify({
         conceptId: "minimal-studio",
         outputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],
+        productionSettings: manualProductionSettings("folded_card"),
         qualityMode: "draft",
       }),
       headers: { "content-type": "application/json" },

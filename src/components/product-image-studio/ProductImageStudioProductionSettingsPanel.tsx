@@ -1,19 +1,15 @@
 import type { Dispatch, SetStateAction } from "react";
-import { assertNever } from "@/features/product-image-studio/domain/types";
 import {
-  applyProductImageStudioSpecPreset,
   buildProductImageStudioValidationChecklist,
-  listProductImageStudioSpecPresets,
   PRODUCT_IMAGE_STUDIO_GENERATION_METHOD_OPTIONS,
   PRODUCT_IMAGE_STUDIO_OUTPUT_PURPOSE_OPTIONS,
   PRODUCT_IMAGE_STUDIO_SHOT_ANGLE_OPTIONS,
-  type ProductImageStudioCardSpec,
   type ProductImageStudioOutputPurpose,
   type ProductImageStudioProductionSettings,
-  type ProductImageStudioSealStickerSpec,
   type ProductImageStudioShotAngle,
 } from "@/features/product-image-studio/domain/productionSettings";
 import type { ProductImageStudioWizardState } from "@/features/product-image-studio/domain/projectWizard";
+import { ProductImageStudioManualSpecFields } from "./ProductImageStudioManualSpecFields";
 import styles from "./ProductImageStudioProductionSettingsPanel.module.css";
 
 type ProductImageStudioProductionSettingsPanelProps = {
@@ -25,7 +21,6 @@ export function ProductImageStudioProductionSettingsPanel({
   setState,
   state,
 }: ProductImageStudioProductionSettingsPanelProps) {
-  const presets = listProductImageStudioSpecPresets(state.cardFormat);
   const checklist = buildProductImageStudioValidationChecklist(state.productionSettings);
 
   return (
@@ -33,50 +28,12 @@ export function ProductImageStudioProductionSettingsPanel({
       <div className={styles.heading}>
         <div>
           <h3 id="production-settings-heading">상품 사양</h3>
-          <p>카드, 봉투, 봉합스티커의 실제 크기를 기준으로 목업 장면을 만듭니다.</p>
+          <p>인쇄물의 실제 mm 규격을 입력하면 업로드한 구성품 기준으로 목업 장면을 만듭니다.</p>
         </div>
         <span>{state.productionSettings.scene.designPreservation === "exact_composite" ? "디자인 원본 보존" : "AI 보정 허용"}</span>
       </div>
 
-      <fieldset className={styles.presetGroup}>
-        <legend>인쇄물 규격</legend>
-        {presets.map((preset) => (
-          <label className={preset.id === state.productionSettings.presetId ? styles.selectedPreset : styles.preset} key={preset.id}>
-            <input
-              checked={preset.id === state.productionSettings.presetId}
-              name="productionSpecPreset"
-              onChange={() =>
-                setState((current) => ({
-                  ...current,
-                  productionSettings: applyProductImageStudioSpecPreset(
-                    current.productionSettings,
-                    current.cardFormat,
-                    preset.id,
-                  ),
-                }))
-              }
-              type="radio"
-            />
-            <span>{preset.label}</span>
-            <small>{preset.summary}</small>
-          </label>
-        ))}
-      </fieldset>
-
-      <dl className={styles.specList}>
-        <div>
-          <dt>카드</dt>
-          <dd>{describeCardSpec(state.productionSettings.card)}</dd>
-        </div>
-        <div>
-          <dt>봉투</dt>
-          <dd>{formatSize(state.productionSettings.envelope.sizeMm.width, state.productionSettings.envelope.sizeMm.height)}</dd>
-        </div>
-        <div>
-          <dt>봉합스티커</dt>
-          <dd>{describeSealStickerSpec(state.productionSettings.sealSticker)}</dd>
-        </div>
-      </dl>
+      <ProductImageStudioManualSpecFields setState={setState} state={state} />
 
       <div className={styles.controlGrid}>
         <label className={styles.selectField}>
@@ -178,30 +135,4 @@ function readOutputPurpose(value: string): ProductImageStudioOutputPurpose | nul
 
 function readShotAngle(value: string): ProductImageStudioShotAngle | null {
   return PRODUCT_IMAGE_STUDIO_SHOT_ANGLE_OPTIONS.find((option) => option.value === value)?.value ?? null;
-}
-
-function describeCardSpec(card: ProductImageStudioCardSpec): string {
-  switch (card.format) {
-    case "folded_card":
-      return `접은 크기 ${formatSize(card.foldedSizeMm.width, card.foldedSizeMm.height)}, 펼친 크기 ${formatSize(card.openSizeMm.width, card.openSizeMm.height)}`;
-    case "postcard_flat":
-      return `엽서 크기 ${formatSize(card.sizeMm.width, card.sizeMm.height)}`;
-    default:
-      return assertNever(card);
-  }
-}
-
-function describeSealStickerSpec(sealSticker: ProductImageStudioSealStickerSpec): string {
-  switch (sealSticker.shape) {
-    case "circle":
-      return `원형 ${sealSticker.sizeMm.diameter}mm`;
-    case "rectangle":
-      return `사각 ${formatSize(sealSticker.sizeMm.width, sealSticker.sizeMm.height)}`;
-    default:
-      return assertNever(sealSticker);
-  }
-}
-
-function formatSize(width: number, height: number): string {
-  return `${width}x${height}mm`;
 }

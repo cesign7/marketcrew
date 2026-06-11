@@ -1,26 +1,18 @@
 import { NextResponse } from "next/server";
 import { listCardSetConceptRecommendations } from "@/features/product-image-studio/domain/concepts";
 import {
-  PRODUCT_IMAGE_STUDIO_OUTPUT_TYPES,
-  PRODUCT_IMAGE_STUDIO_QUALITY_MODES,
-  type ProductImageStudioOutputType,
-  type ProductImageStudioQualityMode,
-} from "@/features/product-image-studio/domain/types";
-import {
   buildProductImageStudioPromptContext,
   resolveProductImageStudioImageProvider,
 } from "@/features/product-image-studio/server/imageProvider";
 import { getProductImageStudioDimensionsForRatio } from "@/features/product-image-studio/server/downloads";
+import {
+  getProductImageStudioGenerationOutputBlockReason,
+  parseProductImageStudioGenerationPayload,
+} from "@/features/product-image-studio/server/generationRoutePayload";
 import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
 
 type ProductImageStudioGenerationRouteContext = {
   readonly params: Promise<{ readonly id: string }>;
-};
-
-type ParsedGenerationPayload = {
-  readonly conceptId: string;
-  readonly outputs: readonly ProductImageStudioOutputType[];
-  readonly qualityMode: ProductImageStudioQualityMode;
 };
 
 export const dynamic = "force-dynamic";
@@ -33,7 +25,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     return NextResponse.json({ error: { code: "PROJECT_NOT_FOUND", message: "프로젝트를 찾지 못했습니다." }, ok: false }, { status: 404 });
   }
 
-  const parsed = parseGenerationPayload(await readJsonPayload(request));
+  const parsed = parseProductImageStudioGenerationPayload(await readJsonPayload(request), project.cardFormat);
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error, ok: false }, { status: 400 });
   }
@@ -44,12 +36,32 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
   }
 
   const assets = await repository.listAssets(project.id);
+  const assetRoles = assets.map((asset) => asset.role);
+  const blockedOutput = parsed.payload.outputs
+    .map((outputType) => ({
+      outputType,
+      reason: getProductImageStudioGenerationOutputBlockReason(
+        project.cardFormat,
+        assetRoles,
+        parsed.payload.productionSettings,
+        outputType,
+      ),
+    }))
+    .find((result) => result.reason !== null);
+  if (blockedOutput?.reason) {
+    return NextResponse.json(
+      { error: { code: "OUTPUT_NOT_READY", message: blockedOutput.reason }, ok: false },
+      { status: 400 },
+    );
+  }
+
+  const projectForGeneration = { ...project, productionSettings: parsed.payload.productionSettings };
   const promptContext = buildProductImageStudioPromptContext({
-    assetRoles: assets.map((asset) => asset.role),
+    assetRoles,
     cardPose: project.requestedCardPoses[0],
     concept,
     outputType: parsed.payload.outputs[0] ?? "set_combined",
-    project,
+    project: projectForGeneration,
     qualityMode: parsed.payload.qualityMode,
     ratio: project.ratios[0] ?? "1:1",
   });
@@ -147,99 +159,6 @@ async function readJsonPayload(request: Request): Promise<unknown> {
   } catch {
     return null;
   }
-}
-
-function parseGenerationPayload(payload: unknown):
-  | {
-      readonly ok: true;
-      readonly payload: ParsedGenerationPayload;
-    }
-  | {
-      readonly error: { readonly code: string; readonly message: string };
-      readonly ok: false;
-    } {
-  if (!isRecord(payload)) {
-    return invalidPayload("INVALID_JSON", "생성 요청 형식이 올바르지 않습니다.");
-  }
-
-  const conceptId = payload["conceptId"];
-  const outputs = parseOutputs(payload["outputs"]);
-  const qualityMode = parseQualityMode(payload["qualityMode"]);
-  if (typeof conceptId !== "string" || conceptId.length === 0) {
-    return invalidPayload("CONCEPT_REQUIRED", "생성할 콘셉트를 선택해 주세요.");
-  }
-
-  if (outputs.length === 0) {
-    return invalidPayload("OUTPUTS_REQUIRED", "생성할 이미지 종류를 선택해 주세요.");
-  }
-
-  if (!qualityMode) {
-    return invalidPayload("QUALITY_MODE_REQUIRED", "생성 품질을 선택해 주세요.");
-  }
-
-  return {
-    ok: true,
-    payload: {
-      conceptId,
-      outputs,
-      qualityMode,
-    },
-  };
-}
-
-function parseOutputs(value: unknown): readonly ProductImageStudioOutputType[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  const outputs: ProductImageStudioOutputType[] = [];
-  for (const item of value) {
-    const output = parseOutputType(item);
-    if (!output) {
-      return [];
-    }
-    outputs.push(output);
-  }
-  return outputs;
-}
-
-function parseOutputType(value: unknown): ProductImageStudioOutputType | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  for (const outputType of PRODUCT_IMAGE_STUDIO_OUTPUT_TYPES) {
-    if (outputType === value) {
-      return outputType;
-    }
-  }
-
-  return null;
-}
-
-function parseQualityMode(value: unknown): ProductImageStudioQualityMode | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  for (const qualityMode of PRODUCT_IMAGE_STUDIO_QUALITY_MODES) {
-    if (qualityMode === value) {
-      return qualityMode;
-    }
-  }
-
-  return null;
-}
-
-function invalidPayload(code: string, message: string): {
-  readonly error: { readonly code: string; readonly message: string };
-  readonly ok: false;
-} {
-  return { error: { code, message }, ok: false };
-}
-
-function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
-  return typeof value === "object" && value !== null;
 }
 
 function isFakeGenerationEnabled(): boolean {

@@ -8,11 +8,13 @@ import {
   buildProductImageStudioCreateProjectPayload,
   changeProductImageStudioCardFormat,
   createInitialProductImageStudioWizardState,
+  getProductImageStudioAvailableOutputs,
   getProductImageStudioOutputChoices,
   getProductImageStudioPoseOptions,
   getProductImageStudioUploadSlots,
   recordProductImageStudioUploadedRole,
 } from "@/features/product-image-studio/domain/projectWizard";
+import { manualCardOnlyProductionSettings } from "./manualProductionSettings";
 
 describe("product image studio project wizard UI", () => {
   it("renders the usable Korean wizard controls on the first studio screen", () => {
@@ -24,35 +26,37 @@ describe("product image studio project wizard UI", () => {
     expect(html).toContain("카드 자세");
     expect(html).toContain("디자인 업로드");
     expect(html).toContain("상품 사양");
+    expect(html).toContain("접은 카드 가로(mm)");
+    expect(html).toContain("펼친 카드 가로(mm)");
+    expect(html).toContain("봉투 가로(mm)");
+    expect(html).toContain("스티커 지름(mm)");
     expect(html).toContain("목업 합성 우선");
     expect(html).toContain("자동 검수 기준");
     expect(html).toContain("콘셉트 추천");
     expect(html).toMatch(/<button[^>]*disabled/);
+    expect(html).not.toContain("접이식 100x150");
     expect(html).not.toContain("네이버 검색광고");
     expect(html).not.toContain("광고유형");
   });
 
-  it("lists folded-card upload slots and keeps concept recommendation disabled before required uploads", () => {
+  it("enables card-only recommendation after card specs and the card image are ready", () => {
     const state = {
       ...createInitialProductImageStudioWizardState(),
       projectName: "봄 초대장 세트",
+      productionSettings: manualCardOnlyProductionSettings(),
     };
 
     const requiredLabels = getProductImageStudioUploadSlots(state)
       .filter((slot) => slot.required)
       .map((slot) => slot.label);
 
-    expect(requiredLabels).toEqual(["접이식 카드 앞면", "접는 위치 참고", "봉투 앞면", "봉합스티커"]);
+    expect(requiredLabels).toEqual(["접이식 카드 앞면"]);
     expect(canRequestProductImageStudioConcepts(state)).toBe(false);
 
-    const uploadedState = getProductImageStudioUploadSlots(state)
-      .filter((slot) => slot.required)
-      .reduce(
-        (currentState, slot) => recordProductImageStudioUploadedRole(currentState, slot.role),
-        state,
-      );
+    const uploadedState = recordProductImageStudioUploadedRole(state, "folded_card_outer_front");
 
     expect(canRequestProductImageStudioConcepts(uploadedState)).toBe(true);
+    expect(getProductImageStudioAvailableOutputs(uploadedState)).toEqual(["card_single"]);
   });
 
   it("switches postcard projects to postcard slots and pose choices", () => {
@@ -67,7 +71,7 @@ describe("product image studio project wizard UI", () => {
       .map((slot) => slot.label);
     const poseLabels = getProductImageStudioPoseOptions(postcardState.cardFormat).map((pose) => pose.label);
 
-    expect(requiredLabels).toEqual(["엽서 앞면", "봉투 앞면", "봉합스티커"]);
+    expect(requiredLabels).toEqual(["엽서 앞면"]);
     expect(poseLabels).toEqual(["엽서 앞면 평면컷", "엽서 뒷면 평면컷", "엽서 생활형 겹침컷"]);
     expect(postcardState.uploadedRoles).not.toContain("folded_card_outer_front");
   });
@@ -93,8 +97,9 @@ describe("product image studio project wizard UI", () => {
     if (payload.productionSettings.card.format !== "folded_card") {
       throw new Error("folded card payload expected");
     }
-    expect(payload.productionSettings.card.foldedSizeMm).toEqual({ height: 150, width: 100 });
-    expect(payload.productionSettings.envelope.sizeMm).toEqual({ height: 160, width: 110 });
+    expect(payload.productionSettings.card.foldedSizeMm).toEqual({ height: 0, width: 0 });
+    expect(payload.productionSettings.envelope.sizeMm).toEqual({ height: 0, width: 0 });
+    expect(payload.productionSettings.specSource).toBe("manual_input");
     expect(payload.productionSettings.scene.generationMethod).toBe("mockup_composite_first");
     expect(Object.prototype.hasOwnProperty.call(payload, "projectName")).toBe(false);
   });

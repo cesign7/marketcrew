@@ -79,14 +79,22 @@ export function getAssetRolesForCardFormat(cardFormat: CardFormat): CardFormatAs
     case "folded_card":
       return {
         cardFormat,
-        required: ["folded_card_outer_front", "folded_card_fold_metadata", "envelope_front", "seal_sticker"],
-        optional: ["folded_card_inner_spread", "folded_card_back", "envelope_inside_flap", "reference_mood"],
+        required: ["folded_card_outer_front"],
+        optional: [
+          "envelope_front",
+          "seal_sticker",
+          "folded_card_fold_metadata",
+          "folded_card_inner_spread",
+          "folded_card_back",
+          "envelope_inside_flap",
+          "reference_mood",
+        ],
       };
     case "postcard_flat":
       return {
         cardFormat,
-        required: ["postcard_front", "envelope_front", "seal_sticker"],
-        optional: ["postcard_back", "envelope_inside_flap", "reference_mood"],
+        required: ["postcard_front"],
+        optional: ["envelope_front", "seal_sticker", "postcard_back", "envelope_inside_flap", "reference_mood"],
       };
     default:
       return assertNever(cardFormat);

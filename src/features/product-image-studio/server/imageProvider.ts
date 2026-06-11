@@ -91,8 +91,8 @@ export function buildProductImageStudioPromptContext(
     `conceptSummary=${input.concept.summary}`,
     `scene=${outputPrompt?.scenePrompt ?? ""}`,
     `geometry=${posePrompt?.prompt ?? getCardFormatFallbackGeometry(input.project.cardFormat)}`,
-    ...buildProductImageStudioProductionPromptLines(input.project.productionSettings),
-    `validationRules=${buildProductImageStudioValidationChecklist(input.project.productionSettings).join(" | ")}`,
+    ...buildProductImageStudioProductionPromptLines(input.project.productionSettings, input.outputType),
+    `validationRules=${buildProductImageStudioValidationChecklist(input.project.productionSettings, input.outputType).join(" | ")}`,
     "Preserve the uploaded print design exactly; only adapt perspective, lighting, paper thickness, and contact shadows.",
   ].join("\n");
 

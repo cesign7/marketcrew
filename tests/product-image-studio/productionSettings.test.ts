@@ -3,44 +3,55 @@ import {
   buildProductImageStudioProductionPromptLines,
   buildProductImageStudioValidationChecklist,
   createDefaultProductImageStudioProductionSettings,
-  listProductImageStudioSpecPresets,
+  getProductImageStudioProductionSettingsIssueForOutput,
   parseProductImageStudioProductionSettings,
 } from "@/features/product-image-studio/domain/productionSettings";
+import {
+  manualCardOnlyProductionSettings,
+  manualProductionSettings,
+} from "./manualProductionSettings";
 
 describe("product image studio production settings", () => {
-  it("defines print-size presets that preserve card, envelope, and seal-sticker scale", () => {
+  it("starts from a manual input draft instead of a hardcoded print-size preset", () => {
     const foldedSettings = createDefaultProductImageStudioProductionSettings("folded_card");
-    const foldedPresets = listProductImageStudioSpecPresets("folded_card");
 
-    expect(foldedPresets.map((preset) => preset.id)).toContain("folded-100x150-envelope-110x160-seal-35");
+    expect(foldedSettings.specSource).toBe("manual_input");
     expect(foldedSettings.card.format).toBe("folded_card");
     if (foldedSettings.card.format !== "folded_card") {
       throw new Error("folded card settings expected");
     }
-    expect(foldedSettings.card.foldedSizeMm).toEqual({ height: 150, width: 100 });
-    expect(foldedSettings.card.openSizeMm).toEqual({ height: 150, width: 200 });
-    expect(foldedSettings.envelope.sizeMm).toEqual({ height: 160, width: 110 });
-    expect(foldedSettings.sealSticker.sizeMm).toEqual({ diameter: 35 });
+    expect(foldedSettings.card.foldedSizeMm).toEqual({ height: 0, width: 0 });
+    expect(foldedSettings.card.openSizeMm).toEqual({ height: 0, width: 0 });
+    expect(foldedSettings.envelope.sizeMm).toEqual({ height: 0, width: 0 });
+    expect(foldedSettings.sealSticker.sizeMm).toEqual({ diameter: 0 });
   });
 
-  it("builds prompt lines for mockup-first generation with validation rules", () => {
-    const settings = createDefaultProductImageStudioProductionSettings("folded_card");
+  it("builds output-specific prompt lines from manually entered dimensions", () => {
+    const settings = manualProductionSettings("folded_card");
 
-    const promptLines = buildProductImageStudioProductionPromptLines(settings);
-    const checklist = buildProductImageStudioValidationChecklist(settings);
+    const cardPromptLines = buildProductImageStudioProductionPromptLines(settings, "card_single");
+    const setPromptLines = buildProductImageStudioProductionPromptLines(settings, "set_combined");
+    const checklist = buildProductImageStudioValidationChecklist(settings, "set_combined");
 
-    expect(promptLines).toContain("generationMethod=mockup_composite_first");
-    expect(promptLines).toContain("cardFoldedSize=100x150mm");
-    expect(promptLines).toContain("cardOpenSize=200x150mm");
-    expect(promptLines).toContain("envelopeSize=110x160mm");
-    expect(promptLines).toContain("sealStickerSize=35mm");
-    expect(promptLines).toContain("designPreservation=exact_composite");
+    expect(cardPromptLines).toContain("specSource=manual_input");
+    expect(cardPromptLines).toContain("cardFoldedSize=100x150mm");
+    expect(cardPromptLines).not.toContain("envelopeSize=110x160mm");
+    expect(setPromptLines).toContain("envelopeSize=110x160mm");
+    expect(setPromptLines).toContain("sealStickerSize=35mm");
+    expect(setPromptLines).toContain("designPreservation=exact_composite");
     expect(checklist).toContain("카드와 봉투의 상대 크기가 실제 사양과 맞아야 합니다.");
     expect(checklist).toContain("글자, 로고, 패턴은 다시 그리지 않고 업로드 이미지를 보존해야 합니다.");
   });
 
-  it("parses settings and rejects physically impossible relative sizes", () => {
-    const settings = createDefaultProductImageStudioProductionSettings("postcard_flat");
+  it("allows card-only settings while requiring matching specs for set outputs", () => {
+    const settings = manualCardOnlyProductionSettings();
+
+    expect(getProductImageStudioProductionSettingsIssueForOutput(settings, "card_single")).toBeNull();
+    expect(getProductImageStudioProductionSettingsIssueForOutput(settings, "set_combined")).toBe("봉투 실제 규격을 입력해 주세요.");
+  });
+
+  it("parses settings and rejects physically impossible relative sizes once both sizes are entered", () => {
+    const settings = manualProductionSettings("postcard_flat");
     const valid = parseProductImageStudioProductionSettings(settings, "postcard_flat");
     const invalid = parseProductImageStudioProductionSettings(
       {

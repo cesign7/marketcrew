@@ -55,11 +55,37 @@
 
 .presetGroup legend,
 .methodGroup legend,
+.specGroup h4,
+.numberField span,
 .selectField span,
 .specList dt {
   color: #344054;
   font-size: 13px;
   font-weight: 900;
+}
+
+.manualSpecGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.specGroup {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.specGroup h4 {
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.inputGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .preset,
@@ -142,6 +168,13 @@
   min-width: 0;
 }
 
+.numberField {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.numberField input,
 .selectField select {
   background: #fff;
   border: 1px solid var(--line);
@@ -176,6 +209,7 @@
 @media (max-width: 720px) {
   .heading,
   .controlGrid,
+  .inputGrid,
   .specList {
     grid-template-columns: 1fr;
   }

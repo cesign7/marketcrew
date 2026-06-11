@@ -19,6 +19,7 @@ import {
   type ProductImageStudioGenerationState,
 } from "@/features/product-image-studio/domain/generationWorkflow";
 import {
+  canUploadProductImageStudioAssetRole,
   canRequestProductImageStudioConcepts,
   createInitialProductImageStudioWizardState,
   recordProductImageStudioUploadedRole,
@@ -47,7 +48,7 @@ export function ProductImageStudioWizard() {
     createInitialProductImageStudioGenerationState,
   );
   const [statusMessage, setStatusMessage] = useState<StatusMessage>({
-    text: "프로젝트 이름과 필수 이미지를 준비하면 콘셉트를 추천받을 수 있습니다.",
+    text: "프로젝트 이름, 실제 규격, 생성할 구성품 이미지를 준비하면 콘셉트를 추천받을 수 있습니다.",
     tone: "info",
   });
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -67,9 +68,9 @@ export function ProductImageStudioWizard() {
         <div className={styles.panelHeader}>
           <div>
             <h2>새 이미지 프로젝트</h2>
-            <p>카드, 봉투, 봉합스티커를 세트컷과 단독컷으로 만들 준비를 합니다.</p>
+            <p>카드, 봉투, 봉합스티커를 업로드한 구성품 기준으로 설정샷과 단독컷으로 만듭니다.</p>
           </div>
-          <span className={styles.fixedSet}>카드 + 봉투 + 봉합스티커</span>
+          <span className={styles.fixedSet}>구성품별 생성</span>
         </div>
 
         <ProductImageStudioProjectSettings setState={setWizardState} state={state} />
@@ -78,7 +79,7 @@ export function ProductImageStudioWizard() {
       </section>
 
       <aside className={styles.sidePanel} aria-label="추천 준비 설정">
-        <ProductImageStudioOutputControls />
+        <ProductImageStudioOutputControls state={state} />
 
         <fieldset className={styles.qualityGroup}>
           <legend>품질 모드</legend>
@@ -130,6 +131,10 @@ export function ProductImageStudioWizard() {
     if (!file) {
       return;
     }
+    if (!canUploadProductImageStudioAssetRole(stateRef.current, role)) {
+      setStatusMessage({ text: "프로젝트 이름과 해당 구성품의 실제 규격을 먼저 입력해 주세요.", tone: "error" });
+      return;
+    }
 
     const ensuredProjectId = await ensureProjectId(stateRef.current);
     if (!ensuredProjectId) {
@@ -174,6 +179,7 @@ export function ProductImageStudioWizard() {
   async function handleStartGeneration(): Promise<void> {
     const payload = buildProductImageStudioGenerationPayload(stateRef.current, generationState);
     if (!payload) {
+      setStatusMessage({ text: "생성 가능한 출력이 없습니다. 규격과 이미지를 먼저 확인해 주세요.", tone: "error" });
       return;
     }
 

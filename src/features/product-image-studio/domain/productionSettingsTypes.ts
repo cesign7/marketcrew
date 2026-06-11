@@ -1,5 +1,3 @@
-import type { CardFormat } from "@/features/product-image-studio/domain/types";
-
 export const PRODUCT_IMAGE_STUDIO_OUTPUT_PURPOSES = [
   "smartstore_list",
   "smartstore_main",
@@ -17,13 +15,8 @@ export type ProductImageStudioGenerationMethod = (typeof PRODUCT_IMAGE_STUDIO_GE
 export const PRODUCT_IMAGE_STUDIO_DESIGN_PRESERVATION_MODES = ["exact_composite", "ai_redraw_allowed"] as const;
 export type ProductImageStudioDesignPreservationMode = (typeof PRODUCT_IMAGE_STUDIO_DESIGN_PRESERVATION_MODES)[number];
 
-export const PRODUCT_IMAGE_STUDIO_SPEC_PRESET_IDS = [
-  "folded-100x150-envelope-110x160-seal-35",
-  "folded-127x178-envelope-135x190-seal-40",
-  "postcard-100x150-envelope-110x160-seal-35",
-  "postcard-a6-envelope-114x162-seal-30",
-] as const;
-export type ProductImageStudioSpecPresetId = (typeof PRODUCT_IMAGE_STUDIO_SPEC_PRESET_IDS)[number];
+export const PRODUCT_IMAGE_STUDIO_SPEC_SOURCES = ["manual_input"] as const;
+export type ProductImageStudioSpecSource = (typeof PRODUCT_IMAGE_STUDIO_SPEC_SOURCES)[number];
 
 export type ProductImageStudioSizeMm = {
   readonly height: number;
@@ -73,16 +66,9 @@ export type ProductImageStudioSceneProductionSettings = {
 export type ProductImageStudioProductionSettings = {
   readonly card: ProductImageStudioCardSpec;
   readonly envelope: ProductImageStudioEnvelopeSpec;
-  readonly presetId: ProductImageStudioSpecPresetId;
   readonly scene: ProductImageStudioSceneProductionSettings;
   readonly sealSticker: ProductImageStudioSealStickerSpec;
-};
-
-export type ProductImageStudioSpecPreset = {
-  readonly id: ProductImageStudioSpecPresetId;
-  readonly label: string;
-  readonly settings: ProductImageStudioProductionSettings;
-  readonly summary: string;
+  readonly specSource: ProductImageStudioSpecSource;
 };
 
 export type ProductImageStudioOption<Value extends string> = {
@@ -113,15 +99,3 @@ export const PRODUCT_IMAGE_STUDIO_GENERATION_METHOD_OPTIONS = [
   { helper: "빈 목업 장면을 만들고 업로드 디자인을 합성하는 기본 방식입니다.", label: "목업 합성 우선", value: "mockup_composite_first" },
   { helper: "참고용 초안에만 사용합니다. 디자인 왜곡 검수가 더 필요합니다.", label: "AI 재생성 보조", value: "ai_recreate_assist" },
 ] as const satisfies readonly ProductImageStudioOption<ProductImageStudioGenerationMethod>[];
-
-export class ProductImageStudioProductionSettingsError extends Error {
-  readonly cardFormat: CardFormat;
-  readonly code: "DEFAULT_PRESET_MISSING";
-
-  constructor(cardFormat: CardFormat) {
-    super(`Default product image studio production preset missing: ${cardFormat}`);
-    this.cardFormat = cardFormat;
-    this.code = "DEFAULT_PRESET_MISSING";
-    this.name = "ProductImageStudioProductionSettingsError";
-  }
-}
