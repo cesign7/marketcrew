@@ -13,10 +13,18 @@ describe("product image studio production smoke contract", () => {
     const smokeScript = await readFile(join(process.cwd(), "scripts", "production-smoke.mjs"), "utf8");
 
     expect(smokeScript).toContain("/product-image-studio");
+    expect(smokeScript).toContain("/login?next=%2Fproduct-image-studio");
     expect(smokeScript).toContain("/api/product-image-studio/provider-status");
+    expect(smokeScript).toContain("checkPageRender");
     expect(smokeScript).toContain("checkApiLoginGate");
     expect(smokeScript).not.toContain("/generations");
     expect(smokeScript).not.toContain("regenerate-ratio");
+  });
+
+  it("keeps Next app route output compatible with the Vercel serverless launcher", async () => {
+    const packageJson = await readFile(join(process.cwd(), "package.json"), "utf8");
+
+    expect(packageJson).not.toContain('"type": "module"');
   });
 
   it("redirects the unauthenticated studio page to owner login when auth is required", async () => {

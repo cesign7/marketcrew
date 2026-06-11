@@ -4,6 +4,7 @@ const apiUrl = normalizeBaseUrl(process.env.MARKETCREW_PROD_API_URL ?? "https://
 const checks = [
   checkHealth(`${apiUrl}/api/backend/health`, "Railway API 상태"),
   checkHealth(`${appUrl}/api/backend/health`, "Vercel -> Railway 연결"),
+  checkPageRender(`${appUrl}/login?next=%2Fproduct-image-studio`, "대표 로그인 페이지 렌더", "대표 로그인"),
   checkLoginGate(`${appUrl}/operations`, "대표 로그인 보호"),
   checkLoginGate(`${appUrl}/product-image-studio`, "상품 이미지 스튜디오 로그인 보호"),
   checkApiLoginGate(`${appUrl}/api/product-image-studio/provider-status`, "상품 이미지 생성 상태 API 보호"),
@@ -46,6 +47,28 @@ async function checkLoginGate(url, label) {
     const ok = [302, 303, 307, 308].includes(response.status) && location.includes("/login");
 
     return { ok, label, message: `status=${response.status}, location=${location || "none"}` };
+  } catch (error) {
+    return { ok: false, label, message: error instanceof Error ? error.message : "알 수 없는 오류" };
+  }
+}
+
+async function checkPageRender(url, label, expectedText) {
+  try {
+    const response = await fetch(url, { cache: "no-store", redirect: "manual" });
+    const bodyText = await response.text();
+    const hasServerError =
+      bodyText.includes("A server error occurred") ||
+      bodyText.includes("This page couldn") ||
+      bodyText.includes("ERR_REQUIRE_ESM");
+    const ok = response.status === 200 && bodyText.includes(expectedText) && !hasServerError;
+
+    return {
+      ok,
+      label,
+      message: `status=${response.status}, expectedText=${bodyText.includes(expectedText) ? "true" : "false"}, bodySafe=${
+        hasServerError ? "false" : "true"
+      }`,
+    };
   } catch (error) {
     return { ok: false, label, message: error instanceof Error ? error.message : "알 수 없는 오류" };
   }
