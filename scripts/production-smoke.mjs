@@ -5,6 +5,8 @@ const checks = [
   checkHealth(`${apiUrl}/api/backend/health`, "Railway API 상태"),
   checkHealth(`${appUrl}/api/backend/health`, "Vercel -> Railway 연결"),
   checkLoginGate(`${appUrl}/operations`, "대표 로그인 보호"),
+  checkLoginGate(`${appUrl}/product-image-studio`, "상품 이미지 스튜디오 로그인 보호"),
+  checkApiLoginGate(`${appUrl}/api/product-image-studio/provider-status`, "상품 이미지 생성 상태 API 보호"),
 ];
 
 const results = await Promise.all(checks);
@@ -44,6 +46,23 @@ async function checkLoginGate(url, label) {
     const ok = [302, 303, 307, 308].includes(response.status) && location.includes("/login");
 
     return { ok, label, message: `status=${response.status}, location=${location || "none"}` };
+  } catch (error) {
+    return { ok: false, label, message: error instanceof Error ? error.message : "알 수 없는 오류" };
+  }
+}
+
+async function checkApiLoginGate(url, label) {
+  try {
+    const response = await fetch(url, { cache: "no-store", redirect: "manual" });
+    const bodyText = await response.text();
+    const hasUnsafeBody =
+      bodyText.includes("OPENAI_API_KEY") ||
+      bodyText.includes("PRODUCT_IMAGE_STUDIO") ||
+      bodyText.includes("gpt-image") ||
+      bodyText.includes("sk-");
+    const ok = response.status === 401 && !hasUnsafeBody;
+
+    return { ok, label, message: `status=${response.status}, bodySafe=${hasUnsafeBody ? "false" : "true"}` };
   } catch (error) {
     return { ok: false, label, message: error instanceof Error ? error.message : "알 수 없는 오류" };
   }

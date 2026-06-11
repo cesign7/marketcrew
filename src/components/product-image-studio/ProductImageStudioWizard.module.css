@@ -1,0 +1,269 @@
+.layout {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  margin: 0 auto;
+  max-width: 1180px;
+}
+
+.mainPanel,
+.sidePanel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.mainPanel {
+  align-content: start;
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+}
+
+.sidePanel {
+  align-self: start;
+  display: grid;
+  gap: 18px;
+  padding: 16px;
+}
+
+.sidePanel .sectionTitle {
+  display: grid;
+}
+
+.panelHeader,
+.sectionTitle {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.panelHeader h2,
+.sectionTitle h3 {
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.panelHeader h2 {
+  font-size: 20px;
+}
+
+.sectionTitle h3 {
+  font-size: 16px;
+}
+
+.panelHeader p,
+.sectionTitle p,
+.uploadSlot p,
+.emptyText,
+.info,
+.success,
+.error {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.fixedSet {
+  background: var(--brand-soft);
+  border-radius: 999px;
+  color: var(--brand-strong);
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 7px 10px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field span,
+.segmentGroup legend,
+.qualityGroup legend {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.field input {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.segmentGroup,
+.qualityGroup {
+  border: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.segmentGroup legend,
+.qualityGroup legend {
+  flex-basis: 100%;
+  margin-bottom: 2px;
+}
+
+.segment,
+.selectedSegment,
+.checkChoice {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #344054;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 11px;
+}
+
+.selectedSegment {
+  background: var(--brand-soft);
+  border-color: #9ccdd8;
+  color: var(--brand-strong);
+}
+
+.optionSection {
+  display: grid;
+  gap: 12px;
+}
+
+.choiceGrid,
+.uploadGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.choiceStack,
+.conceptList {
+  display: grid;
+  gap: 8px;
+}
+
+.checkChoice {
+  justify-content: flex-start;
+}
+
+.uploadSlot {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.uploadSlot > span {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.uploadSlot em,
+.uploadSlot small {
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  padding: 3px 7px;
+}
+
+.uploadSlot em {
+  background: #fff2ea;
+  color: #b54708;
+}
+
+.uploadSlot small {
+  background: #eef4f6;
+  color: var(--brand-strong);
+}
+
+.fileInput {
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.uploadSlot strong {
+  align-items: center;
+  border: 1px solid #9ccdd8;
+  border-radius: 8px;
+  color: var(--brand-strong);
+  display: inline-flex;
+  font-size: 13px;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 10px;
+  width: max-content;
+}
+
+.actionBox {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.primaryAction {
+  align-items: center;
+  background: var(--brand);
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+}
+
+.primaryAction:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.success {
+  color: var(--good);
+}
+
+.error {
+  color: var(--danger);
+}
+
+@media (max-width: 920px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .choiceGrid,
+  .uploadGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .panelHeader,
+  .sectionTitle {
+    display: grid;
+  }
+}

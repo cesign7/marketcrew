@@ -1,0 +1,96 @@
+.gallery {
+  display: grid;
+  gap: 12px;
+}
+
+.heading {
+  display: grid;
+  gap: 4px;
+}
+
+.heading h3,
+.groupHeading h4 {
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.heading h3 {
+  font-size: 16px;
+}
+
+.groupHeading h4 {
+  font-size: 14px;
+}
+
+.heading p,
+.groupHeading p,
+.resultCard p,
+.empty {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.groupList,
+.resultList {
+  display: grid;
+  gap: 8px;
+}
+
+.group,
+.featuredGroup {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.featuredGroup {
+  background: var(--brand-soft);
+  border-color: #9ccdd8;
+}
+
+.groupHeading {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.groupHeading span {
+  background: #eef4f6;
+  border-radius: 999px;
+  color: var(--brand-strong);
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 5px 8px;
+}
+
+.resultCard {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+}
+
+.resultCard div {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.resultCard strong {
+  font-size: 13px;
+}
+
+.resultCard span {
+  color: var(--brand-strong);
+  font-size: 12px;
+  font-weight: 900;
+}

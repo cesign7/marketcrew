@@ -1,0 +1,133 @@
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.heading {
+  display: grid;
+  gap: 4px;
+}
+
+.heading h3 {
+  font-size: 16px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.heading p,
+.ratioOption small,
+.status {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.ratioGroup {
+  border: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.ratioGroup legend,
+.resultSelect > span,
+.customSize span {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ratioOption {
+  background: #fbfcfe;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  gap: 4px 8px;
+  grid-template-columns: auto 1fr;
+  padding: 10px;
+}
+
+.ratioOption[data-selected="true"] {
+  background: var(--brand-soft);
+  border-color: #9ccdd8;
+}
+
+.ratioOption span {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.ratioOption small {
+  grid-column: 2;
+}
+
+.customSize {
+  display: none;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.customSize[data-visible="true"] {
+  display: grid;
+}
+
+.customSize label,
+.resultSelect {
+  display: grid;
+  gap: 6px;
+}
+
+.customSize input,
+.resultSelect select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  min-height: 38px;
+  min-width: 0;
+  padding: 0 10px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.primary,
+.secondary {
+  align-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.primary {
+  background: var(--brand);
+  border: 0;
+  color: #fff;
+}
+
+.secondary {
+  background: #eef4f6;
+  border: 1px solid #9ccdd8;
+  color: var(--brand-strong);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

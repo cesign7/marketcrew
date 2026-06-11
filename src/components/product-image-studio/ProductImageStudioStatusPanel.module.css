@@ -1,0 +1,86 @@
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 16px;
+}
+
+.heading {
+  display: grid;
+  gap: 4px;
+}
+
+.heading h2 {
+  font-size: 18px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.heading p,
+.card p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.card strong {
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.card[data-tone="blocked"] {
+  background: #fff7f5;
+  border-color: #f3b8b0;
+}
+
+.card[data-tone="blocked"] strong {
+  color: var(--danger);
+}
+
+.card[data-tone="ready"] {
+  background: #f1fbf6;
+  border-color: #a9dec2;
+}
+
+.card[data-tone="ready"] strong {
+  color: var(--good);
+}
+
+@media (max-width: 920px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,230 @@
+import { describe, expect, it, vi, afterEach } from "vitest";
+import { GET as downloadZip } from "@/app/api/product-image-studio/projects/[id]/downloads.zip/route";
+import { POST as createProject } from "@/app/api/product-image-studio/projects/route";
+import { POST as startGeneration } from "@/app/api/product-image-studio/projects/[id]/generations/route";
+import {
+  buildProductImageStudioDownloadManifest,
+  createProductImageStudioZipArchive,
+  parseProductImageStudioCustomRatio,
+  regenerateProductImageStudioRatio,
+  toProductImageStudioDownloadItems,
+} from "@/features/product-image-studio/server/downloads";
+import { createInMemoryProductImageStudioRepository } from "@/lib/persistence/productImageStudioRepository";
+import type {
+  CardDisplayPose,
+  ProductImageStudioOutputType,
+  ProductImageStudioRatioPreset,
+} from "@/features/product-image-studio/domain/types";
+import type { ProductImageStudioProjectRecord, ProductImageStudioResultRecord } from "@/lib/persistence/productImageStudioRepository";
+
+describe("product image studio downloads", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("builds safe individual file names and download URLs", () => {
+    const project = projectRecord("project-download-1");
+    const items = toProductImageStudioDownloadItems(project, [
+      resultRecord("result-1", "set_combined", "folded_closed", "1:1"),
+      resultRecord("result-2", "seal_sticker_single", undefined, "4:5"),
+    ]);
+
+    expect(items.map((item) => item.fileName)).toEqual([
+      "project-download-1-set_combined-folded_closed-1x1.png",
+      "project-download-1-seal_sticker_single-4x5.png",
+    ]);
+    expect(items[0]?.downloadUrl).toBe(
+      "/api/product-image-studio/projects/project-download-1/results/result-1/download",
+    );
+    for (const item of items) {
+      expect(item.fileName).not.toContain("..");
+      expect(item.fileName).not.toContain("/");
+    }
+  });
+
+  it("creates a zip archive with a manifest containing all output roles", () => {
+    const project = projectRecord("project-download-2");
+    const archive = createProductImageStudioZipArchive(project, [
+      resultRecord("result-1", "set_combined", "folded_closed", "1:1"),
+      resultRecord("result-2", "card_single", "folded_open_spread", "1:1"),
+      resultRecord("result-3", "envelope_single", undefined, "1:1"),
+      resultRecord("result-4", "seal_sticker_single", undefined, "1:1"),
+    ]);
+    const archiveText = new TextDecoder().decode(archive.bytes);
+
+    expect(archive.fileName).toBe("project-download-2-product-image-studio.zip");
+    expect(archive.manifest.files.map((file) => file.outputType)).toEqual([
+      "set_combined",
+      "card_single",
+      "envelope_single",
+      "seal_sticker_single",
+    ]);
+    expect(archiveText).toContain("manifest.json");
+    expect(archiveText).toContain("set_combined");
+    expect(archiveText).toContain("seal_sticker_single");
+  });
+
+  it("validates custom ratio dimensions", () => {
+    expect(parseProductImageStudioCustomRatio({ height: 1500, width: 1200 })).toEqual({
+      dimensions: { height: 1500, width: 1200 },
+      ok: true,
+    });
+    expect(parseProductImageStudioCustomRatio({ height: 0, width: 1200 })).toMatchObject({
+      error: { code: "CUSTOM_RATIO_SIZE_INVALID" },
+      ok: false,
+    });
+    expect(parseProductImageStudioCustomRatio({ height: 1500.5, width: 1200 })).toMatchObject({
+      error: { code: "CUSTOM_RATIO_SIZE_INVALID" },
+      ok: false,
+    });
+  });
+
+  it("regenerates a ratio by appending a new result record without mutating the original", async () => {
+    const repository = createInMemoryProductImageStudioRepository({
+      createId: nextId(["project-1", "generation-1", "result-original", "result-regenerated"]),
+      now: () => "2026-06-11T00:00:00.000Z",
+    });
+    const project = await repository.createProject(projectInput());
+    const generation = await repository.createGenerationRequest({
+      conceptId: "minimal-studio",
+      projectId: project.id,
+      providerRequestSummary: { provider: "fake" },
+      qualityMode: "draft",
+      requestedCardPoses: ["folded_closed"],
+      requestedOutputs: ["set_combined"],
+    });
+    const original = await repository.addResult({
+      cardPose: "folded_closed",
+      generationRequestId: generation.id,
+      height: 1200,
+      outputType: "set_combined",
+      projectId: project.id,
+      ratio: "1:1",
+      storageKey: "product-image-studio/project-1/results/original.png",
+      width: 1200,
+    });
+
+    const regenerated = await regenerateProductImageStudioRatio({
+      customDimensions: { height: 1500, width: 1200 },
+      projectId: project.id,
+      repository,
+      ratio: "custom",
+      sourceResultId: original.id,
+    });
+    const results = await repository.listResults(project.id);
+
+    expect(regenerated).toMatchObject({ ratio: "custom", width: 1200, height: 1500 });
+    expect(results).toHaveLength(2);
+    expect(results[0]).toEqual(original);
+    expect(results[1]).toMatchObject({ id: "result-regenerated", storageKey: expect.stringContaining("custom-1200x1500") });
+  });
+
+  it("returns a zip download from the route when fake generation has produced results", async () => {
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_FAKE_PROVIDER_ENABLED", "1");
+    const projectId = await createGeneratedProjectId();
+    const response = await downloadZip(
+      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/downloads.zip`),
+      { params: Promise.resolve({ id: projectId }) },
+    );
+    const bodyText = new TextDecoder().decode(await response.arrayBuffer());
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/zip");
+    expect(bodyText).toContain("manifest.json");
+    expect(bodyText).toContain("set_combined");
+    expect(bodyText).toContain("card_single");
+    expect(bodyText).toContain("envelope_single");
+    expect(bodyText).toContain("seal_sticker_single");
+  });
+});
+
+function projectRecord(id: string): ProductImageStudioProjectRecord {
+  return {
+    ...projectInput(),
+    createdAt: "2026-06-11T00:00:00.000Z",
+    id,
+    updatedAt: "2026-06-11T00:00:00.000Z",
+  };
+}
+
+function projectInput() {
+  return {
+    cardFormat: "folded_card",
+    name: "봄 초대장 세트/../",
+    productType: "card_envelope_seal_set",
+    qualityMode: "draft",
+    ratios: ["1:1", "4:5"],
+    requestedCardPoses: ["folded_closed", "folded_open_spread"],
+    requestedOutputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],
+  } as const;
+}
+
+function resultRecord(
+  id: string,
+  outputType: ProductImageStudioOutputType,
+  cardPose: CardDisplayPose | undefined,
+  ratio: ProductImageStudioRatioPreset,
+): ProductImageStudioResultRecord {
+  return {
+    cardPose,
+    createdAt: "2026-06-11T00:00:00.000Z",
+    generationRequestId: "generation-1",
+    height: 1200,
+    id,
+    outputType,
+    projectId: "project-download-1",
+    ratio,
+    storageKey: `product-image-studio/project-download-1/results/${id}.png`,
+    width: 1200,
+  };
+}
+
+function nextId(ids: readonly string[]): () => string {
+  let index = 0;
+  return () => {
+    const id = ids[index];
+    index += 1;
+    return id ?? "fallback-id";
+  };
+}
+
+async function createGeneratedProjectId(): Promise<string> {
+  const createResponse = await createProject(
+    new Request("http://127.0.0.1:3000/api/product-image-studio/projects", {
+      body: JSON.stringify({
+        cardFormat: "folded_card",
+        name: "봄 초대장 세트",
+        productType: "card_envelope_seal_set",
+        qualityMode: "draft",
+        ratios: ["1:1"],
+        requestedCardPoses: ["folded_closed", "folded_open_spread"],
+        requestedOutputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    }),
+  );
+  const projectId = readId(await createResponse.json());
+  await startGeneration(
+    new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/generations`, {
+      body: JSON.stringify({
+        conceptId: "minimal-studio",
+        outputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],
+        qualityMode: "draft",
+      }),
+      headers: { "content-type": "application/json" },
+      method: "POST",
+    }),
+    { params: Promise.resolve({ id: projectId }) },
+  );
+
+  return projectId;
+}
+
+function readId(value: unknown): string {
+  if (typeof value === "object" && value !== null && "id" in value && typeof value.id === "string") {
+    return value.id;
+  }
+
+  throw new Error("id missing");
+}

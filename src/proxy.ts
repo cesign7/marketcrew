@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAuthorizedCronRequest } from "./src/lib/auth/cron";
-import { AUTH_COOKIE_NAME, isAuthRequired, sanitizeNextPath, verifyOwnerSessionToken } from "./src/lib/auth/session";
+import { isAuthorizedCronRequest } from "./lib/auth/cron";
+import { AUTH_COOKIE_NAME, isAuthRequired, sanitizeNextPath, verifyOwnerSessionToken } from "./lib/auth/session";
 
 const PUBLIC_PATH_PREFIXES = ["/login", "/api/auth", "/api/backend/health", "/_next", "/favicon.ico", "/robots.txt"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (isAuthorizedCronRequest(request)) {
     return NextResponse.next();
   }
