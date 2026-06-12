@@ -21,9 +21,11 @@ describe("product image studio Gemini image provider", () => {
   it("builds a Gemini adapter request with prompt and reference images", async () => {
     let capturedBody = "";
     let capturedApiKey = "";
+    let capturedUrl = "";
     const provider = createGeminiImageProvider({
       apiKey: "secret-gemini-key",
-      fetchImpl: async (_input, init) => {
+      fetchImpl: async (input, init) => {
+        capturedUrl = input;
         capturedBody = typeof init.body === "string" ? init.body : "";
         capturedApiKey = init.headers instanceof Headers ? init.headers.get("x-goog-api-key") ?? "" : "";
         return new Response(
@@ -55,12 +57,65 @@ describe("product image studio Gemini image provider", () => {
     });
 
     expect(capturedApiKey).toBe("secret-gemini-key");
-    expect(capturedBody).toContain("\"responseModalities\":[\"TEXT\",\"IMAGE\"]");
+    expect(capturedUrl).toBe("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent");
+    expect(capturedBody).toContain("\"responseModalities\":[\"IMAGE\"]");
+    expect(capturedBody).toContain("\"imageConfig\"");
     expect(capturedBody).toContain("\"aspectRatio\":\"4:5\"");
+    expect(capturedBody).toContain("\"imageSize\":\"1K\"");
+    expect(capturedBody).not.toContain("\"responseFormat\"");
     expect(capturedBody).toContain("\"inline_data\"");
     expect(result.provider).toBe("gemini");
     expect(result.requestId).toBe("gemini-request");
     expect(JSON.stringify(result)).not.toContain("secret-gemini-key");
+  });
+
+  it("retries once without generation config when Gemini rejects the config schema", async () => {
+    const capturedBodies: string[] = [];
+    const provider = createGeminiImageProvider({
+      apiKey: "secret-gemini-key",
+      fetchImpl: async (_input, init) => {
+        capturedBodies.push(typeof init.body === "string" ? init.body : "");
+        if (capturedBodies.length === 1) {
+          return new Response(
+            JSON.stringify({
+              error: {
+                code: 400,
+                message:
+                  "Invalid JSON payload received. Unknown name \"responseModalities\" at 'generation_config': Cannot find field.",
+                status: "INVALID_ARGUMENT",
+              },
+            }),
+            { headers: { "x-goog-request-id": "gemini-schema-rejected" }, status: 400 },
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            candidates: [
+              {
+                content: {
+                  parts: [{ inline_data: { data: Buffer.from("gemini fallback png").toString("base64") } }],
+                },
+              },
+            ],
+          }),
+          { headers: { "x-goog-request-id": "gemini-fallback-request" }, status: 200 },
+        );
+      },
+      model: "gemini-3.1-flash-image",
+    });
+
+    const result = await provider.generateScene({
+      promptContext: postcardPromptContext(["postcard_front"]),
+      referenceImages: [],
+    });
+
+    expect(capturedBodies).toHaveLength(2);
+    expect(capturedBodies[0]).toContain("\"generationConfig\"");
+    expect(capturedBodies[0]).toContain("\"imageConfig\"");
+    expect(capturedBodies[1]).not.toContain("\"generationConfig\"");
+    expect(result.b64Json).toBe(Buffer.from("gemini fallback png").toString("base64"));
+    expect(result.requestId).toBe("gemini-fallback-request");
   });
 
   it("shows the safe Gemini provider error detail when image generation is rejected", async () => {
@@ -71,7 +126,7 @@ describe("product image studio Gemini image provider", () => {
           JSON.stringify({
             error: {
               code: 400,
-              message: "responseModalities must include TEXT when requesting IMAGE output.",
+              message: "Quota exceeded for this API key.",
               status: "INVALID_ARGUMENT",
             },
           }),
@@ -86,7 +141,7 @@ describe("product image studio Gemini image provider", () => {
         referenceImages: [],
       }),
     ).rejects.toMatchObject({
-      message: "Gemini 이미지 생성 요청이 실패했습니다: responseModalities must include TEXT when requesting IMAGE output.",
+      message: "Gemini 이미지 생성 요청이 실패했습니다: Quota exceeded for this API key.",
       requestId: "gemini-rejected",
       status: 400,
     });
@@ -105,7 +160,7 @@ describe("product image studio Gemini image provider", () => {
           JSON.stringify({
             error: {
               code: 400,
-              message: "responseModalities must include TEXT when requesting IMAGE output.",
+              message: "Quota exceeded for this API key.",
               status: "INVALID_ARGUMENT",
             },
           }),
@@ -134,9 +189,7 @@ describe("product image studio Gemini image provider", () => {
     const bodyText = await response.text();
 
     expect(response.status).toBe(502);
-    expect(bodyText).toContain(
-      "Gemini 이미지 생성 요청이 실패했습니다: responseModalities must include TEXT when requesting IMAGE output.",
-    );
+    expect(bodyText).toContain("Gemini 이미지 생성 요청이 실패했습니다: Quota exceeded for this API key.");
     expect(bodyText).toContain("gemini-route-rejected");
     expect(bodyText).not.toContain("secret-gemini-key");
   });

@@ -46,15 +46,15 @@ export type GeminiGenerateContentRequestBody = {
       readonly parts: readonly GeminiRequestPart[];
     },
   ];
-  readonly generationConfig: {
-    readonly responseFormat: {
-      readonly image: {
-        readonly aspectRatio: string;
-        readonly imageSize?: "1K" | "2K";
-      };
-    };
-    readonly responseModalities: readonly ["TEXT", "IMAGE"];
+  readonly generationConfig?: {
+    readonly imageConfig: GeminiImageConfig;
+    readonly responseModalities: readonly ["IMAGE"];
   };
+};
+
+type GeminiImageConfig = {
+  readonly aspectRatio: string;
+  readonly imageSize?: "1K" | "2K";
 };
 
 type GeminiRequestPart =
@@ -71,26 +71,31 @@ type GeminiRequestPart =
 export function buildGeminiGenerateContentRequestBody(
   input: ProductImageStudioProviderCallInput,
   model: string,
+  includeGenerationConfig = true,
 ): GeminiGenerateContentRequestBody {
+  const contents: GeminiGenerateContentRequestBody["contents"] = [
+    {
+      parts: [
+        { text: input.promptContext.prompt },
+        ...input.referenceImages.map((image) => ({
+          inline_data: {
+            data: Buffer.from(image.bytes).toString("base64"),
+            mime_type: image.contentType,
+          },
+        })),
+      ],
+    },
+  ];
+
+  if (!includeGenerationConfig) {
+    return { contents };
+  }
+
   return {
-    contents: [
-      {
-        parts: [
-          { text: input.promptContext.prompt },
-          ...input.referenceImages.map((image) => ({
-            inline_data: {
-              data: Buffer.from(image.bytes).toString("base64"),
-              mime_type: image.contentType,
-            },
-          })),
-        ],
-      },
-    ],
+    contents,
     generationConfig: {
-      responseFormat: {
-        image: toGeminiImageConfig(model, input.promptContext.qualityMode, input.promptContext.ratio),
-      },
-      responseModalities: ["TEXT", "IMAGE"],
+      imageConfig: toGeminiImageConfig(model, input.promptContext.qualityMode, input.promptContext.ratio),
+      responseModalities: ["IMAGE"],
     },
   };
 }
@@ -105,11 +110,41 @@ async function requestGeminiImage(
   headers.set("content-type", "application/json");
   headers.set("x-goog-api-key", apiKey);
 
-  const response = await fetchImpl(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`, {
-    body: JSON.stringify(buildGeminiGenerateContentRequestBody(input, model)),
+  const response = await postGeminiGenerateContent(fetchImpl, headers, model, buildGeminiGenerateContentRequestBody(input, model));
+  const requestId = response.headers.get("x-request-id") ?? response.headers.get("x-goog-request-id");
+  if (!response.ok) {
+    const providerMessage = readGeminiProviderErrorMessage(await readGeminiResponseJson(response));
+    if (shouldRetryGeminiWithoutGenerationConfig(providerMessage)) {
+      const fallbackResponse = await postGeminiGenerateContent(
+        fetchImpl,
+        headers,
+        model,
+        buildGeminiGenerateContentRequestBody(input, model, false),
+      );
+      return readGeminiImageResponse(fallbackResponse, model);
+    }
+
+    const suffix = providerMessage ? `: ${providerMessage}` : "";
+    throw new GeminiImageProviderError(response.status, requestId, `Gemini 이미지 생성 요청이 실패했습니다${suffix}`);
+  }
+
+  return readGeminiImageResponse(response, model);
+}
+
+function postGeminiGenerateContent(
+  fetchImpl: (input: string, init: RequestInit) => Promise<Response>,
+  headers: Headers,
+  model: string,
+  body: GeminiGenerateContentRequestBody,
+): Promise<Response> {
+  return fetchImpl(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    body: JSON.stringify(body),
     headers,
     method: "POST",
   });
+}
+
+async function readGeminiImageResponse(response: Response, model: string): Promise<ProductImageStudioProviderImageResult> {
   const requestId = response.headers.get("x-request-id") ?? response.headers.get("x-goog-request-id");
   if (!response.ok) {
     const providerMessage = readGeminiProviderErrorMessage(await readGeminiResponseJson(response));
@@ -173,6 +208,13 @@ function normalizeGeminiProviderMessage(message: string): string | null {
   return normalized.length > 240 ? `${normalized.slice(0, 240)}...` : normalized;
 }
 
+function shouldRetryGeminiWithoutGenerationConfig(message: string | null): boolean {
+  return (
+    message?.includes("generation_config") === true &&
+    (message.includes("Unknown name") || message.includes("Invalid value at"))
+  );
+}
+
 function readGeminiImageB64(value: unknown): string {
   if (!isRecord(value) || !Array.isArray(value["candidates"])) {
     throw new GeminiImageProviderError(502, null, "Gemini 이미지 응답 형식이 올바르지 않습니다.");
@@ -209,7 +251,7 @@ function toGeminiImageConfig(
   model: string,
   qualityMode: ProductImageStudioQualityMode,
   ratio: ProductImageStudioRatioPreset,
-): GeminiGenerateContentRequestBody["generationConfig"]["responseFormat"]["image"] {
+): GeminiImageConfig {
   const base = { aspectRatio: toGeminiAspectRatio(ratio) };
   if (model.startsWith("gemini-2.5")) {
     return base;
