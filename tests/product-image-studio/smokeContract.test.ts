@@ -78,4 +78,17 @@ describe("product image studio production smoke contract", () => {
     expect(bodyText).not.toContain("PRODUCT_IMAGE_STUDIO");
     expect(bodyText).not.toContain("GEMINI_API_KEY");
   });
+
+  it("allows internal backend API calls signed with the backend bridge token", async () => {
+    vi.stubEnv("MARKETCREW_AUTH_DISABLED", "0");
+    vi.stubEnv("MARKETCREW_BACKEND_API_TOKEN", "bridge-token");
+
+    const response = await proxy(
+      new NextRequest("http://127.0.0.1:3000/api/product-image-studio/provider-status", {
+        headers: { authorization: "Bearer bridge-token" },
+      }),
+    );
+
+    expect(response.status).not.toBe(401);
+  });
 });

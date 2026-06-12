@@ -109,4 +109,17 @@ describe("product image studio generation UI", () => {
       "봉합스티커 단독컷",
     ]);
   });
+
+  it("shows the backend generation error message when generation fails before results", () => {
+    const state = readProductImageStudioGenerationResponse({
+      error: {
+        code: "UNAUTHORIZED",
+        message: "Railway 백엔드 API 인증을 확인해 주세요.",
+      },
+      ok: false,
+    });
+
+    expect(state.phase).toBe("failed");
+    expect(state.message).toBe("Railway 백엔드 API 인증을 확인해 주세요.");
+  });
 });

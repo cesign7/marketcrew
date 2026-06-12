@@ -2,13 +2,13 @@ import { ProductImageStudioShell } from "@/components/product-image-studio/Produ
 import { ProductImageStudioStatusPanel } from "@/components/product-image-studio/ProductImageStudioStatusPanel";
 import { ProductImageStudioWizard } from "@/components/product-image-studio/ProductImageStudioWizard";
 import { getProductImageStudioFileStorageMode } from "@/features/product-image-studio/server/assetUploadApi";
-import { getConfiguredProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
+import { loadProductImageStudioProviderSettingsState } from "@/features/product-image-studio/server/providerSettingsState";
 import { getProductImageStudioRepositoryStorageMode } from "@/features/product-image-studio/server/projectApi";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductImageStudioPage() {
-  const providerStatus = await getConfiguredProductImageStudioProviderStatus();
+  const providerSettingsState = await loadProductImageStudioProviderSettingsState();
 
   return (
     <ProductImageStudioShell
@@ -20,7 +20,7 @@ export default async function ProductImageStudioPage() {
         <ProductImageStudioStatusPanel
           fileStorageMode={getProductImageStudioFileStorageMode()}
           metadataStorageMode={getProductImageStudioRepositoryStorageMode()}
-          status={providerStatus}
+          status={providerSettingsState.status}
         />
         <ProductImageStudioWizard />
       </section>

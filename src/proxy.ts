@@ -44,6 +44,8 @@ function isAuthorizedBackendRequest(request: NextRequest) {
     return false;
   }
 
-  const token = process.env.MARKETCREW_API_TOKEN;
-  return Boolean(token && request.headers.get("authorization") === `Bearer ${token}`);
+  const authorization = request.headers.get("authorization");
+  return [process.env.MARKETCREW_API_TOKEN, process.env.MARKETCREW_BACKEND_API_TOKEN].some(
+    (token) => Boolean(token && authorization === `Bearer ${token}`),
+  );
 }

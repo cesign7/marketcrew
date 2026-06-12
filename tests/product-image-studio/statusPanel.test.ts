@@ -1,10 +1,16 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import ProductImageStudioPage from "@/app/product-image-studio/page";
 import { ProductImageStudioStatusPanel } from "@/components/product-image-studio/ProductImageStudioStatusPanel";
 import { getProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
 
 describe("product image studio status panel", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+
   it("shows default blocked generation state, storage mode, and export status without secrets", () => {
     const html = renderToStaticMarkup(
       createElement(ProductImageStudioStatusPanel, {
@@ -47,5 +53,48 @@ describe("product image studio status panel", () => {
     expect(html).not.toContain("configured-test-secret");
     expect(html).not.toContain("gpt-image-1");
     expect(html).not.toContain("OPENAI_API_KEY");
+  });
+
+  it("uses the Railway provider state on the main studio page in hosted frontend runtime", async () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("MARKETCREW_BACKEND_API_URL", "https://api.marketcrew.app");
+    vi.stubEnv("MARKETCREW_BACKEND_API_TOKEN", "bridge-token");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            settings: {
+              generationEnabled: true,
+              hasCredential: true,
+              model: "hidden-gemini-model",
+              provider: "gemini",
+              storageMode: "postgres",
+              updatedAt: "2026-06-12T00:00:00.000Z",
+            },
+            status: {
+              generation: { enabled: true, status: "enabled" },
+              provider: {
+                configured: true,
+                credentialConfigured: true,
+                modelConfigured: true,
+                name: "gemini",
+              },
+            },
+            storageMode: "postgres",
+          },
+          ok: true,
+        }),
+        { headers: { "content-type": "application/json" }, status: 200 },
+      ),
+    );
+
+    const html = renderToStaticMarkup(await ProductImageStudioPage());
+
+    expect(html).toContain("이미지 생성 가능");
+    expect(html).not.toContain("이미지 생성 차단됨");
+    expect(html).not.toContain("hidden-gemini-model");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "https://api.marketcrew.app/api/product-image-studio/provider-settings",
+    );
   });
 });
