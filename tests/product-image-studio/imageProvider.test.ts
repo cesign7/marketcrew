@@ -58,6 +58,25 @@ describe("product image studio image provider", () => {
     expect(postcard.prompt).not.toBe(folded.prompt);
   });
 
+  it("locks print design and physical scale across the primary card-set concepts", () => {
+    const conceptIds = ["tabletop-set", "premium-stationery", "seasonal-gift", "minimal-studio"] as const;
+
+    for (const conceptId of conceptIds) {
+      const promptContext = promptContextForConcept(conceptId);
+
+      expect(promptContext.prompt).toContain("designLock=uploaded_print_surface_locked");
+      expect(promptContext.prompt).toContain("do not change text size, font, kerning, line breaks, text placement");
+      expect(promptContext.prompt).toContain("logo placement, colors, illustrations, patterns, margins, or safe area");
+      expect(promptContext.prompt).toContain("must remain clipped inside the printed card, envelope, or sticker surface");
+      expect(promptContext.prompt).toContain("never move printed content outside the product image");
+      expect(promptContext.prompt).toContain("expand or crop only the background/canvas");
+      expect(promptContext.prompt).toContain("Do not rescale the card, change the card aspect ratio, or resize the uploaded print design");
+      expect(promptContext.prompt).toContain("physicalScaleReference=card=100x150mm | envelope=110x160mm | sealSticker=35mm diameter");
+      expect(promptContext.prompt).toContain("Pens and pencils should read as about 140-190mm long and 7-12mm thick");
+      expect(promptContext.prompt).toContain("If the card is about 90mm wide, props and surface area must still look physically plausible");
+    }
+  });
+
   it("builds an OpenAI adapter request without leaking the API key in results", async () => {
     let capturedBody = "";
     let capturedAuthorization = "";
@@ -196,6 +215,18 @@ function postcardPromptContext(assetRoles: readonly ProductImageStudioAssetRole[
     assetRoles,
     cardPose: "postcard_front_flat",
     concept: readConcept("minimal-studio"),
+    outputType: "set_combined",
+    project: project("postcard_flat", ["postcard_front_flat"]),
+    qualityMode: "draft",
+    ratio: "4:5",
+  });
+}
+
+function promptContextForConcept(conceptId: string) {
+  return buildProductImageStudioPromptContext({
+    assetRoles: ["postcard_front", "envelope_front", "seal_sticker"],
+    cardPose: "postcard_front_flat",
+    concept: readConcept(conceptId),
     outputType: "set_combined",
     project: project("postcard_flat", ["postcard_front_flat"]),
     qualityMode: "draft",

@@ -54,7 +54,7 @@ export type GeminiGenerateContentRequestBody = {
 
 type GeminiImageConfig = {
   readonly aspectRatio: string;
-  readonly imageSize?: "1K" | "2K";
+  readonly imageSize?: "512" | "1K" | "2K";
 };
 
 type GeminiRequestPart =
@@ -256,6 +256,9 @@ function toGeminiImageConfig(
   ratio: ProductImageStudioRatioPreset,
 ): GeminiImageConfig {
   const base = { aspectRatio: toGeminiAspectRatio(ratio) };
+  if (model === "gemini-3.1-flash-image") {
+    return { ...base, imageSize: "512" };
+  }
   if (model.startsWith("gemini-2.5")) {
     return base;
   }

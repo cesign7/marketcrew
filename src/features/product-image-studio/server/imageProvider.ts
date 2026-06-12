@@ -14,6 +14,7 @@ import {
 import { parseProductImageStudioProviderConfig, parseProductImageStudioProviderRuntimeConfig, type ProductImageStudioProviderEnv } from "@/features/product-image-studio/server/providerConfig";
 import { createGeminiImageProvider } from "@/features/product-image-studio/server/geminiImageProvider";
 import { createOpenAiImageProvider } from "@/features/product-image-studio/server/openAiImageProvider";
+import { buildProductImageStudioPromptHarnessLines } from "@/features/product-image-studio/server/promptHarness";
 import { getActiveProductImageStudioProviderSettings } from "@/features/product-image-studio/server/providerSettingsStore";
 import type { ProductImageStudioProjectRecord } from "@/lib/persistence/productImageStudioRepository";
 
@@ -95,6 +96,7 @@ export function buildProductImageStudioPromptContext(
     `scene=${outputPrompt?.scenePrompt ?? ""}`,
     `geometry=${posePrompt?.prompt ?? getCardFormatFallbackGeometry(input.project.cardFormat)}`,
     ...buildProductImageStudioProductionPromptLines(input.project.productionSettings, input.outputType),
+    ...buildProductImageStudioPromptHarnessLines(input.project.productionSettings, input.outputType),
     `validationRules=${buildProductImageStudioValidationChecklist(input.project.productionSettings, input.outputType).join(" | ")}`,
     "Preserve the uploaded print design exactly; only adapt perspective, lighting, paper thickness, and contact shadows.",
   ].join("\n");

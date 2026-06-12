@@ -61,7 +61,7 @@ describe("product image studio Gemini image provider", () => {
     expect(capturedBody).toContain("\"responseModalities\":[\"IMAGE\"]");
     expect(capturedBody).toContain("\"imageConfig\"");
     expect(capturedBody).toContain("\"aspectRatio\":\"4:5\"");
-    expect(capturedBody).toContain("\"imageSize\":\"1K\"");
+    expect(capturedBody).toContain("\"imageSize\":\"512\"");
     expect(capturedBody).not.toContain("\"responseFormat\"");
     expect(capturedBody).toContain("\"inline_data\"");
     expect(result.provider).toBe("gemini");
