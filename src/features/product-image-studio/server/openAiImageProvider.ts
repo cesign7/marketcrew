@@ -5,6 +5,7 @@ import type {
   ProductImageStudioProviderReferenceImage,
 } from "@/features/product-image-studio/server/imageProvider";
 import type { ProductImageStudioQualityMode, ProductImageStudioRatioPreset } from "@/features/product-image-studio/domain/types";
+import { readOpenAiProviderErrorMessage } from "@/features/product-image-studio/server/openAiProviderErrorMessage";
 
 export type OpenAiImageProviderOptions = {
   readonly apiKey: string;
@@ -111,7 +112,9 @@ async function requestOpenAiImage(
   });
   const requestId = response.headers.get("x-request-id");
   if (!response.ok) {
-    throw new OpenAiImageProviderError(response.status, requestId, "OpenAI 이미지 생성 요청이 실패했습니다.");
+    const providerMessage = await readOpenAiProviderErrorMessage(response);
+    const suffix = providerMessage ? `: ${providerMessage}` : "";
+    throw new OpenAiImageProviderError(response.status, requestId, `OpenAI 이미지 생성 요청이 실패했습니다${suffix}`);
   }
 
   return {
