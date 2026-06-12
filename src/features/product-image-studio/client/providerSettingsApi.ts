@@ -1,4 +1,8 @@
 import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
+import {
+  PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS,
+  normalizeProductImageStudioProviderModel,
+} from "@/features/product-image-studio/domain/providerModels";
 import type {
   ProductImageStudioProviderSettingsStorageMode,
   ProductImageStudioProviderSettingsSummary,
@@ -9,11 +13,6 @@ export type ProductImageStudioProviderSettingsPayload = {
   readonly generationEnabled: boolean;
   readonly model: string;
   readonly provider: ProductImageStudioProviderName;
-};
-
-const DEFAULT_PROVIDER_MODELS: Record<ProductImageStudioProviderName, string> = {
-  gemini: "gemini-3.1-flash-image",
-  openai: "gpt-image-1",
 };
 
 export type RequestProductImageStudioProviderSettingsResult =
@@ -116,7 +115,7 @@ function readLegacySettings(
 
   const activeProvider = {
     hasCredential: value["hasCredential"] === true,
-    model: value["model"],
+    model: normalizeProductImageStudioProviderModel(provider, value["model"]),
     provider,
     storageMode,
     updatedAt: value["updatedAt"],
@@ -126,7 +125,7 @@ function readLegacySettings(
     defaultProvider: provider,
     generationEnabled: value["generationEnabled"] === true,
     hasCredential: activeProvider.hasCredential,
-    model: value["model"],
+    model: normalizeProductImageStudioProviderModel(provider, value["model"]),
     provider,
     providers: toProviderSummaryRecord(activeProvider, storageMode),
     storageMode,
@@ -167,7 +166,10 @@ function readProviderSummary(
 
   return {
     hasCredential: value["hasCredential"] === true,
-    model: typeof value["model"] === "string" ? value["model"] : DEFAULT_PROVIDER_MODELS[provider],
+    model:
+      typeof value["model"] === "string"
+        ? normalizeProductImageStudioProviderModel(provider, value["model"])
+        : PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS[provider],
     provider,
     storageMode: readStorageMode(value["storageMode"]) ?? fallbackStorageMode,
     updatedAt: typeof value["updatedAt"] === "string" ? value["updatedAt"] : null,
@@ -190,7 +192,7 @@ function emptyProviderSummary(
 ): ProductImageStudioProviderSettingsSummary["providers"][ProductImageStudioProviderName] {
   return {
     hasCredential: false,
-    model: DEFAULT_PROVIDER_MODELS[provider],
+    model: PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS[provider],
     provider,
     storageMode,
     updatedAt: null,

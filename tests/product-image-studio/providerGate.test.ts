@@ -4,6 +4,7 @@ import {
   getProductImageStudioProviderStatus,
   parseProductImageStudioProviderConfig,
   getConfiguredProductImageStudioProviderStatus,
+  getDefaultProductImageStudioProviderModel,
 } from "@/features/product-image-studio/server/providerConfig";
 import {
   resetProductImageStudioProviderSettingsForTests,
@@ -14,6 +15,10 @@ describe("product image studio provider gate", () => {
   afterEach(() => {
     resetProductImageStudioProviderSettingsForTests();
     vi.unstubAllEnvs();
+  });
+
+  it("uses the latest OpenAI image model as the default provider model", () => {
+    expect(getDefaultProductImageStudioProviderModel("openai")).toBe("gpt-image-2");
   });
 
   it("keeps generation blocked by default", () => {

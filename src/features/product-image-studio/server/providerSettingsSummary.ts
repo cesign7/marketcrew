@@ -1,3 +1,7 @@
+import {
+  PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS,
+  normalizeProductImageStudioProviderModel,
+} from "@/features/product-image-studio/domain/providerModels";
 import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
 
 export type ProductImageStudioProviderSettingsStorageMode = "memory" | "postgres";
@@ -38,11 +42,6 @@ export type ProductImageStudioProviderSettingsSummaryStateInput = {
   readonly providers: Partial<Record<ProductImageStudioProviderName, ProductImageStudioProviderCredentialSummaryInput>>;
 };
 
-const DEFAULT_PROVIDER_MODELS: Record<ProductImageStudioProviderName, string> = {
-  gemini: "gemini-3.1-flash-image",
-  openai: "gpt-image-1",
-};
-
 export function buildProductImageStudioProviderSettingsSummary(
   settings: ProductImageStudioProviderSettingsSummaryStateInput,
   storageMode: ProductImageStudioProviderSettingsStorageMode,
@@ -52,7 +51,7 @@ export function buildProductImageStudioProviderSettingsSummary(
     return buildProductImageStudioProviderSettingsSummaryFromSingleProvider(
       {
         generationEnabled: settings.generationEnabled,
-        model: DEFAULT_PROVIDER_MODELS[settings.defaultProvider],
+        model: PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS[settings.defaultProvider],
         provider: settings.defaultProvider,
         updatedAt: new Date(0).toISOString(),
       },
@@ -65,7 +64,7 @@ export function buildProductImageStudioProviderSettingsSummary(
     defaultProvider: settings.defaultProvider,
     generationEnabled: settings.generationEnabled,
     hasCredential: true,
-    model: activeSettings.model,
+    model: normalizeProductImageStudioProviderModel(activeSettings.provider, activeSettings.model),
     provider: activeSettings.provider,
     providers: toCredentialSummaries(settings.providers, storageMode),
     storageMode,
@@ -82,7 +81,7 @@ export function buildProductImageStudioProviderSettingsSummaryFromSingleProvider
     defaultProvider: settings.provider,
     generationEnabled: settings.generationEnabled,
     hasCredential,
-    model: settings.model,
+    model: normalizeProductImageStudioProviderModel(settings.provider, settings.model),
     provider: settings.provider,
     providers: toCredentialSummaries(toSingleProviderMap(settings), storageMode),
     storageMode,
@@ -107,7 +106,9 @@ function toCredentialSummary(
 ): ProductImageStudioProviderCredentialSummary {
   return {
     hasCredential: Boolean(settings),
-    model: settings?.model ?? DEFAULT_PROVIDER_MODELS[provider],
+    model: settings?.model
+      ? normalizeProductImageStudioProviderModel(provider, settings.model)
+      : PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS[provider],
     provider,
     storageMode,
     updatedAt: settings?.updatedAt ?? null,

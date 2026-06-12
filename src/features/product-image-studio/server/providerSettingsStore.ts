@@ -1,4 +1,5 @@
 import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
+import { normalizeProductImageStudioProviderModel } from "@/features/product-image-studio/domain/providerModels";
 import {
   decryptProductImageStudioCredential,
   encryptProductImageStudioCredential,
@@ -116,7 +117,7 @@ export async function getActiveProductImageStudioProviderSettings(
     return {
       apiKey: decryptProductImageStudioCredential(row.encryptedApiKey, secret),
       generationEnabled: row.generationEnabled,
-      model: row.model,
+      model: normalizeProductImageStudioProviderModel(row.provider, row.model),
       provider: row.provider,
       source: "saved",
     };
@@ -132,6 +133,7 @@ export async function saveProductImageStudioProviderSettings(
   input: SaveProductImageStudioProviderSettingsInput,
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): Promise<SaveProductImageStudioProviderSettingsResult> {
+  const model = normalizeProductImageStudioProviderModel(input.provider, input.model);
   const storageMode = getProductImageStudioProviderSettingsStorageMode(env);
   if (storageMode === "memory") {
     if (isPersistentProviderSettingsStorageRequired(env)) {
@@ -141,7 +143,7 @@ export async function saveProductImageStudioProviderSettings(
       );
     }
 
-    return saveMemoryProviderSettings(input);
+    return saveMemoryProviderSettings({ ...input, model });
   }
 
   const secret = getProductImageStudioCredentialSecret(env);
@@ -167,7 +169,7 @@ export async function saveProductImageStudioProviderSettings(
   await upsertPostgresProviderSettingsRow({
     encryptedApiKey,
     generationEnabled: input.generationEnabled,
-    model: input.model,
+    model,
     provider: input.provider,
     updatedAt,
   });
@@ -177,7 +179,7 @@ export async function saveProductImageStudioProviderSettings(
     settings: buildProductImageStudioProviderSettingsSummaryFromSingleProvider(
       {
         generationEnabled: input.generationEnabled,
-        model: input.model,
+        model,
         provider: input.provider,
         updatedAt,
       },
@@ -247,7 +249,7 @@ function toSecretSettings(
   return {
     apiKey: providerSettings.apiKey,
     generationEnabled: settings.generationEnabled,
-    model: providerSettings.model,
+    model: normalizeProductImageStudioProviderModel(providerSettings.provider, providerSettings.model),
     provider: providerSettings.provider,
     source: "saved",
   };

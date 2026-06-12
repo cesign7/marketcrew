@@ -1,3 +1,7 @@
+import {
+  PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS,
+  normalizeProductImageStudioProviderModel,
+} from "@/features/product-image-studio/domain/providerModels";
 import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
 import type { ProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
 import { getConfiguredProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
@@ -14,11 +18,6 @@ export type ProductImageStudioProviderSettingsState = {
   readonly settings: ProductImageStudioProviderSettingsSummary | null;
   readonly status: ProductImageStudioProviderStatus;
   readonly storageMode: ProductImageStudioProviderSettingsStorageMode;
-};
-
-const DEFAULT_PROVIDER_MODELS: Record<ProductImageStudioProviderName, string> = {
-  gemini: "gemini-3.1-flash-image",
-  openai: "gpt-image-1",
 };
 
 export async function loadProductImageStudioProviderSettingsState(): Promise<ProductImageStudioProviderSettingsState> {
@@ -201,7 +200,10 @@ function readProviderSummary(
 
   return {
     hasCredential: value["hasCredential"] === true,
-    model: typeof value["model"] === "string" ? value["model"] : DEFAULT_PROVIDER_MODELS[provider],
+    model:
+      typeof value["model"] === "string"
+        ? normalizeProductImageStudioProviderModel(provider, value["model"])
+        : PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS[provider],
     provider,
     storageMode: readStorageMode(value["storageMode"]) ?? fallbackStorageMode,
     updatedAt: typeof value["updatedAt"] === "string" ? value["updatedAt"] : null,
@@ -224,7 +226,7 @@ function emptyProviderSummary(
 ): ProductImageStudioProviderSettingsSummary["providers"][ProductImageStudioProviderName] {
   return {
     hasCredential: false,
-    model: DEFAULT_PROVIDER_MODELS[provider],
+    model: PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS[provider],
     provider,
     storageMode,
     updatedAt: null,

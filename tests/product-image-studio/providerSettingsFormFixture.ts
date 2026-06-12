@@ -34,3 +34,12 @@ export function renderProviderSettingsFormHtml(): string {
     }),
   );
 }
+
+export function renderEmptyProviderSettingsFormHtml(): string {
+  return renderToStaticMarkup(
+    createElement(ProductImageStudioProviderSettingsForm, {
+      initialSettings: null,
+      initialStorageMode: "memory",
+    }),
+  );
+}

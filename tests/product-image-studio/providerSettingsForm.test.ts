@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderProviderSettingsFormHtml } from "./providerSettingsFormFixture";
+import { renderEmptyProviderSettingsFormHtml, renderProviderSettingsFormHtml } from "./providerSettingsFormFixture";
 
 describe("product image studio provider settings form", () => {
   it("renders the provider settings UI without exposing credentials", () => {
@@ -15,5 +15,11 @@ describe("product image studio provider settings form", () => {
     expect(html).toContain("키 저장됨");
     expect(html).not.toContain("secret");
     expect(html).not.toContain("OPENAI_API_KEY");
+  });
+
+  it("shows the latest OpenAI image model for a new provider connection", () => {
+    const html = renderEmptyProviderSettingsFormHtml();
+
+    expect(html).toContain('value="gpt-image-2"');
   });
 });

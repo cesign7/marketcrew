@@ -93,7 +93,7 @@ describe("product image studio provider settings", () => {
     expect(bodyText).toContain("\"providers\"");
     expect(bodyText).toContain("\"openai\"");
     expect(bodyText).toContain("\"gemini\"");
-    expect(bodyText).toContain("\"model\":\"gpt-image-1\"");
+    expect(bodyText).toContain("\"model\":\"gpt-image-2\"");
     expect(bodyText).toContain("\"model\":\"gemini-3.1-flash-image\"");
     expect(bodyText).toContain("\"hasCredential\":true");
     expect(bodyText).not.toContain(TEST_OPENAI_API_KEY);

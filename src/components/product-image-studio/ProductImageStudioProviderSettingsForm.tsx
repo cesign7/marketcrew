@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS } from "@/features/product-image-studio/domain/providerModels";
 import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
 import type {
   ProductImageStudioProviderSettingsStorageMode as SettingsStorageMode,
@@ -36,8 +37,6 @@ const PROVIDER_OPTIONS = [
     provider: "gemini",
   },
 ] as const satisfies readonly ProductImageStudioProviderCardOption[];
-
-const DEFAULT_MODELS: Record<ProductImageStudioProviderName, string> = { gemini: "gemini-3.1-flash-image", openai: "gpt-image-1" };
 
 export function ProductImageStudioProviderSettingsForm({
   initialSettings,
@@ -239,7 +238,7 @@ function createProviderState(settings: SettingsSummary | null, provider: Product
   return {
     apiKey: "",
     hasCredential: providerSummary?.hasCredential ?? false,
-    model: providerSummary?.model ?? DEFAULT_MODELS[provider],
+    model: providerSummary?.model ?? PRODUCT_IMAGE_STUDIO_DEFAULT_PROVIDER_MODELS[provider],
     updatedAt: providerSummary?.updatedAt ?? null,
   };
 }

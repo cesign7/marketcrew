@@ -3,6 +3,7 @@ import {
   type ProductImageStudioProviderGate,
   type ProductImageStudioProviderName,
 } from "@/features/product-image-studio/domain/types";
+import { getProductImageStudioDefaultProviderModel } from "@/features/product-image-studio/domain/providerModels";
 import {
   getProductImageStudioProviderSettingsSummary,
   type ProductImageStudioProviderSettingsSummary,
@@ -164,12 +165,7 @@ function toSafeProviderStatus(
 }
 
 export function getDefaultProductImageStudioProviderModel(provider: ProductImageStudioProviderName): string {
-  switch (provider) {
-    case "openai":
-      return "gpt-image-1";
-    case "gemini":
-      return "gemini-3.1-flash-image";
-  }
+  return getProductImageStudioDefaultProviderModel(provider);
 }
 
 function toSafeGenerationStatus(gate: ProductImageStudioProviderGate): ProductImageStudioProviderStatus["generation"] {
