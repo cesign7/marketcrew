@@ -13,7 +13,6 @@
 }
 
 .heading h3,
-.presetToolbar h4,
 .checklist h4 {
   letter-spacing: 0;
   margin: 0;
@@ -24,8 +23,6 @@
 }
 
 .heading p,
-.preset small,
-.selectedPreset small,
 .method small,
 .selectedMethod small,
 .checklist li {
@@ -45,7 +42,6 @@
   padding: 7px 10px;
 }
 
-.presetGroup,
 .methodGroup {
   border: 0;
   display: grid;
@@ -54,7 +50,6 @@
   padding: 0;
 }
 
-.presetGroup legend,
 .methodGroup legend,
 .specGroup h4,
 .numberField span,
@@ -89,34 +84,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.presetToolbar {
-  background: #f8fafb;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  display: grid;
-  gap: 10px;
-  padding: 12px;
-}
-
-.presetToolbar h4 {
-  color: #344054;
-  font-size: 14px;
-}
-
-.presetForm,
-.presetLoadRow {
-  align-items: end;
-  display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.presetLoadRow {
-  grid-template-columns: minmax(0, 1fr) auto auto;
-}
-
-.preset,
-.selectedPreset,
 .method,
 .selectedMethod {
   border: 1px solid var(--line);
@@ -129,15 +96,11 @@
   padding: 11px;
 }
 
-.preset input,
-.selectedPreset input,
 .method input,
 .selectedMethod input {
   margin-top: 2px;
 }
 
-.preset span,
-.selectedPreset span,
 .method span,
 .selectedMethod span {
   color: #344054;
@@ -145,17 +108,59 @@
   font-weight: 900;
 }
 
-.preset small,
-.selectedPreset small,
 .method small,
 .selectedMethod small {
   grid-column: 2;
 }
 
-.selectedPreset,
 .selectedMethod {
   background: var(--brand-soft);
   border-color: #9ccdd8;
+}
+
+.advancedDisclosure {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 0;
+}
+
+.advancedDisclosure summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  list-style: none;
+  padding: 12px;
+}
+
+.advancedDisclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.advancedDisclosure summary span {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.advancedDisclosure summary small {
+  background: #eef4f6;
+  border-radius: 999px;
+  color: var(--brand-strong);
+  font-size: 12px;
+  font-weight: 900;
+  padding: 5px 8px;
+}
+
+.advancedDisclosure[open] {
+  padding-bottom: 12px;
+}
+
+.advancedDisclosure[open] .methodGroup {
+  padding: 0 12px;
 }
 
 .specList {
@@ -213,27 +218,6 @@
   padding: 0 10px;
 }
 
-.presetButton,
-.presetSecondaryButton,
-.presetDangerButton { border: 0; border-radius: 8px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 900; min-height: 40px; padding: 0 12px; }
-
-.presetButton { background: var(--brand); color: #fff; }
-
-.presetSecondaryButton,
-.presetDangerButton { background: #e9eef1; color: #344054; }
-
-.presetDangerButton { color: #b42318; }
-
-.presetButton:disabled,
-.presetSecondaryButton:disabled,
-.presetDangerButton:disabled { cursor: not-allowed; opacity: 0.48; }
-
-.presetMessage { color: var(--muted); font-size: 13px; line-height: 1.45; margin: 0; }
-
-.presetMessage[data-tone="error"] { color: #b42318; }
-
-.presetMessage[data-tone="success"] { color: var(--brand-strong); }
-
 .checklist {
   background: #f8fafb;
   border: 1px solid var(--line);
@@ -259,8 +243,6 @@
   .heading,
   .controlGrid,
   .inputGrid,
-  .presetForm,
-  .presetLoadRow,
   .specList {
     grid-template-columns: 1fr;
   }

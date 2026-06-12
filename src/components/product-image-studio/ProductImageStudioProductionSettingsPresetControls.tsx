@@ -10,7 +10,7 @@ import {
   type ProductImageStudioProductionSettingsPreset,
 } from "@/features/product-image-studio/domain/productionSettingsPresets";
 import type { ProductImageStudioWizardState } from "@/features/product-image-studio/domain/projectWizard";
-import styles from "./ProductImageStudioProductionSettingsPanel.module.css";
+import styles from "./ProductImageStudioProductionSettingsPresetControls.module.css";
 
 const STORAGE_KEY = "marketcrew.productImageStudio.productionSettingsPresets.v1";
 
@@ -34,6 +34,7 @@ export function ProductImageStudioProductionSettingsPresetControls({
   const [presets, setPresets] = useState<readonly ProductImageStudioProductionSettingsPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState("");
   const [message, setMessage] = useState<PresetMessage>({ text: "저장한 규격이 없습니다.", tone: "info" });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const selectedPreset = useMemo(
     () => presets.find((preset) => preset.id === selectedPresetId) ?? null,
     [presets, selectedPresetId],
@@ -51,50 +52,77 @@ export function ProductImageStudioProductionSettingsPresetControls({
   }, []);
 
   return (
-    <section className={styles.presetToolbar} aria-labelledby="production-settings-preset-heading">
-      <h4 id="production-settings-preset-heading">저장한 규격</h4>
-      <div className={styles.presetForm}>
-        <label className={styles.selectField}>
-          <span>프리셋 이름</span>
-          <input
-            onChange={(event) => setPresetName(event.currentTarget.value)}
-            placeholder="예: A6 접이식 카드 세트"
-            type="text"
-            value={presetName}
-          />
-        </label>
-        <button className={styles.presetButton} onClick={handleSavePreset} type="button">
-          현재 규격 저장
+    <>
+      <section className={styles.toolbar} aria-labelledby="production-settings-preset-heading">
+        <div>
+          <h4 id="production-settings-preset-heading">저장한 규격</h4>
+          <p>{presets.length > 0 ? `${presets.length}개 저장됨` : "자주 쓰는 규격은 따로 저장해 불러옵니다."}</p>
+        </div>
+        <button className={styles.primaryButton} onClick={() => setIsDialogOpen(true)} type="button">
+          규격 저장/불러오기
         </button>
-      </div>
+      </section>
 
-      <div className={styles.presetLoadRow}>
-        <label className={styles.selectField}>
-          <span>저장된 규격</span>
-          <select
-            onChange={(event) => setSelectedPresetId(event.currentTarget.value)}
-            value={selectedPresetId}
+      {isDialogOpen ? (
+        <div className={styles.backdrop}>
+          <section
+            aria-labelledby="production-settings-preset-dialog-heading"
+            aria-modal="true"
+            className={styles.dialog}
+            role="dialog"
           >
-            <option value="">저장된 규격 선택</option>
-            {presets.map((preset) => (
-              <option key={preset.id} value={preset.id}>
-                {preset.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button className={styles.presetSecondaryButton} disabled={!selectedPreset} onClick={handleApplyPreset} type="button">
-          불러오기
-        </button>
-        <button className={styles.presetDangerButton} disabled={!selectedPreset} onClick={handleRemovePreset} type="button">
-          삭제
-        </button>
-      </div>
+            <div className={styles.dialogHeader}>
+              <div>
+                <h4 id="production-settings-preset-dialog-heading">규격 저장/불러오기</h4>
+                <p>현재 입력한 카드, 봉투, 스티커 규격을 저장하거나 기존 규격을 불러옵니다.</p>
+              </div>
+              <button className={styles.closeButton} onClick={() => setIsDialogOpen(false)} type="button">
+                닫기
+              </button>
+            </div>
 
-      <p className={styles.presetMessage} data-tone={message.tone}>
-        {message.text}
-      </p>
-    </section>
+            <div className={styles.presetForm}>
+              <label className={styles.selectField}>
+                <span>저장 이름</span>
+                <input
+                  onChange={(event) => setPresetName(event.currentTarget.value)}
+                  placeholder="예: A6 접이식 카드 세트"
+                  type="text"
+                  value={presetName}
+                />
+              </label>
+              <button className={styles.primaryButton} onClick={handleSavePreset} type="button">
+                현재 규격 저장
+              </button>
+            </div>
+
+            <div className={styles.presetLoadRow}>
+              <label className={styles.selectField}>
+                <span>저장된 규격</span>
+                <select onChange={(event) => setSelectedPresetId(event.currentTarget.value)} value={selectedPresetId}>
+                  <option value="">저장된 규격 선택</option>
+                  {presets.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button className={styles.secondaryButton} disabled={!selectedPreset} onClick={handleApplyPreset} type="button">
+                불러오기
+              </button>
+              <button className={styles.dangerButton} disabled={!selectedPreset} onClick={handleRemovePreset} type="button">
+                삭제
+              </button>
+            </div>
+
+            <p className={styles.message} data-tone={message.tone}>
+              {message.text}
+            </p>
+          </section>
+        </div>
+      ) : null}
+    </>
   );
 
   function handleSavePreset(): void {

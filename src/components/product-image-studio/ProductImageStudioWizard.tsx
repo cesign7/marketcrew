@@ -35,6 +35,7 @@ import { ProductImageStudioProductionSettingsPanel } from "./ProductImageStudioP
 import { ProductImageStudioProjectSettings } from "./ProductImageStudioProjectSettings";
 import { ProductImageStudioQualityOption } from "./ProductImageStudioQualityOption";
 import { ProductImageStudioUploadSection } from "./ProductImageStudioUploadSection";
+import { ProductImageStudioWorkflowSteps } from "./ProductImageStudioWorkflowSteps";
 import {
   createProductImageStudioGenerationProviderOptions,
   getInitialProductImageStudioGenerationProvider,
@@ -90,6 +91,7 @@ export function ProductImageStudioWizard({ initialProviderSettings, providerStat
           <span className={styles.fixedSet}>구성품별 생성</span>
         </div>
 
+        <ProductImageStudioWorkflowSteps state={state} />
         <ProductImageStudioProjectSettings setState={setWizardState} state={state} />
         <ProductImageStudioProductionSettingsPanel setState={setWizardState} state={state} />
         <ProductImageStudioUploadSection busyRole={busyRole} onUpload={handleUpload} state={state} />

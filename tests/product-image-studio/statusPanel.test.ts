@@ -21,11 +21,11 @@ describe("product image studio status panel", () => {
     );
 
     expect(html).toContain("스튜디오 상태");
-    expect(html).toContain("이미지 생성 차단됨");
-    expect(html).toContain("생성 게이트 닫힘");
-    expect(html).toContain("로컬 개발 저장소");
-    expect(html).toContain("임시 메모리 저장소");
-    expect(html).toContain("개별/ZIP 다운로드 가능");
+    expect(html).toContain("차단됨");
+    expect(html).toContain("게이트 닫힘");
+    expect(html).toContain("로컬");
+    expect(html).toContain("메모리");
+    expect(html).toContain("다운로드");
     expect(html).not.toContain("OPENAI_API_KEY");
     expect(html).not.toContain("PRODUCT_IMAGE_STUDIO");
     expect(html).not.toContain("configured-test-secret");
@@ -46,10 +46,10 @@ describe("product image studio status panel", () => {
       }),
     );
 
-    expect(html).toContain("이미지 생성 가능");
-    expect(html).toContain("생성 연결 준비됨");
-    expect(html).toContain("Vercel Blob 저장소");
-    expect(html).toContain("운영 DB 저장소");
+    expect(html).toContain("가능");
+    expect(html).toContain("연결됨");
+    expect(html).toContain("Blob");
+    expect(html).toContain("DB");
     expect(html).not.toContain("configured-test-secret");
     expect(html).not.toContain("gpt-image-1");
     expect(html).not.toContain("OPENAI_API_KEY");
@@ -90,8 +90,8 @@ describe("product image studio status panel", () => {
 
     const html = renderToStaticMarkup(await ProductImageStudioPage());
 
-    expect(html).toContain("이미지 생성 가능");
-    expect(html).not.toContain("이미지 생성 차단됨");
+    expect(html).toContain("가능");
+    expect(html).not.toContain("차단됨");
     expect(html).not.toContain("hidden-gemini-model");
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       "https://api.marketcrew.app/api/product-image-studio/provider-settings",

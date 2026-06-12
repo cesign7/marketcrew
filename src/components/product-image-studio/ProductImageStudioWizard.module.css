@@ -2,9 +2,8 @@
   align-items: start;
   display: grid;
   gap: 18px;
-  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
-  margin: 0 auto;
-  max-width: 1180px;
+  grid-template-columns: 1fr;
+  width: 100%;
 }
 
 .mainPanel,
@@ -57,7 +56,6 @@
 
 .panelHeader p,
 .sectionTitle p,
-.uploadSlot p,
 .emptyText,
 .info,
 .success,
@@ -144,7 +142,7 @@
 }
 
 .choiceGrid,
-.uploadGrid {
+.outputChipList {
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -160,60 +158,58 @@
   justify-content: flex-start;
 }
 
-.uploadSlot {
+.outputChip {
+  background: #f1fbf6;
+  border: 1px solid #a9dec2;
+  border-radius: 8px;
+  color: var(--good);
+  font-size: 13px;
+  font-weight: 900;
+  padding: 10px 11px;
+}
+
+.advancedDisclosure {
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
-  gap: 8px;
-  min-width: 0;
+  gap: 10px;
+}
+
+.advancedDisclosure summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  list-style: none;
   padding: 12px;
 }
 
-.uploadSlot > span {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 900;
+.advancedDisclosure summary::-webkit-details-marker {
+  display: none;
 }
 
-.uploadSlot em,
-.uploadSlot small {
-  border-radius: 999px;
-  font-size: 11px;
-  font-style: normal;
-  font-weight: 900;
-  padding: 3px 7px;
-}
-
-.uploadSlot em {
-  background: #fff2ea;
-  color: #b54708;
-}
-
-.uploadSlot small {
-  background: #eef4f6;
-  color: var(--brand-strong);
-}
-
-.fileInput {
-  opacity: 0;
-  position: absolute;
-  width: 1px;
-}
-
-.uploadSlot strong {
-  align-items: center;
-  border: 1px solid #9ccdd8;
-  border-radius: 8px;
-  color: var(--brand-strong);
-  display: inline-flex;
+.advancedDisclosure summary span {
+  color: #344054;
   font-size: 13px;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 10px;
-  width: max-content;
+  font-weight: 900;
+}
+
+.advancedDisclosure summary small {
+  background: #eef4f6;
+  border-radius: 999px;
+  color: var(--brand-strong);
+  font-size: 12px;
+  font-weight: 900;
+  padding: 5px 8px;
+}
+
+.advancedDisclosure[open] {
+  padding-bottom: 12px;
+}
+
+.advancedDisclosure[open] .choiceGrid {
+  padding: 0 12px;
 }
 
 .actionBox {
@@ -253,12 +249,8 @@
 }
 
 @media (max-width: 920px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
   .choiceGrid,
-  .uploadGrid {
+  .outputChipList {
     grid-template-columns: 1fr;
   }
 

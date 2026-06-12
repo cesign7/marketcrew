@@ -4,8 +4,6 @@
   border-radius: 8px;
   display: grid;
   gap: 14px;
-  margin: 0 auto;
-  max-width: 1180px;
   padding: 16px;
 }
 
@@ -21,7 +19,7 @@
 }
 
 .heading p,
-.card p {
+.card span {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.55;
@@ -30,29 +28,33 @@
 
 .grid {
   display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .card {
+  align-items: center;
   border: 1px solid var(--line);
   border-radius: 8px;
-  display: grid;
-  gap: 7px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
   min-width: 0;
-  padding: 12px;
+  padding: 10px 12px;
 }
 
 .card span {
-  color: var(--muted);
   font-size: 12px;
   font-weight: 900;
+  white-space: nowrap;
 }
 
 .card strong {
   color: var(--text);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .card[data-tone="blocked"] {

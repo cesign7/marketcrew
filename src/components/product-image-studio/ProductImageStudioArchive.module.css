@@ -71,8 +71,7 @@
 }
 
 .resultGrid {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), min(100%, 360px)));
-  justify-content: start;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
 }
 
 .projectCard,

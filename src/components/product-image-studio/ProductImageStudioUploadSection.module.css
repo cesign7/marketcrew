@@ -1,0 +1,117 @@
+.panel {
+  display: grid;
+  gap: 12px;
+}
+
+.sectionTitle,
+.groupHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.sectionTitle h3,
+.groupHeader h4 {
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.sectionTitle h3 {
+  font-size: 16px;
+}
+
+.groupHeader h4 {
+  color: #344054;
+  font-size: 14px;
+}
+
+.sectionTitle p,
+.groupHeader p,
+.uploadSlot p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.groupStack {
+  display: grid;
+  gap: 12px;
+}
+
+.uploadGroup {
+  background: #fbfcfe;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.uploadGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.uploadSlot {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.uploadSlot > span {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.uploadSlot em,
+.uploadSlot small {
+  border-radius: 999px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 900;
+  padding: 3px 7px;
+}
+
+.uploadSlot em {
+  background: #fff2ea;
+  color: #b54708;
+}
+
+.uploadSlot small {
+  background: #eef4f6;
+  color: var(--brand-strong);
+}
+
+.fileInput {
+  opacity: 0;
+  position: absolute;
+  width: 1px;
+}
+
+.uploadSlot strong {
+  align-items: center;
+  border: 1px solid #9ccdd8;
+  border-radius: 8px;
+  color: var(--brand-strong);
+  display: inline-flex;
+  font-size: 13px;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 10px;
+  width: max-content;
+}
+
+@media (max-width: 720px) {
+  .uploadGrid {
+    grid-template-columns: 1fr;
+  }
+}

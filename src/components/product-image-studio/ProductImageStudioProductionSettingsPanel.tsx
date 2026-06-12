@@ -67,32 +67,38 @@ export function ProductImageStudioProductionSettingsPanel({
         </label>
       </div>
 
-      <fieldset className={styles.methodGroup}>
-        <legend>생성 방식</legend>
-        {PRODUCT_IMAGE_STUDIO_GENERATION_METHOD_OPTIONS.map((option) => (
-          <label
-            className={option.value === state.productionSettings.scene.generationMethod ? styles.selectedMethod : styles.method}
-            key={option.value}
-          >
-            <input
-              checked={option.value === state.productionSettings.scene.generationMethod}
-              name="generationMethod"
-              onChange={() =>
-                setState((current) => ({
-                  ...current,
-                  productionSettings: {
-                    ...current.productionSettings,
-                    scene: { ...current.productionSettings.scene, generationMethod: option.value },
-                  },
-                }))
-              }
-              type="radio"
-            />
-            <span>{option.label}</span>
-            <small>{option.helper}</small>
-          </label>
-        ))}
-      </fieldset>
+      <details className={styles.advancedDisclosure}>
+        <summary>
+          <span>고급 생성 방식</span>
+          <small>{getSelectedGenerationMethodLabel(state.productionSettings)}</small>
+        </summary>
+        <fieldset className={styles.methodGroup}>
+          <legend>생성 방식</legend>
+          {PRODUCT_IMAGE_STUDIO_GENERATION_METHOD_OPTIONS.map((option) => (
+            <label
+              className={option.value === state.productionSettings.scene.generationMethod ? styles.selectedMethod : styles.method}
+              key={option.value}
+            >
+              <input
+                checked={option.value === state.productionSettings.scene.generationMethod}
+                name="generationMethod"
+                onChange={() =>
+                  setState((current) => ({
+                    ...current,
+                    productionSettings: {
+                      ...current.productionSettings,
+                      scene: { ...current.productionSettings.scene, generationMethod: option.value },
+                    },
+                  }))
+                }
+                type="radio"
+              />
+              <span>{option.label}</span>
+              <small>{option.helper}</small>
+            </label>
+          ))}
+        </fieldset>
+      </details>
 
       <section className={styles.checklist} aria-labelledby="production-checklist-heading">
         <h4 id="production-checklist-heading">자동 검수 기준</h4>
@@ -130,6 +136,13 @@ function updateScene(
   update: Partial<Pick<ProductImageStudioProductionSettings["scene"], "outputPurpose" | "shotAngle">>,
 ): ProductImageStudioProductionSettings {
   return { ...settings, scene: { ...settings.scene, ...update } };
+}
+
+function getSelectedGenerationMethodLabel(settings: ProductImageStudioProductionSettings): string {
+  return (
+    PRODUCT_IMAGE_STUDIO_GENERATION_METHOD_OPTIONS.find((option) => option.value === settings.scene.generationMethod)
+      ?.label ?? "목업 합성 우선"
+  );
 }
 
 function readOutputPurpose(value: string): ProductImageStudioOutputPurpose | null {

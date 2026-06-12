@@ -1,0 +1,159 @@
+.toolbar {
+  align-items: center;
+  background: #f8fafb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.toolbar div,
+.dialogHeader div {
+  display: grid;
+  gap: 4px;
+}
+
+.toolbar h4,
+.dialogHeader h4 {
+  color: #344054;
+  font-size: 14px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.toolbar p,
+.dialogHeader p,
+.message {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.backdrop {
+  align-items: center;
+  background: rgb(16 24 40 / 42%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 40;
+}
+
+.dialog {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgb(16 24 40 / 22%);
+  display: grid;
+  gap: 14px;
+  max-height: min(720px, calc(100vh - 40px));
+  max-width: 720px;
+  overflow: auto;
+  padding: 18px;
+  width: min(100%, 720px);
+}
+
+.dialogHeader {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.presetForm,
+.presetLoadRow {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.presetLoadRow {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.selectField {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.selectField span {
+  color: #344054;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.selectField input,
+.selectField select {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  min-height: 40px;
+  padding: 0 10px;
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.closeButton {
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  min-height: 40px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.primaryButton {
+  background: var(--brand);
+  color: #fff;
+}
+
+.secondaryButton,
+.closeButton {
+  background: #e9eef1;
+  color: #344054;
+}
+
+.dangerButton {
+  background: #fff1f0;
+  color: #b42318;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.message[data-tone="error"] {
+  color: #b42318;
+}
+
+.message[data-tone="success"] {
+  color: var(--brand-strong);
+}
+
+@media (max-width: 720px) {
+  .toolbar,
+  .dialogHeader {
+    align-items: stretch;
+    display: grid;
+  }
+
+  .presetForm,
+  .presetLoadRow {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { ProductImageStudioUploadSection } from "@/components/product-image-studio/ProductImageStudioUploadSection";
 import { ProductImageStudioWizard } from "@/components/product-image-studio/ProductImageStudioWizard";
 import { readProductImageStudioConceptCards } from "@/features/product-image-studio/client/projectWizardApi";
 import { getProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
@@ -29,11 +30,13 @@ describe("product image studio project wizard UI", () => {
     expect(html).toContain("프로젝트 이름");
     expect(html).toContain("접이식 카드");
     expect(html).toContain("엽서형 카드");
-    expect(html).toContain("카드 자세");
+    expect(html).toContain("설정샷 자세 조정");
     expect(html).toContain("디자인 업로드");
+    expect(html).toContain("접이식 카드 디자인");
+    expect(html).toContain("봉투와 봉합스티커");
     expect(html).toContain("상품 사양");
     expect(html).toContain("저장한 규격");
-    expect(html).toContain("현재 규격 저장");
+    expect(html).toContain("규격 저장/불러오기");
     expect(html).toContain("불러오기");
     expect(html).toContain("접은 카드 가로(mm)");
     expect(html).toContain("펼친 카드 가로(mm)");
@@ -46,6 +49,23 @@ describe("product image studio project wizard UI", () => {
     expect(html).not.toContain("접이식 100x150");
     expect(html).not.toContain("네이버 검색광고");
     expect(html).not.toContain("광고유형");
+  });
+
+  it("separates postcard upload slots from folded-card upload copy", () => {
+    const postcardState = changeProductImageStudioCardFormat(createInitialProductImageStudioWizardState(), "postcard_flat");
+
+    const html = renderToStaticMarkup(
+      createElement(ProductImageStudioUploadSection, {
+        busyRole: null,
+        onUpload: () => undefined,
+        state: postcardState,
+      }),
+    );
+
+    expect(html).toContain("엽서형 카드 디자인");
+    expect(html).toContain("엽서 앞면");
+    expect(html).toContain("봉투와 봉합스티커");
+    expect(html).not.toContain("접이식 카드 디자인");
   });
 
   it("enables card-only recommendation after card specs and the card image are ready", () => {

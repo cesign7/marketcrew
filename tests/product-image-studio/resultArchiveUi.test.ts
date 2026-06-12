@@ -51,7 +51,7 @@ describe("product image studio result archive UI", () => {
     expect(html).not.toContain("GEMINI_API_KEY");
   });
 
-  it("keeps result cards in scan-friendly columns at desktop widths", () => {
+  it("keeps result cards in full-width balanced columns at desktop widths", () => {
     const css = readFileSync(
       join(process.cwd(), "src/components/product-image-studio/ProductImageStudioArchive.module.css"),
       "utf8",
@@ -59,8 +59,8 @@ describe("product image studio result archive UI", () => {
     const resultGridRules = Array.from(css.matchAll(/\.resultGrid\s*\{(?<body>[^}]*)\}/g), (match) => match.groups?.body ?? "");
     const resultGridRule = resultGridRules.find((rule) => rule.includes("grid-template-columns")) ?? "";
 
-    expect(resultGridRule).toContain("justify-content: start;");
-    expect(resultGridRule).toContain("grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), min(100%, 360px)));");
+    expect(resultGridRule).not.toContain("justify-content: start;");
+    expect(resultGridRule).toContain("grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));");
   });
 
   it("groups project detail results by output type and exposes ZIP download", () => {

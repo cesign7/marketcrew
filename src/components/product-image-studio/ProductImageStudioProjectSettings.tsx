@@ -48,11 +48,11 @@ export function ProductImageStudioProjectSettings({ setState, state }: ProductIm
         </label>
       </fieldset>
 
-      <section className={styles.optionSection} aria-labelledby="pose-heading">
-        <div className={styles.sectionTitle}>
-          <h3 id="pose-heading">카드 자세</h3>
-          <p>카드 형식에 맞는 설정샷 자세를 고릅니다.</p>
-        </div>
+      <details className={styles.advancedDisclosure}>
+        <summary>
+          <span>설정샷 자세 조정</span>
+          <small>{state.selectedCardPoses.length}개 선택됨</small>
+        </summary>
         <div className={styles.choiceGrid}>
           {getProductImageStudioPoseOptions(state.cardFormat).map((poseOption) => (
             <label className={styles.checkChoice} key={poseOption.pose}>
@@ -65,7 +65,7 @@ export function ProductImageStudioProjectSettings({ setState, state }: ProductIm
             </label>
           ))}
         </div>
-      </section>
+      </details>
     </>
   );
 }

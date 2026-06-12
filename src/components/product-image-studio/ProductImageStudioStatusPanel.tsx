@@ -28,9 +28,9 @@ export function ProductImageStudioStatusPanel({
     toMetadataStorageCard(metadataStorageMode),
     {
       label: "내보내기",
-      summary: "생성 결과가 준비되면 개별 이미지와 ZIP 파일을 내려받을 수 있습니다.",
+      summary: "개별 이미지와 ZIP 파일을 내려받을 수 있습니다.",
       tone: "ready",
-      value: "개별/ZIP 다운로드 가능",
+      value: "다운로드",
     },
   ] as const satisfies readonly StatusCard[];
 
@@ -42,10 +42,14 @@ export function ProductImageStudioStatusPanel({
       </div>
       <div className={styles.grid}>
         {cards.map((card) => (
-          <article className={styles.card} data-tone={card.tone} key={card.label}>
+          <article
+            aria-label={`${card.label}: ${card.value}. ${card.summary}`}
+            className={styles.card}
+            data-tone={card.tone}
+            key={card.label}
+          >
             <span>{card.label}</span>
             <strong>{card.value}</strong>
-            <p>{card.summary}</p>
           </article>
         ))}
       </div>
@@ -59,7 +63,7 @@ function toGenerationCard(status: ProductImageStudioProviderStatus): StatusCard 
       label: "이미지 생성",
       summary: "실제 이미지 생성 요청을 보낼 준비가 되어 있습니다.",
       tone: "ready",
-      value: "이미지 생성 가능",
+      value: "가능",
     };
   }
 
@@ -67,7 +71,7 @@ function toGenerationCard(status: ProductImageStudioProviderStatus): StatusCard 
     label: "이미지 생성",
     summary: getBlockedSummary(status.generation.reason),
     tone: "blocked",
-    value: "이미지 생성 차단됨",
+    value: "차단됨",
   };
 }
 
@@ -75,16 +79,16 @@ function toProviderCard(status: ProductImageStudioProviderStatus): StatusCard {
   if (status.generation.status === "enabled") {
     return {
       label: "생성 연결",
-      summary: "필요한 서버 설정이 준비되어 있습니다. 세부 값은 화면에 표시하지 않습니다.",
+      summary: "필요한 서버 설정이 준비되어 있습니다.",
       tone: "ready",
-      value: "생성 연결 준비됨",
+      value: "연결됨",
     };
   }
 
-  const value = status.provider.configured && status.provider.modelConfigured ? "생성 연결 확인 필요" : "생성 연결 설정 필요";
+  const value = status.provider.configured && status.provider.modelConfigured ? "확인 필요" : "설정 필요";
   return {
     label: "생성 연결",
-    summary: "서버 설정 상태만 표시하며 키와 모델 값은 숨깁니다.",
+    summary: "키와 모델 값은 숨깁니다.",
     tone: "neutral",
     value,
   };
@@ -95,16 +99,16 @@ function toFileStorageCard(storageMode: ProductImageStudioFileStorageMode): Stat
     case "blob":
       return {
         label: "파일 저장소",
-        summary: "업로드와 생성 결과 이미지를 Vercel Blob에 보관합니다.",
+        summary: "업로드와 생성 결과 이미지를 보관합니다.",
         tone: "ready",
-        value: "Vercel Blob 저장소",
+        value: "Blob",
       };
     case "local":
       return {
         label: "파일 저장소",
-        summary: "개발 환경에서는 업로드와 생성 결과 이미지를 로컬 저장소에 보관합니다.",
+        summary: "개발 환경의 로컬 저장소입니다.",
         tone: "neutral",
-        value: "로컬 개발 저장소",
+        value: "로컬",
       };
   }
 }
@@ -114,16 +118,16 @@ function toMetadataStorageCard(storageMode: ProductImageStudioRepositoryStorageM
     case "postgres":
       return {
         label: "작업 기록",
-        summary: "프로젝트, 업로드, 생성 결과 기록을 운영 DB에 보관합니다.",
+        summary: "프로젝트와 생성 기록을 운영 DB에 보관합니다.",
         tone: "ready",
-        value: "운영 DB 저장소",
+        value: "DB",
       };
     case "memory":
       return {
         label: "작업 기록",
-        summary: "DB 설정 전에는 현재 실행 중인 서버 메모리에만 작업 기록을 보관합니다.",
+        summary: "현재 실행 중인 서버 메모리에만 보관합니다.",
         tone: "neutral",
-        value: "임시 메모리 저장소",
+        value: "메모리",
       };
   }
 }
@@ -131,7 +135,7 @@ function toMetadataStorageCard(storageMode: ProductImageStudioRepositoryStorageM
 function getBlockedSummary(reason: Extract<ProductImageStudioProviderStatus["generation"], { readonly status: "blocked" }>["reason"]): string {
   switch (reason) {
     case "generation_disabled":
-      return "생성 게이트 닫힘. 승인 전까지 실제 provider 호출은 차단됩니다.";
+      return "게이트 닫힘. 승인 전까지 실제 provider 호출은 차단됩니다.";
     case "provider_not_configured":
       return "생성 연결 설정 필요. 화면에는 설정값을 표시하지 않습니다.";
     case "credential_missing":
