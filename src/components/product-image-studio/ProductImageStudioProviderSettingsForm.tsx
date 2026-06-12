@@ -23,8 +23,18 @@ type ProviderFormStates = Record<ProductImageStudioProviderName, ProductImageStu
 type FormMessage = { readonly text: string; readonly tone: "error" | "success" };
 
 const PROVIDER_OPTIONS = [
-  { description: "설정샷, 목업 합성, 고품질 인쇄물 이미지 생성에 사용합니다.", label: "OpenAI", provider: "openai" },
-  { description: "참조 이미지 기반 장면 생성과 빠른 비율 초안에 사용합니다.", label: "Gemini", provider: "gemini" },
+  {
+    apiKeyHint: "sk-로 시작하는 OpenAI 키",
+    description: "설정샷, 목업 합성, 고품질 인쇄물 이미지 생성에 사용합니다.",
+    label: "OpenAI",
+    provider: "openai",
+  },
+  {
+    apiKeyHint: "AI Studio에서 발급한 AIza... 키",
+    description: "참조 이미지 기반 장면 생성과 빠른 비율 초안에 사용합니다.",
+    label: "Gemini",
+    provider: "gemini",
+  },
 ] as const satisfies readonly ProductImageStudioProviderCardOption[];
 
 const DEFAULT_MODELS: Record<ProductImageStudioProviderName, string> = { gemini: "gemini-3.1-flash-image", openai: "gpt-image-1" };

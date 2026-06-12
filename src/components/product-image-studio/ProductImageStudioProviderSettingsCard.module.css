@@ -25,10 +25,16 @@
 }
 
 .header span,
-.fields span {
+.fields span,
+.fields small {
   color: var(--muted);
   font-size: 12px;
   font-weight: 900;
+}
+
+.fields small {
+  font-weight: 700;
+  line-height: 1.45;
 }
 
 .header h3 {

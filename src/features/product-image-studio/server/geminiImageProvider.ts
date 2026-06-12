@@ -204,6 +204,9 @@ function normalizeGeminiProviderMessage(message: string): string | null {
   if (normalized.length === 0) {
     return null;
   }
+  if (normalized.includes("API key not valid")) {
+    return "Gemini API 키가 유효하지 않습니다. 설정에서 AI Studio의 AIza... 키를 다시 저장해 주세요.";
+  }
 
   return normalized.length > 240 ? `${normalized.slice(0, 240)}...` : normalized;
 }

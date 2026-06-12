@@ -9,6 +9,7 @@ import {
   getConfiguredProductImageStudioProviderStatus,
 } from "@/features/product-image-studio/server/providerConfig";
 import {
+  getActiveProductImageStudioProviderSettings,
   getProductImageStudioProviderSettingsStorageMode,
   getProductImageStudioProviderSettingsSummary,
   resetProductImageStudioProviderSettingsForTests,
@@ -16,6 +17,9 @@ import {
 } from "@/features/product-image-studio/server/providerSettingsStore";
 import { resolveConfiguredProductImageStudioImageProvider } from "@/features/product-image-studio/server/imageProvider";
 import { renderProviderSettingsFormHtml } from "./providerSettingsFormFixture";
+
+const TEST_GEMINI_API_KEY = "AIzaSyDUMMYGeminiKeyForMarketCrewTests123";
+const TEST_OPENAI_API_KEY = "sk-proj-marketcrew-test-openai-key";
 
 describe("product image studio provider settings", () => {
   afterEach(() => {
@@ -30,7 +34,7 @@ describe("product image studio provider settings", () => {
     const response = await POST(
       new Request("http://127.0.0.1:3000/api/product-image-studio/provider-settings", {
         body: JSON.stringify({
-          apiKey: "secret-gemini-key",
+          apiKey: TEST_GEMINI_API_KEY,
           generationEnabled: true,
           model: "gemini-3.1-flash-image",
           provider: "gemini",
@@ -44,7 +48,7 @@ describe("product image studio provider settings", () => {
     expect(response.status).toBe(200);
     expect(bodyText).toContain("\"provider\":\"gemini\"");
     expect(bodyText).toContain("\"hasCredential\":true");
-    expect(bodyText).not.toContain("secret-gemini-key");
+    expect(bodyText).not.toContain(TEST_GEMINI_API_KEY);
 
     const status = await getConfiguredProductImageStudioProviderStatus({});
     expect(status).toMatchObject({
@@ -57,7 +61,7 @@ describe("product image studio provider settings", () => {
     const openAiResponse = await POST(
       new Request("http://127.0.0.1:3000/api/product-image-studio/provider-settings", {
         body: JSON.stringify({
-          apiKey: "secret-openai-key",
+          apiKey: TEST_OPENAI_API_KEY,
           generationEnabled: true,
           model: "gpt-image-1",
           provider: "openai",
@@ -69,7 +73,7 @@ describe("product image studio provider settings", () => {
     const geminiResponse = await POST(
       new Request("http://127.0.0.1:3000/api/product-image-studio/provider-settings", {
         body: JSON.stringify({
-          apiKey: "secret-gemini-key",
+          apiKey: TEST_GEMINI_API_KEY,
           generationEnabled: true,
           model: "gemini-3.1-flash-image",
           provider: "gemini",
@@ -92,8 +96,72 @@ describe("product image studio provider settings", () => {
     expect(bodyText).toContain("\"model\":\"gpt-image-1\"");
     expect(bodyText).toContain("\"model\":\"gemini-3.1-flash-image\"");
     expect(bodyText).toContain("\"hasCredential\":true");
-    expect(bodyText).not.toContain("secret-openai-key");
-    expect(bodyText).not.toContain("secret-gemini-key");
+    expect(bodyText).not.toContain(TEST_OPENAI_API_KEY);
+    expect(bodyText).not.toContain(TEST_GEMINI_API_KEY);
+  });
+
+  it("normalizes provider key pasted from an environment variable assignment", async () => {
+    const response = await POST(
+      new Request("http://127.0.0.1:3000/api/product-image-studio/provider-settings", {
+        body: JSON.stringify({
+          apiKey: `export GEMINI_API_KEY="${TEST_GEMINI_API_KEY}"`,
+          generationEnabled: true,
+          model: "gemini-3.1-flash-image",
+          provider: "gemini",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }),
+    );
+    const bodyText = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(bodyText).not.toContain(TEST_GEMINI_API_KEY);
+    await expect(getActiveProductImageStudioProviderSettings({}, "gemini")).resolves.toMatchObject({
+      apiKey: TEST_GEMINI_API_KEY,
+      provider: "gemini",
+    });
+  });
+
+  it("rejects a key that does not match the selected provider before storing it", async () => {
+    const response = await POST(
+      new Request("http://127.0.0.1:3000/api/product-image-studio/provider-settings", {
+        body: JSON.stringify({
+          apiKey: "sk-proj-not-a-gemini-key",
+          generationEnabled: true,
+          model: "gemini-3.1-flash-image",
+          provider: "gemini",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }),
+    );
+    const bodyText = await response.text();
+
+    expect(response.status).toBe(400);
+    expect(bodyText).toContain("Gemini API 키는 Google AI Studio에서 발급한 AIza... 형식이어야 합니다.");
+    expect(bodyText).not.toContain("sk-proj-not-a-gemini-key");
+    await expect(getProductImageStudioProviderSettingsSummary()).resolves.toBeNull();
+  });
+
+  it("rejects a masked provider key before storing it", async () => {
+    const response = await POST(
+      new Request("http://127.0.0.1:3000/api/product-image-studio/provider-settings", {
+        body: JSON.stringify({
+          apiKey: "AIzaSy****************",
+          generationEnabled: true,
+          model: "gemini-3.1-flash-image",
+          provider: "gemini",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }),
+    );
+    const bodyText = await response.text();
+
+    expect(response.status).toBe(400);
+    expect(bodyText).toContain("마스킹된 키는 저장할 수 없습니다.");
+    expect(bodyText).not.toContain("AIzaSy****************");
   });
 
   it("keeps an existing key when only provider settings change", async () => {

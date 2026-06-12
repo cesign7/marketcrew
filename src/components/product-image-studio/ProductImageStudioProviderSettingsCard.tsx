@@ -4,6 +4,7 @@ import type { ProductImageStudioProviderName } from "@/features/product-image-st
 import styles from "./ProductImageStudioProviderSettingsCard.module.css";
 
 export type ProductImageStudioProviderCardOption = {
+  readonly apiKeyHint: string;
   readonly description: string;
   readonly label: string;
   readonly provider: ProductImageStudioProviderName;
@@ -73,10 +74,11 @@ export function ProductImageStudioProviderSettingsCard({
             autoComplete="off"
             disabled={isBusy}
             onChange={(event) => onApiKeyChange(option.provider, event.target.value)}
-            placeholder={state.hasCredential ? "변경할 때만 새 키 입력" : "provider API 키 입력"}
+            placeholder={state.hasCredential ? "변경할 때만 새 키 입력" : option.apiKeyHint}
             type="password"
             value={state.apiKey}
           />
+          <small>{option.apiKeyHint}</small>
         </label>
       </div>
 

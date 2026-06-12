@@ -147,6 +147,35 @@ describe("product image studio Gemini image provider", () => {
     });
   });
 
+  it("turns Gemini invalid API key errors into an actionable Korean message", async () => {
+    const provider = createGeminiImageProvider({
+      apiKey: "secret-gemini-key",
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              code: 400,
+              message: "API key not valid. Please pass a valid API key.",
+              status: "INVALID_ARGUMENT",
+            },
+          }),
+          { status: 400 },
+        ),
+      model: "gemini-3.1-flash-image",
+    });
+
+    await expect(
+      provider.generateScene({
+        promptContext: postcardPromptContext(["postcard_front"]),
+        referenceImages: [],
+      }),
+    ).rejects.toMatchObject({
+      message:
+        "Gemini 이미지 생성 요청이 실패했습니다: Gemini API 키가 유효하지 않습니다. 설정에서 AI Studio의 AIza... 키를 다시 저장해 주세요.",
+      status: 400,
+    });
+  });
+
   it("returns the safe Gemini error detail through the generation API surface", async () => {
     vi.stubEnv("GEMINI_API_KEY", "secret-gemini-key");
     vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "1");

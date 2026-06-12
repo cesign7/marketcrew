@@ -4,6 +4,7 @@ import {
   type ProductImageStudioProviderName,
 } from "@/features/product-image-studio/domain/types";
 import { getConfiguredProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
+import { parseProductImageStudioProviderApiKeyInput } from "@/features/product-image-studio/server/providerApiKeyInput";
 import {
   deleteProductImageStudioProviderSettings,
   getProductImageStudioProviderSettingsStorageMode,
@@ -97,10 +98,14 @@ function parseProviderSettingsPayload(
     return invalidPayload("MODEL_REQUIRED", "이미지 생성 모델을 입력해 주세요.");
   }
 
-  const apiKey = typeof payload["apiKey"] === "string" && payload["apiKey"].trim() ? payload["apiKey"].trim() : null;
+  const parsedApiKey = parseProductImageStudioProviderApiKeyInput(provider, payload["apiKey"]);
+  if (!parsedApiKey.ok) {
+    return invalidPayload(parsedApiKey.error.code, parsedApiKey.error.message);
+  }
+
   return {
     input: {
-      apiKey,
+      apiKey: parsedApiKey.apiKey,
       generationEnabled: payload["generationEnabled"] === true,
       model,
       provider,
