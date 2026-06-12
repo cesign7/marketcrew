@@ -26,6 +26,9 @@ describe("product image studio project wizard UI", () => {
     expect(html).toContain("카드 자세");
     expect(html).toContain("디자인 업로드");
     expect(html).toContain("상품 사양");
+    expect(html).toContain("저장한 규격");
+    expect(html).toContain("현재 규격 저장");
+    expect(html).toContain("불러오기");
     expect(html).toContain("접은 카드 가로(mm)");
     expect(html).toContain("펼친 카드 가로(mm)");
     expect(html).toContain("봉투 가로(mm)");

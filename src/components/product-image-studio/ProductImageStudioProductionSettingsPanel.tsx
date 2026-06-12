@@ -10,6 +10,7 @@ import {
 } from "@/features/product-image-studio/domain/productionSettings";
 import type { ProductImageStudioWizardState } from "@/features/product-image-studio/domain/projectWizard";
 import { ProductImageStudioManualSpecFields } from "./ProductImageStudioManualSpecFields";
+import { ProductImageStudioProductionSettingsPresetControls } from "./ProductImageStudioProductionSettingsPresetControls";
 import styles from "./ProductImageStudioProductionSettingsPanel.module.css";
 
 type ProductImageStudioProductionSettingsPanelProps = {
@@ -32,6 +33,8 @@ export function ProductImageStudioProductionSettingsPanel({
         </div>
         <span>{state.productionSettings.scene.designPreservation === "exact_composite" ? "디자인 원본 보존" : "AI 보정 허용"}</span>
       </div>
+
+      <ProductImageStudioProductionSettingsPresetControls setState={setState} state={state} />
 
       <ProductImageStudioManualSpecFields setState={setState} state={state} />
 

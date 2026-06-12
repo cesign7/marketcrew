@@ -13,6 +13,7 @@
 }
 
 .heading h3,
+.presetToolbar h4,
 .checklist h4 {
   letter-spacing: 0;
   margin: 0;
@@ -86,6 +87,32 @@
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.presetToolbar {
+  background: #f8fafb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.presetToolbar h4 {
+  color: #344054;
+  font-size: 14px;
+}
+
+.presetForm,
+.presetLoadRow {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.presetLoadRow {
+  grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
 .preset,
@@ -175,6 +202,7 @@
 }
 
 .numberField input,
+.selectField input,
 .selectField select {
   background: #fff;
   border: 1px solid var(--line);
@@ -184,6 +212,27 @@
   min-height: 40px;
   padding: 0 10px;
 }
+
+.presetButton,
+.presetSecondaryButton,
+.presetDangerButton { border: 0; border-radius: 8px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 900; min-height: 40px; padding: 0 12px; }
+
+.presetButton { background: var(--brand); color: #fff; }
+
+.presetSecondaryButton,
+.presetDangerButton { background: #e9eef1; color: #344054; }
+
+.presetDangerButton { color: #b42318; }
+
+.presetButton:disabled,
+.presetSecondaryButton:disabled,
+.presetDangerButton:disabled { cursor: not-allowed; opacity: 0.48; }
+
+.presetMessage { color: var(--muted); font-size: 13px; line-height: 1.45; margin: 0; }
+
+.presetMessage[data-tone="error"] { color: #b42318; }
+
+.presetMessage[data-tone="success"] { color: var(--brand-strong); }
 
 .checklist {
   background: #f8fafb;
@@ -210,6 +259,8 @@
   .heading,
   .controlGrid,
   .inputGrid,
+  .presetForm,
+  .presetLoadRow,
   .specList {
     grid-template-columns: 1fr;
   }

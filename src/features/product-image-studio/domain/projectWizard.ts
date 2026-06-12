@@ -137,7 +137,7 @@ export function changeProductImageStudioCardFormat(
     ...state,
     cardFormat,
     productionSettings: createDefaultProductImageStudioProductionSettings(cardFormat),
-    selectedCardPoses: getDefaultPoses(cardFormat),
+    selectedCardPoses: getDefaultProductImageStudioCardPoses(cardFormat),
     uploadedRoles: allowedUploadedRoles,
   };
 }
@@ -225,7 +225,7 @@ function toUploadSlot(role: ProductImageStudioAssetRole, required: boolean): Pro
   return { helper: label.helper, label: label.label, required, role };
 }
 
-function getDefaultPoses(cardFormat: CardFormat): readonly CardDisplayPose[] {
+export function getDefaultProductImageStudioCardPoses(cardFormat: CardFormat): readonly CardDisplayPose[] {
   switch (cardFormat) {
     case "folded_card":
       return ["folded_closed", "folded_open_spread"];
