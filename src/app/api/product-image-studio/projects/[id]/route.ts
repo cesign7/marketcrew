@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { proxyProductImageStudioRequestToBackend } from "@/features/product-image-studio/server/backendProxy";
 import { getProductImageStudioProject } from "@/features/product-image-studio/server/projectApi";
 
 type ProductImageStudioProjectRouteContext = {
@@ -7,7 +8,12 @@ type ProductImageStudioProjectRouteContext = {
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, context: ProductImageStudioProjectRouteContext) {
+export async function GET(request: Request, context: ProductImageStudioProjectRouteContext) {
+  const proxied = await proxyProductImageStudioRequestToBackend(request);
+  if (proxied) {
+    return proxied;
+  }
+
   const { id } = await context.params;
   const project = await getProductImageStudioProject(normalizeRouteParam(id));
   if (!project) {

@@ -6,6 +6,7 @@ import {
   GET,
   POST,
 } from "@/app/api/product-image-studio/provider-settings/route";
+import { POST as START_GENERATION } from "@/app/api/product-image-studio/projects/[id]/generations/route";
 import { GET as GET_PROVIDER_STATUS } from "@/app/api/product-image-studio/provider-status/route";
 import { ProductImageStudioProviderSettingsForm } from "@/components/product-image-studio/ProductImageStudioProviderSettingsForm";
 import {
@@ -168,6 +169,57 @@ describe("product image studio provider settings", () => {
     );
   });
 
+  it("proxies generation API requests to the Railway backend in hosted frontend runtime", async () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("MARKETCREW_BACKEND_API_URL", "https://api.marketcrew.app");
+    vi.stubEnv("MARKETCREW_BACKEND_API_TOKEN", "bridge-token");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            generation: { id: "generation-remote", status: "ready" },
+            results: [],
+          },
+          ok: true,
+        }),
+        {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        },
+      ),
+    );
+
+    const response = await START_GENERATION(
+      new Request("https://marketcrew.app/api/product-image-studio/projects/project-remote/generations", {
+        body: JSON.stringify({
+          conceptId: "minimal-studio",
+          outputs: ["card_single"],
+          productionSettings: {},
+          qualityMode: "draft",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }),
+      { params: Promise.resolve({ id: "project-remote" }) },
+    );
+    const bodyText = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(bodyText).toContain("generation-remote");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "https://api.marketcrew.app/api/product-image-studio/projects/project-remote/generations",
+    );
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      headers: {
+        accept: "application/json",
+        authorization: "Bearer bridge-token",
+        "content-type": "application/json",
+      },
+      method: "POST",
+    });
+  });
+
   it("loads the provider settings page state from the Railway backend", async () => {
     vi.stubEnv("VERCEL", "1");
     vi.stubEnv("MARKETCREW_BACKEND_API_URL", "https://api.marketcrew.app");
@@ -227,6 +279,9 @@ describe("product image studio provider settings", () => {
     );
 
     expect(html).toContain("생성 연결 설정");
+    expect(html).toContain("생성 게이트");
+    expect(html).toContain("게이트 열기");
+    expect(html).toContain("게이트 닫기");
     expect(html).toContain("OpenAI");
     expect(html).toContain("Gemini");
     expect(html).toContain("실제 이미지 생성 허용");

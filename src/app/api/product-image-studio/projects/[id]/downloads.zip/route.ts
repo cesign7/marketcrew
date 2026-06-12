@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDefaultProductImageStudioFileStore } from "@/features/product-image-studio/server/assetUploadApi";
+import { proxyProductImageStudioRequestToBackend } from "@/features/product-image-studio/server/backendProxy";
 import {
   ProductImageStudioDownloadError,
   createProductImageStudioZipArchiveFromStore,
@@ -12,7 +13,12 @@ type ProductImageStudioDownloadRouteContext = {
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, context: ProductImageStudioDownloadRouteContext) {
+export async function GET(request: Request, context: ProductImageStudioDownloadRouteContext) {
+  const proxied = await proxyProductImageStudioRequestToBackend(request);
+  if (proxied) {
+    return proxied;
+  }
+
   const { id } = await context.params;
   const projectId = normalizeRouteParam(id);
   const repository = getProductImageStudioProjectRepository();

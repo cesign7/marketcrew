@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { uploadProductImageStudioAssetFromFormData } from "@/features/product-image-studio/server/assetUploadApi";
+import { proxyProductImageStudioRequestToBackend } from "@/features/product-image-studio/server/backendProxy";
 
 type ProductImageStudioAssetRouteContext = {
   readonly params: Promise<{ readonly id: string }>;
@@ -8,6 +9,11 @@ type ProductImageStudioAssetRouteContext = {
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request, context: ProductImageStudioAssetRouteContext) {
+  const proxied = await proxyProductImageStudioRequestToBackend(request);
+  if (proxied) {
+    return proxied;
+  }
+
   const { id } = await context.params;
   const formData = await readFormData(request);
   if (!formData) {

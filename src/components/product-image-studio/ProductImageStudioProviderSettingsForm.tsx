@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
 import type {
   ProductImageStudioProviderSettingsStorageMode,
@@ -61,6 +61,9 @@ export function ProductImageStudioProviderSettingsForm({
     () => PROVIDER_OPTIONS.find((option) => option.provider === provider) ?? PROVIDER_OPTIONS[0],
     [provider],
   );
+  const hasPendingCredential = apiKey.trim().length > 0;
+  const canOpenGate = hasCredential || hasPendingCredential;
+  const gateSummary = generationEnabled ? `${selectedOption.label} 실제 호출 허용 중` : "실제 provider 호출 차단 중";
 
   return (
     <section className={styles.panel} aria-label="이미지 생성 provider 설정">
@@ -121,19 +124,37 @@ export function ProductImageStudioProviderSettingsForm({
           </label>
         </div>
 
-        <label className={styles.toggle}>
-          <input
-            checked={generationEnabled}
-            disabled={isBusy}
-            onChange={(event) => setGenerationEnabled(event.target.checked)}
-            type="checkbox"
-          />
-          <span className={styles.toggleControl} aria-hidden="true" />
-          <span>
-            <strong>실제 이미지 생성 허용</strong>
-            <small>{generationEnabled ? `${selectedOption.label} 호출 허용` : "저장만 하고 생성 호출은 차단"}</small>
-          </span>
-        </label>
+        <section className={styles.gatePanel} data-state={generationEnabled ? "open" : "closed"} aria-labelledby="generation-gate-heading">
+          <div className={styles.gateCopy}>
+            <span>생성 게이트</span>
+            <h3 id="generation-gate-heading">{generationEnabled ? "게이트 열림" : "게이트 닫힘"}</h3>
+            <p>실제 이미지 생성 허용 상태입니다. 키가 저장된 provider만 호출합니다.</p>
+          </div>
+          <strong className={styles.gateStatus}>{gateSummary}</strong>
+          <div className={styles.gateActions} aria-label="생성 게이트 열기 닫기">
+            <button
+              aria-pressed={generationEnabled}
+              className={styles.gateOpen}
+              disabled={isBusy || generationEnabled || !canOpenGate}
+              onClick={() => void handleGateChange(true)}
+              type="button"
+            >
+              게이트 열기
+            </button>
+            <button
+              aria-pressed={!generationEnabled}
+              className={styles.gateClose}
+              disabled={isBusy || !generationEnabled || (!hasCredential && !hasPendingCredential)}
+              onClick={() => void handleGateChange(false)}
+              type="button"
+            >
+              게이트 닫기
+            </button>
+          </div>
+          <p className={styles.gateHint}>
+            {canOpenGate ? "버튼을 누르면 현재 provider 설정과 함께 바로 저장됩니다." : "먼저 API 키를 저장하거나 입력해 주세요."}
+          </p>
+        </section>
 
         <div className={styles.actions}>
           <button className={styles.primary} disabled={isBusy} type="submit">
@@ -152,7 +173,7 @@ export function ProductImageStudioProviderSettingsForm({
     </section>
   );
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setIsBusy(true);
     setMessage(null);
@@ -190,6 +211,34 @@ export function ProductImageStudioProviderSettingsForm({
     setUpdatedAt(null);
     setStorageMode(result.storageMode);
     setMessage({ text: "provider 연결을 해제했습니다.", tone: "success" });
+  }
+
+  async function handleGateChange(nextGenerationEnabled: boolean): Promise<void> {
+    if (nextGenerationEnabled && !canOpenGate) {
+      setMessage({ text: "먼저 API 키를 저장하거나 입력해 주세요.", tone: "error" });
+      return;
+    }
+
+    setIsBusy(true);
+    setMessage(null);
+    const result = await requestProductImageStudioProviderSettings("POST", {
+      apiKey,
+      generationEnabled: nextGenerationEnabled,
+      model,
+      provider,
+    });
+    setIsBusy(false);
+    if (!result.ok) {
+      setMessage({ text: result.message, tone: "error" });
+      return;
+    }
+
+    applySettingsResult(result.settings, result.storageMode);
+    setApiKey("");
+    setMessage({
+      text: nextGenerationEnabled ? "생성 게이트를 열었습니다." : "생성 게이트를 닫았습니다.",
+      tone: "success",
+    });
   }
 
   function handleProviderChange(nextProvider: ProductImageStudioProviderName): void {

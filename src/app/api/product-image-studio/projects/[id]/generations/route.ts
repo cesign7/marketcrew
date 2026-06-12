@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { listCardSetConceptRecommendations } from "@/features/product-image-studio/domain/concepts";
 import { getDefaultProductImageStudioFileStore } from "@/features/product-image-studio/server/assetUploadApi";
+import { proxyProductImageStudioRequestToBackend } from "@/features/product-image-studio/server/backendProxy";
 import {
   buildProductImageStudioPromptContext,
   createFakeProductImageStudioImageProvider,
@@ -26,6 +27,11 @@ type ProductImageStudioGenerationRouteContext = {
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request, context: ProductImageStudioGenerationRouteContext) {
+  const proxied = await proxyProductImageStudioRequestToBackend(request);
+  if (proxied) {
+    return proxied;
+  }
+
   const { id } = await context.params;
   const repository = getProductImageStudioProjectRepository();
   const project = await repository.getProject(normalizeRouteParam(id));

@@ -28,7 +28,7 @@ export async function proxyRequestToBackend(request: Request, pathOverride?: str
 
   try {
     const response = await fetch(targetUrl, {
-      body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.text(),
+      body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer(),
       cache: "no-store",
       headers: buildBackendProxyHeaders(request),
       method: request.method,
@@ -88,7 +88,7 @@ function buildBackendProxyHeaders(request: Request): HeadersInit {
 
 function pickResponseHeaders(headers: Headers): HeadersInit {
   const picked = new Headers();
-  for (const key of ["content-type", "cache-control"]) {
+  for (const key of ["content-type", "cache-control", "content-disposition"]) {
     const value = headers.get(key);
     if (value) {
       picked.set(key, value);

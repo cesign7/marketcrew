@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { proxyProductImageStudioRequestToBackend } from "@/features/product-image-studio/server/backendProxy";
 import {
   readProductImageStudioResultImage,
   toArrayBuffer,
@@ -10,7 +11,12 @@ type ProductImageStudioResultDownloadRouteContext = {
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, context: ProductImageStudioResultDownloadRouteContext) {
+export async function GET(request: Request, context: ProductImageStudioResultDownloadRouteContext) {
+  const proxied = await proxyProductImageStudioRequestToBackend(request);
+  if (proxied) {
+    return proxied;
+  }
+
   const { id, resultId } = await context.params;
   const projectId = normalizeRouteParam(id);
   const selectedResultId = normalizeRouteParam(resultId);

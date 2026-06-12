@@ -5,6 +5,7 @@ import {
   regenerateProductImageStudioRatio,
 } from "@/features/product-image-studio/server/downloads";
 import { PRODUCT_IMAGE_STUDIO_RATIO_PRESETS, type ProductImageStudioRatioPreset } from "@/features/product-image-studio/domain/types";
+import { proxyProductImageStudioRequestToBackend } from "@/features/product-image-studio/server/backendProxy";
 import { toProductImageStudioResultPreviewResponse } from "@/features/product-image-studio/server/generationResultPreview";
 import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
 
@@ -20,6 +21,11 @@ type ParsedRegenerateRatioPayload = {
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request, context: ProductImageStudioRegenerateRatioRouteContext) {
+  const proxied = await proxyProductImageStudioRequestToBackend(request);
+  if (proxied) {
+    return proxied;
+  }
+
   const { id, resultId } = await context.params;
   const projectId = normalizeRouteParam(id);
   const sourceResultId = normalizeRouteParam(resultId);

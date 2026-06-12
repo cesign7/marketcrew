@@ -127,6 +127,100 @@
   outline: 2px solid rgba(91, 141, 239, 0.18);
 }
 
+.gatePanel {
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1.25fr) minmax(160px, 0.75fr) auto;
+  padding: 14px;
+}
+
+.gatePanel[data-state="open"] {
+  background: #f1fbf6;
+  border-color: #80c89e;
+}
+
+.gatePanel[data-state="closed"] {
+  background: #fff8f1;
+  border-color: #e6b37c;
+}
+
+.gateCopy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.gateCopy span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.gateCopy h3 {
+  color: var(--text);
+  font-size: 16px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.gateCopy p,
+.gateHint {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.gateStatus {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.gateActions {
+  display: inline-flex;
+  gap: 8px;
+  justify-content: end;
+}
+
+.gateOpen,
+.gateClose {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  min-height: 38px;
+  padding: 0 13px;
+  white-space: nowrap;
+}
+
+.gateOpen {
+  background: #198754;
+  color: #fff;
+}
+
+.gateClose {
+  background: #fff;
+  border-color: #d38b46;
+  color: #8a4b12;
+}
+
+.gateOpen:disabled,
+.gateClose:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.gateHint {
+  grid-column: 1 / -1;
+}
+
 .toggle {
   align-items: center;
   border: 1px solid var(--line);
@@ -245,7 +339,12 @@
   }
 
   .fields,
+  .gatePanel,
   .providerOptions {
     grid-template-columns: 1fr;
+  }
+
+  .gateActions {
+    justify-content: start;
   }
 }
