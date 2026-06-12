@@ -8,21 +8,24 @@ import {
 import {
   deletePostgresProviderSettingsRow,
   readPostgresProviderSettingsRow,
-  type PostgresProviderSettingsRow,
+  readPostgresProviderSettingsState,
   upsertPostgresProviderSettingsRow,
 } from "@/features/product-image-studio/server/providerSettingsPostgresStore";
+import {
+  buildProductImageStudioProviderSettingsSummary,
+  buildProductImageStudioProviderSettingsSummaryFromSingleProvider,
+  type ProductImageStudioProviderCredentialSummary,
+  type ProductImageStudioProviderCredentialSummaryInput,
+  type ProductImageStudioProviderSettingsStorageMode,
+  type ProductImageStudioProviderSettingsSummary,
+} from "@/features/product-image-studio/server/providerSettingsSummary";
 import { hasDatabaseUrl } from "@/lib/persistence/postgres";
 
-export type ProductImageStudioProviderSettingsStorageMode = "memory" | "postgres";
-
-export type ProductImageStudioProviderSettingsSummary = {
-  readonly generationEnabled: boolean;
-  readonly hasCredential: boolean;
-  readonly model: string;
-  readonly provider: ProductImageStudioProviderName;
-  readonly storageMode: ProductImageStudioProviderSettingsStorageMode;
-  readonly updatedAt: string;
-};
+export type {
+  ProductImageStudioProviderCredentialSummary,
+  ProductImageStudioProviderSettingsStorageMode,
+  ProductImageStudioProviderSettingsSummary,
+} from "@/features/product-image-studio/server/providerSettingsSummary";
 
 export type ProductImageStudioProviderSecretSettings = {
   readonly apiKey: string;
@@ -52,15 +55,17 @@ export type SaveProductImageStudioProviderSettingsResult =
       readonly ok: false;
     };
 
-type MemoryProviderSettings = {
+type MemoryProviderSettings = ProductImageStudioProviderCredentialSummaryInput & {
   readonly apiKey: string;
-  readonly generationEnabled: boolean;
-  readonly model: string;
-  readonly provider: ProductImageStudioProviderName;
-  readonly updatedAt: string;
 };
 
-let memoryProviderSettings: MemoryProviderSettings | null = null;
+type MemoryProviderSettingsState = {
+  readonly defaultProvider: ProductImageStudioProviderName;
+  readonly generationEnabled: boolean;
+  readonly providers: Partial<Record<ProductImageStudioProviderName, MemoryProviderSettings>>;
+};
+
+let memoryProviderSettings: MemoryProviderSettingsState | null = null;
 
 export function resetProductImageStudioProviderSettingsForTests(): void {
   memoryProviderSettings = null;
@@ -82,18 +87,19 @@ export async function getProductImageStudioProviderSettingsSummary(
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): Promise<ProductImageStudioProviderSettingsSummary | null> {
   if (getProductImageStudioProviderSettingsStorageMode(env) === "memory") {
-    return memoryProviderSettings ? toSummary(memoryProviderSettings, "memory") : null;
+    return memoryProviderSettings ? buildProductImageStudioProviderSettingsSummary(memoryProviderSettings, "memory") : null;
   }
 
-  const row = await readPostgresProviderSettingsRow();
-  return row ? toSummary(row, "postgres") : null;
+  const state = await readPostgresProviderSettingsState();
+  return state ? buildProductImageStudioProviderSettingsSummary(state, "postgres") : null;
 }
 
 export async function getActiveProductImageStudioProviderSettings(
   env: Readonly<Record<string, string | undefined>> = process.env,
+  requestedProvider?: ProductImageStudioProviderName,
 ): Promise<ProductImageStudioProviderSecretSettings | null> {
   if (getProductImageStudioProviderSettingsStorageMode(env) === "memory") {
-    return memoryProviderSettings ? toSecretSettings(memoryProviderSettings) : null;
+    return memoryProviderSettings ? toSecretSettings(memoryProviderSettings, requestedProvider) : null;
   }
 
   const secret = getProductImageStudioCredentialSecret(env);
@@ -101,7 +107,7 @@ export async function getActiveProductImageStudioProviderSettings(
     return null;
   }
 
-  const row = await readPostgresProviderSettingsRow();
+  const row = await readPostgresProviderSettingsRow(requestedProvider);
   if (!row) {
     return null;
   }
@@ -146,11 +152,13 @@ export async function saveProductImageStudioProviderSettings(
     );
   }
 
-  const existing = await readPostgresProviderSettingsRow();
+  const existing = await readPostgresProviderSettingsRow(input.provider);
   const nextApiKey = input.apiKey?.trim();
   const encryptedApiKey = nextApiKey
     ? encryptProductImageStudioCredential(nextApiKey, secret)
-    : existing?.encryptedApiKey;
+    : existing?.provider === input.provider
+      ? existing.encryptedApiKey
+      : undefined;
   if (!encryptedApiKey) {
     return providerSettingsError("API_KEY_REQUIRED", "API 키를 입력해 주세요.");
   }
@@ -166,68 +174,82 @@ export async function saveProductImageStudioProviderSettings(
 
   return {
     ok: true,
-    settings: {
-      generationEnabled: input.generationEnabled,
-      hasCredential: true,
-      model: input.model,
-      provider: input.provider,
+    settings: buildProductImageStudioProviderSettingsSummaryFromSingleProvider(
+      {
+        generationEnabled: input.generationEnabled,
+        model: input.model,
+        provider: input.provider,
+        updatedAt,
+      },
       storageMode,
-      updatedAt,
-    },
+    ),
   };
 }
 
 export async function deleteProductImageStudioProviderSettings(
+  provider?: ProductImageStudioProviderName,
   env: Readonly<Record<string, string | undefined>> = process.env,
 ): Promise<void> {
   if (getProductImageStudioProviderSettingsStorageMode(env) === "memory") {
-    memoryProviderSettings = null;
+    memoryProviderSettings = provider ? deleteMemoryProviderSettings(provider) : null;
     return;
   }
 
-  await deletePostgresProviderSettingsRow();
+  await deletePostgresProviderSettingsRow(provider);
 }
 
 async function saveMemoryProviderSettings(
   input: SaveProductImageStudioProviderSettingsInput,
 ): Promise<SaveProductImageStudioProviderSettingsResult> {
-  const apiKey = input.apiKey?.trim() || memoryProviderSettings?.apiKey;
+  const apiKey = input.apiKey?.trim() || memoryProviderSettings?.providers[input.provider]?.apiKey;
   if (!apiKey) {
     return providerSettingsError("API_KEY_REQUIRED", "API 키를 입력해 주세요.");
   }
 
+  const updatedAt = new Date().toISOString();
   memoryProviderSettings = {
-    apiKey,
+    defaultProvider: input.provider,
     generationEnabled: input.generationEnabled,
-    model: input.model,
-    provider: input.provider,
-    updatedAt: new Date().toISOString(),
+    providers: {
+      ...memoryProviderSettings?.providers,
+      [input.provider]: {
+        apiKey,
+        model: input.model,
+        provider: input.provider,
+        updatedAt,
+      },
+    },
   };
 
-  return { ok: true, settings: toSummary(memoryProviderSettings, "memory") };
+  return { ok: true, settings: buildProductImageStudioProviderSettingsSummary(memoryProviderSettings, "memory") };
 }
 
-function toSecretSettings(settings: MemoryProviderSettings): ProductImageStudioProviderSecretSettings {
+function deleteMemoryProviderSettings(provider: ProductImageStudioProviderName): MemoryProviderSettingsState | null {
+  if (!memoryProviderSettings) {
+    return null;
+  }
+  const providers = { ...memoryProviderSettings.providers };
+  delete providers[provider];
+  const fallbackProvider = providers.openai?.provider ?? providers.gemini?.provider;
+  return fallbackProvider ? { defaultProvider: fallbackProvider, generationEnabled: false, providers } : null;
+}
+
+function toSecretSettings(
+  settings: MemoryProviderSettingsState,
+  requestedProvider: ProductImageStudioProviderName | undefined,
+): ProductImageStudioProviderSecretSettings | null {
+  const provider = requestedProvider ?? settings.defaultProvider;
+  const providerSettings = settings.providers[provider];
+  if (!providerSettings) {
+    return null;
+  }
+
   return {
-    apiKey: settings.apiKey,
+    apiKey: providerSettings.apiKey,
     generationEnabled: settings.generationEnabled,
-    model: settings.model,
-    provider: settings.provider,
+    model: providerSettings.model,
+    provider: providerSettings.provider,
     source: "saved",
-  };
-}
-
-function toSummary(
-  settings: MemoryProviderSettings | PostgresProviderSettingsRow,
-  storageMode: ProductImageStudioProviderSettingsStorageMode,
-): ProductImageStudioProviderSettingsSummary {
-  return {
-    generationEnabled: settings.generationEnabled,
-    hasCredential: true,
-    model: settings.model,
-    provider: settings.provider,
-    storageMode,
-    updatedAt: settings.updatedAt,
   };
 }
 

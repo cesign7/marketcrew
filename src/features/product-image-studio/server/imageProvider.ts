@@ -3,6 +3,7 @@ import type {
   CardDisplayPose,
   ProductImageStudioAssetRole,
   ProductImageStudioOutputType,
+  ProductImageStudioProviderName,
   ProductImageStudioQualityMode,
   ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
@@ -70,6 +71,7 @@ export type ResolvedProductImageStudioImageProvider =
     }
   | {
       readonly kind: "enabled";
+      readonly model: string;
       readonly provider: ImageGenerationProvider;
     };
 
@@ -122,8 +124,9 @@ export function createFakeProductImageStudioImageProvider(): ImageGenerationProv
 
 export function resolveProductImageStudioImageProvider(
   env: ProductImageStudioProviderEnv = process.env,
+  requestedProvider?: ProductImageStudioProviderName,
 ): ResolvedProductImageStudioImageProvider {
-  const config = parseProductImageStudioProviderConfig(env);
+  const config = parseProductImageStudioProviderConfig(env, requestedProvider);
   if (config.gate.kind === "blocked") {
     return {
       kind: "blocked",
@@ -134,16 +137,18 @@ export function resolveProductImageStudioImageProvider(
 
   return {
     kind: "enabled",
+    model: config.gate.model,
     provider: createProviderAdapter(config.gate.provider, config.gate.model, readEnvProviderApiKey(config.gate.provider, env)),
   };
 }
 
 export async function resolveConfiguredProductImageStudioImageProvider(
   env: ProductImageStudioProviderEnv = process.env,
+  requestedProvider?: ProductImageStudioProviderName,
 ): Promise<ResolvedProductImageStudioImageProvider> {
-  const savedSettings = await getActiveProductImageStudioProviderSettings(env);
+  const savedSettings = await getActiveProductImageStudioProviderSettings(env, requestedProvider);
   if (!savedSettings) {
-    return resolveProductImageStudioImageProvider(env);
+    return resolveProductImageStudioImageProvider(env, requestedProvider);
   }
 
   const config = parseProductImageStudioProviderRuntimeConfig(savedSettings);
@@ -157,6 +162,7 @@ export async function resolveConfiguredProductImageStudioImageProvider(
 
   return {
     kind: "enabled",
+    model: config.gate.model,
     provider: createProviderAdapter(config.gate.provider, config.gate.model, savedSettings.apiKey),
   };
 }

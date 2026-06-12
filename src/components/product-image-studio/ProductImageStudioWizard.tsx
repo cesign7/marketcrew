@@ -15,6 +15,7 @@ import {
   createInitialProductImageStudioGenerationState,
   mergeProductImageStudioGenerationResultState,
   selectProductImageStudioConcept,
+  selectProductImageStudioGenerationProvider,
   type ProductImageStudioGenerationResultPreview,
   type ProductImageStudioGenerationState,
 } from "@/features/product-image-studio/domain/generationWorkflow";
@@ -25,12 +26,19 @@ import {
   recordProductImageStudioUploadedRole,
   type ProductImageStudioWizardState,
 } from "@/features/product-image-studio/domain/projectWizard";
+import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
+import type { ProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
+import type { ProductImageStudioProviderSettingsSummary } from "@/features/product-image-studio/server/providerSettingsStore";
 import { ProductImageStudioGenerationPanel } from "./ProductImageStudioGenerationPanel";
 import { ProductImageStudioOutputControls } from "./ProductImageStudioOutputControls";
 import { ProductImageStudioProductionSettingsPanel } from "./ProductImageStudioProductionSettingsPanel";
 import { ProductImageStudioProjectSettings } from "./ProductImageStudioProjectSettings";
 import { ProductImageStudioQualityOption } from "./ProductImageStudioQualityOption";
 import { ProductImageStudioUploadSection } from "./ProductImageStudioUploadSection";
+import {
+  createProductImageStudioGenerationProviderOptions,
+  getInitialProductImageStudioGenerationProvider,
+} from "./productImageStudioGenerationProviders";
 import styles from "./ProductImageStudioWizard.module.css";
 
 type StatusMessage = {
@@ -38,14 +46,22 @@ type StatusMessage = {
   readonly text: string;
 };
 
-export function ProductImageStudioWizard() {
+type ProductImageStudioWizardProps = {
+  readonly initialProviderSettings: ProductImageStudioProviderSettingsSummary | null;
+  readonly providerStatus: ProductImageStudioProviderStatus;
+};
+
+export function ProductImageStudioWizard({ initialProviderSettings, providerStatus }: ProductImageStudioWizardProps) {
   const [state, setState] = useState<ProductImageStudioWizardState>(createInitialProductImageStudioWizardState);
   const stateRef = useRef<ProductImageStudioWizardState>(state);
   const projectIdRef = useRef<string | null>(null);
   const projectRequestRef = useRef<Promise<string | null> | null>(null);
   const [concepts, setConcepts] = useState<readonly ProductImageStudioConceptCard[]>([]);
   const [generationState, setGenerationState] = useState<ProductImageStudioGenerationState>(
-    createInitialProductImageStudioGenerationState,
+    () =>
+      createInitialProductImageStudioGenerationState(
+        getInitialProductImageStudioGenerationProvider(initialProviderSettings, providerStatus),
+      ),
   );
   const [statusMessage, setStatusMessage] = useState<StatusMessage>({
     text: "프로젝트 이름, 실제 규격, 생성할 구성품 이미지를 준비하면 콘셉트를 추천받을 수 있습니다.",
@@ -55,6 +71,7 @@ export function ProductImageStudioWizard() {
   const [busyRole, setBusyRole] = useState<ProductImageStudioAssetRole | null>(null);
   const [isRecommending, setIsRecommending] = useState(false);
   const canRecommend = canRequestProductImageStudioConcepts(state);
+  const providerOptions = createProductImageStudioGenerationProviderOptions(providerStatus);
   stateRef.current = state;
   const setWizardState = useCallback((update: SetStateAction<ProductImageStudioWizardState>) => {
     const nextState = typeof update === "function" ? update(stateRef.current) : update;
@@ -117,7 +134,10 @@ export function ProductImageStudioWizard() {
             onSelectConcept={(conceptId) =>
               setGenerationState((current) => selectProductImageStudioConcept(current, conceptId))
             }
+            onSelectProvider={handleSelectProvider}
             onSimilarVersion={() => void handleStartGeneration()}
+            providerOptions={providerOptions}
+            providerStatus={providerStatus.generation.status}
             projectId={projectId}
             wizardState={state}
           />
@@ -209,6 +229,10 @@ export function ProductImageStudioWizard() {
         results: nextResults,
       };
     });
+  }
+
+  function handleSelectProvider(provider: ProductImageStudioProviderName): void {
+    setGenerationState((current) => selectProductImageStudioGenerationProvider(current, provider));
   }
 
   async function ensureProjectId(snapshot: ProductImageStudioWizardState): Promise<string | null> {

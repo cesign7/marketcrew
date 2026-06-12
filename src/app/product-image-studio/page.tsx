@@ -22,7 +22,10 @@ export default async function ProductImageStudioPage() {
           metadataStorageMode={getProductImageStudioRepositoryStorageMode()}
           status={providerSettingsState.status}
         />
-        <ProductImageStudioWizard />
+        <ProductImageStudioWizard
+          initialProviderSettings={providerSettingsState.settings}
+          providerStatus={providerSettingsState.status}
+        />
       </section>
     </ProductImageStudioShell>
   );

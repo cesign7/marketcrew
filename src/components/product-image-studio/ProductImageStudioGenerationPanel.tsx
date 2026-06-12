@@ -1,5 +1,6 @@
 import {
   describeProductImageStudioGenerationPoseSummary,
+  type ProductImageStudioGenerationProviderOption,
   type ProductImageStudioGenerationResultPreview,
   type ProductImageStudioGenerationState,
 } from "@/features/product-image-studio/domain/generationWorkflow";
@@ -7,6 +8,7 @@ import {
   getProductImageStudioAvailableOutputChoices,
   type ProductImageStudioWizardState,
 } from "@/features/product-image-studio/domain/projectWizard";
+import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
 import { ProductImageStudioDownloadPanel } from "./ProductImageStudioDownloadPanel";
 import { ProductImageStudioResultGallery } from "./ProductImageStudioResultGallery";
 import styles from "./ProductImageStudioGenerationPanel.module.css";
@@ -18,7 +20,10 @@ type ProductImageStudioGenerationPanelProps = {
   readonly onRegeneratedResult: (result: ProductImageStudioGenerationResultPreview) => void;
   readonly onRetry: () => void;
   readonly onSelectConcept: (conceptId: string) => void;
+  readonly onSelectProvider: (provider: ProductImageStudioProviderName) => void;
   readonly onSimilarVersion: () => void;
+  readonly providerOptions: readonly ProductImageStudioGenerationProviderOption[];
+  readonly providerStatus: "blocked" | "enabled";
   readonly projectId: string | null;
   readonly wizardState: ProductImageStudioWizardState;
 };
@@ -37,12 +42,19 @@ export function ProductImageStudioGenerationPanel({
   onRegeneratedResult,
   onRetry,
   onSelectConcept,
+  onSelectProvider,
   onSimilarVersion,
+  providerOptions,
+  providerStatus,
   projectId,
   wizardState,
 }: ProductImageStudioGenerationPanelProps) {
   const outputChoices = getProductImageStudioAvailableOutputChoices(wizardState);
-  const canGenerate = generationState.selectedConceptId !== null && generationState.phase !== "generating" && outputChoices.length > 0;
+  const selectedProviderOption = providerOptions.find((option) => option.provider === generationState.selectedProvider) ?? null;
+  const selectedProviderLabel = selectedProviderOption?.label ?? generationState.selectedProvider;
+  const canUseProvider = Boolean(selectedProviderOption?.connected) && providerStatus === "enabled";
+  const canGenerate =
+    generationState.selectedConceptId !== null && generationState.phase !== "generating" && outputChoices.length > 0 && canUseProvider;
   const statusClassName = getStatusClassName(generationState.phase);
 
   return (
@@ -83,11 +95,32 @@ export function ProductImageStudioGenerationPanel({
       </div>
       {outputChoices.length === 0 ? <p className={styles.summary}>생성 가능한 출력이 아직 없습니다.</p> : null}
 
+      <div className={styles.heading}>
+        <h3>이번 생성 provider</h3>
+        <p>{selectedProviderOption?.helper ?? "provider 연결 상태를 확인해 주세요."}</p>
+      </div>
+      <div className={styles.providerList}>
+        {providerOptions.map((option) => (
+          <button
+            aria-pressed={generationState.selectedProvider === option.provider}
+            className={styles.providerChoice}
+            data-selected={generationState.selectedProvider === option.provider ? "true" : "false"}
+            disabled={option.disabled}
+            key={option.provider}
+            onClick={() => onSelectProvider(option.provider)}
+            type="button"
+          >
+            <strong>{option.label}</strong>
+            <span>{option.connected ? `${option.label} 연결됨` : `${option.label} 연결 안됨`}</span>
+          </button>
+        ))}
+      </div>
+
       <div className={styles.actionBox}>
         <p className={`${styles.status} ${statusClassName}`}>{generationState.message}</p>
         <div className={styles.actions}>
           <button className={styles.primary} disabled={!canGenerate} onClick={onGenerate} type="button">
-            {generationState.phase === "generating" ? "생성 중" : "초안 생성"}
+            {generationState.phase === "generating" ? "생성 중" : `초안 생성 · ${selectedProviderLabel}`}
           </button>
           <button className={styles.secondary} disabled={!canGenerate} onClick={onSimilarVersion} type="button">
             비슷한 버전 생성

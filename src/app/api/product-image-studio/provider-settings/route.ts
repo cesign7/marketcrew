@@ -49,7 +49,12 @@ export async function DELETE(request: Request) {
     return proxied;
   }
 
-  await deleteProductImageStudioProviderSettings();
+  const parsedProvider = parseProviderQuery(request);
+  if (!parsedProvider.ok) {
+    return NextResponse.json({ error: parsedProvider.error, ok: false }, { status: 400 });
+  }
+
+  await deleteProductImageStudioProviderSettings(parsedProvider.provider);
   return providerSettingsResponse();
 }
 
@@ -119,6 +124,17 @@ function parseProviderName(value: unknown): ProductImageStudioProviderName | nul
     }
   }
   return null;
+}
+
+function parseProviderQuery(
+  request: Request,
+): { readonly ok: true; readonly provider?: ProductImageStudioProviderName } | { readonly error: { readonly code: string; readonly message: string }; readonly ok: false } {
+  const providerQuery = new URL(request.url).searchParams.get("provider");
+  if (!providerQuery) {
+    return { ok: true };
+  }
+  const provider = parseProviderName(providerQuery);
+  return provider ? { ok: true, provider } : invalidPayload("INVALID_PROVIDER", "OpenAI 또는 Gemini provider를 선택해 주세요.");
 }
 
 function invalidPayload(

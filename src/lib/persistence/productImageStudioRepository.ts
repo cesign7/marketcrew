@@ -10,6 +10,13 @@ import type {
   ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
 import type { ProductImageStudioProductionSettings } from "@/features/product-image-studio/domain/productionSettings";
+import {
+  buildProductImageStudioProjectSummary,
+  buildProductImageStudioResultArchiveItem,
+  compareProductImageStudioArchiveActivity,
+  type ProductImageStudioProjectSummary,
+  type ProductImageStudioResultArchiveItem,
+} from "@/lib/persistence/productImageStudioArchiveReadModels";
 
 export const PRODUCT_IMAGE_STUDIO_TABLE_NAMES = [
   "product_image_studio_projects",
@@ -124,6 +131,8 @@ export interface ProductImageStudioRepository {
   ): Promise<ProductImageStudioGenerationRequestRecord>;
   addResult(input: AddProductImageStudioResultInput): Promise<ProductImageStudioResultRecord>;
   listResults(projectId: string): Promise<readonly ProductImageStudioResultRecord[]>;
+  listProjectSummaries(): Promise<readonly ProductImageStudioProjectSummary[]>;
+  listResultArchiveItems(projectId?: string): Promise<readonly ProductImageStudioResultArchiveItem[]>;
   addDownloadBundle(input: AddProductImageStudioDownloadBundleInput): Promise<ProductImageStudioDownloadBundleRecord>;
   listDownloadBundles(projectId: string): Promise<readonly ProductImageStudioDownloadBundleRecord[]>;
   addUsageRecord(input: AddProductImageStudioUsageRecordInput): Promise<ProductImageStudioUsageRecord>;
@@ -205,6 +214,19 @@ class InMemoryProductImageStudioRepository implements ProductImageStudioReposito
     return [...this.results.values()].filter((result) => result.projectId === projectId);
   }
 
+  async listProjectSummaries(): Promise<readonly ProductImageStudioProjectSummary[]> {
+    return [...this.projects.values()]
+      .map((project) => buildProductImageStudioProjectSummary(project, this.listResultsSync(project.id)))
+      .sort(compareProductImageStudioArchiveActivity);
+  }
+
+  async listResultArchiveItems(projectId?: string): Promise<readonly ProductImageStudioResultArchiveItem[]> {
+    return [...this.results.values()]
+      .filter((result) => projectId === undefined || result.projectId === projectId)
+      .flatMap((result) => this.toResultArchiveItem(result))
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  }
+
   async addDownloadBundle(
     input: AddProductImageStudioDownloadBundleInput,
   ): Promise<ProductImageStudioDownloadBundleRecord> {
@@ -225,5 +247,15 @@ class InMemoryProductImageStudioRepository implements ProductImageStudioReposito
 
   async listUsageRecords(projectId: string): Promise<readonly ProductImageStudioUsageRecord[]> {
     return [...this.usageRecords.values()].filter((usage) => usage.projectId === projectId);
+  }
+
+  private listResultsSync(projectId: string): readonly ProductImageStudioResultRecord[] {
+    return [...this.results.values()].filter((result) => result.projectId === projectId);
+  }
+
+  private toResultArchiveItem(result: ProductImageStudioResultRecord): readonly ProductImageStudioResultArchiveItem[] {
+    const project = this.projects.get(result.projectId);
+    const generation = this.generationRequests.get(result.generationRequestId);
+    return project && generation ? [buildProductImageStudioResultArchiveItem(project, generation, result)] : [];
   }
 }

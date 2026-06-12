@@ -23,8 +23,6 @@
 }
 
 .heading p,
-.providerOption small,
-.toggle small,
 .footer p {
   color: var(--muted);
   font-size: 13px;
@@ -41,8 +39,7 @@
 }
 
 .badges span,
-.providerFieldset legend,
-.field span {
+.gateCopy span {
   color: var(--muted);
   font-size: 12px;
   font-weight: 900;
@@ -53,78 +50,10 @@
   font-size: 14px;
 }
 
-.form {
+.providerGrid {
   display: grid;
-  gap: 16px;
-}
-
-.providerFieldset {
-  border: 0;
-  display: grid;
-  gap: 9px;
-  margin: 0;
-  padding: 0;
-}
-
-.providerOptions {
-  display: grid;
-  gap: 10px;
+  gap: 14px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.providerOption {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  cursor: pointer;
-  display: grid;
-  gap: 6px;
-  min-height: 96px;
-  padding: 12px;
-}
-
-.providerOption input {
-  position: absolute;
-  transform: scale(0);
-}
-
-.providerOption span {
-  color: var(--text);
-  font-size: 15px;
-  font-weight: 900;
-}
-
-.providerOption[data-active="true"] {
-  background: #f1fbf6;
-  border-color: #80c89e;
-}
-
-.fields {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.field {
-  display: grid;
-  gap: 7px;
-  min-width: 0;
-}
-
-.field input {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--text);
-  font: inherit;
-  min-width: 0;
-  padding: 11px 12px;
-  width: 100%;
-}
-
-.field input:focus,
-.providerOption:focus-within {
-  border-color: #5b8def;
-  outline: 2px solid rgba(91, 141, 239, 0.18);
 }
 
 .gatePanel {
@@ -152,12 +81,6 @@
   display: grid;
   gap: 5px;
   min-width: 0;
-}
-
-.gateCopy span {
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 900;
 }
 
 .gateCopy h3 {
@@ -221,92 +144,6 @@
   grid-column: 1 / -1;
 }
 
-.toggle {
-  align-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  cursor: pointer;
-  display: grid;
-  gap: 12px;
-  grid-template-columns: auto minmax(0, 1fr);
-  padding: 12px;
-}
-
-.toggle input {
-  position: absolute;
-  transform: scale(0);
-}
-
-.toggleControl {
-  background: #d7dde6;
-  border-radius: 999px;
-  display: block;
-  height: 28px;
-  position: relative;
-  width: 50px;
-}
-
-.toggleControl::after {
-  background: #fff;
-  border-radius: 999px;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
-  content: "";
-  height: 22px;
-  left: 3px;
-  position: absolute;
-  top: 3px;
-  transition: transform 0.16s ease;
-  width: 22px;
-}
-
-.toggle input:checked + .toggleControl {
-  background: #198754;
-}
-
-.toggle input:checked + .toggleControl::after {
-  transform: translateX(22px);
-}
-
-.toggle strong {
-  color: var(--text);
-  display: block;
-  font-size: 14px;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.primary,
-.secondary {
-  border: 1px solid transparent;
-  border-radius: 8px;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 900;
-  min-height: 42px;
-  padding: 0 16px;
-}
-
-.primary {
-  background: #111827;
-  color: #fff;
-}
-
-.secondary {
-  background: #fff;
-  border-color: var(--line);
-  color: var(--text);
-}
-
-.primary:disabled,
-.secondary:disabled {
-  cursor: not-allowed;
-  opacity: 0.58;
-}
-
 .footer {
   align-items: center;
   display: flex;
@@ -338,9 +175,8 @@
     justify-items: start;
   }
 
-  .fields,
   .gatePanel,
-  .providerOptions {
+  .providerGrid {
     grid-template-columns: 1fr;
   }
 

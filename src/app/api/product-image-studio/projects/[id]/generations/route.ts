@@ -76,6 +76,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
       projectId: project.id,
       providerRequestSummary: {
         assetRoleCount: assetRoles.length,
+        model: "fake-product-image-studio",
         outputCount: parsed.payload.outputs.length,
         provider: "fake",
       },
@@ -107,7 +108,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     });
   }
 
-  const resolvedProvider = await resolveConfiguredProductImageStudioImageProvider();
+  const resolvedProvider = await resolveConfiguredProductImageStudioImageProvider(process.env, parsed.payload.provider);
   if (resolvedProvider.kind === "blocked") {
     const promptContext = buildProductImageStudioPromptContext({
       assetRoles,
@@ -122,6 +123,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
       {
         data: {
           generation: {
+            provider: parsed.payload.provider ?? null,
             reason: resolvedProvider.reason,
             status: "blocked",
           },
@@ -143,6 +145,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     projectId: project.id,
     providerRequestSummary: {
       assetRoleCount: assetRoles.length,
+      model: resolvedProvider.model,
       outputCount: parsed.payload.outputs.length,
       provider: resolvedProvider.provider.name,
     },

@@ -31,6 +31,27 @@ describe("product image studio repository contract", () => {
     expect(workflowSql).toContain("production_settings JSONB NOT NULL");
   });
 
+  it("declares provider-keyed image provider settings persistence", () => {
+    // Given: the workflow schema is the source of truth for production tables.
+    const workflowSql = readFileSync(join(process.cwd(), "db/workflow-store.sql"), "utf8");
+
+    // When: provider settings persistence is inspected.
+    const providerCredentialSql = workflowSql.slice(
+      workflowSql.indexOf("CREATE TABLE IF NOT EXISTS product_image_studio_provider_settings"),
+      workflowSql.indexOf("CREATE TABLE IF NOT EXISTS product_image_studio_provider_setting_defaults"),
+    );
+    const providerDefaultSql = workflowSql.slice(
+      workflowSql.indexOf("CREATE TABLE IF NOT EXISTS product_image_studio_provider_setting_defaults"),
+      workflowSql.indexOf("CREATE INDEX IF NOT EXISTS product_image_studio_projects_updated_idx"),
+    );
+
+    // Then: credentials are keyed per provider and default selection is stored separately.
+    expect(providerCredentialSql).toContain("provider TEXT PRIMARY KEY");
+    expect(providerCredentialSql).not.toContain("CHECK (id = 'default')");
+    expect(providerDefaultSql).toContain("CREATE TABLE IF NOT EXISTS product_image_studio_provider_setting_defaults");
+    expect(providerDefaultSql).toContain("default_provider TEXT NOT NULL");
+  });
+
   it("selects Postgres metadata storage only when production-like database configuration exists", () => {
     expect(selectProductImageStudioRepositoryStorageMode({})).toBe("memory");
     expect(selectProductImageStudioRepositoryStorageMode({ DATABASE_URL: "postgres://test" })).toBe("memory");

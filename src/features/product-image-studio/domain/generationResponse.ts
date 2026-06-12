@@ -36,6 +36,7 @@ export function readProductImageStudioGenerationResponse(payload: unknown): Prod
       phase: "ready",
       results: readResultPreviews(payload["data"]["results"], generationId),
       selectedConceptId: null,
+      selectedProvider: "openai",
     };
   }
 
@@ -45,6 +46,7 @@ export function readProductImageStudioGenerationResponse(payload: unknown): Prod
       phase: "generating",
       results: [],
       selectedConceptId: null,
+      selectedProvider: "openai",
     };
   }
 
@@ -113,6 +115,7 @@ function createBlockedState(reason: ProductImageStudioGenerationState["blockedRe
     phase: "blocked",
     results: [],
     selectedConceptId: null,
+    selectedProvider: "openai",
   };
 }
 
@@ -122,6 +125,7 @@ function createFailedState(message: string): ProductImageStudioGenerationState {
     phase: "failed",
     results: [],
     selectedConceptId: null,
+    selectedProvider: "openai",
   };
 }
 

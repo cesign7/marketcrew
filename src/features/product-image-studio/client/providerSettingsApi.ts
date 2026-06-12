@@ -11,6 +11,11 @@ export type ProductImageStudioProviderSettingsPayload = {
   readonly provider: ProductImageStudioProviderName;
 };
 
+const DEFAULT_PROVIDER_MODELS: Record<ProductImageStudioProviderName, string> = {
+  gemini: "gemini-3.1-flash-image",
+  openai: "gpt-image-1",
+};
+
 export type RequestProductImageStudioProviderSettingsResult =
   | {
       readonly ok: true;
@@ -25,8 +30,12 @@ export type RequestProductImageStudioProviderSettingsResult =
 export async function requestProductImageStudioProviderSettings(
   method: "DELETE" | "POST",
   payload: ProductImageStudioProviderSettingsPayload | null,
+  providerToDelete?: ProductImageStudioProviderName,
 ): Promise<RequestProductImageStudioProviderSettingsResult> {
-  const response = await fetch("/api/product-image-studio/provider-settings", {
+  const endpoint = providerToDelete
+    ? `/api/product-image-studio/provider-settings?provider=${providerToDelete}`
+    : "/api/product-image-studio/provider-settings";
+  const response = await fetch(endpoint, {
     body: payload ? JSON.stringify(payload) : undefined,
     headers: payload ? { "content-type": "application/json" } : undefined,
     method,
@@ -61,19 +70,130 @@ function readSettings(value: unknown): ProductImageStudioProviderSettingsSummary
     return null;
   }
 
+  return readAggregateSettings(value) ?? readLegacySettings(value);
+}
+
+function readAggregateSettings(
+  value: Readonly<Record<string, unknown>>,
+): ProductImageStudioProviderSettingsSummary | null {
+  const defaultProvider = readProvider(value["defaultProvider"]);
+  const storageMode = readStorageMode(value["storageMode"]);
+  if (!defaultProvider || !storageMode) {
+    return null;
+  }
+
+  const providers = readProviderSummaries(value["providers"], storageMode);
+  if (!providers) {
+    return null;
+  }
+
+  const activeProvider = providers[defaultProvider];
+  const updatedAt = typeof value["updatedAt"] === "string" ? value["updatedAt"] : activeProvider.updatedAt;
+  if (!updatedAt) {
+    return null;
+  }
+
+  return {
+    defaultProvider,
+    generationEnabled: value["generationEnabled"] === true,
+    hasCredential: activeProvider.hasCredential,
+    model: activeProvider.model,
+    provider: defaultProvider,
+    providers,
+    storageMode,
+    updatedAt,
+  };
+}
+
+function readLegacySettings(
+  value: Readonly<Record<string, unknown>>,
+): ProductImageStudioProviderSettingsSummary | null {
   const provider = readProvider(value["provider"]);
   const storageMode = readStorageMode(value["storageMode"]);
   if (!provider || !storageMode || typeof value["model"] !== "string" || typeof value["updatedAt"] !== "string") {
     return null;
   }
 
-  return {
-    generationEnabled: value["generationEnabled"] === true,
+  const activeProvider = {
     hasCredential: value["hasCredential"] === true,
     model: value["model"],
     provider,
     storageMode,
     updatedAt: value["updatedAt"],
+  };
+
+  return {
+    defaultProvider: provider,
+    generationEnabled: value["generationEnabled"] === true,
+    hasCredential: activeProvider.hasCredential,
+    model: value["model"],
+    provider,
+    providers: toProviderSummaryRecord(activeProvider, storageMode),
+    storageMode,
+    updatedAt: value["updatedAt"],
+  };
+}
+
+function readProviderSummaries(
+  value: unknown,
+  storageMode: ProductImageStudioProviderSettingsStorageMode,
+): ProductImageStudioProviderSettingsSummary["providers"] | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const gemini = readProviderSummary(value["gemini"], "gemini", storageMode);
+  const openai = readProviderSummary(value["openai"], "openai", storageMode);
+  if (!gemini || !openai) {
+    return null;
+  }
+
+  return { gemini, openai };
+}
+
+function readProviderSummary(
+  value: unknown,
+  provider: ProductImageStudioProviderName,
+  fallbackStorageMode: ProductImageStudioProviderSettingsStorageMode,
+): ProductImageStudioProviderSettingsSummary["providers"][ProductImageStudioProviderName] | null {
+  if (!isRecord(value)) {
+    return emptyProviderSummary(provider, fallbackStorageMode);
+  }
+
+  const providerName = readProvider(value["provider"]);
+  if (providerName && providerName !== provider) {
+    return null;
+  }
+
+  return {
+    hasCredential: value["hasCredential"] === true,
+    model: typeof value["model"] === "string" ? value["model"] : DEFAULT_PROVIDER_MODELS[provider],
+    provider,
+    storageMode: readStorageMode(value["storageMode"]) ?? fallbackStorageMode,
+    updatedAt: typeof value["updatedAt"] === "string" ? value["updatedAt"] : null,
+  };
+}
+
+function toProviderSummaryRecord(
+  activeProvider: ProductImageStudioProviderSettingsSummary["providers"][ProductImageStudioProviderName],
+  storageMode: ProductImageStudioProviderSettingsStorageMode,
+): ProductImageStudioProviderSettingsSummary["providers"] {
+  return {
+    gemini: activeProvider.provider === "gemini" ? activeProvider : emptyProviderSummary("gemini", storageMode),
+    openai: activeProvider.provider === "openai" ? activeProvider : emptyProviderSummary("openai", storageMode),
+  };
+}
+
+function emptyProviderSummary(
+  provider: ProductImageStudioProviderName,
+  storageMode: ProductImageStudioProviderSettingsStorageMode,
+): ProductImageStudioProviderSettingsSummary["providers"][ProductImageStudioProviderName] {
+  return {
+    hasCredential: false,
+    model: DEFAULT_PROVIDER_MODELS[provider],
+    provider,
+    storageMode,
+    updatedAt: null,
   };
 }
 

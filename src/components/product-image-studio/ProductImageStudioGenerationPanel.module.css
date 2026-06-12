@@ -24,12 +24,14 @@
 }
 
 .conceptList,
+.providerList,
 .outputList {
   display: grid;
   gap: 8px;
 }
 
 .conceptButton,
+.providerChoice,
 .outputItem {
   background: #fbfcfe;
   border: 1px solid var(--line);
@@ -47,17 +49,20 @@
 }
 
 .conceptButton:hover,
-.conceptButton[data-selected="true"] {
+.conceptButton[data-selected="true"],
+.providerChoice[data-selected="true"] {
   background: var(--brand-soft);
   border-color: #9ccdd8;
 }
 
-.conceptButton strong {
+.conceptButton strong,
+.providerChoice strong {
   font-size: 14px;
 }
 
 .tagLine,
 .selected,
+.providerChoice span,
 .outputItem span {
   color: var(--muted);
   font-size: 12px;
@@ -71,6 +76,16 @@
 .outputItem {
   align-items: center;
   grid-template-columns: auto 1fr;
+}
+
+.providerChoice {
+  cursor: pointer;
+  font: inherit;
+}
+
+.providerChoice:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .actionBox {

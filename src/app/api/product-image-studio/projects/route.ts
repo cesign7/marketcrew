@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
-import { createProductImageStudioProjectFromPayload } from "@/features/product-image-studio/server/projectApi";
+import {
+  createProductImageStudioProjectFromPayload,
+  getProductImageStudioProjectRepository,
+} from "@/features/product-image-studio/server/projectApi";
 import { proxyProductImageStudioRequestToBackend } from "@/features/product-image-studio/server/backendProxy";
 
 export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  const proxied = await proxyProductImageStudioRequestToBackend(request);
+  if (proxied) {
+    return proxied;
+  }
+
+  const projects = await getProductImageStudioProjectRepository().listProjectSummaries();
+  return NextResponse.json({ ok: true, projects });
+}
 
 export async function POST(request: Request) {
   const proxied = await proxyProductImageStudioRequestToBackend(request);

@@ -38,4 +38,21 @@ describe("product image studio shell", () => {
       { href: "/product-image-studio/settings", label: "이미지 설정" },
     ]);
   });
+
+  it("marks the deepest matching studio navigation item as active", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        ProductImageStudioShell,
+        {
+          activePath: "/product-image-studio/projects/project-1",
+          children: createElement("section", null, "프로젝트 상세"),
+          description: "프로젝트 결과를 확인합니다.",
+          title: "프로젝트",
+        },
+      ),
+    );
+
+    expect(html).toMatch(/aria-current="page"[^>]*href="\/product-image-studio\/projects"/);
+    expect(html).not.toMatch(/aria-current="page"[^>]*href="\/product-image-studio"/);
+  });
 });

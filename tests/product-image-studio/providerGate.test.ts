@@ -3,10 +3,16 @@ import { GET } from "@/app/api/product-image-studio/provider-status/route";
 import {
   getProductImageStudioProviderStatus,
   parseProductImageStudioProviderConfig,
+  getConfiguredProductImageStudioProviderStatus,
 } from "@/features/product-image-studio/server/providerConfig";
+import {
+  resetProductImageStudioProviderSettingsForTests,
+  saveProductImageStudioProviderSettings,
+} from "@/features/product-image-studio/server/providerSettingsStore";
 
 describe("product image studio provider gate", () => {
   afterEach(() => {
+    resetProductImageStudioProviderSettingsForTests();
     vi.unstubAllEnvs();
   });
 
@@ -52,6 +58,42 @@ describe("product image studio provider gate", () => {
     });
 
     expect(enabled.gate).toEqual({ kind: "enabled", model: "gemini-3.1-flash-image", provider: "gemini" });
+  });
+
+  it("resolves an explicit configured provider", async () => {
+    // Given: OpenAI is configured and the global generation gate is open.
+    await saveProductImageStudioProviderSettings({
+      apiKey: "secret-openai-key",
+      generationEnabled: true,
+      model: "gpt-image-1",
+      provider: "openai",
+    });
+
+    // When: status is requested for OpenAI and Gemini explicitly.
+    const openAiStatus = await getConfiguredProductImageStudioProviderStatus({}, "openai");
+    const geminiStatus = await getConfiguredProductImageStudioProviderStatus({}, "gemini");
+    await saveProductImageStudioProviderSettings({
+      apiKey: "",
+      generationEnabled: false,
+      model: "gpt-image-1",
+      provider: "openai",
+    });
+    const closedOpenAiStatus = await getConfiguredProductImageStudioProviderStatus({}, "openai");
+
+    // Then: explicit provider choice respects each credential and the shared gate.
+    expect(openAiStatus.generation.status).toBe("enabled");
+    expect(openAiStatus.provider.name).toBe("openai");
+    expect(openAiStatus.providers.openai.status).toBe("enabled");
+    expect(geminiStatus.generation.status).toBe("blocked");
+    if (geminiStatus.generation.status === "blocked") {
+      expect(geminiStatus.generation.reason).toBe("credential_missing");
+    }
+    expect(geminiStatus.provider.name).toBe("gemini");
+    expect(geminiStatus.providers.gemini.status).toBe("blocked");
+    expect(closedOpenAiStatus.generation.status).toBe("blocked");
+    if (closedOpenAiStatus.generation.status === "blocked") {
+      expect(closedOpenAiStatus.generation.reason).toBe("generation_disabled");
+    }
   });
 
   it("returns a safe provider status response without env values", async () => {

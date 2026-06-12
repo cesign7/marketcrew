@@ -90,7 +90,7 @@ export function ProductImageStudioShell({ activePath, children, description, tit
 
 function getActiveArea(activePath: string): ProductImageStudioNavigationArea {
   return (
-    PRODUCT_IMAGE_STUDIO_NAV_AREAS.find(
+    [...PRODUCT_IMAGE_STUDIO_NAV_AREAS].sort((left, right) => right.href.length - left.href.length).find(
       (area) => activePath === area.href || activePath.startsWith(`${area.href}/`),
     ) ?? PRODUCT_IMAGE_STUDIO_NAV_AREAS[0]
   );

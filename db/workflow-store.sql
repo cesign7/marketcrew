@@ -357,10 +357,15 @@ CREATE TABLE IF NOT EXISTS product_image_studio_usage_records (
 );
 
 CREATE TABLE IF NOT EXISTS product_image_studio_provider_settings (
-  id TEXT PRIMARY KEY CHECK (id = 'default'),
-  provider TEXT NOT NULL CHECK (provider IN ('openai', 'gemini')),
+  provider TEXT PRIMARY KEY CHECK (provider IN ('openai', 'gemini')),
   model TEXT NOT NULL,
   encrypted_api_key TEXT NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS product_image_studio_provider_setting_defaults (
+  id TEXT PRIMARY KEY CHECK (id = 'default'),
+  default_provider TEXT NOT NULL CHECK (default_provider IN ('openai', 'gemini')),
   generation_enabled BOOLEAN NOT NULL DEFAULT false,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

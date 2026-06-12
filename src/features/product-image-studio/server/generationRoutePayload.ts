@@ -1,9 +1,11 @@
 import {
   PRODUCT_IMAGE_STUDIO_OUTPUT_TYPES,
+  PRODUCT_IMAGE_STUDIO_PROVIDERS,
   PRODUCT_IMAGE_STUDIO_QUALITY_MODES,
   type CardFormat,
   type ProductImageStudioAssetRole,
   type ProductImageStudioOutputType,
+  type ProductImageStudioProviderName,
   type ProductImageStudioQualityMode,
 } from "@/features/product-image-studio/domain/types";
 import {
@@ -16,6 +18,7 @@ export type ParsedProductImageStudioGenerationPayload = {
   readonly conceptId: string;
   readonly outputs: readonly ProductImageStudioOutputType[];
   readonly productionSettings: ProductImageStudioProductionSettings;
+  readonly provider?: ProductImageStudioProviderName;
   readonly qualityMode: ProductImageStudioQualityMode;
 };
 
@@ -38,6 +41,7 @@ export function parseProductImageStudioGenerationPayload(
   const conceptId = payload["conceptId"];
   const outputs = parseOutputs(payload["outputs"]);
   const productionSettings = parseProductImageStudioProductionSettings(payload["productionSettings"], cardFormat);
+  const provider = parseOptionalProvider(payload["provider"]);
   const qualityMode = parseQualityMode(payload["qualityMode"]);
   if (typeof conceptId !== "string" || conceptId.length === 0) {
     return invalidPayload("CONCEPT_REQUIRED", "생성할 콘셉트를 선택해 주세요.");
@@ -47,6 +51,9 @@ export function parseProductImageStudioGenerationPayload(
   }
   if (!productionSettings.ok) {
     return productionSettings;
+  }
+  if (provider === false) {
+    return invalidPayload("PROVIDER_REQUIRED", "OpenAI 또는 Gemini provider를 선택해 주세요.");
   }
   if (!qualityMode) {
     return invalidPayload("QUALITY_MODE_REQUIRED", "생성 품질을 선택해 주세요.");
@@ -58,6 +65,7 @@ export function parseProductImageStudioGenerationPayload(
       conceptId,
       outputs,
       productionSettings: productionSettings.settings,
+      ...(provider ? { provider } : {}),
       qualityMode,
     },
   };
@@ -113,6 +121,22 @@ function parseOutputType(value: unknown): ProductImageStudioOutputType | null {
   }
 
   return null;
+}
+
+function parseOptionalProvider(value: unknown): ProductImageStudioProviderName | false | undefined {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  for (const provider of PRODUCT_IMAGE_STUDIO_PROVIDERS) {
+    if (provider === value) {
+      return provider;
+    }
+  }
+  return false;
 }
 
 function parseQualityMode(value: unknown): ProductImageStudioQualityMode | null {

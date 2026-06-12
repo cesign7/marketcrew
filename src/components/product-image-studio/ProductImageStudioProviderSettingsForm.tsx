@@ -1,170 +1,122 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState } from "react";
 import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
 import type {
-  ProductImageStudioProviderSettingsStorageMode,
-  ProductImageStudioProviderSettingsSummary,
+  ProductImageStudioProviderSettingsStorageMode as SettingsStorageMode,
+  ProductImageStudioProviderSettingsSummary as SettingsSummary,
 } from "@/features/product-image-studio/server/providerSettingsStore";
 import { requestProductImageStudioProviderSettings } from "@/features/product-image-studio/client/providerSettingsApi";
+import {
+  ProductImageStudioProviderSettingsCard,
+  type ProductImageStudioProviderCardOption,
+  type ProductImageStudioProviderCardState,
+} from "./ProductImageStudioProviderSettingsCard";
 import styles from "./ProductImageStudioProviderSettingsForm.module.css";
 
 type ProductImageStudioProviderSettingsFormProps = {
-  readonly initialSettings: ProductImageStudioProviderSettingsSummary | null;
-  readonly initialStorageMode: ProductImageStudioProviderSettingsStorageMode;
+  readonly initialSettings: SettingsSummary | null;
+  readonly initialStorageMode: SettingsStorageMode;
 };
 
-type ProviderOption = {
-  readonly description: string;
-  readonly label: string;
-  readonly provider: ProductImageStudioProviderName;
-};
-
-type FormMessage = {
-  readonly text: string;
-  readonly tone: "error" | "success";
-};
+type ProviderFormStates = Record<ProductImageStudioProviderName, ProductImageStudioProviderCardState>;
+type FormMessage = { readonly text: string; readonly tone: "error" | "success" };
 
 const PROVIDER_OPTIONS = [
-  {
-    description: "기존 생성 품질을 유지하면서 설정샷과 목업 합성에 사용합니다.",
-    label: "OpenAI",
-    provider: "openai",
-  },
-  {
-    description: "참조 이미지 기반 장면 생성과 다양한 비율 초안에 사용합니다.",
-    label: "Gemini",
-    provider: "gemini",
-  },
-] as const satisfies readonly ProviderOption[];
+  { description: "설정샷, 목업 합성, 고품질 인쇄물 이미지 생성에 사용합니다.", label: "OpenAI", provider: "openai" },
+  { description: "참조 이미지 기반 장면 생성과 빠른 비율 초안에 사용합니다.", label: "Gemini", provider: "gemini" },
+] as const satisfies readonly ProductImageStudioProviderCardOption[];
 
-const DEFAULT_MODELS: Record<ProductImageStudioProviderName, string> = {
-  gemini: "gemini-3.1-flash-image",
-  openai: "gpt-image-1",
-};
+const DEFAULT_MODELS: Record<ProductImageStudioProviderName, string> = { gemini: "gemini-3.1-flash-image", openai: "gpt-image-1" };
 
 export function ProductImageStudioProviderSettingsForm({
   initialSettings,
   initialStorageMode,
 }: ProductImageStudioProviderSettingsFormProps) {
-  const [apiKey, setApiKey] = useState("");
+  const [defaultProvider, setDefaultProvider] = useState<ProductImageStudioProviderName>(
+    initialSettings?.defaultProvider ?? "openai",
+  );
   const [generationEnabled, setGenerationEnabled] = useState(initialSettings?.generationEnabled ?? false);
-  const [hasCredential, setHasCredential] = useState(initialSettings?.hasCredential ?? false);
   const [isBusy, setIsBusy] = useState(false);
   const [message, setMessage] = useState<FormMessage | null>(null);
-  const [model, setModel] = useState(initialSettings?.model ?? DEFAULT_MODELS.openai);
-  const [provider, setProvider] = useState<ProductImageStudioProviderName>(initialSettings?.provider ?? "openai");
+  const [providerStates, setProviderStates] = useState<ProviderFormStates>(() => createProviderStates(initialSettings));
   const [storageMode, setStorageMode] = useState(initialSettings?.storageMode ?? initialStorageMode);
   const [updatedAt, setUpdatedAt] = useState(initialSettings?.updatedAt ?? null);
 
-  const selectedOption = useMemo(
-    () => PROVIDER_OPTIONS.find((option) => option.provider === provider) ?? PROVIDER_OPTIONS[0],
-    [provider],
+  const defaultState = providerStates[defaultProvider];
+  const hasAnyCredential = useMemo(
+    () => PROVIDER_OPTIONS.some((option) => providerStates[option.provider].hasCredential),
+    [providerStates],
   );
-  const hasPendingCredential = apiKey.trim().length > 0;
-  const canOpenGate = hasCredential || hasPendingCredential;
-  const gateSummary = generationEnabled ? `${selectedOption.label} 실제 호출 허용 중` : "실제 provider 호출 차단 중";
+  const hasPendingDefaultCredential = defaultState.apiKey.trim().length > 0;
+  const canOpenGate = defaultState.hasCredential || hasPendingDefaultCredential;
+  const gateSummary = generationEnabled ? `${providerLabel(defaultProvider)} 실제 호출 허용 중` : "실제 provider 호출 차단 중";
 
   return (
     <section className={styles.panel} aria-label="이미지 생성 provider 설정">
       <div className={styles.heading}>
         <div>
           <h2>생성 연결 설정</h2>
-          <p>키는 서버에만 저장하고 화면에는 연결 상태만 남깁니다.</p>
+          <p>provider별 키는 서버에만 저장하고 화면에는 연결 상태만 남깁니다.</p>
         </div>
         <div className={styles.badges} aria-label="저장 상태">
           <span>{storageMode === "postgres" ? "운영 DB" : "서버 메모리"}</span>
-          <strong>{hasCredential ? "키 저장됨" : "키 필요"}</strong>
+          <strong>{hasAnyCredential ? "키 저장됨" : "키 필요"}</strong>
         </div>
       </div>
 
-      <form className={styles.form} onSubmit={(event) => void handleSubmit(event)}>
-        <fieldset className={styles.providerFieldset}>
-          <legend>생성 provider</legend>
-          <div className={styles.providerOptions}>
-            {PROVIDER_OPTIONS.map((option) => (
-              <label className={styles.providerOption} data-active={provider === option.provider} key={option.provider}>
-                <input
-                  checked={provider === option.provider}
-                  disabled={isBusy}
-                  name="provider"
-                  onChange={() => handleProviderChange(option.provider)}
-                  type="radio"
-                  value={option.provider}
-                />
-                <span>{option.label}</span>
-                <small>{option.description}</small>
-              </label>
-            ))}
-          </div>
-        </fieldset>
+      <div className={styles.providerGrid}>
+        {PROVIDER_OPTIONS.map((option) => (
+          <ProductImageStudioProviderSettingsCard
+            isBusy={isBusy}
+            isDefault={defaultProvider === option.provider}
+            key={option.provider}
+            onApiKeyChange={handleApiKeyChange}
+            onDisconnect={handleDisconnectProvider}
+            onModelChange={handleModelChange}
+            onSave={handleSaveProvider}
+            onSetDefault={handleSetDefaultProvider}
+            option={option}
+            state={providerStates[option.provider]}
+          />
+        ))}
+      </div>
 
-        <div className={styles.fields}>
-          <label className={styles.field}>
-            <span>모델</span>
-            <input
-              disabled={isBusy}
-              onChange={(event) => setModel(event.target.value)}
-              placeholder={DEFAULT_MODELS[provider]}
-              type="text"
-              value={model}
-            />
-          </label>
-
-          <label className={styles.field}>
-            <span>API 키</span>
-            <input
-              autoComplete="off"
-              disabled={isBusy}
-              onChange={(event) => setApiKey(event.target.value)}
-              placeholder={hasCredential ? "변경할 때만 새 키 입력" : "provider API 키 입력"}
-              type="password"
-              value={apiKey}
-            />
-          </label>
+      <section
+        className={styles.gatePanel}
+        data-state={generationEnabled ? "open" : "closed"}
+        aria-labelledby="generation-gate-heading"
+      >
+        <div className={styles.gateCopy}>
+          <span>실제 이미지 생성 허용</span>
+          <h3 id="generation-gate-heading">전체 생성 게이트</h3>
+          <p>키를 저장해도 게이트가 닫혀 있으면 실제 이미지는 생성되지 않습니다.</p>
         </div>
-
-        <section className={styles.gatePanel} data-state={generationEnabled ? "open" : "closed"} aria-labelledby="generation-gate-heading">
-          <div className={styles.gateCopy}>
-            <span>생성 게이트</span>
-            <h3 id="generation-gate-heading">{generationEnabled ? "게이트 열림" : "게이트 닫힘"}</h3>
-            <p>실제 이미지 생성 허용 상태입니다. 키가 저장된 provider만 호출합니다.</p>
-          </div>
-          <strong className={styles.gateStatus}>{gateSummary}</strong>
-          <div className={styles.gateActions} aria-label="생성 게이트 열기 닫기">
-            <button
-              aria-pressed={generationEnabled}
-              className={styles.gateOpen}
-              disabled={isBusy || generationEnabled || !canOpenGate}
-              onClick={() => void handleGateChange(true)}
-              type="button"
-            >
-              게이트 열기
-            </button>
-            <button
-              aria-pressed={!generationEnabled}
-              className={styles.gateClose}
-              disabled={isBusy || !generationEnabled || (!hasCredential && !hasPendingCredential)}
-              onClick={() => void handleGateChange(false)}
-              type="button"
-            >
-              게이트 닫기
-            </button>
-          </div>
-          <p className={styles.gateHint}>
-            {canOpenGate ? "버튼을 누르면 현재 provider 설정과 함께 바로 저장됩니다." : "먼저 API 키를 저장하거나 입력해 주세요."}
-          </p>
-        </section>
-
-        <div className={styles.actions}>
-          <button className={styles.primary} disabled={isBusy} type="submit">
-            {isBusy ? "저장 중" : "연결 정보 저장"}
+        <strong className={styles.gateStatus}>{gateSummary}</strong>
+        <div className={styles.gateActions} aria-label="생성 게이트 열기 닫기">
+          <button
+            aria-pressed={generationEnabled}
+            className={styles.gateOpen}
+            disabled={isBusy || generationEnabled || !canOpenGate}
+            onClick={() => void handleGateChange(true)}
+            type="button"
+          >
+            게이트 열기
           </button>
-          <button className={styles.secondary} disabled={isBusy || !hasCredential} onClick={() => void handleDelete()} type="button">
-            연결 해제
+          <button
+            aria-pressed={!generationEnabled}
+            className={styles.gateClose}
+            disabled={isBusy || !generationEnabled}
+            onClick={() => void handleGateChange(false)}
+            type="button"
+          >
+            게이트 닫기
           </button>
         </div>
-      </form>
+        <p className={styles.gateHint}>
+          {canOpenGate ? "현재 기본 provider 설정으로 저장됩니다." : "기본 provider에 API 키를 먼저 저장해 주세요."}
+        </p>
+      </section>
 
       <div className={styles.footer}>
         <p>{updatedAt ? `마지막 저장: ${formatDateTime(updatedAt)}` : "저장된 provider 연결이 없습니다."}</p>
@@ -173,58 +125,64 @@ export function ProductImageStudioProviderSettingsForm({
     </section>
   );
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    setIsBusy(true);
-    setMessage(null);
-
-    const result = await requestProductImageStudioProviderSettings("POST", {
-      apiKey,
-      generationEnabled,
-      model,
-      provider,
-    });
-    setIsBusy(false);
-    if (!result.ok) {
-      setMessage({ text: result.message, tone: "error" });
-      return;
-    }
-
-    applySettingsResult(result.settings, result.storageMode);
-    setApiKey("");
-    setMessage({ text: "생성 연결 정보를 저장했습니다.", tone: "success" });
+  function handleApiKeyChange(provider: ProductImageStudioProviderName, value: string): void {
+    updateProviderState(provider, { apiKey: value });
   }
 
-  async function handleDelete(): Promise<void> {
+  function handleModelChange(provider: ProductImageStudioProviderName, value: string): void {
+    updateProviderState(provider, { model: value });
+  }
+
+  function handleSaveProvider(provider: ProductImageStudioProviderName): void {
+    void persistProviderSettings(provider, generationEnabled, "provider 연결 정보를 저장했습니다.");
+  }
+
+  function handleSetDefaultProvider(provider: ProductImageStudioProviderName): void {
+    setDefaultProvider(provider);
+    if (providerStates[provider].hasCredential || providerStates[provider].apiKey.trim().length > 0) {
+      void persistProviderSettings(provider, generationEnabled, "기본 provider를 변경했습니다.");
+      return;
+    }
+    setMessage({ text: "API 키를 저장하면 기본 provider로 사용할 수 있습니다.", tone: "error" });
+  }
+
+  async function handleDisconnectProvider(provider: ProductImageStudioProviderName): Promise<void> {
     setIsBusy(true);
     setMessage(null);
-    const result = await requestProductImageStudioProviderSettings("DELETE", null);
+    const result = await requestProductImageStudioProviderSettings("DELETE", null, provider);
     setIsBusy(false);
     if (!result.ok) {
       setMessage({ text: result.message, tone: "error" });
       return;
     }
-
-    setApiKey("");
-    setGenerationEnabled(false);
-    setHasCredential(false);
-    setUpdatedAt(null);
-    setStorageMode(result.storageMode);
-    setMessage({ text: "provider 연결을 해제했습니다.", tone: "success" });
+    applySettingsResult(result.settings, result.storageMode);
+    setMessage({ text: `${providerLabel(provider)} 연결을 해제했습니다.`, tone: "success" });
   }
 
   async function handleGateChange(nextGenerationEnabled: boolean): Promise<void> {
     if (nextGenerationEnabled && !canOpenGate) {
-      setMessage({ text: "먼저 API 키를 저장하거나 입력해 주세요.", tone: "error" });
+      setMessage({ text: "먼저 기본 provider의 API 키를 저장하거나 입력해 주세요.", tone: "error" });
       return;
     }
+    await persistProviderSettings(
+      defaultProvider,
+      nextGenerationEnabled,
+      nextGenerationEnabled ? "생성 게이트를 열었습니다." : "생성 게이트를 닫았습니다.",
+    );
+  }
 
+  async function persistProviderSettings(
+    provider: ProductImageStudioProviderName,
+    nextGenerationEnabled: boolean,
+    successText: string,
+  ): Promise<void> {
     setIsBusy(true);
     setMessage(null);
+    const state = providerStates[provider];
     const result = await requestProductImageStudioProviderSettings("POST", {
-      apiKey,
+      apiKey: state.apiKey,
       generationEnabled: nextGenerationEnabled,
-      model,
+      model: state.model,
       provider,
     });
     setIsBusy(false);
@@ -234,31 +192,54 @@ export function ProductImageStudioProviderSettingsForm({
     }
 
     applySettingsResult(result.settings, result.storageMode);
-    setApiKey("");
-    setMessage({
-      text: nextGenerationEnabled ? "생성 게이트를 열었습니다." : "생성 게이트를 닫았습니다.",
-      tone: "success",
-    });
+    setMessage({ text: successText, tone: "success" });
   }
 
-  function handleProviderChange(nextProvider: ProductImageStudioProviderName): void {
-    setProvider(nextProvider);
-    setModel(DEFAULT_MODELS[nextProvider]);
+  function updateProviderState(provider: ProductImageStudioProviderName, patch: Partial<ProductImageStudioProviderCardState>) {
+    setProviderStates((current) => ({
+      ...current,
+      [provider]: { ...current[provider], ...patch },
+    }));
   }
 
-  function applySettingsResult(
-    settings: ProductImageStudioProviderSettingsSummary | null,
-    nextStorageMode: ProductImageStudioProviderSettingsStorageMode,
-  ): void {
+  function applySettingsResult(settings: SettingsSummary | null, nextStorageMode: SettingsStorageMode): void {
     setStorageMode(nextStorageMode);
     if (!settings) {
+      setProviderStates(createProviderStates(null));
+      setGenerationEnabled(false);
+      setUpdatedAt(null);
       return;
     }
+    setDefaultProvider(settings.defaultProvider);
     setGenerationEnabled(settings.generationEnabled);
-    setHasCredential(settings.hasCredential);
-    setModel(settings.model);
-    setProvider(settings.provider);
+    setProviderStates(createProviderStates(settings));
     setUpdatedAt(settings.updatedAt);
+  }
+}
+
+function createProviderStates(settings: SettingsSummary | null): ProviderFormStates {
+  return {
+    gemini: createProviderState(settings, "gemini"),
+    openai: createProviderState(settings, "openai"),
+  };
+}
+
+function createProviderState(settings: SettingsSummary | null, provider: ProductImageStudioProviderName) {
+  const providerSummary = settings?.providers[provider];
+  return {
+    apiKey: "",
+    hasCredential: providerSummary?.hasCredential ?? false,
+    model: providerSummary?.model ?? DEFAULT_MODELS[provider],
+    updatedAt: providerSummary?.updatedAt ?? null,
+  };
+}
+
+function providerLabel(provider: ProductImageStudioProviderName): string {
+  switch (provider) {
+    case "gemini":
+      return "Gemini";
+    case "openai":
+      return "OpenAI";
   }
 }
 

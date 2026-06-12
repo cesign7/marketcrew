@@ -1,6 +1,7 @@
 import type {
   CardDisplayPose,
   ProductImageStudioOutputType,
+  ProductImageStudioProviderName,
   ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
 import {
@@ -30,21 +31,34 @@ export type ProductImageStudioGenerationState = {
   readonly phase: ProductImageStudioGenerationPhase;
   readonly results: readonly ProductImageStudioGenerationResultPreview[];
   readonly selectedConceptId: string | null;
+  readonly selectedProvider: ProductImageStudioProviderName;
 };
 
 export type ProductImageStudioGenerationPayload = {
   readonly conceptId: string;
   readonly outputs: readonly ProductImageStudioOutputType[];
   readonly productionSettings: ProductImageStudioProductionSettings;
+  readonly provider: ProductImageStudioProviderName;
   readonly qualityMode: ProductImageStudioWizardState["qualityMode"];
 };
 
-export function createInitialProductImageStudioGenerationState(): ProductImageStudioGenerationState {
+export type ProductImageStudioGenerationProviderOption = {
+  readonly connected: boolean;
+  readonly disabled: boolean;
+  readonly helper: string;
+  readonly label: string;
+  readonly provider: ProductImageStudioProviderName;
+};
+
+export function createInitialProductImageStudioGenerationState(
+  selectedProvider: ProductImageStudioProviderName = "openai",
+): ProductImageStudioGenerationState {
   return {
     message: "콘셉트를 선택하면 초안 생성을 시작할 수 있습니다.",
     phase: "idle",
     results: [],
     selectedConceptId: null,
+    selectedProvider,
   };
 }
 
@@ -56,6 +70,17 @@ export function selectProductImageStudioConcept(
     ...state,
     message: "선택한 콘셉트로 초안을 생성할 수 있습니다.",
     selectedConceptId: conceptId,
+  };
+}
+
+export function selectProductImageStudioGenerationProvider(
+  state: ProductImageStudioGenerationState,
+  provider: ProductImageStudioProviderName,
+): ProductImageStudioGenerationState {
+  return {
+    ...state,
+    message: "선택한 provider로 초안을 생성할 수 있습니다.",
+    selectedProvider: provider,
   };
 }
 
@@ -88,7 +113,7 @@ export function mergeProductImageStudioGenerationResultState(
   nextState: ProductImageStudioGenerationState,
 ): ProductImageStudioGenerationState {
   if (nextState.phase !== "ready") {
-    return { ...nextState, results: previousState.results };
+    return { ...nextState, results: previousState.results, selectedProvider: previousState.selectedProvider };
   }
 
   const previousIds = new Set(previousState.results.map((result) => result.id));
@@ -96,6 +121,7 @@ export function mergeProductImageStudioGenerationResultState(
   return {
     ...nextState,
     results: [...previousState.results, ...newResults],
+    selectedProvider: previousState.selectedProvider,
   };
 }
 
@@ -115,6 +141,7 @@ export function buildProductImageStudioGenerationPayload(
     conceptId: generationState.selectedConceptId,
     outputs,
     productionSettings: wizardState.productionSettings,
+    provider: generationState.selectedProvider,
     qualityMode: wizardState.qualityMode,
   };
 }

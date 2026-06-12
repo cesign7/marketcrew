@@ -12,6 +12,10 @@ import {
   mapProductImageStudioResultRow,
   mapProductImageStudioUsageRow,
 } from "@/lib/persistence/productImageStudioPostgresRows";
+import {
+  listPostgresProductImageStudioProjectSummaries,
+  listPostgresProductImageStudioResultArchiveItems,
+} from "@/lib/persistence/productImageStudioPostgresArchiveRepository";
 import type {
   AddProductImageStudioAssetInput,
   AddProductImageStudioDownloadBundleInput,
@@ -27,6 +31,10 @@ import type {
   ProductImageStudioResultRecord,
   ProductImageStudioUsageRecord,
 } from "@/lib/persistence/productImageStudioRepository";
+import type {
+  ProductImageStudioProjectSummary,
+  ProductImageStudioResultArchiveItem,
+} from "@/lib/persistence/productImageStudioArchiveReadModels";
 
 export type ProductImageStudioPostgresRepositoryOptions = {
   readonly createId?: () => string;
@@ -150,6 +158,16 @@ class PostgresProductImageStudioRepository implements ProductImageStudioReposito
     await this.ensureSchema();
     const result = await this.query("SELECT * FROM product_image_studio_results WHERE project_id = $1 ORDER BY created_at ASC", [projectId]);
     return result.rows.map(mapProductImageStudioResultRow);
+  }
+
+  async listProjectSummaries(): Promise<readonly ProductImageStudioProjectSummary[]> {
+    await this.ensureSchema();
+    return listPostgresProductImageStudioProjectSummaries((text, values) => this.query(text, values));
+  }
+
+  async listResultArchiveItems(projectId?: string): Promise<readonly ProductImageStudioResultArchiveItem[]> {
+    await this.ensureSchema();
+    return listPostgresProductImageStudioResultArchiveItems((text, values) => this.query(text, values), projectId);
   }
 
   async addDownloadBundle(

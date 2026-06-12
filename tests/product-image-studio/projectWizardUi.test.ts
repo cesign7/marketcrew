@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ProductImageStudioWizard } from "@/components/product-image-studio/ProductImageStudioWizard";
 import { readProductImageStudioConceptCards } from "@/features/product-image-studio/client/projectWizardApi";
+import { getProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
 import {
   canRequestProductImageStudioConcepts,
   buildProductImageStudioCreateProjectPayload,
@@ -18,7 +19,12 @@ import { manualCardOnlyProductionSettings } from "./manualProductionSettings";
 
 describe("product image studio project wizard UI", () => {
   it("renders the usable Korean wizard controls on the first studio screen", () => {
-    const html = renderToStaticMarkup(createElement(ProductImageStudioWizard));
+    const html = renderToStaticMarkup(
+      createElement(ProductImageStudioWizard, {
+        initialProviderSettings: null,
+        providerStatus: getProductImageStudioProviderStatus({}),
+      }),
+    );
 
     expect(html).toContain("프로젝트 이름");
     expect(html).toContain("접이식 카드");

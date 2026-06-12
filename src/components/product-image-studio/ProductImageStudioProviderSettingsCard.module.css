@@ -1,0 +1,110 @@
+.card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.card[data-default="true"] {
+  border-color: #5b8def;
+  box-shadow: 0 0 0 2px rgba(91, 141, 239, 0.12);
+}
+
+.card[data-connected="true"] {
+  background: #f8fcfa;
+}
+
+.header {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.header span,
+.fields span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.header h3 {
+  color: var(--text);
+  font-size: 17px;
+  letter-spacing: 0;
+  margin: 4px 0 0;
+}
+
+.header strong {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.card p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.fields {
+  display: grid;
+  gap: 10px;
+}
+
+.fields label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.fields input {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  min-width: 0;
+  padding: 11px 12px;
+  width: 100%;
+}
+
+.fields input:focus {
+  border-color: #5b8def;
+  outline: 2px solid rgba(91, 141, 239, 0.18);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actions button {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  min-height: 38px;
+  padding: 0 12px;
+}
+
+.actions button[data-role="default"] {
+  background: #eef4ff;
+  border-color: #9bbcf5;
+  color: #214a92;
+}
+
+.actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

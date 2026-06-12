@@ -3,7 +3,10 @@ import {
   type ProductImageStudioProviderGate,
   type ProductImageStudioProviderName,
 } from "@/features/product-image-studio/domain/types";
-import { getActiveProductImageStudioProviderSettings } from "@/features/product-image-studio/server/providerSettingsStore";
+import {
+  getProductImageStudioProviderSettingsSummary,
+  type ProductImageStudioProviderSettingsSummary,
+} from "@/features/product-image-studio/server/providerSettingsStore";
 
 export type ProductImageStudioProviderEnv = Readonly<Record<string, string | undefined>>;
 
@@ -39,6 +42,7 @@ export type ProductImageStudioProviderStatus = {
     readonly modelConfigured: boolean;
     readonly name: ProductImageStudioProviderName | null;
   };
+  readonly providers: Record<ProductImageStudioProviderName, ProductImageStudioProviderStatusEntry>;
 };
 
 type ProductImageStudioProviderGateBlockedReason = Extract<
@@ -46,14 +50,30 @@ type ProductImageStudioProviderGateBlockedReason = Extract<
   { readonly kind: "blocked" }
 >["reason"];
 
+type ProductImageStudioProviderStatusEntryBase = {
+  readonly configured: boolean;
+  readonly credentialConfigured: boolean;
+  readonly modelConfigured: boolean;
+  readonly name: ProductImageStudioProviderName;
+};
+
+type ProductImageStudioProviderStatusEntry =
+  | (ProductImageStudioProviderStatusEntryBase & { readonly status: "enabled" })
+  | (ProductImageStudioProviderStatusEntryBase & {
+      readonly reason: ProductImageStudioProviderGateBlockedReason;
+      readonly status: "blocked";
+    });
+
 export function parseProductImageStudioProviderConfig(
   env: ProductImageStudioProviderEnv = process.env,
+  requestedProvider?: ProductImageStudioProviderName,
 ): ProductImageStudioProviderConfig {
+  const provider = requestedProvider ?? readProviderName(env.PRODUCT_IMAGE_STUDIO_PROVIDER);
   return parseProductImageStudioProviderRuntimeConfig({
-    apiKey: readEnvCredential(env),
+    apiKey: readEnvCredential(provider, env),
     generationEnabled: env.PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED === "1",
-    model: readEnvModel(env),
-    provider: readProviderName(env.PRODUCT_IMAGE_STUDIO_PROVIDER),
+    model: readEnvModel(provider, env),
+    provider,
   });
 }
 
@@ -105,23 +125,32 @@ export function parseProductImageStudioProviderRuntimeConfig(
 
 export function getProductImageStudioProviderStatus(
   env: ProductImageStudioProviderEnv = process.env,
+  requestedProvider?: ProductImageStudioProviderName,
 ): ProductImageStudioProviderStatus {
-  const config = parseProductImageStudioProviderConfig(env);
-  return toSafeProviderStatus(config);
+  const config = parseProductImageStudioProviderConfig(env, requestedProvider);
+  return toSafeProviderStatus(config, buildEnvProviderStatusEntries(env));
 }
 
 export async function getConfiguredProductImageStudioProviderStatus(
   env: ProductImageStudioProviderEnv = process.env,
+  requestedProvider?: ProductImageStudioProviderName,
 ): Promise<ProductImageStudioProviderStatus> {
-  const savedSettings = await getActiveProductImageStudioProviderSettings(env);
-  if (savedSettings) {
-    return toSafeProviderStatus(parseProductImageStudioProviderRuntimeConfig(savedSettings));
+  const savedSummary = await getProductImageStudioProviderSettingsSummary(env);
+  if (savedSummary) {
+    const provider = requestedProvider ?? savedSummary.defaultProvider;
+    return toSafeProviderStatus(
+      parseProductImageStudioProviderRuntimeConfig(toRuntimeSettingsFromSummary(savedSummary, provider)),
+      buildSavedProviderStatusEntries(savedSummary),
+    );
   }
 
-  return getProductImageStudioProviderStatus(env);
+  return getProductImageStudioProviderStatus(env, requestedProvider);
 }
 
-function toSafeProviderStatus(config: ProductImageStudioProviderConfig): ProductImageStudioProviderStatus {
+function toSafeProviderStatus(
+  config: ProductImageStudioProviderConfig,
+  providers: Record<ProductImageStudioProviderName, ProductImageStudioProviderStatusEntry>,
+): ProductImageStudioProviderStatus {
   return {
     generation: toSafeGenerationStatus(config.gate),
     provider: {
@@ -130,6 +159,7 @@ function toSafeProviderStatus(config: ProductImageStudioProviderConfig): Product
       modelConfigured: config.modelConfigured,
       name: config.provider,
     },
+    providers,
   };
 }
 
@@ -158,8 +188,62 @@ function toSafeGenerationStatus(gate: ProductImageStudioProviderGate): ProductIm
   }
 }
 
-function readEnvModel(env: ProductImageStudioProviderEnv): string | null {
-  const provider = readProviderName(env.PRODUCT_IMAGE_STUDIO_PROVIDER);
+function buildSavedProviderStatusEntries(
+  summary: ProductImageStudioProviderSettingsSummary,
+): Record<ProductImageStudioProviderName, ProductImageStudioProviderStatusEntry> {
+  return {
+    gemini: toProviderStatusEntry(
+      parseProductImageStudioProviderRuntimeConfig(toRuntimeSettingsFromSummary(summary, "gemini")),
+      "gemini",
+    ),
+    openai: toProviderStatusEntry(
+      parseProductImageStudioProviderRuntimeConfig(toRuntimeSettingsFromSummary(summary, "openai")),
+      "openai",
+    ),
+  };
+}
+
+function buildEnvProviderStatusEntries(
+  env: ProductImageStudioProviderEnv,
+): Record<ProductImageStudioProviderName, ProductImageStudioProviderStatusEntry> {
+  return {
+    gemini: toProviderStatusEntry(parseProductImageStudioProviderConfig(env, "gemini"), "gemini"),
+    openai: toProviderStatusEntry(parseProductImageStudioProviderConfig(env, "openai"), "openai"),
+  };
+}
+
+function toProviderStatusEntry(
+  config: ProductImageStudioProviderConfig,
+  provider: ProductImageStudioProviderName,
+): ProductImageStudioProviderStatusEntry {
+  const base = {
+    configured: config.provider !== null,
+    credentialConfigured: config.hasCredential,
+    modelConfigured: config.modelConfigured,
+    name: provider,
+  };
+  switch (config.gate.kind) {
+    case "blocked":
+      return { ...base, reason: config.gate.reason, status: "blocked" };
+    case "enabled":
+      return { ...base, status: "enabled" };
+  }
+}
+
+function toRuntimeSettingsFromSummary(
+  summary: ProductImageStudioProviderSettingsSummary,
+  provider: ProductImageStudioProviderName,
+): ProductImageStudioProviderRuntimeSettings {
+  const providerSummary = summary.providers[provider];
+  return {
+    apiKey: providerSummary.hasCredential ? "saved-provider-key" : null,
+    generationEnabled: summary.generationEnabled,
+    model: providerSummary.model,
+    provider,
+  };
+}
+
+function readEnvModel(provider: ProductImageStudioProviderName | null, env: ProductImageStudioProviderEnv): string | null {
   switch (provider) {
     case "openai":
       return env.PRODUCT_IMAGE_STUDIO_OPENAI_IMAGE_MODEL ?? null;
@@ -170,8 +254,7 @@ function readEnvModel(env: ProductImageStudioProviderEnv): string | null {
   }
 }
 
-function readEnvCredential(env: ProductImageStudioProviderEnv): string | null {
-  const provider = readProviderName(env.PRODUCT_IMAGE_STUDIO_PROVIDER);
+function readEnvCredential(provider: ProductImageStudioProviderName | null, env: ProductImageStudioProviderEnv): string | null {
   switch (provider) {
     case "openai":
       return env.OPENAI_API_KEY ?? null;
