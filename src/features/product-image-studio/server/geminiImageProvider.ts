@@ -53,7 +53,7 @@ export type GeminiGenerateContentRequestBody = {
         readonly imageSize?: "1K" | "2K";
       };
     };
-    readonly responseModalities: readonly ["IMAGE"];
+    readonly responseModalities: readonly ["TEXT", "IMAGE"];
   };
 };
 
@@ -90,7 +90,7 @@ export function buildGeminiGenerateContentRequestBody(
       responseFormat: {
         image: toGeminiImageConfig(model, input.promptContext.qualityMode, input.promptContext.ratio),
       },
-      responseModalities: ["IMAGE"],
+      responseModalities: ["TEXT", "IMAGE"],
     },
   };
 }
@@ -112,11 +112,13 @@ async function requestGeminiImage(
   });
   const requestId = response.headers.get("x-request-id") ?? response.headers.get("x-goog-request-id");
   if (!response.ok) {
-    throw new GeminiImageProviderError(response.status, requestId, "Gemini 이미지 생성 요청이 실패했습니다.");
+    const providerMessage = readGeminiProviderErrorMessage(await readGeminiResponseJson(response));
+    const suffix = providerMessage ? `: ${providerMessage}` : "";
+    throw new GeminiImageProviderError(response.status, requestId, `Gemini 이미지 생성 요청이 실패했습니다${suffix}`);
   }
 
   return {
-    b64Json: readGeminiImageB64(await response.json()),
+    b64Json: readGeminiImageB64(await readGeminiSuccessJson(response)),
     contentType: "image/png",
     height: 0,
     model,
@@ -124,6 +126,51 @@ async function requestGeminiImage(
     requestId: requestId ?? undefined,
     width: 0,
   };
+}
+
+async function readGeminiSuccessJson(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch (error) {
+    if (error instanceof SyntaxError || error instanceof TypeError) {
+      throw new GeminiImageProviderError(502, null, "Gemini 이미지 응답 JSON을 읽지 못했습니다.");
+    }
+    throw error;
+  }
+}
+
+async function readGeminiResponseJson(response: Response): Promise<unknown | null> {
+  try {
+    return await response.json();
+  } catch (error) {
+    if (error instanceof SyntaxError || error instanceof TypeError) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+function readGeminiProviderErrorMessage(value: unknown): string | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const error = value["error"];
+  if (isRecord(error) && typeof error["message"] === "string") {
+    return normalizeGeminiProviderMessage(error["message"]);
+  }
+
+  const message = value["message"];
+  return typeof message === "string" ? normalizeGeminiProviderMessage(message) : null;
+}
+
+function normalizeGeminiProviderMessage(message: string): string | null {
+  const normalized = message.replace(/\s+/g, " ").trim();
+  if (normalized.length === 0) {
+    return null;
+  }
+
+  return normalized.length > 240 ? `${normalized.slice(0, 240)}...` : normalized;
 }
 
 function readGeminiImageB64(value: unknown): string {

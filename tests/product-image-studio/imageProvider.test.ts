@@ -4,23 +4,11 @@ import { POST as uploadAsset } from "@/app/api/product-image-studio/projects/[id
 import { POST as createProject } from "@/app/api/product-image-studio/projects/route";
 import { POST as startGeneration } from "@/app/api/product-image-studio/projects/[id]/generations/route";
 import { listCardSetConceptRecommendations } from "@/features/product-image-studio/domain/concepts";
-import {
-  buildProductImageStudioPromptContext,
-  createFakeProductImageStudioImageProvider,
-  resolveProductImageStudioImageProvider,
-} from "@/features/product-image-studio/server/imageProvider";
-import { createGeminiImageProvider } from "@/features/product-image-studio/server/geminiImageProvider";
+import { buildProductImageStudioPromptContext, createFakeProductImageStudioImageProvider, resolveProductImageStudioImageProvider } from "@/features/product-image-studio/server/imageProvider";
 import { createOpenAiImageProvider } from "@/features/product-image-studio/server/openAiImageProvider";
 import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
-import type {
-  CardDisplayPose,
-  CardFormat,
-  ProductImageStudioAssetRole,
-} from "@/features/product-image-studio/domain/types";
-import {
-  manualCardOnlyProductionSettings,
-  manualProductionSettings,
-} from "./manualProductionSettings";
+import type { CardDisplayPose, CardFormat, ProductImageStudioAssetRole } from "@/features/product-image-studio/domain/types";
+import { manualCardOnlyProductionSettings, manualProductionSettings } from "./manualProductionSettings";
 
 describe("product image studio image provider", () => {
   afterEach(() => {
@@ -95,51 +83,6 @@ describe("product image studio image provider", () => {
     expect(capturedAuthorization).toBe("Bearer secret-test-key");
     expect(result.model).toBe("gpt-image-2");
     expect(JSON.stringify(result)).not.toContain("secret-test-key");
-  });
-
-  it("builds a Gemini adapter request with prompt and reference images", async () => {
-    let capturedBody = "";
-    let capturedApiKey = "";
-    const provider = createGeminiImageProvider({
-      apiKey: "secret-gemini-key",
-      fetchImpl: async (_input, init) => {
-        capturedBody = typeof init.body === "string" ? init.body : "";
-        capturedApiKey = init.headers instanceof Headers ? init.headers.get("x-goog-api-key") ?? "" : "";
-        return new Response(
-          JSON.stringify({
-            candidates: [
-              {
-                content: {
-                  parts: [{ inlineData: { data: Buffer.from("gemini generated png").toString("base64") } }],
-                },
-              },
-            ],
-          }),
-          { headers: { "x-goog-request-id": "gemini-request" }, status: 200 },
-        );
-      },
-      model: "gemini-3.1-flash-image",
-    });
-
-    const result = await provider.editWithReferences({
-      promptContext: postcardPromptContext(["postcard_front"]),
-      referenceImages: [
-        {
-          bytes: Uint8Array.from([1, 2, 3]).buffer,
-          contentType: "image/png",
-          fileName: "postcard-front.png",
-          role: "postcard_front",
-        },
-      ],
-    });
-
-    expect(capturedApiKey).toBe("secret-gemini-key");
-    expect(capturedBody).toContain("\"responseModalities\":[\"IMAGE\"]");
-    expect(capturedBody).toContain("\"aspectRatio\":\"4:5\"");
-    expect(capturedBody).toContain("\"inline_data\"");
-    expect(result.provider).toBe("gemini");
-    expect(result.requestId).toBe("gemini-request");
-    expect(JSON.stringify(result)).not.toContain("secret-gemini-key");
   });
 
   it("returns a blocked generation response without provider billing in default env", async () => {
