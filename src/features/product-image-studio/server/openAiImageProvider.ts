@@ -113,8 +113,7 @@ async function requestOpenAiImage(
   const requestId = response.headers.get("x-request-id");
   if (!response.ok) {
     const providerMessage = await readOpenAiProviderErrorMessage(response);
-    const suffix = providerMessage ? `: ${providerMessage}` : "";
-    throw new OpenAiImageProviderError(response.status, requestId, `OpenAI 이미지 생성 요청이 실패했습니다${suffix}`);
+    throw new OpenAiImageProviderError(response.status, requestId, buildOpenAiProviderFailureMessage(response.status, requestId, providerMessage));
   }
 
   return {
@@ -126,6 +125,31 @@ async function requestOpenAiImage(
     requestId: requestId ?? undefined,
     width: 0,
   };
+}
+
+function buildOpenAiProviderFailureMessage(status: number, requestId: string | null, providerMessage: string | null): string {
+  const detail = providerMessage ?? buildOpenAiProviderFallbackMessage(status, requestId);
+  return `OpenAI 이미지 생성 요청이 실패했습니다: ${detail}`;
+}
+
+function buildOpenAiProviderFallbackMessage(status: number, requestId: string | null): string {
+  const requestLabel = requestId ? ` 요청 ID: ${requestId}` : " 요청 ID 없음";
+  if (status === 400) {
+    return `OpenAI가 오류 본문 없이 HTTP 400을 반환했습니다. 모델명, 이미지 크기, 업로드 이미지 형식, 요청 설정을 확인해 주세요.${requestLabel}`;
+  }
+  if (status === 401) {
+    return `OpenAI가 오류 본문 없이 HTTP 401을 반환했습니다. API 키가 올바른지, 저장된 키가 현재 프로젝트에 연결되어 있는지 확인해 주세요.${requestLabel}`;
+  }
+  if (status === 403) {
+    return `OpenAI가 오류 본문 없이 HTTP 403을 반환했습니다. 이미지 모델 권한, 프로젝트 권한, 조직 인증 상태를 확인해 주세요.${requestLabel}`;
+  }
+  if (status === 429) {
+    return `OpenAI가 오류 본문 없이 HTTP 429를 반환했습니다. 크레딧, 사용 한도, 속도 제한을 확인해 주세요.${requestLabel}`;
+  }
+  if (status >= 500) {
+    return `OpenAI가 오류 본문 없이 HTTP ${status}을 반환했습니다. OpenAI 일시 장애 또는 provider 응답 문제일 수 있습니다.${requestLabel}`;
+  }
+  return `OpenAI가 오류 본문 없이 HTTP ${status}을 반환했습니다. OpenAI provider 상태와 설정을 확인해 주세요.${requestLabel}`;
 }
 
 function readB64Json(value: unknown): string {
