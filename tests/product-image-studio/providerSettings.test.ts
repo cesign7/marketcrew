@@ -6,20 +6,25 @@ import {
   GET,
   POST,
 } from "@/app/api/product-image-studio/provider-settings/route";
+import { GET as GET_PROVIDER_STATUS } from "@/app/api/product-image-studio/provider-status/route";
 import { ProductImageStudioProviderSettingsForm } from "@/components/product-image-studio/ProductImageStudioProviderSettingsForm";
 import {
   getProductImageStudioProviderStatus,
   getConfiguredProductImageStudioProviderStatus,
 } from "@/features/product-image-studio/server/providerConfig";
 import {
+  getProductImageStudioProviderSettingsStorageMode,
+  getProductImageStudioProviderSettingsSummary,
   resetProductImageStudioProviderSettingsForTests,
   saveProductImageStudioProviderSettings,
 } from "@/features/product-image-studio/server/providerSettingsStore";
 import { resolveConfiguredProductImageStudioImageProvider } from "@/features/product-image-studio/server/imageProvider";
+import { loadProductImageStudioProviderSettingsState } from "@/features/product-image-studio/server/providerSettingsState";
 
 describe("product image studio provider settings", () => {
   afterEach(() => {
     resetProductImageStudioProviderSettingsForTests();
+    vi.restoreAllMocks();
     vi.unstubAllEnvs();
   });
 
@@ -83,6 +88,111 @@ describe("product image studio provider settings", () => {
     }
   });
 
+  it("uses Postgres provider settings storage whenever a database URL is configured", () => {
+    expect(
+      getProductImageStudioProviderSettingsStorageMode({
+        MARKETCREW_DATABASE_URL: "postgres://marketcrew:test@127.0.0.1:5432/marketcrew",
+      }),
+    ).toBe("postgres");
+  });
+
+  it("does not accept ephemeral provider key storage in hosted runtimes", async () => {
+    const saved = await saveProductImageStudioProviderSettings(
+      {
+        apiKey: "secret-openai-key",
+        generationEnabled: true,
+        model: "gpt-image-1",
+        provider: "openai",
+      },
+      { VERCEL: "1" },
+    );
+
+    expect(saved.ok).toBe(false);
+    if (!saved.ok) {
+      expect(saved.error.code).toBe("PROVIDER_SETTINGS_DATABASE_REQUIRED");
+    }
+    await expect(getProductImageStudioProviderSettingsSummary({ VERCEL: "1" })).resolves.toBeNull();
+  });
+
+  it("proxies provider settings API requests to the Railway backend in hosted frontend runtime", async () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("MARKETCREW_BACKEND_API_URL", "https://api.marketcrew.app");
+    vi.stubEnv("MARKETCREW_BACKEND_API_TOKEN", "bridge-token");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ data: remoteProviderSettingsState(), ok: true }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      }),
+    );
+
+    const response = await GET(new Request("https://marketcrew.app/api/product-image-studio/provider-settings"));
+    const bodyText = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(bodyText).toContain("remote-gemini-model");
+    expect(bodyText).toContain("\"storageMode\":\"postgres\"");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "https://api.marketcrew.app/api/product-image-studio/provider-settings",
+    );
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      headers: {
+        accept: "application/json",
+        authorization: "Bearer bridge-token",
+      },
+      method: "GET",
+    });
+  });
+
+  it("proxies provider status API requests to the Railway backend in hosted frontend runtime", async () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("MARKETCREW_BACKEND_API_URL", "https://api.marketcrew.app");
+    vi.stubEnv("MARKETCREW_BACKEND_API_TOKEN", "bridge-token");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ data: remoteProviderSettingsState().status, ok: true }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      }),
+    );
+
+    const response = await GET_PROVIDER_STATUS(
+      new Request("https://marketcrew.app/api/product-image-studio/provider-status"),
+    );
+    const bodyText = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(bodyText).toContain("\"name\":\"gemini\"");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "https://api.marketcrew.app/api/product-image-studio/provider-status",
+    );
+  });
+
+  it("loads the provider settings page state from the Railway backend", async () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("MARKETCREW_BACKEND_API_URL", "https://api.marketcrew.app");
+    vi.stubEnv("MARKETCREW_BACKEND_API_TOKEN", "bridge-token");
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ data: remoteProviderSettingsState(), ok: true }), {
+        headers: { "content-type": "application/json" },
+        status: 200,
+      }),
+    );
+
+    const state = await loadProductImageStudioProviderSettingsState();
+
+    expect(state.storageMode).toBe("postgres");
+    expect(state.settings).toMatchObject({
+      hasCredential: true,
+      model: "remote-gemini-model",
+      provider: "gemini",
+    });
+    expect(state.status).toMatchObject({
+      generation: { status: "enabled" },
+      provider: { credentialConfigured: true, name: "gemini" },
+    });
+  });
+
   it("clears saved provider settings through the API", async () => {
     await saveProductImageStudioProviderSettings({
       apiKey: "secret-openai-key",
@@ -125,3 +235,29 @@ describe("product image studio provider settings", () => {
     expect(html).not.toContain("OPENAI_API_KEY");
   });
 });
+
+function remoteProviderSettingsState() {
+  return {
+    settings: {
+      generationEnabled: true,
+      hasCredential: true,
+      model: "remote-gemini-model",
+      provider: "gemini",
+      storageMode: "postgres",
+      updatedAt: "2026-06-12T00:00:00.000Z",
+    },
+    status: {
+      generation: {
+        enabled: true,
+        status: "enabled",
+      },
+      provider: {
+        configured: true,
+        credentialConfigured: true,
+        modelConfigured: true,
+        name: "gemini",
+      },
+    },
+    storageMode: "postgres",
+  };
+}

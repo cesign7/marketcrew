@@ -86,9 +86,18 @@ function readStorageMode(value: unknown): ProductImageStudioProviderSettingsStor
 }
 
 function readErrorMessage(value: unknown): string {
-  if (!isRecord(value) || !isRecord(value["error"]) || typeof value["error"]["message"] !== "string") {
+  if (!isRecord(value)) {
     return "provider 설정을 저장하지 못했습니다.";
   }
+
+  if (typeof value["message"] === "string") {
+    return value["message"];
+  }
+
+  if (!isRecord(value["error"]) || typeof value["error"]["message"] !== "string") {
+    return "provider 설정을 저장하지 못했습니다.";
+  }
+
   return value["error"]["message"];
 }
 

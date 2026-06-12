@@ -2,20 +2,13 @@ import { ProductImageStudioProviderSettingsForm } from "@/components/product-ima
 import { ProductImageStudioShell } from "@/components/product-image-studio/ProductImageStudioShell";
 import { ProductImageStudioStatusPanel } from "@/components/product-image-studio/ProductImageStudioStatusPanel";
 import { getProductImageStudioFileStorageMode } from "@/features/product-image-studio/server/assetUploadApi";
-import { getConfiguredProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
-import {
-  getProductImageStudioProviderSettingsStorageMode,
-  getProductImageStudioProviderSettingsSummary,
-} from "@/features/product-image-studio/server/providerSettingsStore";
+import { loadProductImageStudioProviderSettingsState } from "@/features/product-image-studio/server/providerSettingsState";
 import { getProductImageStudioRepositoryStorageMode } from "@/features/product-image-studio/server/projectApi";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductImageStudioSettingsPage() {
-  const [providerStatus, providerSettings] = await Promise.all([
-    getConfiguredProductImageStudioProviderStatus(),
-    getProductImageStudioProviderSettingsSummary(),
-  ]);
+  const providerSettingsState = await loadProductImageStudioProviderSettingsState();
 
   return (
     <ProductImageStudioShell
@@ -27,11 +20,11 @@ export default async function ProductImageStudioSettingsPage() {
         <ProductImageStudioStatusPanel
           fileStorageMode={getProductImageStudioFileStorageMode()}
           metadataStorageMode={getProductImageStudioRepositoryStorageMode()}
-          status={providerStatus}
+          status={providerSettingsState.status}
         />
         <ProductImageStudioProviderSettingsForm
-          initialSettings={providerSettings}
-          initialStorageMode={getProductImageStudioProviderSettingsStorageMode()}
+          initialSettings={providerSettingsState.settings}
+          initialStorageMode={providerSettingsState.storageMode}
         />
       </section>
     </ProductImageStudioShell>

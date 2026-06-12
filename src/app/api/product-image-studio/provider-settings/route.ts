@@ -11,14 +11,25 @@ import {
   saveProductImageStudioProviderSettings,
   type SaveProductImageStudioProviderSettingsInput,
 } from "@/features/product-image-studio/server/providerSettingsStore";
+import { proxyRequestToBackend } from "@/lib/backend/proxy";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request) {
+export async function GET(request: Request) {
+  const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
+  if (proxied) {
+    return proxied;
+  }
+
   return providerSettingsResponse();
 }
 
 export async function POST(request: Request) {
+  const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
+  if (proxied) {
+    return proxied;
+  }
+
   const parsed = parseProviderSettingsPayload(await readJsonPayload(request));
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error, ok: false }, { status: 400 });
@@ -32,7 +43,12 @@ export async function POST(request: Request) {
   return providerSettingsResponse();
 }
 
-export async function DELETE(_request: Request) {
+export async function DELETE(request: Request) {
+  const proxied = await proxyRequestToBackend(request, undefined, { failClosed: true });
+  if (proxied) {
+    return proxied;
+  }
+
   await deleteProductImageStudioProviderSettings();
   return providerSettingsResponse();
 }

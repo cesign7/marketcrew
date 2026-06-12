@@ -75,7 +75,7 @@ export function getProductImageStudioProviderSettingsStorageMode(
   if (env.PRODUCT_IMAGE_STUDIO_PROVIDER_SETTINGS_STORE === "postgres") {
     return hasDatabaseUrl(env) ? "postgres" : "memory";
   }
-  return env.VERCEL === "1" && hasDatabaseUrl(env) ? "postgres" : "memory";
+  return hasDatabaseUrl(env) ? "postgres" : "memory";
 }
 
 export async function getProductImageStudioProviderSettingsSummary(
@@ -128,6 +128,13 @@ export async function saveProductImageStudioProviderSettings(
 ): Promise<SaveProductImageStudioProviderSettingsResult> {
   const storageMode = getProductImageStudioProviderSettingsStorageMode(env);
   if (storageMode === "memory") {
+    if (isPersistentProviderSettingsStorageRequired(env)) {
+      return providerSettingsError(
+        "PROVIDER_SETTINGS_DATABASE_REQUIRED",
+        "운영에서는 provider 키를 서버 메모리에 저장하지 않습니다. Railway DB 또는 DATABASE_URL 연결을 확인해 주세요.",
+      );
+    }
+
     return saveMemoryProviderSettings(input);
   }
 
@@ -222,6 +229,19 @@ function toSummary(
     storageMode,
     updatedAt: settings.updatedAt,
   };
+}
+
+function isPersistentProviderSettingsStorageRequired(env: Readonly<Record<string, string | undefined>>): boolean {
+  if (env.PRODUCT_IMAGE_STUDIO_PROVIDER_SETTINGS_STORE === "memory") {
+    return false;
+  }
+
+  return (
+    env.PRODUCT_IMAGE_STUDIO_PROVIDER_SETTINGS_STORE === "postgres" ||
+    env.VERCEL === "1" ||
+    env.MARKETCREW_BACKEND_MODE === "1" ||
+    env.RAILWAY_SERVICE_NAME === "marketcrew-api"
+  );
 }
 
 function providerSettingsError(
