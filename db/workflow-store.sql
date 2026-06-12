@@ -356,6 +356,15 @@ CREATE TABLE IF NOT EXISTS product_image_studio_usage_records (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS product_image_studio_provider_settings (
+  id TEXT PRIMARY KEY CHECK (id = 'default'),
+  provider TEXT NOT NULL CHECK (provider IN ('openai', 'gemini')),
+  model TEXT NOT NULL,
+  encrypted_api_key TEXT NOT NULL,
+  generation_enabled BOOLEAN NOT NULL DEFAULT false,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS product_image_studio_projects_updated_idx
   ON product_image_studio_projects (updated_at DESC);
 

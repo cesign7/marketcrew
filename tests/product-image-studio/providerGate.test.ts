@@ -43,6 +43,17 @@ describe("product image studio provider gate", () => {
     expect(enabled.gate).toEqual({ kind: "enabled", model: "gpt-image-1", provider: "openai" });
   });
 
+  it("supports Gemini generation settings from server env as a fallback", () => {
+    const enabled = parseProductImageStudioProviderConfig({
+      GEMINI_API_KEY: "configured-gemini-secret",
+      PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED: "1",
+      PRODUCT_IMAGE_STUDIO_GEMINI_IMAGE_MODEL: "gemini-3.1-flash-image",
+      PRODUCT_IMAGE_STUDIO_PROVIDER: "gemini",
+    });
+
+    expect(enabled.gate).toEqual({ kind: "enabled", model: "gemini-3.1-flash-image", provider: "gemini" });
+  });
+
   it("returns a safe provider status response without env values", async () => {
     vi.stubEnv("OPENAI_API_KEY", "configured-test-secret");
     vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "1");

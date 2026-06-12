@@ -8,6 +8,7 @@ const checks = [
   checkLoginGate(`${appUrl}/operations`, "대표 로그인 보호"),
   checkLoginGate(`${appUrl}/product-image-studio`, "상품 이미지 스튜디오 로그인 보호"),
   checkApiLoginGate(`${appUrl}/api/product-image-studio/provider-status`, "상품 이미지 생성 상태 API 보호"),
+  checkApiLoginGate(`${appUrl}/api/product-image-studio/provider-settings`, "상품 이미지 provider 설정 API 보호"),
 ];
 
 const results = await Promise.all(checks);
@@ -80,8 +81,10 @@ async function checkApiLoginGate(url, label) {
     const bodyText = await response.text();
     const hasUnsafeBody =
       bodyText.includes("OPENAI_API_KEY") ||
+      bodyText.includes("GEMINI_API_KEY") ||
       bodyText.includes("PRODUCT_IMAGE_STUDIO") ||
       bodyText.includes("gpt-image") ||
+      bodyText.includes("gemini-") ||
       bodyText.includes("sk-");
     const ok = response.status === 401 && !hasUnsafeBody;
 

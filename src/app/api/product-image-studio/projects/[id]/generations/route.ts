@@ -4,12 +4,13 @@ import { getDefaultProductImageStudioFileStore } from "@/features/product-image-
 import {
   buildProductImageStudioPromptContext,
   createFakeProductImageStudioImageProvider,
-  resolveProductImageStudioImageProvider,
+  resolveConfiguredProductImageStudioImageProvider,
 } from "@/features/product-image-studio/server/imageProvider";
 import {
   createStoredProductImageStudioGenerationResults,
   readProductImageStudioReferenceImages,
 } from "@/features/product-image-studio/server/generationRunner";
+import { GeminiImageProviderError } from "@/features/product-image-studio/server/geminiImageProvider";
 import { toProductImageStudioResultPreviewResponse } from "@/features/product-image-studio/server/generationResultPreview";
 import { OpenAiImageProviderError } from "@/features/product-image-studio/server/openAiImageProvider";
 import {
@@ -100,7 +101,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     });
   }
 
-  const resolvedProvider = resolveProductImageStudioImageProvider();
+  const resolvedProvider = await resolveConfiguredProductImageStudioImageProvider();
   if (resolvedProvider.kind === "blocked") {
     const promptContext = buildProductImageStudioPromptContext({
       assetRoles,
@@ -174,7 +175,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
       ok: true,
     });
   } catch (error) {
-    if (error instanceof OpenAiImageProviderError) {
+    if (error instanceof OpenAiImageProviderError || error instanceof GeminiImageProviderError) {
       return NextResponse.json(
         {
           error: {

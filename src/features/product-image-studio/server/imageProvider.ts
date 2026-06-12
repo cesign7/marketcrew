@@ -10,8 +10,10 @@ import {
   buildProductImageStudioProductionPromptLines,
   buildProductImageStudioValidationChecklist,
 } from "@/features/product-image-studio/domain/productionSettings";
-import { parseProductImageStudioProviderConfig, type ProductImageStudioProviderEnv } from "@/features/product-image-studio/server/providerConfig";
+import { parseProductImageStudioProviderConfig, parseProductImageStudioProviderRuntimeConfig, type ProductImageStudioProviderEnv } from "@/features/product-image-studio/server/providerConfig";
+import { createGeminiImageProvider } from "@/features/product-image-studio/server/geminiImageProvider";
 import { createOpenAiImageProvider } from "@/features/product-image-studio/server/openAiImageProvider";
+import { getActiveProductImageStudioProviderSettings } from "@/features/product-image-studio/server/providerSettingsStore";
 import type { ProductImageStudioProjectRecord } from "@/lib/persistence/productImageStudioRepository";
 
 export type ProductImageStudioPromptContext = {
@@ -48,13 +50,13 @@ export type ProductImageStudioProviderImageResult = {
   readonly contentType: "image/png";
   readonly height: number;
   readonly model: string;
-  readonly provider: "fake" | "openai";
+  readonly provider: "fake" | "gemini" | "openai";
   readonly requestId?: string;
   readonly width: number;
 };
 
 export interface ImageGenerationProvider {
-  readonly name: "fake" | "openai";
+  readonly name: "fake" | "gemini" | "openai";
   generateScene(input: ProductImageStudioProviderCallInput): Promise<ProductImageStudioProviderImageResult>;
   editWithReferences(input: ProductImageStudioProviderCallInput): Promise<ProductImageStudioProviderImageResult>;
   regenerateRatio(input: ProductImageStudioProviderCallInput): Promise<ProductImageStudioProviderImageResult>;
@@ -132,11 +134,53 @@ export function resolveProductImageStudioImageProvider(
 
   return {
     kind: "enabled",
-    provider: createOpenAiImageProvider({
-      apiKey: env.OPENAI_API_KEY ?? "",
-      model: config.gate.model,
-    }),
+    provider: createProviderAdapter(config.gate.provider, config.gate.model, readEnvProviderApiKey(config.gate.provider, env)),
   };
+}
+
+export async function resolveConfiguredProductImageStudioImageProvider(
+  env: ProductImageStudioProviderEnv = process.env,
+): Promise<ResolvedProductImageStudioImageProvider> {
+  const savedSettings = await getActiveProductImageStudioProviderSettings(env);
+  if (!savedSettings) {
+    return resolveProductImageStudioImageProvider(env);
+  }
+
+  const config = parseProductImageStudioProviderRuntimeConfig(savedSettings);
+  if (config.gate.kind === "blocked") {
+    return {
+      kind: "blocked",
+      provider: createFakeProductImageStudioImageProvider(),
+      reason: config.gate.reason,
+    };
+  }
+
+  return {
+    kind: "enabled",
+    provider: createProviderAdapter(config.gate.provider, config.gate.model, savedSettings.apiKey),
+  };
+}
+
+function createProviderAdapter(
+  provider: "gemini" | "openai",
+  model: string,
+  apiKey: string,
+): ImageGenerationProvider {
+  switch (provider) {
+    case "gemini":
+      return createGeminiImageProvider({ apiKey, model });
+    case "openai":
+      return createOpenAiImageProvider({ apiKey, model });
+  }
+}
+
+function readEnvProviderApiKey(provider: "gemini" | "openai", env: ProductImageStudioProviderEnv): string {
+  switch (provider) {
+    case "gemini":
+      return env.GEMINI_API_KEY ?? env.GOOGLE_GENERATIVE_AI_API_KEY ?? "";
+    case "openai":
+      return env.OPENAI_API_KEY ?? "";
+  }
 }
 
 function createFakeImageResult(

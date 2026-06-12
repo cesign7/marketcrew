@@ -15,6 +15,7 @@ describe("product image studio production smoke contract", () => {
     expect(smokeScript).toContain("/product-image-studio");
     expect(smokeScript).toContain("/login?next=%2Fproduct-image-studio");
     expect(smokeScript).toContain("/api/product-image-studio/provider-status");
+    expect(smokeScript).toContain("/api/product-image-studio/provider-settings");
     expect(smokeScript).toContain("checkPageRender");
     expect(smokeScript).toContain("checkApiLoginGate");
     expect(smokeScript).not.toContain("/generations");
@@ -56,5 +57,25 @@ describe("product image studio production smoke contract", () => {
     expect(bodyText).not.toContain("gpt-image-1");
     expect(bodyText).not.toContain("PRODUCT_IMAGE_STUDIO");
     expect(bodyText).not.toContain("OPENAI_API_KEY");
+  });
+
+  it("keeps the provider settings API behind auth without leaking provider env details", async () => {
+    vi.stubEnv("MARKETCREW_AUTH_DISABLED", "0");
+    vi.stubEnv("GEMINI_API_KEY", "configured-test-secret");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "1");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_GEMINI_IMAGE_MODEL", "gemini-3.1-flash-image");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_PROVIDER", "gemini");
+
+    const response = await proxy(
+      new NextRequest("http://127.0.0.1:3000/api/product-image-studio/provider-settings"),
+    );
+    const bodyText = await response.text();
+
+    expect(response.status).toBe(401);
+    expect(bodyText).toContain("UNAUTHORIZED");
+    expect(bodyText).not.toContain("configured-test-secret");
+    expect(bodyText).not.toContain("gemini-3.1-flash-image");
+    expect(bodyText).not.toContain("PRODUCT_IMAGE_STUDIO");
+    expect(bodyText).not.toContain("GEMINI_API_KEY");
   });
 });

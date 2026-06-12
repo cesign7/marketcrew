@@ -26,6 +26,8 @@ describe("product image studio repository contract", () => {
     for (const tableName of expectedTableNames) {
       expect(workflowSql).toContain(`CREATE TABLE IF NOT EXISTS ${tableName}`);
     }
+    expect(workflowSql).toContain("CREATE TABLE IF NOT EXISTS product_image_studio_provider_settings");
+    expect(workflowSql).toContain("encrypted_api_key TEXT NOT NULL");
     expect(workflowSql).toContain("production_settings JSONB NOT NULL");
   });
 

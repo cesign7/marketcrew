@@ -56,6 +56,9 @@ export type ProductImageStudioRatioPreset = (typeof PRODUCT_IMAGE_STUDIO_RATIO_P
 export const PRODUCT_IMAGE_STUDIO_QUALITY_MODES = ["draft", "high"] as const;
 export type ProductImageStudioQualityMode = (typeof PRODUCT_IMAGE_STUDIO_QUALITY_MODES)[number];
 
+export const PRODUCT_IMAGE_STUDIO_PROVIDERS = ["openai", "gemini"] as const;
+export type ProductImageStudioProviderName = (typeof PRODUCT_IMAGE_STUDIO_PROVIDERS)[number];
+
 export const PRODUCT_IMAGE_STUDIO_GENERATION_STATUSES = [
   "queued",
   "generating_scene",
@@ -73,7 +76,7 @@ export type ProductImageStudioProviderGate =
     }
   | {
       readonly kind: "enabled";
-      readonly provider: "openai";
+      readonly provider: ProductImageStudioProviderName;
       readonly model: string;
     };
 
