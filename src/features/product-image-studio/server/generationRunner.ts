@@ -27,7 +27,28 @@ export type ProductImageStudioReferenceImagesResult =
   | {
       readonly error: { readonly code: string; readonly message: string };
       readonly ok: false;
+  };
+
+type ProductImageStudioGenerationAttempt =
+  | {
+      readonly kind: "fulfilled";
+      readonly result: ProductImageStudioResultRecord;
+    }
+  | {
+      readonly error: unknown;
+      readonly kind: "rejected";
+      readonly outputType: ProductImageStudioOutputType;
     };
+
+export type ProductImageStudioGenerationFailure = {
+  readonly error: unknown;
+  readonly outputType: ProductImageStudioOutputType;
+};
+
+export type ProductImageStudioGenerationBatchResult = {
+  readonly failures: readonly ProductImageStudioGenerationFailure[];
+  readonly results: readonly ProductImageStudioResultRecord[];
+};
 
 export async function createStoredProductImageStudioGenerationResults(input: {
   readonly assets: readonly ProductImageStudioAssetRecord[];
@@ -40,43 +61,108 @@ export async function createStoredProductImageStudioGenerationResults(input: {
   readonly repository: ProductImageStudioRepository;
   readonly requestedOutputs: readonly ProductImageStudioOutputType[];
 }): Promise<readonly ProductImageStudioResultRecord[]> {
+  const batch = await createStoredProductImageStudioGenerationResultBatch(input);
+  const firstFailure = batch.failures[0];
+  if (firstFailure) {
+    throw firstFailure.error;
+  }
+  return batch.results;
+}
+
+export async function createStoredProductImageStudioGenerationResultBatch(input: {
+  readonly assets: readonly ProductImageStudioAssetRecord[];
+  readonly concept: ProductImageStudioConceptRecommendation;
+  readonly fileStore: ProductImageFileStore;
+  readonly generation: ProductImageStudioGenerationRequestRecord;
+  readonly project: ProductImageStudioProjectRecord;
+  readonly provider: ImageGenerationProvider;
+  readonly referenceImages: readonly ProductImageStudioProviderReferenceImage[];
+  readonly repository: ProductImageStudioRepository;
+  readonly requestedOutputs: readonly ProductImageStudioOutputType[];
+}): Promise<ProductImageStudioGenerationBatchResult> {
+  const attempts = await Promise.all(
+    input.requestedOutputs.map((outputType) => createStoredProductImageStudioGenerationAttempt(input, outputType)),
+  );
+  const results: ProductImageStudioResultRecord[] = [];
+  const failures: ProductImageStudioGenerationFailure[] = [];
+  for (const attempt of attempts) {
+    switch (attempt.kind) {
+      case "fulfilled":
+        results.push(attempt.result);
+        break;
+      case "rejected":
+        failures.push({ error: attempt.error, outputType: attempt.outputType });
+        break;
+    }
+  }
+  return { failures, results };
+}
+
+function createStoredProductImageStudioGenerationAttempt(
+  input: {
+    readonly assets: readonly ProductImageStudioAssetRecord[];
+    readonly concept: ProductImageStudioConceptRecommendation;
+    readonly fileStore: ProductImageFileStore;
+    readonly generation: ProductImageStudioGenerationRequestRecord;
+    readonly project: ProductImageStudioProjectRecord;
+    readonly provider: ImageGenerationProvider;
+    readonly referenceImages: readonly ProductImageStudioProviderReferenceImage[];
+    readonly repository: ProductImageStudioRepository;
+  },
+  outputType: ProductImageStudioOutputType,
+): Promise<ProductImageStudioGenerationAttempt> {
+  return createStoredProductImageStudioGenerationResult(input, outputType).then(
+    (result): ProductImageStudioGenerationAttempt => ({ kind: "fulfilled", result }),
+    (error: unknown): ProductImageStudioGenerationAttempt => ({ error, kind: "rejected", outputType }),
+  );
+}
+
+async function createStoredProductImageStudioGenerationResult(
+  input: {
+    readonly assets: readonly ProductImageStudioAssetRecord[];
+    readonly concept: ProductImageStudioConceptRecommendation;
+    readonly fileStore: ProductImageFileStore;
+    readonly generation: ProductImageStudioGenerationRequestRecord;
+    readonly project: ProductImageStudioProjectRecord;
+    readonly provider: ImageGenerationProvider;
+    readonly referenceImages: readonly ProductImageStudioProviderReferenceImage[];
+    readonly repository: ProductImageStudioRepository;
+  },
+  outputType: ProductImageStudioOutputType,
+): Promise<ProductImageStudioResultRecord> {
   const ratio = input.project.ratios[0] ?? "1:1";
   const dimensions = getProductImageStudioDimensionsForRatio(ratio);
-  return Promise.all(
-    input.requestedOutputs.map(async (outputType) => {
-      const promptContext = buildProductImageStudioPromptContext({
-        assetRoles: input.assets.map((asset) => asset.role),
-        cardPose: input.project.requestedCardPoses[0],
-        concept: input.concept,
-        outputType,
-        project: input.project,
-        qualityMode: input.generation.qualityMode,
-        ratio,
-      });
-      const generatedImage =
-        input.referenceImages.length > 0
-          ? await input.provider.editWithReferences({ promptContext, referenceImages: input.referenceImages })
-          : await input.provider.generateScene({ promptContext, referenceImages: [] });
-      const savedImage = await input.fileStore.saveGeneratedImage({
-        bytes: Buffer.from(generatedImage.b64Json, "base64"),
-        contentType: generatedImage.contentType,
-        generationRequestId: input.generation.id,
-        outputType,
-        projectId: input.project.id,
-        ratio,
-      });
-      return input.repository.addResult({
-        cardPose: outputType === "set_combined" || outputType === "card_single" ? input.project.requestedCardPoses[0] : undefined,
-        generationRequestId: input.generation.id,
-        height: generatedImage.height > 0 ? generatedImage.height : dimensions.height,
-        outputType,
-        projectId: input.project.id,
-        ratio,
-        storageKey: savedImage.storageKey,
-        width: generatedImage.width > 0 ? generatedImage.width : dimensions.width,
-      });
-    }),
-  );
+  const promptContext = buildProductImageStudioPromptContext({
+    assetRoles: input.assets.map((asset) => asset.role),
+    cardPose: input.project.requestedCardPoses[0],
+    concept: input.concept,
+    outputType,
+    project: input.project,
+    qualityMode: input.generation.qualityMode,
+    ratio,
+  });
+  const generatedImage =
+    input.referenceImages.length > 0
+      ? await input.provider.editWithReferences({ promptContext, referenceImages: input.referenceImages })
+      : await input.provider.generateScene({ promptContext, referenceImages: [] });
+  const savedImage = await input.fileStore.saveGeneratedImage({
+    bytes: Buffer.from(generatedImage.b64Json, "base64"),
+    contentType: generatedImage.contentType,
+    generationRequestId: input.generation.id,
+    outputType,
+    projectId: input.project.id,
+    ratio,
+  });
+  return input.repository.addResult({
+    cardPose: outputType === "set_combined" || outputType === "card_single" ? input.project.requestedCardPoses[0] : undefined,
+    generationRequestId: input.generation.id,
+    height: generatedImage.height > 0 ? generatedImage.height : dimensions.height,
+    outputType,
+    projectId: input.project.id,
+    ratio,
+    storageKey: savedImage.storageKey,
+    width: generatedImage.width > 0 ? generatedImage.width : dimensions.width,
+  });
 }
 
 export async function readProductImageStudioReferenceImages(

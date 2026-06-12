@@ -7,6 +7,11 @@ import {
   type ProductImageStudioWizardState,
 } from "@/features/product-image-studio/domain/projectWizard";
 import {
+  readProductImageStudioJsonPayload,
+  readProductImageStudioProjectResultIds,
+  recoverProductImageStudioStoredGenerationResults,
+} from "@/features/product-image-studio/client/generationResultRecovery";
+import {
   readProductImageStudioGenerationResponse,
   type ProductImageStudioGenerationPayload,
   type ProductImageStudioGenerationResultPreview,
@@ -91,13 +96,25 @@ export async function startProductImageStudioGeneration(
   projectId: string,
   payload: ProductImageStudioGenerationPayload,
 ): Promise<ProductImageStudioGenerationState> {
-  const response = await fetch(`/api/product-image-studio/projects/${encodeURIComponent(projectId)}/generations`, {
-    body: JSON.stringify(payload),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-  });
-  const responsePayload: unknown = await response.json();
-  return readProductImageStudioGenerationResponse(responsePayload);
+  const knownResultIds = await readProductImageStudioProjectResultIds(projectId);
+  try {
+    const response = await fetch(`/api/product-image-studio/projects/${encodeURIComponent(projectId)}/generations`, {
+      body: JSON.stringify(payload),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+    const responsePayload = await readProductImageStudioJsonPayload(response);
+    const state = readProductImageStudioGenerationResponse(responsePayload);
+    if (state.phase !== "failed") {
+      return state;
+    }
+    return recoverGenerationState(projectId, knownResultIds, payload, state.message);
+  } catch (error) {
+    if (error instanceof TypeError || error instanceof DOMException) {
+      return recoverGenerationState(projectId, knownResultIds, payload, "생성 응답을 읽지 못했습니다.");
+    }
+    throw error;
+  }
 }
 
 export async function regenerateProductImageStudioResultRatio(
@@ -134,6 +151,32 @@ function readProjectId(payload: unknown): string | null {
 
   const id = payload["id"];
   return typeof id === "string" ? id : null;
+}
+
+async function recoverGenerationState(
+  projectId: string,
+  knownResultIds: ReadonlySet<string>,
+  payload: ProductImageStudioGenerationPayload,
+  fallbackMessage: string,
+): Promise<ProductImageStudioGenerationState> {
+  const recoveredResults = await recoverProductImageStudioStoredGenerationResults(projectId, knownResultIds);
+  if (recoveredResults.length > 0) {
+    return {
+      message: "생성 응답은 끊겼지만 저장된 이미지를 불러왔습니다.",
+      phase: "ready",
+      results: recoveredResults,
+      selectedConceptId: null,
+      selectedProvider: payload.provider,
+    };
+  }
+
+  return {
+    message: fallbackMessage,
+    phase: "failed",
+    results: [],
+    selectedConceptId: null,
+    selectedProvider: payload.provider,
+  };
 }
 
 export function readProductImageStudioConceptCards(payload: unknown): readonly ProductImageStudioConceptCard[] {

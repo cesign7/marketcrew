@@ -196,6 +196,73 @@ describe("product image studio image provider", () => {
     );
     expect(new TextDecoder().decode(await downloadResponse.arrayBuffer())).toBe("openai generated png");
   });
+
+  it("returns saved OpenAI results when another requested output fails", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "secret-test-key");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "1");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_OPENAI_IMAGE_MODEL", "gpt-image-2");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_PROVIDER", "openai");
+    let callCount = 0;
+    vi.stubGlobal("fetch", async () => {
+      callCount += 1;
+      if (callCount === 1) {
+        return new Response(JSON.stringify({ data: [{ b64_json: Buffer.from("saved card png").toString("base64") }] }), {
+          headers: { "content-type": "application/json", "x-request-id": "req-card" },
+          status: 200,
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: "insufficient_quota",
+            message: "You exceeded your current quota. Secret key sk-live-secret-key.",
+            type: "insufficient_quota",
+          },
+        }),
+        {
+          headers: { "content-type": "application/json", "x-request-id": "req-seal-failed" },
+          status: 429,
+        },
+      );
+    });
+    const projectId = await createProjectId("folded_card");
+    const cardUpload = await uploadAsset(uploadRequest(projectId, "folded_card_outer_front"), {
+      params: Promise.resolve({ id: projectId }),
+    });
+    const sealUpload = await uploadAsset(uploadRequest(projectId, "seal_sticker"), {
+      params: Promise.resolve({ id: projectId }),
+    });
+    expect(cardUpload.status).toBe(201);
+    expect(sealUpload.status).toBe(201);
+
+    const response = await startGeneration(
+      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/generations`, {
+        body: JSON.stringify({
+          conceptId: "minimal-studio",
+          outputs: ["card_single", "seal_sticker_single"],
+          productionSettings: manualProductionSettings("folded_card"),
+          qualityMode: "draft",
+        }),
+        headers: { "content-type": "application/json" },
+        method: "POST",
+      }),
+      { params: Promise.resolve({ id: projectId }) },
+    );
+    const bodyText = await response.text();
+    const bodyJson: unknown = JSON.parse(bodyText);
+
+    expect(response.status).toBe(207);
+    expect(bodyJson).toMatchObject({
+      data: {
+        generation: { status: "partial" },
+        results: [{ outputType: "card_single", ratio: "1:1" }],
+      },
+      ok: true,
+    });
+    expect(bodyText).toContain("일부 이미지만 준비되었습니다.");
+    expect(bodyText).not.toContain("sk-live-secret-key");
+    expect(await getProductImageStudioProjectRepository().listResults(projectId)).toHaveLength(1);
+  });
 });
 
 function foldedPromptContext(assetRoles: readonly ProductImageStudioAssetRole[]) {

@@ -30,9 +30,9 @@ export function readProductImageStudioGenerationResponse(payload: unknown): Prod
     return createBlockedState(parseBlockedReason(generation["reason"]));
   }
 
-  if (status === "ready") {
+  if (status === "ready" || status === "partial") {
     return {
-      message: "초안 이미지가 준비되었습니다.",
+      message: readGenerationMessage(generation) ?? (status === "partial" ? "일부 이미지만 준비되었습니다." : "초안 이미지가 준비되었습니다."),
       phase: "ready",
       results: readResultPreviews(payload["data"]["results"], generationId),
       selectedConceptId: null,
@@ -69,6 +69,11 @@ function readGenerationErrorMessage(payload: unknown): string | null {
   }
 
   return null;
+}
+
+function readGenerationMessage(generation: Readonly<Record<string, unknown>>): string | null {
+  const message = generation["message"];
+  return typeof message === "string" && message.trim().length > 0 ? message : null;
 }
 
 function readResultPreviews(value: unknown, fallbackGenerationId: string): readonly ProductImageStudioGenerationResultPreview[] {

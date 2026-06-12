@@ -153,6 +153,32 @@ describe("product image studio generation UI", () => {
     ]);
   });
 
+  it("reads partial provider generation results as ready with the server message", () => {
+    const state = readProductImageStudioGenerationResponse({
+      data: {
+        generation: {
+          id: "generation-partial",
+          message: "일부 이미지만 준비되었습니다.",
+          status: "partial",
+        },
+        results: [
+          {
+            generationRequestId: "generation-partial",
+            id: "result-card",
+            outputType: "card_single",
+            previewUrl: "/api/product-image-studio/projects/project-1/results/result-card/preview",
+            ratio: "1:1",
+          },
+        ],
+      },
+      ok: true,
+    });
+
+    expect(state.phase).toBe("ready");
+    expect(state.message).toBe("일부 이미지만 준비되었습니다.");
+    expect(state.results.map((result) => result.id)).toEqual(["result-card"]);
+  });
+
   it("shows the backend generation error message when generation fails before results", () => {
     const state = readProductImageStudioGenerationResponse({
       error: {

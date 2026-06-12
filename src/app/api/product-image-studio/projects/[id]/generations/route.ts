@@ -8,8 +8,10 @@ import {
   resolveConfiguredProductImageStudioImageProvider,
 } from "@/features/product-image-studio/server/imageProvider";
 import {
+  createStoredProductImageStudioGenerationResultBatch,
   createStoredProductImageStudioGenerationResults,
   readProductImageStudioReferenceImages,
+  type ProductImageStudioGenerationFailure,
 } from "@/features/product-image-studio/server/generationRunner";
 import { GeminiImageProviderError } from "@/features/product-image-studio/server/geminiImageProvider";
 import { toProductImageStudioResultPreviewResponse } from "@/features/product-image-studio/server/generationResultPreview";
@@ -25,6 +27,7 @@ type ProductImageStudioGenerationRouteContext = {
 };
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 export async function POST(request: Request, context: ProductImageStudioGenerationRouteContext) {
   const proxied = await proxyProductImageStudioRequestToBackend(request);
@@ -161,7 +164,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
   }
 
   try {
-    const results = await createStoredProductImageStudioGenerationResults({
+    const generationResult = await createStoredProductImageStudioGenerationResultBatch({
       assets,
       concept,
       fileStore,
@@ -172,6 +175,34 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
       repository,
       requestedOutputs: parsed.payload.outputs,
     });
+    const unexpectedFailure = generationResult.failures.find((failure) => !isImageProviderError(failure.error));
+    if (unexpectedFailure) {
+      throw unexpectedFailure.error;
+    }
+
+    if (generationResult.failures.length > 0) {
+      if (generationResult.results.length > 0) {
+        return NextResponse.json(
+          {
+            data: {
+              generation: {
+                id: generation.id,
+                message: buildPartialGenerationMessage(generationResult.failures),
+                status: "partial",
+              },
+              results: generationResult.results.map((result) => toProductImageStudioResultPreviewResponse(project.id, result)),
+            },
+            ok: true,
+          },
+          { status: 207 },
+        );
+      }
+
+      const firstFailure = generationResult.failures[0];
+      if (firstFailure) {
+        throw firstFailure.error;
+      }
+    }
 
     return NextResponse.json({
       data: {
@@ -179,7 +210,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
           id: generation.id,
           status: "ready",
         },
-        results: results.map((result) => toProductImageStudioResultPreviewResponse(project.id, result)),
+        results: generationResult.results.map((result) => toProductImageStudioResultPreviewResponse(project.id, result)),
       },
       ok: true,
     });
@@ -211,6 +242,14 @@ async function readJsonPayload(request: Request): Promise<unknown> {
 
 function isFakeGenerationEnabled(): boolean {
   return process.env.PRODUCT_IMAGE_STUDIO_FAKE_PROVIDER_ENABLED === "1";
+}
+
+function isImageProviderError(error: unknown): error is OpenAiImageProviderError | GeminiImageProviderError {
+  return error instanceof OpenAiImageProviderError || error instanceof GeminiImageProviderError;
+}
+
+function buildPartialGenerationMessage(failures: readonly ProductImageStudioGenerationFailure[]): string {
+  return `일부 이미지만 준비되었습니다. 실패한 출력 ${failures.length}개는 provider 설정, 크레딧, 모델 권한을 확인해 주세요.`;
 }
 
 function normalizeRouteParam(value: string): string {
