@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   ProductImageStudioActivityWorkspacePage,
   ProductImageStudioBatchWorkspacePage,
+  ProductImageStudioProductSpecsWorkspacePage,
   ProductImageStudioTemplatesWorkspacePage,
   ProductImageStudioUploadsWorkspacePage,
   ProductImageStudioUsageWorkspacePage,
@@ -46,6 +47,12 @@ describe("product image studio workspace support pages", () => {
         html: renderToStaticMarkup(createElement(ProductImageStudioUploadsWorkspacePage)),
         label: "uploads",
         requiredCopy: ["업로드"],
+      },
+      {
+        activeHref: "/product-image-studio/specs",
+        html: renderToStaticMarkup(createElement(ProductImageStudioProductSpecsWorkspacePage)),
+        label: "specs",
+        requiredCopy: ["상품 규격", "새 규격", "저장된 규격", "접이식 카드", "엽서형 카드"],
       },
       {
         activeHref: "/product-image-studio/usage",

@@ -49,7 +49,8 @@ describe("product image studio project wizard UI", () => {
     expect(html).toContain("봉투와 봉합스티커");
     expect(html).toContain("상품 사양");
     expect(html).toContain("저장한 규격");
-    expect(html).toContain("규격 저장/불러오기");
+    expect(html).toContain("저장된 규격 선택");
+    expect(html).toContain("상품 규격 관리");
     expect(html).toContain("규격 편집");
     expect(html).toContain("불러오기");
     expect(html).toContain("접은 카드 가로(mm)");

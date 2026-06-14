@@ -10,6 +10,7 @@ import {
   Image,
   Layers,
   Plus,
+  Ruler,
   Search,
   Settings,
   Sparkles,
@@ -82,6 +83,7 @@ const PRODUCT_IMAGE_STUDIO_NAV_GROUPS: readonly ProductImageStudioNavigationGrou
       },
       { key: "templates", href: "/product-image-studio/templates", label: "템플릿", icon: FileText },
       { key: "uploads", href: "/product-image-studio/uploads", label: "업로드", icon: Upload },
+      { key: "specs", href: "/product-image-studio/specs", label: "상품 규격", icon: Ruler },
     ],
   },
   {

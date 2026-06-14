@@ -34,7 +34,7 @@ export function ProductImageStudioProductionSettingsPanel({
         <span>{state.productionSettings.scene.designPreservation === "exact_composite" ? "디자인 원본 보존" : "AI 보정 허용"}</span>
       </div>
 
-      <ProductImageStudioProductionSettingsPresetControls setState={setState} state={state} />
+      <ProductImageStudioProductionSettingsPresetControls setState={setState} />
 
       <ProductImageStudioManualSpecFields setState={setState} state={state} />
 

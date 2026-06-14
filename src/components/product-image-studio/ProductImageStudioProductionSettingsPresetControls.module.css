@@ -1,30 +1,25 @@
 .toolbar {
-  align-items: center;
   background: #fafafa;
   border: 1px solid var(--line);
   border-radius: 8px;
-  display: flex;
+  display: grid;
   gap: 12px;
-  justify-content: space-between;
   padding: 12px;
 }
 
-.toolbar div,
-.dialogHeader div {
+.heading {
   display: grid;
   gap: 4px;
 }
 
-.toolbar h4,
-.dialogHeader h4 {
+.heading h4 {
   color: #171717;
   font-size: 14px;
   letter-spacing: 0;
   margin: 0;
 }
 
-.toolbar p,
-.dialogHeader p,
+.heading p,
 .message {
   color: var(--muted);
   font-size: 13px;
@@ -32,47 +27,10 @@
   margin: 0;
 }
 
-.backdrop {
-  align-items: center;
-  background: rgb(23 23 23 / 42%);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  padding: 20px;
-  position: fixed;
-  z-index: 40;
-}
-
-.dialog {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: 0 24px 70px rgb(23 23 23 / 22%);
-  display: grid;
-  gap: 14px;
-  max-height: min(720px, calc(100vh - 40px));
-  max-width: 720px;
-  overflow: auto;
-  padding: 18px;
-  width: min(100%, 720px);
-}
-
-.dialogHeader {
-  align-items: start;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-}
-
-.presetForm,
-.presetLoadRow {
+.controls {
   align-items: end;
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.presetLoadRow {
   grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
@@ -88,9 +46,8 @@
   font-weight: 900;
 }
 
-.selectField input,
 .selectField select {
-  background: #fff;
+  background: #ffffff;
   border: 1px solid var(--line);
   border-radius: 8px;
   color: var(--text);
@@ -100,39 +57,33 @@
 }
 
 .primaryButton,
-.secondaryButton,
-.dangerButton,
-.closeButton {
-  border: 0;
+.secondaryButton {
+  align-items: center;
   border-radius: 8px;
-  cursor: pointer;
+  display: inline-flex;
   font: inherit;
   font-size: 13px;
   font-weight: 900;
+  justify-content: center;
   min-height: 40px;
   padding: 0 12px;
+  text-decoration: none;
   white-space: nowrap;
 }
 
 .primaryButton {
   background: var(--brand);
-  color: #fff;
+  border: 0;
+  color: #ffffff;
 }
 
-.secondaryButton,
-.closeButton {
-  background: #f5f5f5;
+.secondaryButton {
+  background: #ffffff;
+  border: 1px solid var(--line);
   color: #171717;
 }
 
-.dangerButton {
-  background: #f5f5f5;
-  color: #171717;
-}
-
-.primaryButton:disabled,
-.secondaryButton:disabled,
-.dangerButton:disabled {
+.primaryButton:disabled {
   cursor: not-allowed;
   opacity: 0.48;
 }
@@ -145,15 +96,9 @@
   color: #0070f3;
 }
 
-@media (max-width: 720px) {
-  .toolbar,
-  .dialogHeader {
+@media (max-width: 760px) {
+  .controls {
     align-items: stretch;
-    display: grid;
-  }
-
-  .presetForm,
-  .presetLoadRow {
     grid-template-columns: 1fr;
   }
 }

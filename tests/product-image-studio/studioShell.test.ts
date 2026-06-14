@@ -16,6 +16,7 @@ const EXPECTED_NAV_ITEMS = [
   { href: "/product-image-studio/designs", label: "디자인" },
   { href: "/product-image-studio/templates", label: "템플릿" },
   { href: "/product-image-studio/uploads", label: "업로드" },
+  { href: "/product-image-studio/specs", label: "상품 규격" },
   { href: "/product-image-studio/usage", label: "사용량" },
   { href: "/product-image-studio/settings", label: "환경설정" },
 ] as const;
