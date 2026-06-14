@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -19,6 +19,10 @@ const EXPECTED_NAV_ITEMS = [
   { href: "/product-image-studio/usage", label: "사용량" },
   { href: "/product-image-studio/settings", label: "환경설정" },
 ] as const;
+
+const SHELL_CSS_MODULE_PATTERN = /^ProductImageStudioShell(?:[A-Za-z]+)?\.module\.css$/;
+const SHELL_CSS_MODULE_MAX_PURE_LOC = 250;
+const PRODUCT_IMAGE_STUDIO_COMPONENT_DIR = join(process.cwd(), "src/components/product-image-studio");
 
 describe("product image studio shell", () => {
   it("renders grouped workspace navigation without old primary labels or unrelated brand text", () => {
@@ -115,10 +119,7 @@ describe("product image studio shell", () => {
 
   it("keeps nested page stacks full width inside the studio workspace", () => {
     // Given: the shell CSS is the layout contract for nested route content.
-    const css = readFileSync(
-      join(process.cwd(), "src/components/product-image-studio/ProductImageStudioShell.module.css"),
-      "utf8",
-    );
+    const css = readShellCssModules();
 
     // Then: nested stacks can fill the content well.
     expect(css).toContain(".workspace :global(.page-stack)");
@@ -127,18 +128,48 @@ describe("product image studio shell", () => {
     expect(css).toContain(".topBar");
     expect(css).toContain(".contentWell");
     expect(css).toContain("overflow-x: auto;");
-    expect(css).toContain(".navGroup { display: contents; }");
+    expect(css).toMatch(/\.navGroup\s*{\s*display:\s*contents;/);
   });
 
   it("keeps shell design tokens neutral with the single blue accent", () => {
     // Given: the shell CSS defines the product image workspace visual system.
-    const css = readFileSync(
-      join(process.cwd(), "src/components/product-image-studio/ProductImageStudioShell.module.css"),
-      "utf8",
-    );
+    const css = readShellCssModules();
 
     // Then: the requested blue token exists and forbidden accent families are absent.
     expect(css).toContain("--studio-blue: #0070f3");
     expect(css).not.toMatch(/lime|mint|purple|orange|#d9ff62|--studio-lime/i);
   });
+
+  it("keeps every hand-edited shell CSS module under the pure LOC ceiling", () => {
+    // Given: shell CSS is split by responsibility instead of growing one oversized module.
+    const shellCssModuleFiles = getShellCssModuleFiles();
+
+    // Then: every shell CSS module stays below the architectural ceiling.
+    expect(shellCssModuleFiles).toContain("ProductImageStudioShell.module.css");
+    for (const fileName of shellCssModuleFiles) {
+      const css = readFileSync(join(PRODUCT_IMAGE_STUDIO_COMPONENT_DIR, fileName), "utf8");
+      expect(countPureLoc(css), fileName).toBeLessThanOrEqual(SHELL_CSS_MODULE_MAX_PURE_LOC);
+    }
+  });
 });
+
+function readShellCssModules(): string {
+  return getShellCssModuleFiles()
+    .map((fileName) => readFileSync(join(PRODUCT_IMAGE_STUDIO_COMPONENT_DIR, fileName), "utf8"))
+    .join("\n");
+}
+
+function getShellCssModuleFiles(): readonly string[] {
+  return readdirSync(PRODUCT_IMAGE_STUDIO_COMPONENT_DIR)
+    .filter((fileName) => SHELL_CSS_MODULE_PATTERN.test(fileName))
+    .sort();
+}
+
+function countPureLoc(source: string): number {
+  return source
+    .split("\n")
+    .filter((line) => {
+      const trimmed = line.trim();
+      return trimmed.length > 0 && !trimmed.startsWith("/*") && !trimmed.startsWith("*") && !trimmed.startsWith("//");
+    }).length;
+}

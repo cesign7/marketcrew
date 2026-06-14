@@ -87,7 +87,7 @@ function ProjectUpdateList({ updates }: { readonly updates: readonly ProjectUpda
           <strong>{update.projectName}</strong>
           <p className={styles.activityMeta}>생성 결과 {update.resultCount}개</p>
           <div className={styles.activityActions}>
-            <Link href={`/product-image-studio/projects/${encodeURIComponent(update.projectId)}`} prefetch={false}>
+            <Link href={`/product-image-studio/designs/${encodeURIComponent(update.projectId)}`} prefetch={false}>
               프로젝트 열기
             </Link>
           </div>

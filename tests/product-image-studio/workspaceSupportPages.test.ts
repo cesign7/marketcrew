@@ -80,6 +80,8 @@ describe("product image studio workspace support pages", () => {
     expect(html).toContain("카드 단독컷");
     expect(html).toContain("프로젝트 업데이트");
     expect(html).toContain("생성 결과 1개");
+    expect(html).toContain('href="/product-image-studio/designs/project-1"');
+    expect(html).not.toContain('href="/product-image-studio/projects/project-1"');
     expect(html).not.toContain("저장된 활동이 아직 없습니다");
     expect(html).not.toMatch(FORBIDDEN_FAKE_DATA_COPY_PATTERN);
   });

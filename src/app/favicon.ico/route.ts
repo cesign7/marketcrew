@@ -1,8 +1,8 @@
 export const dynamic = "force-static";
 
 const FAVICON_HEADERS = {
-  "cache-control": "public, max-age=31536000, immutable",
-  "content-type": "image/x-icon",
+  "cache-control": "public, max-age=0, must-revalidate",
+  "content-type": "image/vnd.microsoft.icon",
 } as const satisfies HeadersInit;
 
 const FAVICON_ICO_BYTES = [

@@ -39,6 +39,8 @@ describe("product image studio home", () => {
     expect(html).toContain("저장된 업로드가 아직 없습니다.");
     expect(html).toContain("사용량");
     expect(html).toContain('href="/product-image-studio/ai-tools/product-staging"');
+    expect(html).toContain('href="/product-image-studio/designs/project-1"');
+    expect(html).not.toContain('href="/product-image-studio/projects/project-1"');
     expect(html).not.toContain("Photoroom");
     expect(html).not.toContain("Vercel");
     expect(html).not.toContain("OPENAI_API_KEY");

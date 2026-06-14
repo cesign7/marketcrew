@@ -92,7 +92,7 @@ export function ProductImageStudioHome({
               {recentProjects.map((project) => (
                 <Link
                   className={styles.designItem}
-                  href={`/product-image-studio/projects/${encodeURIComponent(project.id)}`}
+                  href={`/product-image-studio/designs/${encodeURIComponent(project.id)}`}
                   key={project.id}
                   prefetch={false}
                 >
