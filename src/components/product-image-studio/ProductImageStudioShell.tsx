@@ -25,6 +25,7 @@ type ProductImageStudioShellProps = {
   readonly activePath: string;
   readonly children: React.ReactNode;
   readonly description: string;
+  readonly showPrimaryAction?: boolean;
   readonly title: string;
 };
 
@@ -98,7 +99,13 @@ export function getProductImageStudioNavItems(): readonly ProductImageStudioNavi
   return PRODUCT_IMAGE_STUDIO_NAV_ITEMS.map((area) => ({ href: area.href, label: area.label }));
 }
 
-export function ProductImageStudioShell({ activePath, children, description, title }: ProductImageStudioShellProps) {
+export function ProductImageStudioShell({
+  activePath,
+  children,
+  description,
+  showPrimaryAction = true,
+  title,
+}: ProductImageStudioShellProps) {
   const activeArea = getActiveArea(activePath);
   const ActiveIcon = activeArea.icon;
 
@@ -188,14 +195,16 @@ export function ProductImageStudioShell({ activePath, children, description, tit
               {activeArea.label}
             </span>
             <h1>{title}</h1>
-            <p>{description}</p>
+            {description.trim().length > 0 ? <p>{description}</p> : null}
           </div>
-          <Link className={workspaceStyles.primaryLink} href="/product-image-studio/ai-tools/product-staging" prefetch={false}>
-            <span className={workspaceStyles.primaryIcon} aria-hidden="true">
-              <Plus size={16} strokeWidth={2.35} />
-            </span>
-            새 상품컷
-          </Link>
+          {showPrimaryAction ? (
+            <Link className={workspaceStyles.primaryLink} href="/product-image-studio/ai-tools/product-staging" prefetch={false}>
+              <span className={workspaceStyles.primaryIcon} aria-hidden="true">
+                <Plus size={16} strokeWidth={2.35} />
+              </span>
+              새 상품컷
+            </Link>
+          ) : null}
         </section>
 
         <section className={workspaceStyles.contentWell}>

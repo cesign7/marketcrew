@@ -6,12 +6,24 @@ type WorkspaceSupportShellProps = {
   readonly activePath: string;
   readonly children: ReactNode;
   readonly description: string;
+  readonly showPrimaryAction?: boolean;
   readonly title: string;
 };
 
-export function WorkspaceSupportShell({ activePath, children, description, title }: WorkspaceSupportShellProps) {
+export function WorkspaceSupportShell({
+  activePath,
+  children,
+  description,
+  showPrimaryAction,
+  title,
+}: WorkspaceSupportShellProps) {
   return (
-    <ProductImageStudioShell activePath={activePath} description={description} title={title}>
+    <ProductImageStudioShell
+      activePath={activePath}
+      description={description}
+      showPrimaryAction={showPrimaryAction}
+      title={title}
+    >
       <section className="page-stack">
         <div className={styles.supportStack}>{children}</div>
       </section>

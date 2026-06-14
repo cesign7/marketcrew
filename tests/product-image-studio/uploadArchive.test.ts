@@ -68,7 +68,7 @@ describe("product image studio upload archive", () => {
     ]);
   });
 
-  it("renders uploads as a reusable image library", () => {
+  it("renders uploads as an image-only library", () => {
     // Given: the uploads page receives archived source assets.
     const html = renderToStaticMarkup(
       createElement(ProductImageStudioUploadsWorkspacePage, {
@@ -76,13 +76,16 @@ describe("product image studio upload archive", () => {
       }),
     );
 
-    // Then: the page shows a compact image list and reuse actions.
-    expect(html).toContain("업로드 라이브러리");
-    expect(html).toContain("card-front.png");
-    expect(html).toContain("접이식 카드 앞면");
-    expect(html).toContain("디자인에서 사용");
-    expect(html).toContain("템플릿에 적용");
+    // Then: the page body only exposes uploaded image thumbnails.
     expect(html).toContain('src="/api/product-image-studio/projects/project-1/assets/asset-1/preview"');
+    expect(html).not.toContain("새 상품컷");
+    expect(html).not.toContain("새 업로드");
+    expect(html).not.toContain("업로드 라이브러리");
+    expect(html).not.toContain("card-front.png");
+    expect(html).not.toContain("접이식 카드 앞면");
+    expect(html).not.toContain("디자인에서 사용");
+    expect(html).not.toContain("템플릿에 적용");
+    expect(html).not.toContain("원본 보기");
     expect(html).not.toContain("저장된 업로드가 아직 없습니다");
   });
 

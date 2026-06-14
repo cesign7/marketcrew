@@ -1,224 +1,23 @@
-.hero,
-.panel,
-.uploadCard {
-  background: #ffffff;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-}
-
-.hero {
-  align-items: center;
-  display: flex;
-  gap: 18px;
-  justify-content: space-between;
-  padding: 18px;
-}
-
-.hero > div {
-  align-items: center;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: auto minmax(0, 1fr);
-}
-
-.hero h2,
-.uploadCard h3 {
-  color: #171717;
-  letter-spacing: 0;
-  margin: 0;
-}
-
-.hero h2 {
-  font-size: 18px;
-}
-
-.hero p {
-  color: #666666;
-  font-size: 14px;
-  grid-column: 2;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.iconBubble {
-  align-items: center;
-  background: rgba(0, 112, 243, 0.08);
-  border: 1px solid rgba(0, 112, 243, 0.18);
-  border-radius: 8px;
-  color: #0070f3;
-  display: inline-flex;
-  grid-row: 1 / span 2;
-  height: 42px;
-  justify-content: center;
-  width: 42px;
-}
-
-.primaryAction,
-.actions a {
-  align-items: center;
-  border-radius: 8px;
-  display: inline-flex;
-  font-size: 13px;
-  font-weight: 850;
-  gap: 6px;
-  min-height: 36px;
-  text-decoration: none;
-}
-
-.primaryAction {
-  background: #0070f3;
-  color: #ffffff;
-  flex: 0 0 auto;
-  padding: 0 13px;
-}
-
-.panel {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-}
-
-.toolbar {
-  align-items: flex-start;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-}
-
-.countBadge,
-.slotBadge {
-  border-radius: 999px;
-  display: inline-flex;
-  font-size: 12px;
-  font-weight: 850;
-  line-height: 1;
-}
-
-.countBadge {
-  background: #f5f5f5;
-  border: 1px solid #e5e5e5;
-  color: #171717;
-  padding: 7px 10px;
+.library {
+  min-width: 0;
 }
 
 .uploadGrid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 280px));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 220px));
   justify-content: start;
 }
 
-.uploadCard {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.thumbLink {
-  align-items: center;
+.uploadImage {
   aspect-ratio: 4 / 3;
-  background: #fafafa;
-  display: flex;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.thumbLink img {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
   display: block;
-  height: 100%;
   object-fit: contain;
   padding: 10px;
   width: 100%;
-}
-
-.cardBody {
-  display: grid;
-  gap: 12px;
-  grid-template-rows: auto 1fr auto;
-  padding: 14px;
-}
-
-.cardTitleRow {
-  align-items: flex-start;
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-}
-
-.cardTitleRow svg {
-  color: #0070f3;
-  flex: 0 0 auto;
-}
-
-.slotBadge {
-  background: rgba(0, 112, 243, 0.08);
-  color: #0070f3;
-  margin-bottom: 7px;
-  padding: 6px 8px;
-}
-
-.uploadCard h3 {
-  font-size: 15px;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-
-.metaList {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-}
-
-.metaList dt {
-  color: #666666;
-  font-size: 11px;
-  font-weight: 850;
-  margin: 0 0 3px;
-}
-
-.metaList dd {
-  color: #171717;
-  font-size: 13px;
-  font-weight: 760;
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.actions a {
-  border: 1px solid #e5e5e5;
-  color: #171717;
-  padding: 0 10px;
-}
-
-.actions a:hover,
-.actions a:focus-visible {
-  border-color: #0070f3;
-  color: #0070f3;
-}
-
-@media (max-width: 720px) {
-  .hero,
-  .toolbar {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .hero > div {
-    grid-template-columns: 1fr;
-  }
-
-  .hero p,
-  .iconBubble {
-    grid-column: auto;
-    grid-row: auto;
-  }
 }
 
 @media (max-width: 520px) {

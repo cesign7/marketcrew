@@ -45,7 +45,7 @@ describe("product image studio workspace support pages", () => {
         activeHref: "/product-image-studio/uploads",
         html: renderToStaticMarkup(createElement(ProductImageStudioUploadsWorkspacePage)),
         label: "uploads",
-        requiredCopy: ["업로드", "업로드 라이브러리", "디자인과 템플릿 작업에 연결합니다"],
+        requiredCopy: ["업로드"],
       },
       {
         activeHref: "/product-image-studio/usage",
