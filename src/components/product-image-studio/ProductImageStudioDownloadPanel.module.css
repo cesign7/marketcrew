@@ -18,7 +18,14 @@
   margin: 0;
 }
 
+.eyebrow {
+  color: var(--brand-strong);
+  font-size: 12px;
+  font-weight: 900;
+}
+
 .heading p,
+.actionHint,
 .ratioOption small,
 .status {
   color: var(--muted);
@@ -31,6 +38,7 @@
   border: 0;
   display: grid;
   gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
   padding: 0;
 }
@@ -44,8 +52,7 @@
 }
 
 .ratioOption {
-  background: #fbfcfe;
-  border: 1px solid rgba(29, 36, 48, 0.1);
+  border: 1px solid rgba(29, 36, 48, 0.12);
   border-radius: 8px;
   cursor: pointer;
   display: grid;
@@ -131,4 +138,11 @@
 .secondary:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+@media (max-width: 520px) {
+  .ratioGroup,
+  .customSize {
+    grid-template-columns: 1fr;
+  }
 }

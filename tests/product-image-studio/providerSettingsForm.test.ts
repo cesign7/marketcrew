@@ -5,8 +5,7 @@ describe("product image studio provider settings form", () => {
   it("renders the provider settings UI without exposing credentials", () => {
     const html = renderProviderSettingsFormHtml();
 
-    expect(html).toContain("생성 연결 설정");
-    expect(html).toContain("연결 작업대");
+    expect(html).toContain("연결 리소스");
     expect(html).toContain("기본 생성 엔진");
     expect(html).toContain("생성 게이트");
     expect(html).toContain("게이트 열기");
@@ -14,7 +13,8 @@ describe("product image studio provider settings form", () => {
     expect(html).toContain("OpenAI");
     expect(html).toContain("Gemini");
     expect(html).toContain("실제 이미지 생성 허용");
-    expect(html).toContain("키 저장됨");
+    expect(html).toContain("저장됨");
+    expect(html).toContain("연결 해제");
     expect(html).not.toContain("secret");
     expect(html).not.toContain("OPENAI_API_KEY");
   });

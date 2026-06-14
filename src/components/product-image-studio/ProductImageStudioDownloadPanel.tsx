@@ -39,9 +39,9 @@ type RatioOption = {
 };
 
 const RATIO_OPTIONS: readonly RatioOption[] = [
-  { helper: "정사각형 목록과 대표 이미지", label: "1:1 상품 목록", ratio: "1:1" },
+  { helper: "목록용 썸네일과 정사각형 대표 이미지", label: "1:1 상품 목록", ratio: "1:1" },
   { helper: "세로형 대표 이미지", label: "4:5 대표용", ratio: "4:5" },
-  { helper: "상세페이지 중간 이미지", label: "3:4 상세 이미지", ratio: "3:4" },
+  { helper: "상세페이지용 중간 이미지", label: "3:4 상세 이미지", ratio: "3:4" },
   { helper: "자사몰, 블로그 확장용", label: "16:9 확장 콘텐츠", ratio: "16:9" },
   { helper: "직접 입력한 픽셀 크기", label: "사용자 지정", ratio: "custom" },
 ];
@@ -72,10 +72,11 @@ export function ProductImageStudioDownloadPanel({
   const displayMessage = hasResults && message === EMPTY_DOWNLOAD_MESSAGE ? READY_DOWNLOAD_MESSAGE : message;
 
   return (
-    <section className={styles.panel} aria-label="비율 및 다운로드">
+    <section className={styles.panel} aria-label="상품컷 갤러리 비율 변경과 다운로드">
       <div className={styles.heading}>
-        <h3>비율 및 다운로드</h3>
-        <p>목록, 대표 이미지, 상세 이미지에 맞게 다시 만들거나 내려받습니다.</p>
+        <span className={styles.eyebrow}>상품컷 갤러리</span>
+        <h3>비율 변경</h3>
+        <p>목록용, 대표용, 상세페이지용 상품컷에 맞게 다시 만들거나 내려받습니다.</p>
       </div>
 
       <fieldset className={styles.ratioGroup}>
@@ -140,10 +141,11 @@ export function ProductImageStudioDownloadPanel({
       <p className={styles.status} aria-live="polite">
         {displayMessage}
       </p>
+      <p className={styles.actionHint}>생성 결과가 준비되면 비율 변경과 다시 만들기를 사용할 수 있습니다.</p>
 
       <div className={styles.actions}>
         <button className={styles.secondary} disabled={!hasResults || isBusy} onClick={() => void handleRegenerate()} type="button">
-          {isBusy ? "비율 변경 중" : "비율 변경 생성"}
+          {isBusy ? "비율 변경 중" : "비율 변경 다시 만들기"}
         </button>
         <button
           className={styles.secondary}

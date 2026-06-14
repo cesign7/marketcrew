@@ -9,7 +9,7 @@ import {
 } from "@/components/product-image-studio/ProductImageStudioShell";
 
 describe("product image studio shell", () => {
-  it("renders a studio-specific shell without Search Ad filter text", () => {
+  it("renders a MarketCrew SaaS shell without Search Ad filter text", () => {
     const html = renderToStaticMarkup(
       createElement(
         ProductImageStudioShell,
@@ -23,12 +23,16 @@ describe("product image studio shell", () => {
     );
 
     expect(html).toContain("상품 이미지 스튜디오");
-    expect(html).toContain("AI 이미지 작업대");
-    expect(html).toContain("새 이미지 만들기");
+    expect(html).toContain("MarketCrew 비주얼 스튜디오");
+    expect(html).toContain("리소스");
+    expect(html).toContain("작업 공간");
+    expect(html).toContain("새 상품컷");
     expect(html).toContain("마켓크루");
     expect(html).toContain("카드 세트 프로젝트");
     expect(html).not.toContain("side-nav");
     expect(html).not.toContain("네이버 검색광고");
+    expect(html).not.toContain("Lovable");
+    expect(html).not.toContain("Photoroom");
     expect(html).not.toContain("브랜드");
     expect(html).not.toContain("광고유형");
   });
@@ -37,10 +41,10 @@ describe("product image studio shell", () => {
     const navItems = getProductImageStudioNavItems();
 
     expect(navItems).toEqual([
-      { href: "/product-image-studio", label: "스튜디오" },
+      { href: "/product-image-studio", label: "이미지 제작" },
       { href: "/product-image-studio/projects", label: "프로젝트" },
-      { href: "/product-image-studio/results", label: "결과 보관함" },
-      { href: "/product-image-studio/settings", label: "이미지 설정" },
+      { href: "/product-image-studio/results", label: "결과" },
+      { href: "/product-image-studio/settings", label: "설정" },
     ]);
   });
 
@@ -69,5 +73,8 @@ describe("product image studio shell", () => {
 
     expect(css).toContain(".workspace :global(.page-stack)");
     expect(css).toContain("width: min(100%, 1180px);");
+    expect(css).toContain(".resourceRail");
+    expect(css).toContain(".topBar");
+    expect(css).toContain(".contentWell");
   });
 });

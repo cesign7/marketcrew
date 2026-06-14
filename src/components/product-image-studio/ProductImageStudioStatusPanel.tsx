@@ -9,9 +9,11 @@ type ProductImageStudioStatusPanelProps = {
   readonly status: ProductImageStudioProviderStatus;
 };
 
-type StatusCard = {
+type StatusBadgeKey = "download" | "file-storage" | "generation" | "metadata" | "provider";
+
+type StatusBadge = {
+  readonly key: StatusBadgeKey;
   readonly label: string;
-  readonly summary: string;
   readonly tone: "blocked" | "ready" | "neutral";
   readonly value: string;
 };
@@ -21,35 +23,35 @@ export function ProductImageStudioStatusPanel({
   metadataStorageMode,
   status,
 }: ProductImageStudioStatusPanelProps) {
-  const cards: readonly StatusCard[] = [
-    toGenerationCard(status),
-    toProviderCard(status),
-    toFileStorageCard(fileStorageMode),
-    toMetadataStorageCard(metadataStorageMode),
+  const badges: readonly StatusBadge[] = [
+    toGenerationBadge(status),
+    toProviderBadge(status),
+    toFileStorageBadge(fileStorageMode),
+    toMetadataStorageBadge(metadataStorageMode),
     {
-      label: "내보내기",
-      summary: "개별 이미지와 ZIP 파일을 내려받을 수 있습니다.",
+      key: "download",
+      label: "다운로드",
       tone: "ready",
-      value: "다운로드",
+      value: "가능",
     },
   ];
 
   return (
-    <section className={styles.panel} aria-label="상품 이미지 스튜디오 상태 요약">
+    <section className={styles.panel} aria-label="작업 상태">
       <div className={styles.heading}>
-        <h2>스튜디오 상태</h2>
-        <p>상품 이미지 스튜디오 상태 요약</p>
+        <h2>작업 상태</h2>
       </div>
-      <div className={styles.grid}>
-        {cards.map((card) => (
+      <div className={styles.badges}>
+        {badges.map((badge) => (
           <article
-            aria-label={`${card.label}: ${card.value}. ${card.summary}`}
-            className={styles.card}
-            data-tone={card.tone}
-            key={card.label}
+            aria-label={`${badge.label}: ${badge.value}`}
+            className={styles.badge}
+            data-status-badge={badge.key}
+            data-tone={badge.tone}
+            key={badge.key}
           >
-            <span>{card.label}</span>
-            <strong>{card.value}</strong>
+            <span className={styles.label}>{badge.label}</span>
+            <strong className={styles.value}>{badge.value}</strong>
           </article>
         ))}
       </div>
@@ -57,88 +59,79 @@ export function ProductImageStudioStatusPanel({
   );
 }
 
-function toGenerationCard(status: ProductImageStudioProviderStatus): StatusCard {
+function toGenerationBadge(status: ProductImageStudioProviderStatus): StatusBadge {
   if (status.generation.status === "enabled") {
     return {
-      label: "이미지 생성",
-      summary: "실제 이미지 생성 요청을 보낼 준비가 되어 있습니다.",
+      key: "generation",
+      label: "생성",
       tone: "ready",
       value: "가능",
     };
   }
 
   return {
-    label: "이미지 생성",
-    summary: getBlockedSummary(status.generation.reason),
+    key: "generation",
+    label: "생성",
     tone: "blocked",
-    value: "차단됨",
+    value: "차단",
   };
 }
 
-function toProviderCard(status: ProductImageStudioProviderStatus): StatusCard {
-  if (status.generation.status === "enabled") {
+function toProviderBadge(status: ProductImageStudioProviderStatus): StatusBadge {
+  const providerConnected =
+    status.provider.configured && status.provider.credentialConfigured && status.provider.modelConfigured;
+
+  if (providerConnected) {
     return {
-      label: "생성 연결",
-      summary: "필요한 서버 설정이 준비되어 있습니다.",
+      key: "provider",
+      label: "연결",
       tone: "ready",
       value: "연결됨",
     };
   }
 
-  const value = status.provider.configured && status.provider.modelConfigured ? "확인 필요" : "설정 필요";
   return {
-    label: "생성 연결",
-    summary: "키와 모델 값은 숨깁니다.",
+    key: "provider",
+    label: "연결",
     tone: "neutral",
-    value,
+    value: "설정 필요",
   };
 }
 
-function toFileStorageCard(storageMode: ProductImageStudioFileStorageMode): StatusCard {
+function toFileStorageBadge(storageMode: ProductImageStudioFileStorageMode): StatusBadge {
   switch (storageMode) {
     case "blob":
       return {
-        label: "파일 저장소",
-        summary: "업로드와 생성 결과 이미지를 보관합니다.",
+        key: "file-storage",
+        label: "저장",
         tone: "ready",
         value: "Blob",
       };
     case "local":
       return {
-        label: "파일 저장소",
-        summary: "개발 환경의 로컬 저장소입니다.",
+        key: "file-storage",
+        label: "저장",
         tone: "neutral",
         value: "로컬",
       };
   }
 }
 
-function toMetadataStorageCard(storageMode: ProductImageStudioRepositoryStorageMode): StatusCard {
+function toMetadataStorageBadge(storageMode: ProductImageStudioRepositoryStorageMode): StatusBadge {
   switch (storageMode) {
     case "postgres":
       return {
-        label: "작업 기록",
-        summary: "프로젝트와 생성 기록을 운영 DB에 보관합니다.",
+        key: "metadata",
+        label: "기록",
         tone: "ready",
         value: "DB",
       };
     case "memory":
       return {
-        label: "작업 기록",
-        summary: "현재 실행 중인 서버 메모리에만 보관합니다.",
+        key: "metadata",
+        label: "기록",
         tone: "neutral",
         value: "메모리",
       };
-  }
-}
-
-function getBlockedSummary(reason: Extract<ProductImageStudioProviderStatus["generation"], { readonly status: "blocked" }>["reason"]): string {
-  switch (reason) {
-    case "generation_disabled":
-      return "게이트 닫힘. 승인 전까지 실제 provider 호출은 차단됩니다.";
-    case "provider_not_configured":
-      return "생성 연결 설정 필요. 화면에는 설정값을 표시하지 않습니다.";
-    case "credential_missing":
-      return "서버 credential 확인 필요. 비밀값은 화면에 표시하지 않습니다.";
   }
 }

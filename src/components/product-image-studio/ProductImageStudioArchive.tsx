@@ -32,8 +32,9 @@ export function ProductImageStudioProjectArchive({ projects }: ProductImageStudi
   return (
     <section className={styles.archive} aria-label="프로젝트 보관함">
       <ArchiveHeading
-        title="비주얼 보관함"
-        description="프로젝트별 상품 이미지 제작 기록과 생성 결과 수를 확인합니다."
+        eyebrow="리소스"
+        title="프로젝트 보관함"
+        description="상품컷 리소스에서 프로젝트별 상품 이미지 제작 기록과 생성 결과 수를 확인합니다."
         action={<Link href="/product-image-studio">새 프로젝트</Link>}
       />
       {projects.length === 0 ? (
@@ -68,7 +69,11 @@ export function ProductImageStudioProjectArchive({ projects }: ProductImageStudi
 export function ProductImageStudioResultArchive({ results }: ProductImageStudioResultArchiveProps) {
   return (
     <section className={styles.archive} aria-label="결과 보관함">
-      <ArchiveHeading title="상품컷 갤러리" description="결과 보관함에서 프로젝트 전체의 생성 이미지를 한 번에 확인합니다." />
+      <ArchiveHeading
+        eyebrow="리소스"
+        title="상품컷 갤러리"
+        description="상품컷 리소스의 결과 보관함에서 프로젝트 전체의 생성 이미지를 한 번에 확인합니다."
+      />
       {results.length === 0 ? (
         <ArchiveEmpty title="아직 생성 결과가 없습니다." description="카드, 봉투, 봉합스티커 설정샷을 생성하면 이곳에 표시됩니다." />
       ) : (
@@ -85,8 +90,9 @@ export function ProductImageStudioProjectDetailArchive({
   return (
     <section className={styles.archive} aria-label="프로젝트 결과">
       <ArchiveHeading
+        eyebrow="리소스"
         title="프로젝트 결과"
-        description={`${project.name}의 생성 이미지를 출력 타입별로 확인합니다.`}
+        description={`${project.name}의 상품컷 리소스를 출력 타입별로 확인합니다.`}
         action={results.length > 0 ? <a href={results[0].projectZipUrl}>프로젝트 ZIP 다운로드</a> : undefined}
       />
       <dl className={styles.summaryStrip}>
@@ -163,15 +169,18 @@ function ResultGrid({
 function ArchiveHeading({
   action,
   description,
+  eyebrow,
   title,
 }: {
   readonly action?: React.ReactNode;
   readonly description: string;
+  readonly eyebrow?: string;
   readonly title: string;
 }) {
   return (
     <div className={styles.heading}>
       <div>
+        {eyebrow ? <p className={styles.eyebrow}>{eyebrow}</p> : null}
         <h2>{title}</h2>
         <p>{description}</p>
       </div>

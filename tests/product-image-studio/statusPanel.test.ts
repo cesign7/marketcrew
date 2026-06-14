@@ -11,7 +11,7 @@ describe("product image studio status panel", () => {
     vi.unstubAllEnvs();
   });
 
-  it("shows default blocked generation state, storage mode, and export status without secrets", () => {
+  it("renders blocked generation as compact app-frame status badges without secrets", () => {
     const html = renderToStaticMarkup(
       createElement(ProductImageStudioStatusPanel, {
         fileStorageMode: "local",
@@ -20,20 +20,32 @@ describe("product image studio status panel", () => {
       }),
     );
 
-    expect(html).toContain("스튜디오 상태");
-    expect(html).toContain("상품 이미지 스튜디오 상태 요약");
-    expect(html).toContain("차단됨");
-    expect(html).toContain("게이트 닫힘");
+    expect(html).toContain("작업 상태");
+    expect(html).toContain('data-status-badge="generation"');
+    expect(html).toContain('data-status-badge="provider"');
+    expect(html).toContain('data-status-badge="file-storage"');
+    expect(html).toContain('data-status-badge="metadata"');
+    expect(html).toContain('data-status-badge="download"');
+    expect(html).toContain("생성");
+    expect(html).toContain("차단");
+    expect(html).toContain("연결");
+    expect(html).toContain("설정 필요");
+    expect(html).toContain("저장");
     expect(html).toContain("로컬");
+    expect(html).toContain("기록");
     expect(html).toContain("메모리");
     expect(html).toContain("다운로드");
+    expect(html).not.toContain("상품 이미지 스튜디오 상태 요약");
+    expect(html).not.toContain("게이트 닫힘");
     expect(html).not.toContain("OPENAI_API_KEY");
     expect(html).not.toContain("PRODUCT_IMAGE_STUDIO");
     expect(html).not.toContain("configured-test-secret");
     expect(html).not.toContain("gpt-image-1");
+    expect(html).not.toContain("Lovable");
+    expect(html).not.toContain("Photoroom");
   });
 
-  it("summarizes enabled generation without printing model or credential values", () => {
+  it("renders enabled generation and durable stores as compact status badges without model values", () => {
     const html = renderToStaticMarkup(
       createElement(ProductImageStudioStatusPanel, {
         fileStorageMode: "blob",
@@ -47,13 +59,25 @@ describe("product image studio status panel", () => {
       }),
     );
 
+    expect(html).toContain("작업 상태");
+    expect(html).toContain('data-status-badge="generation"');
+    expect(html).toContain("생성");
     expect(html).toContain("가능");
+    expect(html).toContain('data-status-badge="provider"');
+    expect(html).toContain("연결");
     expect(html).toContain("연결됨");
+    expect(html).toContain('data-status-badge="file-storage"');
+    expect(html).toContain("저장");
     expect(html).toContain("Blob");
+    expect(html).toContain('data-status-badge="metadata"');
+    expect(html).toContain("기록");
     expect(html).toContain("DB");
+    expect(html).toContain("다운로드");
+    expect(html).not.toContain("상품 이미지 스튜디오 상태 요약");
     expect(html).not.toContain("configured-test-secret");
     expect(html).not.toContain("gpt-image-1");
     expect(html).not.toContain("OPENAI_API_KEY");
+    expect(html).not.toContain("PRODUCT_IMAGE_STUDIO");
   });
 
   it("uses the Railway provider state on the main studio page in hosted frontend runtime", async () => {
@@ -91,9 +115,16 @@ describe("product image studio status panel", () => {
 
     const html = renderToStaticMarkup(await ProductImageStudioPage());
 
+    expect(html).toContain("작업 상태");
+    expect(html).toContain("생성");
     expect(html).toContain("가능");
+    expect(html).toContain("연결");
+    expect(html).toContain("저장");
+    expect(html).toContain("기록");
     expect(html).not.toContain("차단됨");
     expect(html).not.toContain("hidden-gemini-model");
+    expect(html).not.toContain("Lovable");
+    expect(html).not.toContain("Photoroom");
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       "https://api.marketcrew.app/api/product-image-studio/provider-settings",
     );

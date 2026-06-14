@@ -117,7 +117,7 @@ export function ProductImageStudioWizard({ initialProviderSettings, providerStat
           <section className={styles.conceptPanel} aria-live="polite">
             <div className={styles.sectionTitle}>
               <h3>추천 콘셉트</h3>
-              <p>선택한 형식과 업로드 이미지를 기준으로 다음 단계에서 생성합니다.</p>
+              <p>선택한 형식과 업로드 이미지를 기준으로 생성 명령을 준비합니다.</p>
             </div>
             <p className={styles.emptyText}>아직 추천 콘셉트가 없습니다.</p>
           </section>

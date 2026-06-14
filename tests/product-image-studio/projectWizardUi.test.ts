@@ -32,6 +32,13 @@ describe("product image studio project wizard UI", () => {
     expect(html).toContain("빠르게 만들 이미지");
     expect(html).toContain("상품 캔버스");
     expect(html).toContain("카드만으로 시작");
+    expect(html).toContain("세트컷으로 확장");
+    expect(html).toContain("목록용 상품컷");
+    expect(html).toContain("카드 슬롯");
+    expect(html).toContain("봉투 슬롯");
+    expect(html).toContain("봉합스티커 슬롯");
+    expect(html).toContain("필수 시작점");
+    expect(html).toContain("선택 확장");
     expect(html).toContain("접이식 카드");
     expect(html).toContain("엽서형 카드");
     expect(html).toContain("설정샷 자세 조정");
@@ -50,6 +57,10 @@ describe("product image studio project wizard UI", () => {
     expect(html).toContain("목업 합성 우선");
     expect(html).toContain("자동 검수 기준");
     expect(html).toContain("콘셉트 추천");
+    expect(html).toContain("추천 콘셉트");
+    expect(html).toContain("생성 명령");
+    expect(html).toContain("빠른 초안");
+    expect(html).toContain("고품질");
     expect(html).toMatch(/<button[^>]*disabled/);
     expect(html).not.toContain("접이식 100x150");
     expect(html).not.toContain("네이버 검색광고");

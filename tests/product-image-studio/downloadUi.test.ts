@@ -17,10 +17,14 @@ describe("product image studio download UI", () => {
       }),
     );
 
-    expect(html).toContain("비율 및 다운로드");
+    expect(html).toContain("상품컷 갤러리");
+    expect(html).toContain("비율 변경");
     expect(html).toContain("1:1 상품 목록");
+    expect(html).toContain("목록용");
     expect(html).toContain("4:5 대표용");
+    expect(html).toContain("대표용");
     expect(html).toContain("3:4 상세 이미지");
+    expect(html).toContain("상세페이지용");
     expect(html).toContain("16:9 확장 콘텐츠");
     expect(html).toContain("사용자 지정");
     expect(html).toContain("다운로드할 이미지가 없습니다.");
@@ -61,7 +65,8 @@ describe("product image studio download UI", () => {
       }),
     );
 
-    expect(html).toContain("비율 변경 생성");
+    expect(html).toContain("비율 변경 다시 만들기");
+    expect(html).toContain("다시 만들기");
     expect(html).toContain("개별 다운로드");
     expect(html).toContain("ZIP 다운로드");
     expect(html).toContain("/api/product-image-studio/projects/project-1/downloads.zip");

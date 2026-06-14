@@ -4,94 +4,96 @@
   border: 1px solid rgba(29, 36, 48, 0.1);
   border-radius: 8px;
   display: flex;
-  gap: 12px;
-  padding: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 10px;
 }
 
 .heading {
   align-items: baseline;
-  display: grid;
+  display: flex;
   flex: 0 0 auto;
-  gap: 2px;
-  padding: 0 8px;
+  min-height: 30px;
+  padding-right: 4px;
 }
 
 .heading h2 {
-  font-size: 14px;
+  color: var(--text);
+  font-size: 13px;
   letter-spacing: 0;
   margin: 0;
   white-space: nowrap;
 }
 
-.heading p,
-.card span {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.55;
-  margin: 0;
-}
-
-.grid {
+.badges {
+  align-items: center;
   display: flex;
   flex: 1 1 auto;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
-.card {
+.badge {
   align-items: center;
   background: #fff;
   border: 1px solid rgba(29, 36, 48, 0.1);
-  border-radius: 8px;
-  display: flex;
-  gap: 8px;
-  justify-content: space-between;
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  min-height: 30px;
   min-width: 0;
-  padding: 8px 10px;
+  padding: 5px 9px;
 }
 
-.card span {
+.label {
+  color: var(--muted);
   font-size: 12px;
   font-weight: 900;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 
-.card strong {
+.value {
   color: var(--text);
   font-size: 13px;
   line-height: 1.35;
-  overflow-wrap: anywhere;
-  text-align: right;
+  white-space: nowrap;
 }
 
-.card[data-tone="blocked"] {
+.badge[data-tone="blocked"] {
   background: #fff7f5;
   border-color: #f3b8b0;
 }
 
-.card[data-tone="blocked"] strong {
+.badge[data-tone="blocked"] .value {
   color: var(--danger);
 }
 
-.card[data-tone="ready"] {
+.badge[data-tone="ready"] {
   background: #f1fbf6;
   border-color: #a9dec2;
 }
 
-.card[data-tone="ready"] strong {
+.badge[data-tone="ready"] .value {
   color: var(--good);
 }
 
 @media (max-width: 920px) {
   .panel {
     align-items: stretch;
-    display: grid;
+    display: flex;
   }
 }
 
 @media (max-width: 560px) {
-  .grid {
-    display: grid;
+  .badges {
+    align-items: stretch;
+    display: flex;
+  }
+
+  .badge {
+    justify-content: space-between;
   }
 }

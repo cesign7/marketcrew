@@ -25,13 +25,13 @@ type FormMessage = { readonly text: string; readonly tone: "error" | "success" }
 
 const PROVIDER_OPTIONS: readonly ProductImageStudioProviderCardOption[] = [
   {
-    apiKeyHint: "sk-로 시작하는 OpenAI 키",
+    apiKeyHint: "관리 콘솔에서 발급한 비밀 키",
     description: "설정샷, 목업 합성, 고품질 인쇄물 이미지 생성에 사용합니다.",
     label: "OpenAI",
     provider: "openai",
   },
   {
-    apiKeyHint: "AI Studio에서 발급한 AIza... 키",
+    apiKeyHint: "관리 콘솔에서 발급한 비밀 키",
     description: "참조 이미지 기반 장면 생성과 빠른 비율 초안에 사용합니다.",
     label: "Gemini",
     provider: "gemini",
@@ -59,19 +59,19 @@ export function ProductImageStudioProviderSettingsForm({
   );
   const hasPendingDefaultCredential = defaultState.apiKey.trim().length > 0;
   const canOpenGate = defaultState.hasCredential || hasPendingDefaultCredential;
-  const gateSummary = generationEnabled ? `${providerLabel(defaultProvider)} 실제 호출 허용 중` : "실제 provider 호출 차단 중";
+  const gateSummary = generationEnabled ? `${providerLabel(defaultProvider)} 생성 허용 중` : "실제 생성 차단 중";
 
   return (
-    <section className={styles.panel} aria-label="이미지 생성 provider 설정">
+    <section className={styles.panel} aria-label="이미지 생성 연결 리소스 설정">
       <div className={styles.heading}>
         <div>
-          <span>연결 작업대</span>
-          <h2>생성 연결 설정</h2>
-          <p>기본 생성 엔진을 고르고 provider별 키는 서버에만 저장합니다.</p>
+          <span>연결 리소스</span>
+          <h2>이미지 생성 연결</h2>
+          <p>기본 생성 엔진을 고르고 비밀 키는 서버에만 저장합니다.</p>
         </div>
         <div className={styles.badges} aria-label="저장 상태">
           <span>{storageMode === "postgres" ? "운영 DB" : "서버 메모리"}</span>
-          <strong>{hasAnyCredential ? "키 저장됨" : "키 필요"}</strong>
+          <strong>{hasAnyCredential ? "저장됨" : "연결 필요"}</strong>
         </div>
       </div>
 
@@ -125,12 +125,12 @@ export function ProductImageStudioProviderSettingsForm({
           </button>
         </div>
         <p className={styles.gateHint}>
-          {canOpenGate ? "현재 기본 provider 설정으로 저장됩니다." : "기본 provider에 API 키를 먼저 저장해 주세요."}
+          {canOpenGate ? "현재 기본 생성 엔진 설정으로 저장됩니다." : "기본 생성 엔진의 비밀 키를 먼저 저장해 주세요."}
         </p>
       </section>
 
       <div className={styles.footer}>
-        <p>{updatedAt ? `마지막 저장: ${formatDateTime(updatedAt)}` : "저장된 provider 연결이 없습니다."}</p>
+        <p>{updatedAt ? `마지막 저장: ${formatDateTime(updatedAt)}` : "저장된 연결 리소스가 없습니다."}</p>
         {message ? <strong data-tone={message.tone}>{message.text}</strong> : null}
       </div>
     </section>
@@ -145,16 +145,16 @@ export function ProductImageStudioProviderSettingsForm({
   }
 
   function handleSaveProvider(provider: ProductImageStudioProviderName): void {
-    void persistProviderSettings(provider, generationEnabled, "provider 연결 정보를 저장했습니다.");
+    void persistProviderSettings(provider, generationEnabled, "연결 리소스를 저장했습니다.");
   }
 
   function handleSetDefaultProvider(provider: ProductImageStudioProviderName): void {
     setDefaultProvider(provider);
     if (providerStates[provider].hasCredential || providerStates[provider].apiKey.trim().length > 0) {
-      void persistProviderSettings(provider, generationEnabled, "기본 provider를 변경했습니다.");
+      void persistProviderSettings(provider, generationEnabled, "기본 생성 엔진을 변경했습니다.");
       return;
     }
-    setMessage({ text: "API 키를 저장하면 기본 provider로 사용할 수 있습니다.", tone: "error" });
+    setMessage({ text: "비밀 키를 저장하면 기본 생성 엔진으로 사용할 수 있습니다.", tone: "error" });
   }
 
   async function handleDisconnectProvider(provider: ProductImageStudioProviderName): Promise<void> {
@@ -172,7 +172,7 @@ export function ProductImageStudioProviderSettingsForm({
 
   async function handleGateChange(nextGenerationEnabled: boolean): Promise<void> {
     if (nextGenerationEnabled && !canOpenGate) {
-      setMessage({ text: "먼저 기본 provider의 API 키를 저장하거나 입력해 주세요.", tone: "error" });
+      setMessage({ text: "먼저 기본 생성 엔진의 비밀 키를 저장하거나 입력해 주세요.", tone: "error" });
       return;
     }
     await persistProviderSettings(

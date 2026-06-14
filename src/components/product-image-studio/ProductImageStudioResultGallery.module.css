@@ -1,15 +1,14 @@
 .gallery {
-  background: #fff;
-  border: 1px solid rgba(29, 36, 48, 0.1);
-  border-radius: 8px;
   display: grid;
-  gap: 12px;
-  padding: 12px;
+  gap: 14px;
+  min-width: 0;
 }
 
 .heading {
-  display: grid;
-  gap: 4px;
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
 }
 
 .heading h3,
@@ -22,12 +21,39 @@
   font-size: 16px;
 }
 
+.eyebrow {
+  color: var(--brand-strong);
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  margin-bottom: 3px;
+}
+
+.useCases {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.useCases span {
+  background: #f5f7f8;
+  border: 1px solid rgba(29, 36, 48, 0.1);
+  border-radius: 999px;
+  color: #344054;
+  font-size: 11px;
+  font-weight: 900;
+  padding: 5px 8px;
+}
+
 .groupHeading h4 {
   font-size: 14px;
 }
 
 .heading p,
 .groupHeading p,
+.actionHint,
 .resultCard p,
 .empty {
   color: var(--muted);
@@ -44,16 +70,23 @@
 
 .group,
 .featuredGroup {
-  border: 1px solid rgba(29, 36, 48, 0.1);
-  border-radius: 8px;
+  border-top: 1px solid rgba(29, 36, 48, 0.1);
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 12px;
+  padding-top: 12px;
 }
 
 .featuredGroup {
-  background: #ecfdf3;
   border-color: #75c99c;
+  padding-top: 14px;
+}
+
+.featuredGroup .resultList {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.group .resultList {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 
 .groupHeading {
@@ -78,18 +111,28 @@
   border: 1px solid rgba(29, 36, 48, 0.1);
   border-radius: 8px;
   display: grid;
-  gap: 6px;
+  gap: 8px;
   padding: 10px;
 }
 
-.previewImage {
-  aspect-ratio: 1 / 1;
+.previewImage,
+.previewPlaceholder {
+  aspect-ratio: 4 / 5;
   background: #f5f7f8;
   border: 1px solid rgba(29, 36, 48, 0.1);
   border-radius: 6px;
+  color: var(--muted);
   display: block;
+  font-size: 12px;
+  font-weight: 800;
   object-fit: cover;
   width: 100%;
+}
+
+.previewPlaceholder {
+  align-content: center;
+  display: grid;
+  justify-items: center;
 }
 
 .resultCard div {
@@ -97,14 +140,27 @@
   display: flex;
   gap: 8px;
   justify-content: space-between;
+  min-width: 0;
 }
 
 .resultCard strong {
   font-size: 13px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .resultCard span {
   color: var(--brand-strong);
   font-size: 12px;
   font-weight: 900;
+}
+
+@media (max-width: 720px) {
+  .heading {
+    display: grid;
+  }
+
+  .useCases {
+    justify-content: flex-start;
+  }
 }

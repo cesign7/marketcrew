@@ -13,8 +13,8 @@ export default async function ProductImageStudioSettingsPage() {
   return (
     <ProductImageStudioShell
       activePath="/product-image-studio/settings"
-      description="AI provider 키와 실제 생성 호출 여부를 관리합니다."
-      title="이미지 설정"
+      description="이미지 생성 연결 리소스와 생성 게이트를 관리합니다."
+      title="연결 리소스"
     >
       <section className="page-stack">
         <ProductImageStudioStatusPanel

@@ -50,19 +50,24 @@ describe("product image studio result gallery", () => {
 
     const html = renderToStaticMarkup(createElement(ProductImageStudioResultGallery, { results, wizardState }));
 
-    expect(html).toContain("결과 갤러리");
+    expect(html).toContain("상품컷 갤러리");
     expect(html).toContain("상품컷 미리보기");
     expect(html).toContain("세트컷");
-    expect(html).toContain("카드");
-    expect(html).toContain("봉투");
-    expect(html).toContain("봉합스티커");
+    expect(html).toContain("카드 단독컷");
+    expect(html).toContain("봉투 단독컷");
+    expect(html).toContain("봉합스티커 단독컷");
     expect(html).toContain("세트 구성");
     expect(html).toContain("목록용");
+    expect(html).toContain("대표용");
+    expect(html).toContain("상세페이지용");
+    expect(html).toContain("다시 만들기");
+    expect(html).toContain("비율 변경");
     expect(html).toContain("접이식 카드 - 접은 카드 닫힌 컷");
     expect(html).toContain("원본안");
     expect(html).toContain("비교안 2");
-    expect(html).toContain("아직 봉투 결과가 없습니다.");
-    expect(html).toContain("아직 봉합스티커 결과가 없습니다.");
+    expect(html).toContain("아직 봉투 단독컷 결과가 없습니다.");
+    expect(html).toContain("아직 봉합스티커 단독컷 결과가 없습니다.");
+    expect(html).not.toContain("<h4>카드</h4>");
   });
 
   it("renders result preview images when the generation response includes preview URLs", () => {

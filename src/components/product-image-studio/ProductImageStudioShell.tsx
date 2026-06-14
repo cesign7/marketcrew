@@ -20,26 +20,26 @@ const PRODUCT_IMAGE_STUDIO_NAV_AREAS: readonly ProductImageStudioNavigationArea[
   {
     key: "studio",
     href: "/product-image-studio",
-    label: "스튜디오",
-    description: "이미지 제작",
+    label: "이미지 제작",
+    description: "새 상품컷 준비",
   },
   {
     key: "projects",
     href: "/product-image-studio/projects",
     label: "프로젝트",
-    description: "인쇄물 세트",
+    description: "작업 묶음",
   },
   {
     key: "results",
     href: "/product-image-studio/results",
-    label: "결과 보관함",
-    description: "생성 이미지",
+    label: "결과",
+    description: "완성 이미지",
   },
   {
     key: "settings",
     href: "/product-image-studio/settings",
-    label: "이미지 설정",
-    description: "생성 상태",
+    label: "설정",
+    description: "연결 관리",
   },
 ];
 
@@ -52,12 +52,14 @@ export function ProductImageStudioShell({ activePath, children, description, tit
 
   return (
     <main className={styles.shell}>
-      <header className={styles.header}>
-        <div className={styles.brandLine}>
-          <div className={styles.brand}>
-            <strong>마켓크루</strong>
-            <span>AI 이미지 작업대</span>
-          </div>
+      <aside className={styles.resourceRail} aria-label="상품 이미지 스튜디오 리소스">
+        <div className={styles.railBrand}>
+          <strong>마켓크루</strong>
+          <span>MarketCrew 비주얼 스튜디오</span>
+        </div>
+
+        <div className={styles.railSection}>
+          <span className={styles.sectionLabel}>리소스</span>
           <nav className={styles.nav} aria-label="상품 이미지 스튜디오 메뉴">
             {PRODUCT_IMAGE_STUDIO_NAV_AREAS.map((area) => (
               <Link
@@ -73,24 +75,26 @@ export function ProductImageStudioShell({ activePath, children, description, tit
             ))}
           </nav>
         </div>
+      </aside>
 
-        <div className={styles.titleRow}>
+      <section className={styles.workspace}>
+        <header className={styles.topBar}>
           <div className={styles.titleCopy}>
-            <span>상품 이미지 스튜디오</span>
+            <span>작업 공간</span>
             <h1>{title}</h1>
             <p>{description}</p>
           </div>
-          <div className={styles.headerActions}>
+          <div className={styles.topBarActions}>
             <Link className={styles.primaryLink} href="/product-image-studio" prefetch={false}>
-              새 이미지 만들기
+              새 상품컷
             </Link>
             <LogoutButton />
           </div>
-        </div>
-      </header>
+        </header>
 
-      <section className={styles.workspace}>
-        {children}
+        <section className={styles.contentWell}>
+          {children}
+        </section>
       </section>
     </main>
   );

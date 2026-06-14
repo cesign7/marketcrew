@@ -60,7 +60,7 @@ export function ProductImageStudioGenerationPanel({
   return (
     <section className={styles.panel} aria-label="콘셉트와 생성 설정">
       <div className={styles.heading}>
-        <h3>생성 명령</h3>
+        <h3>추천 콘셉트</h3>
         <p>콘셉트를 고르고 현재 준비된 구성품으로 초안을 만듭니다.</p>
       </div>
 
@@ -96,8 +96,8 @@ export function ProductImageStudioGenerationPanel({
       {outputChoices.length === 0 ? <p className={styles.summary}>생성 가능한 출력이 아직 없습니다.</p> : null}
 
       <div className={styles.heading}>
-        <h3>이번 생성 provider</h3>
-        <p>{selectedProviderOption?.helper ?? "provider 연결 상태를 확인해 주세요."}</p>
+        <h3>이번 생성 엔진</h3>
+        <p>{selectedProviderOption?.helper ?? "생성 엔진 연결 상태를 확인해 주세요."}</p>
       </div>
       <div className={styles.providerList}>
         {providerOptions.map((option) => (
@@ -116,6 +116,10 @@ export function ProductImageStudioGenerationPanel({
         ))}
       </div>
 
+      <div className={styles.heading}>
+        <h3>생성 명령</h3>
+        <p>위에서 고른 빠른 초안 또는 고품질 모드로 요청합니다.</p>
+      </div>
       <div className={styles.actionBox}>
         <p className={`${styles.status} ${statusClassName}`}>{generationState.message}</p>
         <div className={styles.actions}>
