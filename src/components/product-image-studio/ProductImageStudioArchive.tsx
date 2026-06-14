@@ -30,15 +30,15 @@ type ProductImageStudioProjectDetailArchiveProps = {
 
 export function ProductImageStudioProjectArchive({ projects }: ProductImageStudioProjectArchiveProps) {
   return (
-    <section className={styles.archive} aria-label="프로젝트 보관함">
+    <section className={styles.archive} aria-label="디자인">
       <ArchiveHeading
-        eyebrow="리소스"
-        title="프로젝트 보관함"
-        description="상품컷 리소스에서 프로젝트별 상품 이미지 제작 기록과 생성 결과 수를 확인합니다."
-        action={<Link href="/product-image-studio">새 프로젝트</Link>}
+        eyebrow="내 콘텐츠"
+        title="디자인"
+        description="디자인별 제작 기록과 생성 결과 수를 확인합니다."
+        action={<Link href="/product-image-studio/ai-tools/product-staging">새 디자인</Link>}
       />
       {projects.length === 0 ? (
-        <ArchiveEmpty title="저장된 프로젝트가 없습니다." description="스튜디오에서 이미지를 생성하면 이곳에 프로젝트가 쌓입니다." />
+        <ArchiveEmpty title="저장된 디자인이 없습니다." description="스튜디오에서 이미지를 생성하면 이곳에 디자인이 쌓입니다." />
       ) : (
         <div className={styles.projectGrid}>
           {projects.map((project) => (
@@ -55,7 +55,7 @@ export function ProductImageStudioProjectArchive({ projects }: ProductImageStudi
                 <Metric label="마지막 활동" value={formatProductImageStudioArchiveDate(project.latestResultAt)} />
               </dl>
               <div className={styles.actions}>
-                <Link href={`/product-image-studio/projects/${encodeURIComponent(project.id)}`}>상세 보기</Link>
+                <Link href={`/product-image-studio/designs/${encodeURIComponent(project.id)}`}>상세 보기</Link>
                 {project.resultCount > 0 ? <a href={project.zipDownloadUrl}>ZIP 다운로드</a> : null}
               </div>
             </article>
@@ -68,11 +68,11 @@ export function ProductImageStudioProjectArchive({ projects }: ProductImageStudi
 
 export function ProductImageStudioResultArchive({ results }: ProductImageStudioResultArchiveProps) {
   return (
-    <section className={styles.archive} aria-label="결과 보관함">
+    <section className={styles.archive} aria-label="활동">
       <ArchiveHeading
-        eyebrow="리소스"
+        eyebrow="활동"
         title="상품컷 갤러리"
-        description="상품컷 리소스의 결과 보관함에서 프로젝트 전체의 생성 이미지를 한 번에 확인합니다."
+        description="최근 생성 이미지를 한 번에 확인합니다."
       />
       {results.length === 0 ? (
         <ArchiveEmpty title="아직 생성 결과가 없습니다." description="카드, 봉투, 봉합스티커 설정샷을 생성하면 이곳에 표시됩니다." />
@@ -88,12 +88,12 @@ export function ProductImageStudioProjectDetailArchive({
   results,
 }: ProductImageStudioProjectDetailArchiveProps) {
   return (
-    <section className={styles.archive} aria-label="프로젝트 결과">
+    <section className={styles.archive} aria-label="디자인 결과">
       <ArchiveHeading
-        eyebrow="리소스"
-        title="프로젝트 결과"
-        description={`${project.name}의 상품컷 리소스를 출력 타입별로 확인합니다.`}
-        action={results.length > 0 ? <a href={results[0].projectZipUrl}>프로젝트 ZIP 다운로드</a> : undefined}
+        eyebrow="디자인"
+        title="디자인 결과"
+        description={`${project.name}의 상품컷 디자인 결과를 출력 타입별로 확인합니다.`}
+        action={results.length > 0 ? <a href={results[0].projectZipUrl}>디자인 ZIP 다운로드</a> : undefined}
       />
       <dl className={styles.summaryStrip}>
         <Metric label="상품" value={getProductImageStudioArchiveProductTypeLabel(project.productType)} />
@@ -102,7 +102,7 @@ export function ProductImageStudioProjectDetailArchive({
         <Metric label="생성일" value={formatProductImageStudioArchiveDate(project.createdAt)} />
       </dl>
       {results.length === 0 ? (
-        <ArchiveEmpty title="이 프로젝트에는 아직 결과가 없습니다." description="스튜디오에서 초안을 생성하면 출력 타입별로 정리됩니다." />
+        <ArchiveEmpty title="이 디자인에는 아직 결과가 없습니다." description="스튜디오에서 초안을 생성하면 출력 타입별로 정리됩니다." />
       ) : (
         <div className={styles.outputSections}>
           {PRODUCT_IMAGE_STUDIO_ARCHIVE_OUTPUT_GROUPS.map((outputType) => {
@@ -155,7 +155,7 @@ function ResultGrid({
               {result.outputType === "card_single" ? <Metric label="카드 자세" value={getProductImageStudioArchivePoseLabel(result.cardPose)} /> : null}
             </dl>
             <div className={styles.actions}>
-              {showProjectLink ? <Link href={`/product-image-studio/projects/${encodeURIComponent(result.projectId)}`}>프로젝트 보기</Link> : null}
+              {showProjectLink ? <Link href={`/product-image-studio/designs/${encodeURIComponent(result.projectId)}`}>디자인 보기</Link> : null}
               <a href={result.previewUrl}>미리보기</a>
               <a href={result.downloadUrl}>다운로드</a>
             </div>

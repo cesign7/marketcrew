@@ -20,7 +20,7 @@
 }
 
 .groupHeader h4 {
-  color: #344054;
+  color: #171717;
   font-size: 14px;
 }
 
@@ -39,7 +39,7 @@
 }
 
 .uploadGroup {
-  background: #fbfcfe;
+  background: #fafafa;
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -82,13 +82,13 @@
 }
 
 .uploadSlot em {
-  background: #fff2ea;
-  color: #b54708;
+  background: #f5f5f5;
+  color: #171717;
 }
 
 .uploadSlot small {
-  background: #eef4f6;
-  color: var(--brand-strong);
+  background: #e6f2ff;
+  color: #0070f3;
 }
 
 .fileInput {
@@ -99,9 +99,9 @@
 
 .uploadSlot strong {
   align-items: center;
-  border: 1px solid #9ccdd8;
+  border: 1px solid #b8dcff;
   border-radius: 8px;
-  color: var(--brand-strong);
+  color: #0070f3;
   display: inline-flex;
   font-size: 13px;
   justify-content: center;

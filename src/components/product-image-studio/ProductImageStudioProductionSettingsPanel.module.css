@@ -33,9 +33,9 @@
 }
 
 .heading > span {
-  background: #eef4f6;
+  background: #e6f2ff;
   border-radius: 999px;
-  color: var(--brand-strong);
+  color: #0070f3;
   flex: 0 0 auto;
   font-size: 12px;
   font-weight: 900;
@@ -55,7 +55,7 @@
 .numberField span,
 .selectField span,
 .specList dt {
-  color: #344054;
+  color: #171717;
   font-size: 13px;
   font-weight: 900;
 }
@@ -103,7 +103,7 @@
 
 .method span,
 .selectedMethod span {
-  color: #344054;
+  color: #171717;
   font-size: 13px;
   font-weight: 900;
 }
@@ -114,8 +114,8 @@
 }
 
 .selectedMethod {
-  background: var(--brand-soft);
-  border-color: #9ccdd8;
+  background: #f0f7ff;
+  border-color: #0070f3;
 }
 
 .advancedDisclosure {
@@ -141,15 +141,15 @@
 }
 
 .advancedDisclosure summary span {
-  color: #344054;
+  color: #171717;
   font-size: 13px;
   font-weight: 900;
 }
 
 .advancedDisclosure summary small {
-  background: #eef4f6;
+  background: #e6f2ff;
   border-radius: 999px;
-  color: var(--brand-strong);
+  color: #0070f3;
   font-size: 12px;
   font-weight: 900;
   padding: 5px 8px;
@@ -171,7 +171,7 @@
 }
 
 .specList div {
-  background: #f8fafb;
+  background: #fafafa;
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -219,7 +219,7 @@
 }
 
 .checklist {
-  background: #f8fafb;
+  background: #fafafa;
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -228,7 +228,7 @@
 }
 
 .checklist h4 {
-  color: #344054;
+  color: #171717;
   font-size: 14px;
 }
 

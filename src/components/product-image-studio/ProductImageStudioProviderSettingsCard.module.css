@@ -1,6 +1,6 @@
 .card {
   background: #fff;
-  border: 1px solid var(--line);
+  border: 1px solid #e5e5e5;
   border-radius: 8px;
   display: grid;
   gap: 12px;
@@ -9,12 +9,12 @@
 }
 
 .card[data-default="true"] {
-  border-color: #5b8def;
-  box-shadow: 0 0 0 2px rgba(91, 141, 239, 0.12);
+  border-color: #0070f3;
+  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.12);
 }
 
 .card[data-connected="true"] {
-  background: #f8fcfa;
+  background: #ffffff;
 }
 
 .header {
@@ -71,7 +71,7 @@
 
 .fields input {
   background: #fff;
-  border: 1px solid var(--line);
+  border: 1px solid #e5e5e5;
   border-radius: 8px;
   color: var(--text);
   font: inherit;
@@ -81,8 +81,8 @@
 }
 
 .fields input:focus {
-  border-color: #5b8def;
-  outline: 2px solid rgba(91, 141, 239, 0.18);
+  border-color: #0070f3;
+  outline: 2px solid rgba(0, 112, 243, 0.18);
 }
 
 .actions {
@@ -93,7 +93,7 @@
 
 .actions button {
   background: #fff;
-  border: 1px solid var(--line);
+  border: 1px solid #e5e5e5;
   border-radius: 8px;
   color: var(--text);
   cursor: pointer;
@@ -105,9 +105,9 @@
 }
 
 .actions button[data-role="default"] {
-  background: #eef4ff;
-  border-color: #9bbcf5;
-  color: #214a92;
+  background: rgba(0, 112, 243, 0.08);
+  border-color: rgba(0, 112, 243, 0.2);
+  color: #0070f3;
 }
 
 .actions button:disabled {

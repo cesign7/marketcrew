@@ -1,8 +1,6 @@
 import type { ProductImageStudioFileStorageMode } from "@/features/product-image-studio/server/assetUploadApi";
 import type { ProductImageStudioRepositoryStorageMode } from "@/features/product-image-studio/server/projectApi";
 import type { ProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
-import { Cable, Database, Download, HardDrive, WandSparkles } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import styles from "./ProductImageStudioStatusPanel.module.css";
 
 type ProductImageStudioStatusPanelProps = {
@@ -16,7 +14,7 @@ type StatusBadgeKey = "download" | "file-storage" | "generation" | "metadata" | 
 type StatusBadge = {
   readonly key: StatusBadgeKey;
   readonly label: string;
-  readonly icon: LucideIcon;
+  readonly marker: string;
   readonly tone: "blocked" | "ready" | "neutral";
   readonly value: string;
 };
@@ -34,7 +32,7 @@ export function ProductImageStudioStatusPanel({
     {
       key: "download",
       label: "다운로드",
-      icon: Download,
+      marker: "내",
       tone: "ready",
       value: "가능",
     },
@@ -55,8 +53,6 @@ export function ProductImageStudioStatusPanel({
 }
 
 function StatusBadgeItem({ badge }: { readonly badge: StatusBadge }) {
-  const Icon = badge.icon;
-
   return (
     <article
       aria-label={`${badge.label}: ${badge.value}`}
@@ -64,7 +60,9 @@ function StatusBadgeItem({ badge }: { readonly badge: StatusBadge }) {
       data-status-badge={badge.key}
       data-tone={badge.tone}
     >
-      <Icon size={14} strokeWidth={2.35} aria-hidden="true" />
+      <span className={styles.badgeMark} aria-hidden="true">
+        {badge.marker}
+      </span>
       <span className={styles.label}>{badge.label}</span>
       <strong className={styles.value}>{badge.value}</strong>
     </article>
@@ -76,7 +74,7 @@ function toGenerationBadge(status: ProductImageStudioProviderStatus): StatusBadg
     return {
       key: "generation",
       label: "생성",
-      icon: WandSparkles,
+      marker: "생",
       tone: "ready",
       value: "가능",
     };
@@ -85,7 +83,7 @@ function toGenerationBadge(status: ProductImageStudioProviderStatus): StatusBadg
   return {
     key: "generation",
     label: "생성",
-    icon: WandSparkles,
+    marker: "생",
     tone: "blocked",
     value: "차단",
   };
@@ -99,7 +97,7 @@ function toProviderBadge(status: ProductImageStudioProviderStatus): StatusBadge 
     return {
       key: "provider",
       label: "연결",
-      icon: Cable,
+      marker: "연",
       tone: "ready",
       value: "연결됨",
     };
@@ -108,7 +106,7 @@ function toProviderBadge(status: ProductImageStudioProviderStatus): StatusBadge 
   return {
     key: "provider",
     label: "연결",
-    icon: Cable,
+    marker: "연",
     tone: "neutral",
     value: "설정 필요",
   };
@@ -120,7 +118,7 @@ function toFileStorageBadge(storageMode: ProductImageStudioFileStorageMode): Sta
       return {
         key: "file-storage",
         label: "저장",
-        icon: HardDrive,
+        marker: "저",
         tone: "ready",
         value: "Blob",
       };
@@ -128,7 +126,7 @@ function toFileStorageBadge(storageMode: ProductImageStudioFileStorageMode): Sta
       return {
         key: "file-storage",
         label: "저장",
-        icon: HardDrive,
+        marker: "저",
         tone: "neutral",
         value: "로컬",
       };
@@ -141,7 +139,7 @@ function toMetadataStorageBadge(storageMode: ProductImageStudioRepositoryStorage
       return {
         key: "metadata",
         label: "기록",
-        icon: Database,
+        marker: "기",
         tone: "ready",
         value: "DB",
       };
@@ -149,7 +147,7 @@ function toMetadataStorageBadge(storageMode: ProductImageStudioRepositoryStorage
       return {
         key: "metadata",
         label: "기록",
-        icon: Database,
+        marker: "기",
         tone: "neutral",
         value: "메모리",
       };

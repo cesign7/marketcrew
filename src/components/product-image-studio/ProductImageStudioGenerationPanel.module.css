@@ -34,7 +34,7 @@
 .providerChoice,
 .outputItem {
   background: #fff;
-  border: 1px solid rgba(29, 36, 48, 0.1);
+  border: 1px solid #e5e5e5;
   border-radius: 8px;
   color: var(--text);
   display: grid;
@@ -51,8 +51,8 @@
 .conceptButton:hover,
 .conceptButton[data-selected="true"],
 .providerChoice[data-selected="true"] {
-  background: #ecfdf3;
-  border-color: #75c99c;
+  background: #f0f7ff;
+  border-color: #0070f3;
 }
 
 .conceptButton strong,
@@ -70,7 +70,7 @@
 }
 
 .selected {
-  color: var(--brand-strong);
+  color: #0070f3;
 }
 
 .outputItem {
@@ -89,8 +89,8 @@
 }
 
 .actionBox {
-  background: #101828;
-  border: 1px solid #101828;
+  background: #171717;
+  border: 1px solid #171717;
   border-radius: 8px;
   display: grid;
   gap: 10px;
@@ -117,9 +117,9 @@
 }
 
 .primary {
-  background: #fff;
+  background: #0070f3;
   border: 0;
-  color: #101828;
+  color: #ffffff;
 }
 
 .secondary {
@@ -135,13 +135,13 @@
 }
 
 .blocked {
-  color: #fecaca;
+  color: #ffffff;
 }
 
 .ready {
-  color: #bbf7d0;
+  color: #ffffff;
 }
 
 .failed {
-  color: #fecaca;
+  color: #ffffff;
 }

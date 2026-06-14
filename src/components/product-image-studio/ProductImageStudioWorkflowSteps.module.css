@@ -9,7 +9,7 @@
 
 .step {
   align-items: center;
-  background: #fbfcfe;
+  background: #fafafa;
   border: 1px solid var(--line);
   border-radius: 8px;
   display: grid;
@@ -21,9 +21,9 @@
 
 .step > span {
   align-items: center;
-  background: #e9eef1;
+  background: #f5f5f5;
   border-radius: 999px;
-  color: #344054;
+  color: #171717;
   display: inline-flex;
   font-size: 12px;
   font-weight: 900;
@@ -33,12 +33,12 @@
 }
 
 .step[data-status="ready"] {
-  background: #f1fbf6;
-  border-color: #a9dec2;
+  background: #f0f7ff;
+  border-color: #b8dcff;
 }
 
 .step[data-status="ready"] > span {
-  background: #198754;
+  background: #0070f3;
   color: #fff;
 }
 

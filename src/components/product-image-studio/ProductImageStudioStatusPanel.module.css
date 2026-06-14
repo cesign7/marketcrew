@@ -1,8 +1,8 @@
 .panel {
   align-items: center;
   background: #ffffff;
-  border: 1px solid rgba(25, 24, 22, 0.1);
-  border-radius: 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -36,8 +36,8 @@
 
 .badge {
   align-items: center;
-  background: #fbfaf7;
-  border: 1px solid rgba(25, 24, 22, 0.1);
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
   border-radius: 999px;
   display: inline-flex;
   gap: 6px;
@@ -47,9 +47,12 @@
   padding: 5px 9px;
 }
 
-.badge svg {
+.badgeMark {
   color: var(--text);
   flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1;
 }
 
 .label {
@@ -68,29 +71,29 @@
 }
 
 .badge[data-tone="blocked"] {
-  background: #fff4f1;
-  border-color: #f3b8b0;
+  background: #fafafa;
+  border-color: #e5e5e5;
 }
 
-.badge[data-tone="blocked"] svg {
-  color: var(--danger);
+.badge[data-tone="blocked"] .badgeMark {
+  color: #666666;
 }
 
 .badge[data-tone="blocked"] .value {
-  color: var(--danger);
+  color: #171717;
 }
 
 .badge[data-tone="ready"] {
-  background: #efffd0;
-  border-color: #d7f58e;
+  background: rgba(0, 112, 243, 0.08);
+  border-color: rgba(0, 112, 243, 0.2);
 }
 
-.badge[data-tone="ready"] svg {
-  color: #2f4a00;
+.badge[data-tone="ready"] .badgeMark {
+  color: #0070f3;
 }
 
 .badge[data-tone="ready"] .value {
-  color: #2f4a00;
+  color: #0070f3;
 }
 
 @media (max-width: 920px) {

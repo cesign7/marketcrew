@@ -1,33 +1,28 @@
 import styles from "./ProductImageStudioWorkbenchIntro.module.css";
-import { Crop, ImagePlus, Layers3, PackageCheck, Sparkles, UploadCloud } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
 const TOOL_ITEMS = [
-  { label: "업로드", icon: UploadCloud },
-  { label: "규격", icon: Crop },
-  { label: "배경", icon: Layers3 },
-  { label: "생성", icon: Sparkles },
+  { label: "업로드", marker: "업" },
+  { label: "규격", marker: "규" },
+  { label: "배경", marker: "배" },
+  { label: "생성", marker: "생" },
 ] as const;
 
 export function ProductImageStudioWorkbenchIntro() {
   return (
     <section className={styles.studioBoard} aria-label="상품 캔버스">
-      <aside className={styles.toolRail} aria-label="이미지 제작 작업대">
-        {TOOL_ITEMS.map((item, index) => {
-          const Icon: LucideIcon = item.icon;
-          return (
-            <button className={index === 0 ? styles.activeTool : styles.toolButton} key={item.label} type="button">
-              <Icon size={19} strokeWidth={2.2} aria-hidden="true" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+      <aside className={styles.toolRail} aria-label="상품컷 작업대">
+        {TOOL_ITEMS.map((item, index) => (
+          <button className={index === 0 ? styles.activeTool : styles.toolButton} key={item.label} type="button">
+            <strong aria-hidden="true">{item.marker}</strong>
+            <span>{item.label}</span>
+          </button>
+        ))}
       </aside>
 
       <div className={styles.canvasPanel}>
         <header className={styles.canvasHeader}>
           <div>
-            <span>이미지 제작 작업대</span>
+            <span>상품컷 작업대</span>
             <h2>상품 캔버스</h2>
           </div>
           <div className={styles.canvasMeta} aria-label="현재 출력 설정">
@@ -52,9 +47,7 @@ export function ProductImageStudioWorkbenchIntro() {
 
       <aside className={styles.inspector} aria-label="설정샷 생성 순서">
         <div className={styles.inspectorHeader}>
-          <strong aria-hidden="true">
-            <PackageCheck size={15} strokeWidth={2.3} />
-          </strong>
+          <strong aria-hidden="true">준</strong>
           <div>
             <span>빠르게 만들 이미지</span>
             <h3>카드만 올려도 시작</h3>
@@ -75,9 +68,7 @@ export function ProductImageStudioWorkbenchIntro() {
           </li>
         </ol>
         <div className={styles.uploadHint}>
-          <strong aria-hidden="true">
-            <ImagePlus size={15} strokeWidth={2.4} />
-          </strong>
+          <strong aria-hidden="true">+</strong>
           <span>업로드한 구성품만 캔버스에 배치합니다.</span>
         </div>
       </aside>

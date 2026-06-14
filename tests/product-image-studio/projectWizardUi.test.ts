@@ -28,7 +28,7 @@ describe("product image studio project wizard UI", () => {
     );
 
     expect(html).toContain("프로젝트 이름");
-    expect(html).toContain("이미지 제작 작업대");
+    expect(html).toContain("상품컷 작업대");
     expect(html).toContain("빠르게 만들 이미지");
     expect(html).toContain("상품 캔버스");
     expect(html).toContain("업로드");

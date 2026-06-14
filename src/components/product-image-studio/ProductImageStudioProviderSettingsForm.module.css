@@ -1,6 +1,6 @@
 .panel {
   background: #fff;
-  border: 1px solid rgba(29, 36, 48, 0.1);
+  border: 1px solid #e5e5e5;
   border-radius: 8px;
   display: grid;
   gap: 18px;
@@ -9,9 +9,10 @@
 
 .heading {
   align-items: start;
-  background: #101828;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
   border-radius: 8px;
-  color: #fff;
+  color: #171717;
   display: flex;
   gap: 16px;
   justify-content: space-between;
@@ -25,7 +26,7 @@
 }
 
 .heading span {
-  color: #a7f3d0;
+  color: #0070f3;
   display: block;
   font-size: 12px;
   font-weight: 900;
@@ -41,7 +42,7 @@
 }
 
 .heading p {
-  color: rgba(255, 255, 255, 0.72);
+  color: #666666;
 }
 
 .badges {
@@ -60,7 +61,7 @@
 }
 
 .badges strong {
-  color: #fff;
+  color: #171717;
   font-size: 14px;
 }
 
@@ -71,7 +72,7 @@
 }
 
 .providerTitle {
-  color: #101828;
+  color: #171717;
   font-size: 16px;
   grid-column: 1 / -1;
   letter-spacing: 0;
@@ -81,7 +82,7 @@
 .gatePanel {
   align-items: center;
   background: #fff;
-  border: 1px solid rgba(29, 36, 48, 0.1);
+  border: 1px solid #e5e5e5;
   border-radius: 8px;
   display: grid;
   gap: 12px;
@@ -90,13 +91,13 @@
 }
 
 .gatePanel[data-state="open"] {
-  background: #f1fbf6;
-  border-color: #80c89e;
+  background: rgba(0, 112, 243, 0.08);
+  border-color: rgba(0, 112, 243, 0.2);
 }
 
 .gatePanel[data-state="closed"] {
-  background: #fff8f1;
-  border-color: #e6b37c;
+  background: #fafafa;
+  border-color: #e5e5e5;
 }
 
 .gateCopy {
@@ -146,14 +147,14 @@
 }
 
 .gateOpen {
-  background: #198754;
+  background: #0070f3;
   color: #fff;
 }
 
 .gateClose {
   background: #fff;
-  border-color: #d38b46;
-  color: #8a4b12;
+  border-color: #e5e5e5;
+  color: #171717;
 }
 
 .gateOpen:disabled,
@@ -179,11 +180,11 @@
 }
 
 .footer strong[data-tone="success"] {
-  color: var(--good);
+  color: #0070f3;
 }
 
 .footer strong[data-tone="error"] {
-  color: var(--danger);
+  color: #171717;
 }
 
 @media (max-width: 760px) {

@@ -1,0 +1,207 @@
+.supportStack {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+}
+
+.panel,
+.dropzone,
+.workflowCard,
+.templateCard,
+.usageCard {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+}
+
+.panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.sectionHeading {
+  display: grid;
+  gap: 5px;
+}
+
+.eyebrow,
+.cardMeta,
+.disabledLabel {
+  color: #666666;
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: 0;
+}
+
+.sectionHeading h2,
+.dropzone h2,
+.emptyState h2,
+.workflowCard h3,
+.templateCard h3,
+.usageCard h3 {
+  color: #171717;
+  font-size: 18px;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.sectionHeading p,
+.dropzone p,
+.emptyState p,
+.workflowCard p,
+.templateCard p,
+.usageCard p,
+.activityMeta {
+  color: #666666;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.dropzone {
+  align-items: center;
+  border-style: dashed;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  min-height: 220px;
+  padding: 28px;
+  text-align: center;
+}
+
+.iconBubble {
+  align-items: center;
+  background: rgba(0, 112, 243, 0.08);
+  border: 1px solid rgba(0, 112, 243, 0.18);
+  border-radius: 8px;
+  color: #0070f3;
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.primaryAction,
+.secondaryAction {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 800;
+  min-height: 38px;
+  padding: 0 13px;
+  text-decoration: none;
+}
+
+.primaryAction {
+  background: #0070f3;
+  color: #ffffff;
+}
+
+.secondaryAction {
+  border: 1px solid #e5e5e5;
+  color: #171717;
+}
+
+.grid,
+.twoColumn {
+  display: grid;
+  gap: 12px;
+}
+
+.grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+
+.twoColumn {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workflowCard,
+.templateCard,
+.usageCard {
+  display: grid;
+  gap: 8px;
+  min-height: 150px;
+  padding: 16px;
+}
+
+.workflowCard[aria-disabled="true"] {
+  background: #fafafa;
+}
+
+.cardTop {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.cardIcon {
+  color: #0070f3;
+}
+
+.disabledLabel {
+  align-self: end;
+  border: 1px solid #e5e5e5;
+  border-radius: 999px;
+  display: inline-flex;
+  justify-self: start;
+  padding: 5px 9px;
+}
+
+.emptyState {
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.activityList {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.activityItem {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  display: grid;
+  gap: 7px;
+  padding: 13px;
+}
+
+.activityItem strong {
+  color: #171717;
+  font-size: 15px;
+}
+
+.activityActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.activityActions a {
+  color: #0070f3;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.usageValue {
+  color: #171717;
+  font-size: 20px;
+  font-weight: 860;
+}
+
+@media (max-width: 840px) {
+  .twoColumn {
+    grid-template-columns: 1fr;
+  }
+}

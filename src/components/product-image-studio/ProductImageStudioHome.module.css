@@ -1,0 +1,267 @@
+.home { display: grid; gap: 14px; }
+
+.startBand {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.startCopy { display: grid; gap: 5px; min-width: 0; }
+
+.startCopy span,
+.sectionHeader a,
+.quickAction small,
+.toolCard small,
+.itemMeta,
+.emptyState p,
+.usageGrid dt {
+  color: #666666;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.startCopy span { color: #0070f3; font-weight: 760; }
+
+.startCopy h2,
+.sectionHeader h2 {
+  color: #171717;
+  letter-spacing: 0;
+  line-height: 1.18;
+  margin: 0;
+}
+
+.startCopy h2 { font-size: 22px; }
+
+.startCopy p {
+  color: #666666;
+  font-size: 14px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.primaryAction,
+.quickAction,
+.toolCard,
+.sectionHeader a { text-decoration: none; }
+
+.primaryAction {
+  align-items: center;
+  background: #0070f3;
+  border-radius: 8px;
+  color: #ffffff;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+}
+
+.quickActions,
+.twoColumnGrid,
+.toolGrid,
+.usageGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.quickActions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.quickAction,
+.toolCard,
+.sectionBlock {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+}
+
+.quickAction,
+.toolCard {
+  align-items: center;
+  color: #171717;
+  display: flex;
+  gap: 12px;
+  min-height: 82px;
+  padding: 14px;
+}
+
+.quickAction:hover,
+.toolCard:hover,
+.sectionHeader a:hover {
+  border-color: rgba(0, 112, 243, 0.28);
+  color: #0070f3;
+}
+
+.quickAction > span:not(.actionIcon),
+.toolCard > span:not(.actionIcon) {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 3px;
+  min-width: 0;
+}
+
+.quickAction strong,
+.toolCard strong,
+.emptyState strong {
+  color: #171717;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.actionIcon {
+  align-items: center;
+  background: rgba(0, 112, 243, 0.08);
+  border: 1px solid rgba(0, 112, 243, 0.16);
+  border-radius: 8px;
+  color: #0070f3;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.twoColumnGrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+
+.sectionBlock {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.sectionHeader {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.sectionHeader h2 { font-size: 17px; }
+
+.sectionHeader a {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  color: #171717;
+  flex: 0 0 auto;
+  font-weight: 760;
+  padding: 7px 10px;
+}
+
+.designList { display: grid; gap: 8px; }
+
+.designItem {
+  align-items: center;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  color: #171717;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-height: 66px;
+  padding: 12px;
+  text-decoration: none;
+}
+
+.designItem:hover { border-color: rgba(0, 112, 243, 0.28); }
+
+.designItem > span:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.designItem strong {
+  font-size: 14px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.designItem small {
+  color: #666666;
+  font-size: 12px;
+}
+
+.itemMeta { flex: 0 0 auto; text-align: right; }
+
+.emptyState {
+  background: #fafafa;
+  border: 1px dashed #d4d4d4;
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  min-height: 104px;
+  padding: 18px;
+}
+
+.emptyState p { margin: 0; }
+
+.toolGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.toolCard em {
+  background: #f5f5f5;
+  border: 1px solid #e5e5e5;
+  border-radius: 999px;
+  color: #666666;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 760;
+  padding: 6px 9px;
+}
+
+.usageGrid { grid-template-columns: repeat(6, minmax(0, 1fr)); margin: 0; }
+
+.usageGrid div {
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 12px;
+}
+
+.usageGrid dt,
+.usageGrid dd { margin: 0; }
+
+.usageGrid dd {
+  color: #171717;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 1100px) {
+  .quickActions,
+  .toolGrid,
+  .usageGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .startBand,
+  .sectionHeader,
+  .designItem {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .primaryAction,
+  .sectionHeader a,
+  .itemMeta { width: 100%; }
+
+  .quickActions,
+  .twoColumnGrid,
+  .toolGrid,
+  .usageGrid { grid-template-columns: 1fr; }
+
+  .itemMeta { text-align: left; }
+}

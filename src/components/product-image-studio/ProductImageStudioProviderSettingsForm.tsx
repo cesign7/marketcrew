@@ -62,10 +62,10 @@ export function ProductImageStudioProviderSettingsForm({
   const gateSummary = generationEnabled ? `${providerLabel(defaultProvider)} 생성 허용 중` : "실제 생성 차단 중";
 
   return (
-    <section className={styles.panel} aria-label="이미지 생성 연결 리소스 설정">
+    <section className={styles.panel} aria-label="이미지 생성 연결 설정">
       <div className={styles.heading}>
         <div>
-          <span>연결 리소스</span>
+          <span>생성 연결</span>
           <h2>이미지 생성 연결</h2>
           <p>기본 생성 엔진을 고르고 비밀 키는 서버에만 저장합니다.</p>
         </div>
@@ -130,7 +130,7 @@ export function ProductImageStudioProviderSettingsForm({
       </section>
 
       <div className={styles.footer}>
-        <p>{updatedAt ? `마지막 저장: ${formatDateTime(updatedAt)}` : "저장된 연결 리소스가 없습니다."}</p>
+        <p>{updatedAt ? `마지막 저장: ${formatDateTime(updatedAt)}` : "저장된 생성 연결이 없습니다."}</p>
         {message ? <strong data-tone={message.tone}>{message.text}</strong> : null}
       </div>
     </section>
@@ -145,7 +145,7 @@ export function ProductImageStudioProviderSettingsForm({
   }
 
   function handleSaveProvider(provider: ProductImageStudioProviderName): void {
-    void persistProviderSettings(provider, generationEnabled, "연결 리소스를 저장했습니다.");
+    void persistProviderSettings(provider, generationEnabled, "생성 연결을 저장했습니다.");
   }
 
   function handleSetDefaultProvider(provider: ProductImageStudioProviderName): void {

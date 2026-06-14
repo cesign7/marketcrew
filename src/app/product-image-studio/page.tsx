@@ -1,7 +1,12 @@
+import { headers } from "next/headers";
+import { ProductImageStudioHome } from "@/components/product-image-studio/ProductImageStudioHome";
 import { ProductImageStudioShell } from "@/components/product-image-studio/ProductImageStudioShell";
-import { ProductImageStudioStatusPanel } from "@/components/product-image-studio/ProductImageStudioStatusPanel";
-import { ProductImageStudioWizard } from "@/components/product-image-studio/ProductImageStudioWizard";
 import { getProductImageStudioFileStorageMode } from "@/features/product-image-studio/server/assetUploadApi";
+import {
+  createProductImageStudioArchivePageRequestOptions,
+  loadProductImageStudioProjectArchivePageData,
+  loadProductImageStudioResultArchivePageData,
+} from "@/features/product-image-studio/server/archivePageData";
 import { loadProductImageStudioProviderSettingsState } from "@/features/product-image-studio/server/providerSettingsState";
 import { getProductImageStudioRepositoryStorageMode } from "@/features/product-image-studio/server/projectApi";
 
@@ -9,22 +14,25 @@ export const dynamic = "force-dynamic";
 
 export default async function ProductImageStudioPage() {
   const providerSettingsState = await loadProductImageStudioProviderSettingsState();
+  const archiveRequestOptions = createProductImageStudioArchivePageRequestOptions(await headers());
+  const [projects, results] = await Promise.all([
+    loadProductImageStudioProjectArchivePageData(archiveRequestOptions),
+    loadProductImageStudioResultArchivePageData(archiveRequestOptions),
+  ]);
 
   return (
     <ProductImageStudioShell
       activePath="/product-image-studio"
-      description="카드, 봉투, 봉합스티커 세트를 상품 사진으로 준비합니다."
-      title="상품 이미지 스튜디오"
+      description="자주 쓰는 작업과 최근 디자인을 한곳에서 확인합니다."
+      title="홈"
     >
       <section className="page-stack">
-        <ProductImageStudioStatusPanel
+        <ProductImageStudioHome
           fileStorageMode={getProductImageStudioFileStorageMode()}
           metadataStorageMode={getProductImageStudioRepositoryStorageMode()}
-          status={providerSettingsState.status}
-        />
-        <ProductImageStudioWizard
-          initialProviderSettings={providerSettingsState.settings}
+          projects={projects}
           providerStatus={providerSettingsState.status}
+          results={results}
         />
       </section>
     </ProductImageStudioShell>

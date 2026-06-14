@@ -1,0 +1,203 @@
+.hub {
+  --ai-tools-blue: #0070f3;
+  --ai-tools-line: #e5e5e5;
+  --ai-tools-muted: #666666;
+  --ai-tools-surface: #ffffff;
+  --ai-tools-text: #171717;
+  display: grid;
+  gap: 14px;
+  width: 100%;
+}
+
+.summary {
+  align-items: center;
+  background: var(--ai-tools-surface);
+  border: 1px solid var(--ai-tools-line);
+  border-radius: 8px;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 16px;
+}
+
+.kicker,
+.summary h2,
+.cardCopy h2,
+.cardCopy p {
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.kicker {
+  color: var(--ai-tools-blue);
+  font-size: 12px;
+  font-weight: 840;
+  line-height: 1.3;
+}
+
+.summary h2 {
+  color: var(--ai-tools-text);
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.count,
+.readyPill,
+.pendingPill {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 840;
+  line-height: 1;
+  min-height: 28px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.count {
+  background: #f5f5f5;
+  border: 1px solid var(--ai-tools-line);
+  color: var(--ai-tools-text);
+}
+
+.toolGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.toolCard {
+  align-content: space-between;
+  background: var(--ai-tools-surface);
+  border: 1px solid var(--ai-tools-line);
+  border-radius: 8px;
+  display: grid;
+  gap: 18px;
+  min-height: 220px;
+  min-width: 0;
+  padding: 16px;
+}
+
+.toolCard[data-ai-tool-state="enabled"] {
+  border-color: rgba(0, 112, 243, 0.32);
+}
+
+.cardHeader {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.iconWrap,
+.actionIcon {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.iconWrap {
+  background: #fafafa;
+  border: 1px solid var(--ai-tools-line);
+  border-radius: 8px;
+  color: var(--ai-tools-text);
+  flex: 0 0 auto;
+  height: 40px;
+  width: 40px;
+}
+
+.toolCard[data-ai-tool-state="enabled"] .iconWrap {
+  background: rgba(0, 112, 243, 0.08);
+  border-color: rgba(0, 112, 243, 0.2);
+  color: var(--ai-tools-blue);
+}
+
+.readyPill {
+  background: rgba(0, 112, 243, 0.08);
+  border: 1px solid rgba(0, 112, 243, 0.2);
+  color: var(--ai-tools-blue);
+}
+
+.pendingPill {
+  background: #f5f5f5;
+  border: 1px solid var(--ai-tools-line);
+  color: var(--ai-tools-muted);
+}
+
+.cardCopy {
+  display: grid;
+  gap: 8px;
+}
+
+.cardCopy h2 {
+  color: var(--ai-tools-text);
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.cardCopy p {
+  color: var(--ai-tools-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.cardAction,
+.disabledAction {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 840;
+  gap: 8px;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 12px;
+  text-decoration: none;
+}
+
+.cardAction {
+  background: var(--ai-tools-blue);
+  border: 1px solid var(--ai-tools-blue);
+  color: #ffffff;
+}
+
+.cardAction:hover {
+  background: var(--ai-tools-blue);
+  border-color: var(--ai-tools-blue);
+}
+
+.disabledAction {
+  background: #fafafa;
+  border: 1px solid var(--ai-tools-line);
+  color: var(--ai-tools-muted);
+  cursor: not-allowed;
+}
+
+.actionIcon {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  color: #ffffff;
+  height: 22px;
+  width: 22px;
+}
+
+@media (max-width: 1100px) {
+  .toolGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .toolGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

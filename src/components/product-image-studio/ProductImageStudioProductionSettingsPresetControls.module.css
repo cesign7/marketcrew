@@ -1,6 +1,6 @@
 .toolbar {
   align-items: center;
-  background: #f8fafb;
+  background: #fafafa;
   border: 1px solid var(--line);
   border-radius: 8px;
   display: flex;
@@ -17,7 +17,7 @@
 
 .toolbar h4,
 .dialogHeader h4 {
-  color: #344054;
+  color: #171717;
   font-size: 14px;
   letter-spacing: 0;
   margin: 0;
@@ -34,7 +34,7 @@
 
 .backdrop {
   align-items: center;
-  background: rgb(16 24 40 / 42%);
+  background: rgb(23 23 23 / 42%);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -47,7 +47,7 @@
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 24px 70px rgb(16 24 40 / 22%);
+  box-shadow: 0 24px 70px rgb(23 23 23 / 22%);
   display: grid;
   gap: 14px;
   max-height: min(720px, calc(100vh - 40px));
@@ -83,7 +83,7 @@
 }
 
 .selectField span {
-  color: #344054;
+  color: #171717;
   font-size: 13px;
   font-weight: 900;
 }
@@ -121,13 +121,13 @@
 
 .secondaryButton,
 .closeButton {
-  background: #e9eef1;
-  color: #344054;
+  background: #f5f5f5;
+  color: #171717;
 }
 
 .dangerButton {
-  background: #fff1f0;
-  color: #b42318;
+  background: #f5f5f5;
+  color: #171717;
 }
 
 .primaryButton:disabled,
@@ -138,11 +138,11 @@
 }
 
 .message[data-tone="error"] {
-  color: #b42318;
+  color: #666666;
 }
 
 .message[data-tone="success"] {
-  color: var(--brand-strong);
+  color: #0070f3;
 }
 
 @media (max-width: 720px) {
