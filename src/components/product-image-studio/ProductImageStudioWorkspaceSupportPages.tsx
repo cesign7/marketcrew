@@ -1,7 +1,7 @@
 export { ProductImageStudioActivityWorkspacePage } from "./ProductImageStudioWorkspaceActivityPage";
+export { ProductImageStudioUploadsWorkspacePage } from "./ProductImageStudioUploadLibrary";
 export {
   ProductImageStudioBatchWorkspacePage,
   ProductImageStudioTemplatesWorkspacePage,
-  ProductImageStudioUploadsWorkspacePage,
   ProductImageStudioUsageWorkspacePage,
 } from "./ProductImageStudioWorkspaceStaticPages";

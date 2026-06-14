@@ -132,31 +132,6 @@ export function ProductImageStudioTemplatesWorkspacePage() {
   );
 }
 
-export function ProductImageStudioUploadsWorkspacePage() {
-  return (
-    <WorkspaceSupportShell
-      activePath="/product-image-studio/uploads"
-      description="프로젝트에 올린 원본 파일과 결과 자산을 확인합니다."
-      title="업로드"
-    >
-      <section className={styles.panel} aria-label="업로드 자산">
-        <SectionHeading
-          eyebrow="자산"
-          title="업로드 갤러리"
-          description="업로드한 파일은 생성 프로젝트 안에 보관됩니다."
-        />
-        <EmptyState
-          title="저장된 업로드가 아직 없습니다."
-          description="상품 설정샷 생성 화면에서 카드, 봉투, 봉합스티커 파일을 올리면 프로젝트 안에 보관됩니다."
-        />
-        <Link className={styles.secondaryAction} href="/product-image-studio" prefetch={false}>
-          프로젝트 업로드 열기
-        </Link>
-      </section>
-    </WorkspaceSupportShell>
-  );
-}
-
 export function ProductImageStudioUsageWorkspacePage() {
   return (
     <WorkspaceSupportShell
