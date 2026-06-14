@@ -23,12 +23,12 @@ describe("product image studio shell", () => {
     );
 
     expect(html).toContain("상품 이미지 스튜디오");
-    expect(html).toContain("MarketCrew 비주얼 스튜디오");
-    expect(html).toContain("리소스");
-    expect(html).toContain("작업 공간");
-    expect(html).toContain("새 상품컷");
     expect(html).toContain("마켓크루");
+    expect(html).toContain("작업 메뉴");
+    expect(html).toContain("상품명, 프로젝트, 생성 결과 검색");
+    expect(html).toContain("새 상품컷");
     expect(html).toContain("카드 세트 프로젝트");
+    expect(html).toContain("현재 모드");
     expect(html).not.toContain("side-nav");
     expect(html).not.toContain("네이버 검색광고");
     expect(html).not.toContain("Lovable");
@@ -72,8 +72,8 @@ describe("product image studio shell", () => {
     );
 
     expect(css).toContain(".workspace :global(.page-stack)");
-    expect(css).toContain("width: min(100%, 1180px);");
-    expect(css).toContain(".resourceRail");
+    expect(css).toContain("width: 100%;");
+    expect(css).toContain(".sidebar");
     expect(css).toContain(".topBar");
     expect(css).toContain(".contentWell");
   });

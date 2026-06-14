@@ -1,8 +1,8 @@
 .panel {
   align-items: center;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(29, 36, 48, 0.1);
-  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid rgba(25, 24, 22, 0.1);
+  border-radius: 16px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -36,8 +36,8 @@
 
 .badge {
   align-items: center;
-  background: #fff;
-  border: 1px solid rgba(29, 36, 48, 0.1);
+  background: #fbfaf7;
+  border: 1px solid rgba(25, 24, 22, 0.1);
   border-radius: 999px;
   display: inline-flex;
   gap: 6px;
@@ -45,6 +45,11 @@
   min-height: 30px;
   min-width: 0;
   padding: 5px 9px;
+}
+
+.badge svg {
+  color: var(--text);
+  flex: 0 0 auto;
 }
 
 .label {
@@ -63,8 +68,12 @@
 }
 
 .badge[data-tone="blocked"] {
-  background: #fff7f5;
+  background: #fff4f1;
   border-color: #f3b8b0;
+}
+
+.badge[data-tone="blocked"] svg {
+  color: var(--danger);
 }
 
 .badge[data-tone="blocked"] .value {
@@ -72,12 +81,16 @@
 }
 
 .badge[data-tone="ready"] {
-  background: #f1fbf6;
-  border-color: #a9dec2;
+  background: #efffd0;
+  border-color: #d7f58e;
+}
+
+.badge[data-tone="ready"] svg {
+  color: #2f4a00;
 }
 
 .badge[data-tone="ready"] .value {
-  color: var(--good);
+  color: #2f4a00;
 }
 
 @media (max-width: 920px) {

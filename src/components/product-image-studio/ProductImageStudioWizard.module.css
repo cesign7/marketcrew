@@ -1,34 +1,35 @@
 .layout {
   align-items: start;
   display: grid;
-  gap: 16px;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
   width: 100%;
 }
 
 .mainPanel,
 .sidePanel {
-  background: var(--panel);
-  border: 1px solid rgba(29, 36, 48, 0.1);
-  border-radius: 8px;
   min-width: 0;
 }
 
 .mainPanel {
   align-content: start;
+  background: transparent;
+  border: 0;
   display: grid;
-  gap: 16px;
-  padding: 14px;
+  gap: 10px;
+  padding: 0;
 }
 
 .sidePanel {
   align-self: start;
-  background: #fdfdfb;
+  background: #ffffff;
+  border: 1px solid rgba(25, 24, 22, 0.1);
+  border-radius: 18px;
   display: grid;
-  gap: 14px;
+  gap: 12px;
   padding: 14px;
   position: sticky;
-  top: 16px;
+  top: 14px;
 }
 
 .sidePanel .sectionTitle {
@@ -50,11 +51,11 @@
 }
 
 .panelHeader h2 {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .sectionTitle h3 {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 .panelHeader p,
@@ -70,9 +71,9 @@
 }
 
 .fixedSet {
-  background: var(--brand-soft);
+  background: #f4f2ee;
   border-radius: 999px;
-  color: var(--brand-strong);
+  color: #111111;
   flex: 0 0 auto;
   font-size: 12px;
   font-weight: 900;
@@ -94,7 +95,7 @@
 
 .field input {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   color: var(--text);
   font: inherit;
   min-height: 44px;
@@ -122,7 +123,7 @@
 .checkChoice {
   align-items: center;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   color: #344054;
   cursor: pointer;
   display: inline-flex;
@@ -134,9 +135,9 @@
 }
 
 .selectedSegment {
-  background: var(--brand-soft);
-  border-color: #9ccdd8;
-  color: var(--brand-strong);
+  background: #111111;
+  border-color: #111111;
+  color: #ffffff;
 }
 
 .optionSection {
@@ -162,10 +163,10 @@
 }
 
 .outputChip {
-  background: #f1fbf6;
-  border: 1px solid #a9dec2;
-  border-radius: 8px;
-  color: var(--good);
+  background: #efffd0;
+  border: 1px solid #d7f58e;
+  border-radius: 999px;
+  color: #2f4a00;
   font-size: 13px;
   font-weight: 900;
   padding: 10px 11px;
@@ -173,9 +174,8 @@
 
 .advancedDisclosure {
   border: 1px solid var(--line);
-  border-radius: 8px;
-  display: grid;
-  gap: 10px;
+  border-radius: 14px;
+  display: block;
 }
 
 .advancedDisclosure summary {
@@ -199,26 +199,28 @@
 }
 
 .advancedDisclosure summary small {
-  background: #eef4f6;
+  background: #f4f2ee;
   border-radius: 999px;
-  color: var(--brand-strong);
+  color: #111111;
   font-size: 12px;
   font-weight: 900;
   padding: 5px 8px;
 }
 
-.advancedDisclosure[open] {
-  padding-bottom: 12px;
+.advancedDisclosure:not([open]) .choiceGrid {
+  display: none;
 }
 
 .advancedDisclosure[open] .choiceGrid {
-  padding: 0 12px;
+  display: grid;
+  margin: 0 12px 12px;
+  padding: 0;
 }
 
 .actionBox {
   background: #101828;
   border: 1px solid #101828;
-  border-radius: 8px;
+  border-radius: 14px;
   display: grid;
   gap: 10px;
   padding: 12px;
@@ -226,10 +228,10 @@
 
 .primaryAction {
   align-items: center;
-  background: var(--brand);
+  background: #d9ff62;
   border: 0;
-  border-radius: 8px;
-  color: #fff;
+  border-radius: 12px;
+  color: #111111;
   cursor: pointer;
   display: inline-flex;
   font-size: 14px;

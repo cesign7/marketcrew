@@ -1,74 +1,86 @@
 import styles from "./ProductImageStudioWorkbenchIntro.module.css";
+import { Crop, ImagePlus, Layers3, PackageCheck, Sparkles, UploadCloud } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+const TOOL_ITEMS = [
+  { label: "업로드", icon: UploadCloud },
+  { label: "규격", icon: Crop },
+  { label: "배경", icon: Layers3 },
+  { label: "생성", icon: Sparkles },
+] as const;
 
 export function ProductImageStudioWorkbenchIntro() {
   return (
-    <section className={styles.intro} aria-label="상품 캔버스">
-      <header className={styles.header}>
-        <div className={styles.titleBlock}>
-          <span>이미지 제작 작업대</span>
-          <h2>상품 캔버스</h2>
-          <p>카드 원본을 먼저 올리고, 필요한 순간에 봉투와 봉합스티커를 연결해 세트컷으로 넓힙니다.</p>
+    <section className={styles.studioBoard} aria-label="상품 캔버스">
+      <aside className={styles.toolRail} aria-label="이미지 제작 작업대">
+        {TOOL_ITEMS.map((item, index) => {
+          const Icon: LucideIcon = item.icon;
+          return (
+            <button className={index === 0 ? styles.activeTool : styles.toolButton} key={item.label} type="button">
+              <Icon size={19} strokeWidth={2.2} aria-hidden="true" />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+      </aside>
+
+      <div className={styles.canvasPanel}>
+        <header className={styles.canvasHeader}>
+          <div>
+            <span>이미지 제작 작업대</span>
+            <h2>상품 캔버스</h2>
+          </div>
+          <div className={styles.canvasMeta} aria-label="현재 출력 설정">
+            <span>4:5</span>
+            <span>0.5K 초안</span>
+          </div>
+        </header>
+
+        <div className={styles.artboard} aria-label="카드 봉투 봉합스티커 슬롯">
+          <div className={styles.envelopeSlot}>
+            <span>봉투 슬롯</span>
+          </div>
+          <div className={styles.cardSlot}>
+            <span>카드 슬롯</span>
+            <strong>카드만으로 시작</strong>
+          </div>
+          <div className={styles.sealSlot}>
+            <span>봉합스티커 슬롯</span>
+          </div>
+        </div>
+      </div>
+
+      <aside className={styles.inspector} aria-label="설정샷 생성 순서">
+        <div className={styles.inspectorHeader}>
+          <strong aria-hidden="true">
+            <PackageCheck size={15} strokeWidth={2.3} />
+          </strong>
+          <div>
+            <span>빠르게 만들 이미지</span>
+            <h3>카드만 올려도 시작</h3>
+          </div>
         </div>
         <ol className={styles.flow} aria-label="상품컷 제작 경로">
           <li>
             <strong>카드만으로 시작</strong>
-            <span>단독컷 준비</span>
+            <span>단독컷</span>
           </li>
           <li>
             <strong>세트컷으로 확장</strong>
-            <span>봉투와 스티커 연결</span>
+            <span>봉투와 스티커</span>
           </li>
           <li>
             <strong>목록용 상품컷</strong>
-            <span>대표 이미지 출력</span>
+            <span>대표 이미지</span>
           </li>
         </ol>
-      </header>
-
-      <div className={styles.workbench}>
-        <div className={styles.canvas} aria-label="카드 봉투 봉합스티커 슬롯 관계">
-          <div className={styles.canvasToolbar}>
-            <span>현재 캔버스</span>
-            <strong>목록용 상품컷</strong>
-          </div>
-
-          <div className={styles.stage} aria-label="카드와 세트 구성 슬롯">
-            <div className={styles.envelopeSlot}>
-              <span>봉투 슬롯</span>
-              <strong>세트컷으로 확장</strong>
-            </div>
-            <div className={styles.cardSlot}>
-              <span>카드 슬롯</span>
-              <strong>카드만으로 시작</strong>
-              <small>필수 시작점</small>
-            </div>
-            <div className={styles.sealSlot}>
-              <span>봉합스티커 슬롯</span>
-              <strong>선택 확장</strong>
-            </div>
-          </div>
+        <div className={styles.uploadHint}>
+          <strong aria-hidden="true">
+            <ImagePlus size={15} strokeWidth={2.4} />
+          </strong>
+          <span>업로드한 구성품만 캔버스에 배치합니다.</span>
         </div>
-
-        <aside className={styles.startPanel} aria-label="카드 단독컷 시작 안내">
-          <span>빠르게 만들 이미지</span>
-          <h3>카드만 올려도 바로 시작</h3>
-          <p>접이식 카드나 엽서형 카드의 업로드/규격 입력은 그대로 사용하고, 카드 준비가 끝나면 단독컷부터 추천합니다.</p>
-          <dl>
-            <div>
-              <dt>카드</dt>
-              <dd>필수 시작점</dd>
-            </div>
-            <div>
-              <dt>봉투</dt>
-              <dd>선택 확장</dd>
-            </div>
-            <div>
-              <dt>봉합스티커</dt>
-              <dd>선택 확장</dd>
-            </div>
-          </dl>
-        </aside>
-      </div>
+      </aside>
     </section>
   );
 }

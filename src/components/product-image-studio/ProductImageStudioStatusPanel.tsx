@@ -1,6 +1,8 @@
 import type { ProductImageStudioFileStorageMode } from "@/features/product-image-studio/server/assetUploadApi";
 import type { ProductImageStudioRepositoryStorageMode } from "@/features/product-image-studio/server/projectApi";
 import type { ProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
+import { Cable, Database, Download, HardDrive, WandSparkles } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import styles from "./ProductImageStudioStatusPanel.module.css";
 
 type ProductImageStudioStatusPanelProps = {
@@ -14,6 +16,7 @@ type StatusBadgeKey = "download" | "file-storage" | "generation" | "metadata" | 
 type StatusBadge = {
   readonly key: StatusBadgeKey;
   readonly label: string;
+  readonly icon: LucideIcon;
   readonly tone: "blocked" | "ready" | "neutral";
   readonly value: string;
 };
@@ -31,6 +34,7 @@ export function ProductImageStudioStatusPanel({
     {
       key: "download",
       label: "다운로드",
+      icon: Download,
       tone: "ready",
       value: "가능",
     },
@@ -43,19 +47,27 @@ export function ProductImageStudioStatusPanel({
       </div>
       <div className={styles.badges}>
         {badges.map((badge) => (
-          <article
-            aria-label={`${badge.label}: ${badge.value}`}
-            className={styles.badge}
-            data-status-badge={badge.key}
-            data-tone={badge.tone}
-            key={badge.key}
-          >
-            <span className={styles.label}>{badge.label}</span>
-            <strong className={styles.value}>{badge.value}</strong>
-          </article>
+          <StatusBadgeItem badge={badge} key={badge.key} />
         ))}
       </div>
     </section>
+  );
+}
+
+function StatusBadgeItem({ badge }: { readonly badge: StatusBadge }) {
+  const Icon = badge.icon;
+
+  return (
+    <article
+      aria-label={`${badge.label}: ${badge.value}`}
+      className={styles.badge}
+      data-status-badge={badge.key}
+      data-tone={badge.tone}
+    >
+      <Icon size={14} strokeWidth={2.35} aria-hidden="true" />
+      <span className={styles.label}>{badge.label}</span>
+      <strong className={styles.value}>{badge.value}</strong>
+    </article>
   );
 }
 
@@ -64,6 +76,7 @@ function toGenerationBadge(status: ProductImageStudioProviderStatus): StatusBadg
     return {
       key: "generation",
       label: "생성",
+      icon: WandSparkles,
       tone: "ready",
       value: "가능",
     };
@@ -72,6 +85,7 @@ function toGenerationBadge(status: ProductImageStudioProviderStatus): StatusBadg
   return {
     key: "generation",
     label: "생성",
+    icon: WandSparkles,
     tone: "blocked",
     value: "차단",
   };
@@ -85,6 +99,7 @@ function toProviderBadge(status: ProductImageStudioProviderStatus): StatusBadge 
     return {
       key: "provider",
       label: "연결",
+      icon: Cable,
       tone: "ready",
       value: "연결됨",
     };
@@ -93,6 +108,7 @@ function toProviderBadge(status: ProductImageStudioProviderStatus): StatusBadge 
   return {
     key: "provider",
     label: "연결",
+    icon: Cable,
     tone: "neutral",
     value: "설정 필요",
   };
@@ -104,6 +120,7 @@ function toFileStorageBadge(storageMode: ProductImageStudioFileStorageMode): Sta
       return {
         key: "file-storage",
         label: "저장",
+        icon: HardDrive,
         tone: "ready",
         value: "Blob",
       };
@@ -111,6 +128,7 @@ function toFileStorageBadge(storageMode: ProductImageStudioFileStorageMode): Sta
       return {
         key: "file-storage",
         label: "저장",
+        icon: HardDrive,
         tone: "neutral",
         value: "로컬",
       };
@@ -123,6 +141,7 @@ function toMetadataStorageBadge(storageMode: ProductImageStudioRepositoryStorage
       return {
         key: "metadata",
         label: "기록",
+        icon: Database,
         tone: "ready",
         value: "DB",
       };
@@ -130,6 +149,7 @@ function toMetadataStorageBadge(storageMode: ProductImageStudioRepositoryStorage
       return {
         key: "metadata",
         label: "기록",
+        icon: Database,
         tone: "neutral",
         value: "메모리",
       };
