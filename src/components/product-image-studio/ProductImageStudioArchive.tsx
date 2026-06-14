@@ -32,8 +32,8 @@ export function ProductImageStudioProjectArchive({ projects }: ProductImageStudi
   return (
     <section className={styles.archive} aria-label="프로젝트 보관함">
       <ArchiveHeading
-        title="프로젝트"
-        description="상품 이미지 제작 프로젝트와 생성 결과 수를 확인합니다."
+        title="비주얼 보관함"
+        description="프로젝트별 상품 이미지 제작 기록과 생성 결과 수를 확인합니다."
         action={<Link href="/product-image-studio">새 프로젝트</Link>}
       />
       {projects.length === 0 ? (
@@ -68,7 +68,7 @@ export function ProductImageStudioProjectArchive({ projects }: ProductImageStudi
 export function ProductImageStudioResultArchive({ results }: ProductImageStudioResultArchiveProps) {
   return (
     <section className={styles.archive} aria-label="결과 보관함">
-      <ArchiveHeading title="결과 보관함" description="프로젝트를 넘나들며 생성된 이미지를 한 번에 확인합니다." />
+      <ArchiveHeading title="상품컷 갤러리" description="결과 보관함에서 프로젝트 전체의 생성 이미지를 한 번에 확인합니다." />
       {results.length === 0 ? (
         <ArchiveEmpty title="아직 생성 결과가 없습니다." description="카드, 봉투, 봉합스티커 설정샷을 생성하면 이곳에 표시됩니다." />
       ) : (

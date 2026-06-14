@@ -5,9 +5,13 @@
 
 .heading {
   align-items: flex-start;
+  background: #101828;
+  border-radius: 8px;
+  color: #fff;
   display: flex;
   gap: 16px;
   justify-content: space-between;
+  padding: 18px;
 }
 
 .heading h2,
@@ -34,6 +38,10 @@
   margin: 0;
 }
 
+.heading p {
+  color: rgba(255, 255, 255, 0.72);
+}
+
 .headingAction,
 .actions {
   align-items: center;
@@ -55,9 +63,9 @@
 }
 
 .headingAction a {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: #fff;
+  background: #fff;
+  border-color: #fff;
+  color: #101828;
 }
 
 .projectGrid,
@@ -78,7 +86,7 @@
 .resultCard,
 .emptyState {
   background: #fff;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(29, 36, 48, 0.1);
   border-radius: 8px;
 }
 

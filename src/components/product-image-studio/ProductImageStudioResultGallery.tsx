@@ -16,8 +16,8 @@ export function ProductImageStudioResultGallery({ results, wizardState }: Produc
   return (
     <section className={styles.gallery} aria-label="생성 결과 갤러리">
       <div className={styles.heading}>
-        <h3>결과 갤러리</h3>
-        <p>세트컷과 단독컷을 나누어 비교합니다.</p>
+        <h3>상품컷 미리보기</h3>
+        <p>결과 갤러리에서 세트컷과 단독컷을 나누어 비교합니다.</p>
       </div>
       <div className={styles.groupList}>
         {groups.map((group) => (
@@ -27,7 +27,7 @@ export function ProductImageStudioResultGallery({ results, wizardState }: Produc
                 <h4>{group.label}</h4>
                 <p>{group.summary}</p>
               </div>
-              <span>{group.emphasis === "combined" ? "세트 구성" : "단독 구성"}</span>
+              <span>{group.emphasis === "combined" ? "목록용 · 세트 구성" : "단독 구성"}</span>
             </div>
             {group.items.length === 0 ? (
               <p className={styles.empty}>{group.emptyMessage}</p>

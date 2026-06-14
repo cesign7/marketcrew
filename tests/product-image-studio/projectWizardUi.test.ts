@@ -28,6 +28,10 @@ describe("product image studio project wizard UI", () => {
     );
 
     expect(html).toContain("프로젝트 이름");
+    expect(html).toContain("이미지 제작 작업대");
+    expect(html).toContain("빠르게 만들 이미지");
+    expect(html).toContain("상품 캔버스");
+    expect(html).toContain("카드만으로 시작");
     expect(html).toContain("접이식 카드");
     expect(html).toContain("엽서형 카드");
     expect(html).toContain("설정샷 자세 조정");
@@ -37,6 +41,7 @@ describe("product image studio project wizard UI", () => {
     expect(html).toContain("상품 사양");
     expect(html).toContain("저장한 규격");
     expect(html).toContain("규격 저장/불러오기");
+    expect(html).toContain("규격 편집");
     expect(html).toContain("불러오기");
     expect(html).toContain("접은 카드 가로(mm)");
     expect(html).toContain("펼친 카드 가로(mm)");

@@ -21,6 +21,7 @@ describe("product image studio status panel", () => {
     );
 
     expect(html).toContain("스튜디오 상태");
+    expect(html).toContain("상품 이미지 스튜디오 상태 요약");
     expect(html).toContain("차단됨");
     expect(html).toContain("게이트 닫힘");
     expect(html).toContain("로컬");

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/LogoutButton";
+import styles from "./ProductImageStudioShell.module.css";
 
 type ProductImageStudioShellProps = {
   readonly activePath: string;
@@ -15,7 +16,7 @@ type ProductImageStudioNavigationArea = {
   readonly description: string;
 };
 
-const PRODUCT_IMAGE_STUDIO_NAV_AREAS = [
+const PRODUCT_IMAGE_STUDIO_NAV_AREAS: readonly ProductImageStudioNavigationArea[] = [
   {
     key: "studio",
     href: "/product-image-studio",
@@ -40,7 +41,7 @@ const PRODUCT_IMAGE_STUDIO_NAV_AREAS = [
     label: "이미지 설정",
     description: "생성 상태",
   },
-] as const satisfies readonly ProductImageStudioNavigationArea[];
+];
 
 export function getProductImageStudioNavItems() {
   return PRODUCT_IMAGE_STUDIO_NAV_AREAS.map((area) => ({ href: area.href, label: area.label }));
@@ -50,38 +51,45 @@ export function ProductImageStudioShell({ activePath, children, description, tit
   const activeArea = getActiveArea(activePath);
 
   return (
-    <main className="app-shell">
-      <aside className="side-nav" aria-label="상품 이미지 스튜디오 메뉴">
-        <div className="side-nav__brand">
-          <strong>마켓크루</strong>
-          <span>상품 이미지 제작</span>
-        </div>
-        <nav className="side-nav__links">
-          {PRODUCT_IMAGE_STUDIO_NAV_AREAS.map((area) => (
-            <Link
-              aria-current={activeArea.key === area.key ? "page" : undefined}
-              className={activeArea.key === area.key ? "is-active" : ""}
-              href={area.href}
-              key={area.key}
-              prefetch={false}
-            >
-              <span>{area.label}</span>
-              <small>{area.description}</small>
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      <section className="workspace">
-        <header className="workspace-header">
-          <div>
-            <span className="eyebrow">상품 이미지 스튜디오</span>
-            <h1>{title}</h1>
-            <p className="muted">{description}</p>
+    <main className={styles.shell}>
+      <header className={styles.header}>
+        <div className={styles.brandLine}>
+          <div className={styles.brand}>
+            <strong>마켓크루</strong>
+            <span>AI 이미지 작업대</span>
           </div>
-          <LogoutButton />
-        </header>
+          <nav className={styles.nav} aria-label="상품 이미지 스튜디오 메뉴">
+            {PRODUCT_IMAGE_STUDIO_NAV_AREAS.map((area) => (
+              <Link
+                aria-current={activeArea.key === area.key ? "page" : undefined}
+                className={activeArea.key === area.key ? styles.activeLink : styles.navLink}
+                href={area.href}
+                key={area.key}
+                prefetch={false}
+              >
+                <span>{area.label}</span>
+                <small>{area.description}</small>
+              </Link>
+            ))}
+          </nav>
+        </div>
 
+        <div className={styles.titleRow}>
+          <div className={styles.titleCopy}>
+            <span>상품 이미지 스튜디오</span>
+            <h1>{title}</h1>
+            <p>{description}</p>
+          </div>
+          <div className={styles.headerActions}>
+            <Link className={styles.primaryLink} href="/product-image-studio" prefetch={false}>
+              새 이미지 만들기
+            </Link>
+            <LogoutButton />
+          </div>
+        </div>
+      </header>
+
+      <section className={styles.workspace}>
         {children}
       </section>
     </main>

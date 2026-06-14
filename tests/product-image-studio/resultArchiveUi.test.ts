@@ -25,6 +25,7 @@ describe("product image studio result archive UI", () => {
     const emptyHtml = renderToStaticMarkup(createElement(ProductImageStudioProjectArchive, { projects: [] }));
 
     expect(html).toContain("프로젝트");
+    expect(html).toContain("비주얼 보관함");
     expect(html).toContain("봄 초대장 세트");
     expect(html).toContain("결과 2개");
     expect(html).toContain("상세 보기");
@@ -39,6 +40,7 @@ describe("product image studio result archive UI", () => {
     const html = renderToStaticMarkup(createElement(ProductImageStudioResultArchive, { results: [archiveItem()] }));
 
     expect(html).toContain("결과 보관함");
+    expect(html).toContain("상품컷 갤러리");
     expect(html).toContain("봄 초대장 세트");
     expect(html).toContain("카드 단독컷");
     expect(html).toContain("1:1");

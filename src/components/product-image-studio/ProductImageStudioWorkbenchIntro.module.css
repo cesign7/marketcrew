@@ -1,0 +1,107 @@
+.intro {
+  background: #101828;
+  border-radius: 8px;
+  color: #fff;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(340px, 0.92fr) minmax(300px, 1.08fr);
+  min-width: 0;
+  overflow: hidden;
+  padding: 18px;
+}
+
+.copy {
+  align-content: center;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.copy span,
+.stage span {
+  color: #a7f3d0;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.copy h2 {
+  font-size: clamp(24px, 2.4vw, 32px);
+  letter-spacing: 0;
+  line-height: 1.08;
+  margin: 0;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+
+.copy p,
+.stage p {
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.canvas {
+  background: #f5f7f8;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  color: #101828;
+  display: grid;
+  gap: 12px;
+  min-height: 220px;
+  padding: 14px;
+}
+
+.stage {
+  align-content: end;
+  background:
+    linear-gradient(135deg, rgba(16, 24, 40, 0.08), rgba(23, 107, 135, 0.08)),
+    #fff;
+  border: 1px solid rgba(29, 36, 48, 0.1);
+  border-radius: 8px;
+  display: grid;
+  gap: 7px;
+  min-height: 150px;
+  padding: 16px;
+}
+
+.stage span {
+  color: #176b87;
+}
+
+.stage strong {
+  color: #101828;
+  font-size: 22px;
+  letter-spacing: 0;
+}
+
+.stage p {
+  color: #667085;
+}
+
+.flow {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.flow li {
+  background: #fff;
+  border: 1px solid rgba(29, 36, 48, 0.1);
+  border-radius: 8px;
+  color: #344054;
+  font-size: 12px;
+  font-weight: 900;
+  padding: 10px;
+  text-align: center;
+}
+
+@media (max-width: 860px) {
+  .intro {
+    grid-template-columns: 1fr;
+  }
+}

@@ -21,7 +21,7 @@ export function ProductImageStudioStatusPanel({
   metadataStorageMode,
   status,
 }: ProductImageStudioStatusPanelProps) {
-  const cards = [
+  const cards: readonly StatusCard[] = [
     toGenerationCard(status),
     toProviderCard(status),
     toFileStorageCard(fileStorageMode),
@@ -32,13 +32,13 @@ export function ProductImageStudioStatusPanel({
       tone: "ready",
       value: "다운로드",
     },
-  ] as const satisfies readonly StatusCard[];
+  ];
 
   return (
-    <section className={styles.panel} aria-label="상품 이미지 스튜디오 상태">
+    <section className={styles.panel} aria-label="상품 이미지 스튜디오 상태 요약">
       <div className={styles.heading}>
         <h2>스튜디오 상태</h2>
-        <p>생성 가능 여부와 저장 방식을 안전하게 확인합니다.</p>
+        <p>상품 이미지 스튜디오 상태 요약</p>
       </div>
       <div className={styles.grid}>
         {cards.map((card) => (

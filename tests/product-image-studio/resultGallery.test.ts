@@ -51,11 +51,13 @@ describe("product image studio result gallery", () => {
     const html = renderToStaticMarkup(createElement(ProductImageStudioResultGallery, { results, wizardState }));
 
     expect(html).toContain("결과 갤러리");
+    expect(html).toContain("상품컷 미리보기");
     expect(html).toContain("세트컷");
     expect(html).toContain("카드");
     expect(html).toContain("봉투");
     expect(html).toContain("봉합스티커");
     expect(html).toContain("세트 구성");
+    expect(html).toContain("목록용");
     expect(html).toContain("접이식 카드 - 접은 카드 닫힌 컷");
     expect(html).toContain("원본안");
     expect(html).toContain("비교안 2");

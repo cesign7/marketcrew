@@ -19,7 +19,7 @@ describe("product image studio download UI", () => {
 
     expect(html).toContain("비율 및 다운로드");
     expect(html).toContain("1:1 상품 목록");
-    expect(html).toContain("4:5 세로 대표");
+    expect(html).toContain("4:5 대표용");
     expect(html).toContain("3:4 상세 이미지");
     expect(html).toContain("16:9 확장 콘텐츠");
     expect(html).toContain("사용자 지정");

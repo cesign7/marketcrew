@@ -1,5 +1,6 @@
 .panel {
-  border: 1px solid var(--line);
+  background: #fff;
+  border: 1px solid rgba(29, 36, 48, 0.1);
   border-radius: 8px;
   display: grid;
   gap: 12px;
@@ -44,7 +45,7 @@
 
 .ratioOption {
   background: #fbfcfe;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(29, 36, 48, 0.1);
   border-radius: 8px;
   cursor: pointer;
   display: grid;
@@ -54,8 +55,8 @@
 }
 
 .ratioOption[data-selected="true"] {
-  background: var(--brand-soft);
-  border-color: #9ccdd8;
+  background: #ecfdf3;
+  border-color: #75c99c;
 }
 
 .ratioOption span {
@@ -115,15 +116,15 @@
 }
 
 .primary {
-  background: var(--brand);
+  background: #101828;
   border: 0;
   color: #fff;
 }
 
 .secondary {
-  background: #eef4f6;
-  border: 1px solid #9ccdd8;
-  color: var(--brand-strong);
+  background: #fff;
+  border: 1px solid rgba(29, 36, 48, 0.14);
+  color: #101828;
 }
 
 .primary:disabled,

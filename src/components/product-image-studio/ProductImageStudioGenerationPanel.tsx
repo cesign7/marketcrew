@@ -60,8 +60,8 @@ export function ProductImageStudioGenerationPanel({
   return (
     <section className={styles.panel} aria-label="콘셉트와 생성 설정">
       <div className={styles.heading}>
-        <h3>콘셉트 선택</h3>
-        <p>선택한 콘셉트로 현재 준비된 구성품의 출력 이미지를 생성합니다.</p>
+        <h3>생성 명령</h3>
+        <p>콘셉트를 고르고 현재 준비된 구성품으로 초안을 만듭니다.</p>
       </div>
 
       <div className={styles.conceptList}>
@@ -120,10 +120,10 @@ export function ProductImageStudioGenerationPanel({
         <p className={`${styles.status} ${statusClassName}`}>{generationState.message}</p>
         <div className={styles.actions}>
           <button className={styles.primary} disabled={!canGenerate} onClick={onGenerate} type="button">
-            {generationState.phase === "generating" ? "생성 중" : `초안 생성 · ${selectedProviderLabel}`}
+            {generationState.phase === "generating" ? "생성 중" : `초안 만들기 · ${selectedProviderLabel}`}
           </button>
           <button className={styles.secondary} disabled={!canGenerate} onClick={onSimilarVersion} type="button">
-            비슷한 버전 생성
+            비슷하게 다시 만들기
           </button>
           {generationState.phase === "blocked" || generationState.phase === "failed" ? (
             <button className={styles.secondary} onClick={onRetry} type="button">

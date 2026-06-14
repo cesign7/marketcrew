@@ -1,6 +1,6 @@
 .panel {
-  background: var(--panel);
-  border: 1px solid var(--line);
+  background: #fff;
+  border: 1px solid rgba(29, 36, 48, 0.1);
   border-radius: 8px;
   display: grid;
   gap: 18px;
@@ -9,9 +9,13 @@
 
 .heading {
   align-items: start;
+  background: #101828;
+  border-radius: 8px;
+  color: #fff;
   display: flex;
   gap: 16px;
   justify-content: space-between;
+  padding: 18px;
 }
 
 .heading h2 {
@@ -20,12 +24,24 @@
   margin: 0;
 }
 
+.heading span {
+  color: #a7f3d0;
+  display: block;
+  font-size: 12px;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
 .heading p,
 .footer p {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.55;
   margin: 0;
+}
+
+.heading p {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .badges {
@@ -44,7 +60,7 @@
 }
 
 .badges strong {
-  color: var(--text);
+  color: #fff;
   font-size: 14px;
 }
 
@@ -54,10 +70,18 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.providerTitle {
+  color: #101828;
+  font-size: 16px;
+  grid-column: 1 / -1;
+  letter-spacing: 0;
+  margin: 0;
+}
+
 .gatePanel {
   align-items: center;
   background: #fff;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(29, 36, 48, 0.1);
   border-radius: 8px;
   display: grid;
   gap: 12px;

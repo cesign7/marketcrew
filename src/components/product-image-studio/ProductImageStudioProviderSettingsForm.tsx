@@ -23,7 +23,7 @@ type ProductImageStudioProviderSettingsFormProps = {
 type ProviderFormStates = Record<ProductImageStudioProviderName, ProductImageStudioProviderCardState>;
 type FormMessage = { readonly text: string; readonly tone: "error" | "success" };
 
-const PROVIDER_OPTIONS = [
+const PROVIDER_OPTIONS: readonly ProductImageStudioProviderCardOption[] = [
   {
     apiKeyHint: "sk-로 시작하는 OpenAI 키",
     description: "설정샷, 목업 합성, 고품질 인쇄물 이미지 생성에 사용합니다.",
@@ -36,7 +36,7 @@ const PROVIDER_OPTIONS = [
     label: "Gemini",
     provider: "gemini",
   },
-] as const satisfies readonly ProductImageStudioProviderCardOption[];
+];
 
 export function ProductImageStudioProviderSettingsForm({
   initialSettings,
@@ -65,8 +65,9 @@ export function ProductImageStudioProviderSettingsForm({
     <section className={styles.panel} aria-label="이미지 생성 provider 설정">
       <div className={styles.heading}>
         <div>
+          <span>연결 작업대</span>
           <h2>생성 연결 설정</h2>
-          <p>provider별 키는 서버에만 저장하고 화면에는 연결 상태만 남깁니다.</p>
+          <p>기본 생성 엔진을 고르고 provider별 키는 서버에만 저장합니다.</p>
         </div>
         <div className={styles.badges} aria-label="저장 상태">
           <span>{storageMode === "postgres" ? "운영 DB" : "서버 메모리"}</span>
@@ -75,6 +76,7 @@ export function ProductImageStudioProviderSettingsForm({
       </div>
 
       <div className={styles.providerGrid}>
+        <h3 className={styles.providerTitle}>기본 생성 엔진</h3>
         {PROVIDER_OPTIONS.map((option) => (
           <ProductImageStudioProviderSettingsCard
             isBusy={isBusy}

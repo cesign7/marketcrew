@@ -35,6 +35,7 @@ import { ProductImageStudioProductionSettingsPanel } from "./ProductImageStudioP
 import { ProductImageStudioProjectSettings } from "./ProductImageStudioProjectSettings";
 import { ProductImageStudioQualityOption } from "./ProductImageStudioQualityOption";
 import { ProductImageStudioUploadSection } from "./ProductImageStudioUploadSection";
+import { ProductImageStudioWorkbenchIntro } from "./ProductImageStudioWorkbenchIntro";
 import { ProductImageStudioWorkflowSteps } from "./ProductImageStudioWorkflowSteps";
 import {
   createProductImageStudioGenerationProviderOptions,
@@ -83,13 +84,7 @@ export function ProductImageStudioWizard({ initialProviderSettings, providerStat
   return (
     <div className={styles.layout}>
       <section className={styles.mainPanel} aria-label="상품 이미지 프로젝트 위저드">
-        <div className={styles.panelHeader}>
-          <div>
-            <h2>새 이미지 프로젝트</h2>
-            <p>카드, 봉투, 봉합스티커를 업로드한 구성품 기준으로 설정샷과 단독컷으로 만듭니다.</p>
-          </div>
-          <span className={styles.fixedSet}>구성품별 생성</span>
-        </div>
+        <ProductImageStudioWorkbenchIntro />
 
         <ProductImageStudioWorkflowSteps state={state} />
         <ProductImageStudioProjectSettings setState={setWizardState} state={state} />

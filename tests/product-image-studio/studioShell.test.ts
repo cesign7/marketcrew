@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -21,8 +23,11 @@ describe("product image studio shell", () => {
     );
 
     expect(html).toContain("상품 이미지 스튜디오");
+    expect(html).toContain("AI 이미지 작업대");
+    expect(html).toContain("새 이미지 만들기");
     expect(html).toContain("마켓크루");
     expect(html).toContain("카드 세트 프로젝트");
+    expect(html).not.toContain("side-nav");
     expect(html).not.toContain("네이버 검색광고");
     expect(html).not.toContain("브랜드");
     expect(html).not.toContain("광고유형");
@@ -54,5 +59,15 @@ describe("product image studio shell", () => {
 
     expect(html).toMatch(/aria-current="page"[^>]*href="\/product-image-studio\/projects"/);
     expect(html).not.toMatch(/aria-current="page"[^>]*href="\/product-image-studio"/);
+  });
+
+  it("keeps nested page stacks full width inside the studio workspace", () => {
+    const css = readFileSync(
+      join(process.cwd(), "src/components/product-image-studio/ProductImageStudioShell.module.css"),
+      "utf8",
+    );
+
+    expect(css).toContain(".workspace :global(.page-stack)");
+    expect(css).toContain("width: min(100%, 1180px);");
   });
 });

@@ -38,13 +38,13 @@ type RatioOption = {
   readonly ratio: ProductImageStudioRatioPreset;
 };
 
-const RATIO_OPTIONS = [
+const RATIO_OPTIONS: readonly RatioOption[] = [
   { helper: "정사각형 목록과 대표 이미지", label: "1:1 상품 목록", ratio: "1:1" },
-  { helper: "세로형 대표 이미지", label: "4:5 세로 대표", ratio: "4:5" },
+  { helper: "세로형 대표 이미지", label: "4:5 대표용", ratio: "4:5" },
   { helper: "상세페이지 중간 이미지", label: "3:4 상세 이미지", ratio: "3:4" },
   { helper: "자사몰, 블로그 확장용", label: "16:9 확장 콘텐츠", ratio: "16:9" },
   { helper: "직접 입력한 픽셀 크기", label: "사용자 지정", ratio: "custom" },
-] as const satisfies readonly RatioOption[];
+];
 
 const EMPTY_DOWNLOAD_MESSAGE = "다운로드할 이미지가 없습니다.";
 const READY_DOWNLOAD_MESSAGE = "원하는 비율을 선택한 뒤 다운로드하거나 새 크기로 다시 만들 수 있습니다.";

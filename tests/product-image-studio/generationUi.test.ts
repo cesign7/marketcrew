@@ -121,14 +121,15 @@ describe("product image studio generation UI", () => {
     );
 
     expect(html).toContain("미니멀 스튜디오");
+    expect(html).toContain("생성 명령");
     expect(html).toContain("선택됨");
     expect(html).toContain("이미지 생성 차단됨");
     expect(html).toContain("이번 생성 provider");
     expect(html).toContain("OpenAI 연결됨");
     expect(html).toContain("Gemini 연결 안됨");
-    expect(html).toContain("초안 생성 · OpenAI");
+    expect(html).toContain("초안 만들기 · OpenAI");
     expect(html).toContain("다시 시도");
-    expect(html).toContain("비슷한 버전 생성");
+    expect(html).toContain("비슷하게 다시 만들기");
     expect(html).toContain("접이식 카드: 접은 카드 닫힌 컷, 접이식 카드 펼친 컷");
   });
 

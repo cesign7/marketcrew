@@ -6,6 +6,8 @@ describe("product image studio provider settings form", () => {
     const html = renderProviderSettingsFormHtml();
 
     expect(html).toContain("생성 연결 설정");
+    expect(html).toContain("연결 작업대");
+    expect(html).toContain("기본 생성 엔진");
     expect(html).toContain("생성 게이트");
     expect(html).toContain("게이트 열기");
     expect(html).toContain("게이트 닫기");
