@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { proxyProductImageStudioRequestToBackend } from "@/features/product-image-studio/server/backendProxy";
-import { readProductImageStudioAssetImage } from "@/features/product-image-studio/server/assetImageResponse";
+import {
+  createProductImageStudioAssetPreviewHeaders,
+  readProductImageStudioAssetImage,
+} from "@/features/product-image-studio/server/assetImageResponse";
 import { toArrayBuffer } from "@/features/product-image-studio/server/resultImageResponse";
 
 type ProductImageStudioAssetPreviewRouteContext = {
@@ -22,10 +25,10 @@ export async function GET(request: Request, context: ProductImageStudioAssetPrev
   }
 
   return new Response(toArrayBuffer(assetImage.image.bytes), {
-    headers: {
-      "content-disposition": `inline; filename="${assetImage.fileName}"`,
-      "content-type": assetImage.image.contentType,
-    },
+    headers: createProductImageStudioAssetPreviewHeaders({
+      contentType: assetImage.image.contentType,
+      fileName: assetImage.fileName,
+    }),
     status: 200,
   });
 }

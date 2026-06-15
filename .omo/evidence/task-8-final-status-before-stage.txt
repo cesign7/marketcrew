@@ -1,0 +1,57 @@
+ M package-lock.json
+ M package.json
+ M scripts/production-smoke.mjs
+ M src/app/api/product-image-studio/projects/[id]/assets/[assetId]/preview/route.ts
+ M src/components/product-image-studio/ProductImageStudioAiTools.tsx
+ M src/components/product-image-studio/ProductImageStudioArchive.tsx
+ M src/components/product-image-studio/ProductImageStudioUploadLibrary.module.css
+ M src/components/product-image-studio/ProductImageStudioUploadLibrary.tsx
+ M src/components/product-image-studio/ProductImageStudioWorkspaceActivityPage.tsx
+ M src/components/product-image-studio/productImageStudioArchiveCopy.ts
+ M src/features/product-image-studio/server/archivePageData.ts
+ M src/features/product-image-studio/server/assetImageResponse.ts
+ M src/features/product-image-studio/server/blobFileStore.ts
+ M src/features/product-image-studio/server/downloads.ts
+ M src/features/product-image-studio/server/fileStore.ts
+ M src/features/product-image-studio/server/geminiImageProvider.ts
+ M src/features/product-image-studio/server/imageProvider.ts
+ M src/features/product-image-studio/server/openAiImageProvider.ts
+ M src/lib/persistence/productImageStudioArchiveReadModels.ts
+ M src/lib/persistence/productImageStudioPostgresArchiveRepository.ts
+ M tests/product-image-studio/aiTools.test.ts
+ M tests/product-image-studio/archivePageData.test.ts
+ M tests/product-image-studio/assetUploadApi.test.ts
+ M tests/product-image-studio/downloads.test.ts
+ M tests/product-image-studio/fileStore.test.ts
+ M tests/product-image-studio/geminiImageProvider.test.ts
+ M tests/product-image-studio/imageProvider.test.ts
+ M tests/product-image-studio/openAiImageProvider.test.ts
+ M tests/product-image-studio/providerGate.test.ts
+ M tests/product-image-studio/resultArchiveUi.test.ts
+ M tests/product-image-studio/smokeContract.test.ts
+ M tests/product-image-studio/uploadArchive.test.ts
+ M tests/product-image-studio/workspaceSupportPages.test.ts
+?? .omo/
+?? src/app/api/product-image-studio/image-generator/
+?? src/app/product-image-studio/ai-tools/image-generator/
+?? src/components/product-image-studio/ProductImageStudioImageGenerator.module.css
+?? src/components/product-image-studio/ProductImageStudioImageGenerator.tsx
+?? "src/components/product-image-studio/ProductImageStudioUploadLibrary.module 2.css"
+?? src/features/product-image-studio/client/imageGeneratorApi.ts
+?? src/features/product-image-studio/domain/imageGenerator.ts
+?? src/features/product-image-studio/server/fileStoreErrors.ts
+?? src/features/product-image-studio/server/fileStoreMime.ts
+?? src/features/product-image-studio/server/fileStorePaths.ts
+?? src/features/product-image-studio/server/imageGeneratorPersistence.ts
+?? src/features/product-image-studio/server/imageGeneratorPrompt.ts
+?? src/features/product-image-studio/server/imageGeneratorRoutePayload.ts
+?? src/features/product-image-studio/server/imageGeneratorRunner.ts
+?? src/features/product-image-studio/server/svgAssetRasterizer.ts
+?? src/features/product-image-studio/server/svgAssetSanitizer.ts
+?? tests/product-image-studio/blobFileStore.test.ts
+?? tests/product-image-studio/imageGeneratorDomain.test.ts
+?? tests/product-image-studio/imageGeneratorProxy.test.ts
+?? tests/product-image-studio/imageGeneratorRoute.test.ts
+?? tests/product-image-studio/imageGeneratorUi.test.ts
+?? tests/product-image-studio/svgAssetRasterizer.test.ts
+?? tests/product-image-studio/svgAssetSanitizer.test.ts

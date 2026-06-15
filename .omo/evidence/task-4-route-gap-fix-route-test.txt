@@ -1,0 +1,12 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/imageGeneratorRoute.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  18:54:18
+   Duration  358ms (transform 98ms, setup 0ms, import 234ms, tests 57ms, environment 0ms)

@@ -65,7 +65,7 @@ function RecentResultList({ results }: { readonly results: readonly ProductImage
     <ul className={styles.activityList}>
       {results.map((result) => (
         <li className={styles.activityItem} key={result.resultId}>
-          <span className={styles.cardMeta}>{getProductImageStudioArchiveOutputLabel(result.outputType)}</span>
+          <span className={styles.cardMeta}>{getProductImageStudioArchiveOutputLabel(result.outputType, result.workflow)}</span>
           <strong>{result.projectName}</strong>
           <p className={styles.activityMeta}>{formatProductImageStudioArchiveDate(result.createdAt)}</p>
           <div className={styles.activityActions}>

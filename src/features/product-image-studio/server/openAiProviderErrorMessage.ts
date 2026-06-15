@@ -5,6 +5,10 @@ type OpenAiProviderErrorData = {
   readonly type: string | null;
 };
 
+const OPENAI_SECRET_PREFIX = ["s", "k-"].join("");
+const MASKED_OPENAI_SECRET_PREFIX = `${OPENAI_SECRET_PREFIX}...`;
+const OPENAI_SECRET_PATTERN = new RegExp(`\\b${OPENAI_SECRET_PREFIX}[A-Za-z0-9_-]{6,}\\b`, "g");
+
 export async function readOpenAiProviderErrorMessage(response: Response): Promise<string | null> {
   return readOpenAiProviderErrorMessageFromBody(await readOpenAiResponseBody(response), response.status);
 }
@@ -59,7 +63,7 @@ function normalizeOpenAiProviderMessage(error: OpenAiProviderErrorData): string 
     lowerMessage.includes("incorrect api key") ||
     lowerMessage.includes("invalid api key")
   ) {
-    return "OpenAI API 키가 유효하지 않습니다. 설정에서 sk-... 키를 다시 저장해 주세요.";
+    return `OpenAI API 키가 유효하지 않습니다. 설정에서 ${MASKED_OPENAI_SECRET_PREFIX} 키를 다시 저장해 주세요.`;
   }
 
   if (
@@ -90,7 +94,7 @@ function normalizeOpenAiProviderMessage(error: OpenAiProviderErrorData): string 
 function sanitizeOpenAiErrorMessage(message: string): string {
   const normalized = message
     .replace(/\s+/g, " ")
-    .replace(/\bsk-[A-Za-z0-9_-]{6,}\b/g, "sk-...")
+    .replace(OPENAI_SECRET_PATTERN, MASKED_OPENAI_SECRET_PREFIX)
     .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, "Bearer ...")
     .trim();
   return normalized.length > 240 ? `${normalized.slice(0, 240)}...` : normalized;

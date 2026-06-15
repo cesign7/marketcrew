@@ -1,15 +1,50 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 import type {
   ProductImageStudioAssetRole,
   ProductImageStudioOutputType,
   ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
+import {
+  getExtensionForContentType,
+  parseGeneratedImageMimeType,
+  parseImageMimeTypeFromStorageKey,
+  prepareProductImageAssetForStorage,
+  type ProductImageStudioGeneratedImageMimeType,
+  type ProductImageStudioImageMimeType,
+} from "@/features/product-image-studio/server/fileStoreMime";
+import { ProductImageStudioFileStoreError } from "@/features/product-image-studio/server/fileStoreErrors";
+import {
+  buildStorageKey,
+  sanitizeOriginalFileName,
+  toGeneratedProductImageFileName,
+  toRelativeStoragePath,
+  toSafePathSegment,
+} from "@/features/product-image-studio/server/fileStorePaths";
 
-export const PRODUCT_IMAGE_STUDIO_ALLOWED_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp"] as const;
-
-export type ProductImageStudioImageMimeType = (typeof PRODUCT_IMAGE_STUDIO_ALLOWED_IMAGE_MIME_TYPES)[number];
+export {
+  PRODUCT_IMAGE_STUDIO_ALLOWED_IMAGE_MIME_TYPES,
+  PRODUCT_IMAGE_STUDIO_GENERATED_IMAGE_MIME_TYPES,
+  getExtensionForContentType,
+  parseGeneratedImageMimeType,
+  parseImageMimeType,
+  parseImageMimeTypeFromStorageKey,
+  prepareProductImageAssetForStorage,
+  type ProductImageStudioGeneratedImageMimeType,
+  type ProductImageStudioImageMimeType,
+} from "@/features/product-image-studio/server/fileStoreMime";
+export {
+  buildStorageKey,
+  sanitizeOriginalFileName,
+  toGeneratedProductImageFileName,
+  toRelativeStoragePath,
+  toSafePathSegment,
+} from "@/features/product-image-studio/server/fileStorePaths";
+export {
+  ProductImageStudioFileStoreError,
+  type ProductImageStudioFileStoreErrorCode,
+} from "@/features/product-image-studio/server/fileStoreErrors";
 
 export type SaveProductImageInput = {
   readonly bytes: Uint8Array;
@@ -21,11 +56,13 @@ export type SaveProductImageInput = {
 
 export type SaveGeneratedProductImageInput = {
   readonly bytes: Uint8Array;
-  readonly contentType: ProductImageStudioImageMimeType;
+  readonly contentType: ProductImageStudioGeneratedImageMimeType;
   readonly generationRequestId: string;
   readonly outputType: ProductImageStudioOutputType;
   readonly projectId: string;
   readonly ratio: ProductImageStudioRatioPreset;
+  readonly sequence?: number;
+  readonly suffix?: string;
 };
 
 export type SavedProductImageFile = {
@@ -54,18 +91,6 @@ export type LocalProductImageFileStoreOptions = {
   readonly publicBasePath: string;
   readonly rootDirectory: string;
 };
-
-export type ProductImageStudioFileStoreErrorCode = "UNSUPPORTED_IMAGE_TYPE" | "IMAGE_TOO_LARGE";
-
-export class ProductImageStudioFileStoreError extends Error {
-  readonly code: ProductImageStudioFileStoreErrorCode;
-
-  constructor(code: ProductImageStudioFileStoreErrorCode, message: string) {
-    super(message);
-    this.name = "ProductImageStudioFileStoreError";
-    this.code = code;
-  }
-}
 
 export function createLocalProductImageFileStore(options: LocalProductImageFileStoreOptions): ProductImageFileStore {
   return new LocalProductImageFileStore(options);
@@ -123,30 +148,31 @@ class LocalProductImageFileStore implements ProductImageFileStore {
   }
 
   async saveImage(input: SaveProductImageInput): Promise<SavedProductImageFile> {
-    const contentType = parseImageMimeType(input.contentType);
-    if (input.bytes.byteLength > this.maxBytes) {
+    const prepared = prepareProductImageAssetForStorage(input.bytes, input.contentType);
+    if (prepared.bytes.byteLength > this.maxBytes) {
       throw new ProductImageStudioFileStoreError("IMAGE_TOO_LARGE", "이미지 파일이 허용 용량을 넘었습니다.");
     }
 
-    const extension = getExtensionForContentType(contentType);
+    const extension = getExtensionForContentType(prepared.contentType);
     const safeProjectId = toSafePathSegment(input.projectId);
     const safeRole = toSafePathSegment(input.role);
     const fileName = `${toSafePathSegment(this.createId())}.${extension}`;
     return this.writeImage({
-      bytes: input.bytes,
-      contentType,
+      bytes: prepared.bytes,
+      contentType: prepared.contentType,
       originalFileName: sanitizeOriginalFileName(input.originalFileName),
       storageKey: buildStorageKey(safeProjectId, safeRole, fileName),
     });
   }
 
   async saveGeneratedImage(input: SaveGeneratedProductImageInput): Promise<SavedProductImageFile> {
+    const contentType = parseGeneratedImageMimeType(input.contentType);
     const safeProjectId = toSafePathSegment(input.projectId);
     const safeGenerationId = toSafePathSegment(input.generationRequestId);
-    const fileName = `${toSafePathSegment(input.outputType)}-${toSafePathSegment(input.ratio.replace(":", "x"))}.png`;
+    const fileName = toGeneratedProductImageFileName({ ...input, contentType });
     return this.writeImage({
       bytes: input.bytes,
-      contentType: input.contentType,
+      contentType,
       originalFileName: fileName,
       storageKey: buildStorageKey(safeProjectId, "results", safeGenerationId, fileName),
     });
@@ -196,75 +222,8 @@ class LocalProductImageFileStore implements ProductImageFileStore {
   }
 }
 
-export function parseImageMimeType(contentType: string): ProductImageStudioImageMimeType {
-  switch (contentType) {
-    case "image/png":
-    case "image/jpeg":
-    case "image/webp":
-      return contentType;
-    default:
-      throw new ProductImageStudioFileStoreError("UNSUPPORTED_IMAGE_TYPE", "지원하지 않는 이미지 형식입니다.");
-  }
-}
-
-export function getExtensionForContentType(contentType: ProductImageStudioImageMimeType): string {
-  switch (contentType) {
-    case "image/png":
-      return "png";
-    case "image/jpeg":
-      return "jpg";
-    case "image/webp":
-      return "webp";
-  }
-}
-
-export function sanitizeOriginalFileName(originalFileName: string): string {
-  const fileName = basename(originalFileName).replaceAll(/[^A-Za-z0-9._-]/g, "-");
-  return fileName || "upload";
-}
-
-export function toSafePathSegment(value: string): string {
-  const segment = value.replaceAll(/[^A-Za-z0-9._-]/g, "-");
-  if (segment === "." || segment === "..") {
-    return "item";
-  }
-  return segment || "item";
-}
-
 function trimTrailingSlash(value: string): string {
   return value.endsWith("/") ? value.slice(0, -1) : value;
-}
-
-export function buildStorageKey(...segments: readonly string[]): string {
-  return ["product-image-studio", ...segments.map(toSafePathSegment)].join("/");
-}
-
-export function toRelativeStoragePath(storageKey: string): string | null {
-  const prefix = "product-image-studio/";
-  if (!storageKey.startsWith(prefix)) {
-    return null;
-  }
-
-  const relativePath = storageKey.slice(prefix.length);
-  const segments = relativePath.split("/");
-  if (
-    segments.length === 0 ||
-    segments.some((segment) => segment.length === 0 || segment === "." || segment === ".." || toSafePathSegment(segment) !== segment)
-  ) {
-    return null;
-  }
-
-  return relativePath;
-}
-
-function parseImageMimeTypeFromStorageKey(storageKey: string): ProductImageStudioImageMimeType {
-  if (storageKey.endsWith(".jpg") || storageKey.endsWith(".jpeg")) {
-    return "image/jpeg";
-  }
-  if (storageKey.endsWith(".webp")) {
-    return "image/webp";
-  }
-  return "image/png";
 }
 
 function isNodeErrorCode(error: unknown, code: string): boolean {

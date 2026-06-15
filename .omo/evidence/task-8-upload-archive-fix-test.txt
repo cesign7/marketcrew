@@ -1,0 +1,12 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/uploadArchive.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  19:21:58
+   Duration  513ms (transform 187ms, setup 0ms, import 403ms, tests 25ms, environment 0ms)

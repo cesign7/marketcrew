@@ -3,6 +3,7 @@ import type {
   ProductImageStudioProviderCallInput,
   ProductImageStudioProviderImageResult,
   ProductImageStudioProviderReferenceImage,
+  ProductImageStudioProviderResolution,
 } from "@/features/product-image-studio/server/imageProvider";
 import type { ProductImageStudioQualityMode, ProductImageStudioRatioPreset } from "@/features/product-image-studio/domain/types";
 import { readOpenAiProviderErrorMessage } from "@/features/product-image-studio/server/openAiProviderErrorMessage";
@@ -60,30 +61,44 @@ export type OpenAiGenerationRequestBody = {
   readonly n: 1;
   readonly output_format: "png";
   readonly prompt: string;
-  readonly quality: "low" | "high";
-  readonly size: string;
+  readonly quality: OpenAiImageQuality;
+  readonly size: OpenAiImageSize;
 };
+
+type OpenAiImageQuality = "low" | "high";
+
+type OpenAiImageSize =
+  | "1024x1024"
+  | "1024x1536"
+  | "1536x1024"
+  | "1536x2048"
+  | "1632x2048"
+  | "2048x1152"
+  | "2048x2048"
+  | "auto";
 
 export function buildOpenAiGenerationRequestBody(
   input: ProductImageStudioProviderCallInput,
   model: string,
 ): OpenAiGenerationRequestBody {
+  const requestOptions = toOpenAiRequestOptions(input.promptContext.qualityMode, input.promptContext.ratio, input.promptContext.resolution);
   return {
     model,
     n: 1,
     output_format: "png",
     prompt: input.promptContext.prompt,
-    quality: toOpenAiQuality(input.promptContext.qualityMode),
-    size: toOpenAiSize(input.promptContext.ratio),
+    quality: requestOptions.quality,
+    size: requestOptions.size,
   };
 }
 
 function buildOpenAiEditFormData(input: ProductImageStudioProviderCallInput, model: string): FormData {
+  const requestOptions = toOpenAiRequestOptions(input.promptContext.qualityMode, input.promptContext.ratio, input.promptContext.resolution);
   const formData = new FormData();
   formData.set("model", model);
   formData.set("prompt", input.promptContext.prompt);
-  formData.set("quality", toOpenAiQuality(input.promptContext.qualityMode));
-  formData.set("size", toOpenAiSize(input.promptContext.ratio));
+  formData.set("quality", requestOptions.quality);
+  formData.set("size", requestOptions.size);
 
   for (const image of input.referenceImages) {
     formData.append("image[]", toFile(image));
@@ -169,7 +184,25 @@ function toFile(image: ProductImageStudioProviderReferenceImage): File {
   return new File([image.bytes], image.fileName, { type: image.contentType });
 }
 
-function toOpenAiQuality(qualityMode: ProductImageStudioQualityMode): "low" | "high" {
+function toOpenAiRequestOptions(
+  qualityMode: ProductImageStudioQualityMode,
+  ratio: ProductImageStudioRatioPreset,
+  resolution: ProductImageStudioProviderResolution | undefined,
+): { readonly quality: OpenAiImageQuality; readonly size: OpenAiImageSize } {
+  return {
+    quality: toOpenAiQuality(qualityMode, resolution),
+    size: toOpenAiSize(ratio, resolution),
+  };
+}
+
+function toOpenAiQuality(
+  qualityMode: ProductImageStudioQualityMode,
+  resolution: ProductImageStudioProviderResolution | undefined,
+): OpenAiImageQuality {
+  if (resolution === "0.5k") {
+    return "low";
+  }
+
   switch (qualityMode) {
     case "draft":
       return "low";
@@ -178,7 +211,18 @@ function toOpenAiQuality(qualityMode: ProductImageStudioQualityMode): "low" | "h
   }
 }
 
-function toOpenAiSize(ratio: ProductImageStudioRatioPreset): string {
+function toOpenAiSize(
+  ratio: ProductImageStudioRatioPreset,
+  resolution: ProductImageStudioProviderResolution | undefined,
+): OpenAiImageSize {
+  if (resolution === "2k") {
+    return toOpenAi2kSize(ratio);
+  }
+
+  return toOpenAiNearestSupportedSize(ratio);
+}
+
+function toOpenAiNearestSupportedSize(ratio: ProductImageStudioRatioPreset): OpenAiImageSize {
   switch (ratio) {
     case "1:1":
       return "1024x1024";
@@ -187,6 +231,21 @@ function toOpenAiSize(ratio: ProductImageStudioRatioPreset): string {
       return "1024x1536";
     case "16:9":
       return "1536x1024";
+    case "custom":
+      return "auto";
+  }
+}
+
+function toOpenAi2kSize(ratio: ProductImageStudioRatioPreset): OpenAiImageSize {
+  switch (ratio) {
+    case "1:1":
+      return "2048x2048";
+    case "4:5":
+      return "1632x2048";
+    case "3:4":
+      return "1536x2048";
+    case "16:9":
+      return "2048x1152";
     case "custom":
       return "auto";
   }

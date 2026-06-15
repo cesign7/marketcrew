@@ -1,0 +1,29 @@
+HTTP/manual-QA evidence for review-work blockers
+started_at=2026-06-15T11:49:20Z
+mode=automated route-level HTTP evidence; no dev server started; no real provider calls.
+
+fresh command: npm test -- --run tests/product-image-studio/imageGeneratorRoute.test.ts tests/product-image-studio/imageGeneratorRouteFailures.test.ts
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/imageGeneratorRoute.test.ts tests/product-image-studio/imageGeneratorRouteFailures.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  2 passed (2)
+      Tests  8 passed (8)
+   Start at  20:49:20
+   Duration  297ms (transform 217ms, setup 0ms, import 409ms, tests 48ms, environment 0ms)
+
+route_http_evidence_exit=0
+
+route proof summary:
+- imageGeneratorRoute.test.ts asserts closed gate returns HTTP 423, status blocked, no provider calls, no archive writes, and no secret text.
+- imageGeneratorRouteFailures.test.ts asserts malicious provider failure text containing OPENAI_API_KEY, sk-live-route-leak, internal.marketcrew.local, and token=route-token is absent from HTTP 502 response while requestId remains.
+- Provider calls are fake in-process doubles; mocked fetch responses only; no external provider/network call is made.
+
+inspected prior HTTP evidence: .omo/evidence/f2-code-quality-fix-http.txt exists and documents a gate-closed 423 replay.
+
+binary PASS
+completed_at=2026-06-15T11:49:21Z

@@ -1,0 +1,12 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/openAiImageProvider.test.ts tests/product-image-studio/geminiImageProvider.test.ts tests/product-image-studio/imageProvider.test.ts tests/product-image-studio/imageGeneratorProxy.test.ts tests/product-image-studio/uploadArchive.test.ts tests/product-image-studio/archivePageData.test.ts tests/product-image-studio/downloads.test.ts tests/product-image-studio/resultArchiveUi.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  8 passed (8)
+      Tests  55 passed (55)
+   Start at  19:24:25
+   Duration  599ms (transform 1.39s, setup 0ms, import 2.67s, tests 340ms, environment 1ms)

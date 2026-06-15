@@ -1,0 +1,19 @@
+HTTP/1.1 200 OK
+vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+content-disposition: inline; filename="safe-card.svg"
+content-security-policy: default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox
+content-type: image/svg+xml; charset=utf-8
+x-content-type-options: nosniff
+Date: Mon, 15 Jun 2026 10:22:46 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420" role="img" aria-label="safe card reference">
+  <rect width="640" height="420" fill="#f8fafc"/>
+  <rect x="130" y="70" width="380" height="260" rx="18" fill="#ffffff" stroke="#111827" stroke-width="4"/>
+  <circle cx="210" cy="150" r="36" fill="#006adc"/>
+  <rect x="270" y="132" width="150" height="16" rx="8" fill="#111827"/>
+  <rect x="270" y="166" width="210" height="12" rx="6" fill="#64748b"/>
+  <rect x="180" y="245" width="280" height="26" rx="13" fill="#13795b"/>
+</svg>

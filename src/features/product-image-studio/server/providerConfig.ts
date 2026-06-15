@@ -8,8 +8,12 @@ import {
   getProductImageStudioProviderSettingsSummary,
   type ProductImageStudioProviderSettingsSummary,
 } from "@/features/product-image-studio/server/providerSettingsStore";
+import {
+  readProductImageStudioEnvCredential,
+  type ProductImageStudioProviderEnv,
+} from "@/features/product-image-studio/server/providerEnvCredential";
 
-export type ProductImageStudioProviderEnv = Readonly<Record<string, string | undefined>>;
+export type { ProductImageStudioProviderEnv } from "@/features/product-image-studio/server/providerEnvCredential";
 
 export type ProductImageStudioProviderRuntimeSettings = {
   readonly apiKey: string | null;
@@ -71,7 +75,7 @@ export function parseProductImageStudioProviderConfig(
 ): ProductImageStudioProviderConfig {
   const provider = requestedProvider ?? readProviderName(env.PRODUCT_IMAGE_STUDIO_PROVIDER);
   return parseProductImageStudioProviderRuntimeConfig({
-    apiKey: readEnvCredential(provider, env),
+    apiKey: readProductImageStudioEnvCredential(provider, env),
     generationEnabled: env.PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED === "1",
     model: readEnvModel(provider, env),
     provider,
@@ -245,17 +249,6 @@ function readEnvModel(provider: ProductImageStudioProviderName | null, env: Prod
       return env.PRODUCT_IMAGE_STUDIO_OPENAI_IMAGE_MODEL ?? null;
     case "gemini":
       return env.PRODUCT_IMAGE_STUDIO_GEMINI_IMAGE_MODEL ?? null;
-    case null:
-      return null;
-  }
-}
-
-function readEnvCredential(provider: ProductImageStudioProviderName | null, env: ProductImageStudioProviderEnv): string | null {
-  switch (provider) {
-    case "openai":
-      return env.OPENAI_API_KEY ?? null;
-    case "gemini":
-      return env.GEMINI_API_KEY ?? env.GOOGLE_GENERATIVE_AI_API_KEY ?? null;
     case null:
       return null;
   }

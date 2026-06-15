@@ -1,0 +1,17 @@
+Manual QA for Todo 5
+
+Page: http://localhost:3100/product-image-studio/ai-tools/image-generator
+Server env: MARKETCREW_AUTH_DISABLED=1, PRODUCT_IMAGE_STUDIO_FAKE_PROVIDER_ENABLED=1
+
+Browser checks:
+- Page rendered inside ProductImageStudioShell with AI tools nav active.
+- No unrelated "새 상품컷" primary action was visible.
+- Prompt textarea, reference upload copy, model controls, count select, ratio radios, resolution radios, and disabled empty-prompt generate state were visible.
+- Filled prompt: 정돈된 테이블 위 프리미엄 카드 설정샷
+- Selected model: 나노바나나 2
+- Selected count: 2
+- Clicked scoped form submit button "생성".
+- PASS: result canvas showed "2장 준비" and two download links with raster result labels.
+
+Limit:
+- The in-app Browser runtime exposes the file input but does not expose setInputFiles; SVG upload was verified by static render tests and the safe fixture exists at .omo/evidence/fixtures/safe-card.svg.

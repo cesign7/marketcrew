@@ -1,0 +1,52 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/imageGeneratorUi.test.ts tests/product-image-studio/aiTools.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+ ❯ tests/product-image-studio/imageGeneratorUi.test.ts (0 test)
+ ❯ tests/product-image-studio/aiTools.test.ts (2 tests | 1 failed) 26ms
+     × renders seven AI tool cards with product staging and image generator enabled 14ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/product-image-studio/imageGeneratorUi.test.ts [ tests/product-image-studio/imageGeneratorUi.test.ts ]
+Error: Cannot find package '@/app/product-image-studio/ai-tools/image-generator/page' imported from /Users/mini/Documents/marketcrew2/tests/product-image-studio/imageGeneratorUi.test.ts
+ ❯ tests/product-image-studio/imageGeneratorUi.test.ts:4:1
+      2| import { renderToStaticMarkup } from "react-dom/server";
+      3| import { afterEach, describe, expect, it, vi } from "vitest";
+      4| import ImageGeneratorPage from "@/app/product-image-studio/ai-tools/im…
+       | ^
+      5| import { ProductImageStudioImageGenerator } from "@/components/product…
+      6| import { readProductImageStudioImageGeneratorGenerationResponse } from…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/product-image-studio/aiTools.test.ts > product image studio AI tools routes > renders seven AI tool cards with product staging and image generator enabled
+AssertionError: expected 6 to be 7 // Object.is equality
+
+- Expected
++ Received
+
+- 7
++ 6
+
+ ❯ tests/product-image-studio/aiTools.test.ts:36:58
+     34|
+     35|     // Then: all planned tools are visible in Korean, with only ready …
+     36|     expect(countOccurrences(html, "data-ai-tool-card=")).toBe(7);
+       |                                                          ^
+     37|     expect(html).toContain("7개 도구");
+     38|     for (const toolName of TOOL_NAMES) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  1 failed | 1 passed (2)
+   Start at  18:29:11
+   Duration  590ms (transform 293ms, setup 0ms, import 479ms, tests 26ms, environment 0ms)

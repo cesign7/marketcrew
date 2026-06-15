@@ -1,0 +1,6 @@
+cleanup_at=2026-06-15T10:24:47Z
+removed=/tmp/marketcrew-task-8-assets
+removed=/tmp/marketcrew-task-8-cdp-profile
+port_3100=free
+test_results_dir=absent
+playwright_report_dir=absent

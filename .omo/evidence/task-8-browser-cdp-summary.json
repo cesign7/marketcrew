@@ -1,0 +1,90 @@
+{
+  "activityPage": {
+    "generatedResultVisible": true,
+    "promptPreviewVisible": true
+  },
+  "apiSummary": {
+    "downloadUrl": "/api/product-image-studio/projects/53c650be-5f9b-49c0-b91f-01ad201df16b/results/986659a9-6f3e-45c6-a71e-094bc12540e1/download",
+    "projectId": "53c650be-5f9b-49c0-b91f-01ad201df16b",
+    "resultId": "986659a9-6f3e-45c6-a71e-094bc12540e1",
+    "safeSvgAssetId": "0b28e947-704d-4ee6-ad9c-68e3b8b2b33d",
+    "safeSvgContentType": "image/svg+xml",
+    "safeSvgPreviewUrl": "/api/product-image-studio/projects/53c650be-5f9b-49c0-b91f-01ad201df16b/assets/0b28e947-704d-4ee6-ad9c-68e3b8b2b33d/preview"
+  },
+  "blocked": {
+    "blockedText": "",
+    "generateDisabled": true,
+    "resultDownloadCount": 0
+  },
+  "consoleErrors": [],
+  "generated": {
+    "downloadLinks": [
+      {
+        "href": "/api/product-image-studio/projects/53c650be-5f9b-49c0-b91f-01ad201df16b/results/e5d4edb1-5f48-4238-94df-6902d3b91bca/download",
+        "text": "다운로드"
+      },
+      {
+        "href": "/api/product-image-studio/projects/53c650be-5f9b-49c0-b91f-01ad201df16b/results/986659a9-6f3e-45c6-a71e-094bc12540e1/download",
+        "text": "다운로드"
+      }
+    ],
+    "generatedImageCount": 2,
+    "readyTextVisible": true
+  },
+  "hub": {
+    "cardCount": 7,
+    "cards": [
+      {
+        "id": "product-staging",
+        "state": "enabled",
+        "text": "사용 가능상품 설정샷 생성인쇄물 디자인을 업로드하고 실제 규격에 맞춘 설정샷을 만듭니다.바로 시작"
+      },
+      {
+        "id": "image-generator",
+        "state": "enabled",
+        "text": "사용 가능AI 이미지 생성기프롬프트와 참고 이미지를 넣어 새 이미지를 생성합니다.바로 시작"
+      },
+      {
+        "id": "background-props",
+        "state": "disabled",
+        "text": "준비 중배경/소품 생성촬영 분위기에 맞는 배경과 소품 후보를 준비합니다.준비 중"
+      },
+      {
+        "id": "ratio-resize",
+        "state": "disabled",
+        "text": "준비 중비율 변경대표 이미지와 상세 이미지에 맞는 출력 비율을 조정합니다.준비 중"
+      },
+      {
+        "id": "similar-image",
+        "state": "disabled",
+        "text": "준비 중비슷한 이미지 생성선택한 결과와 닮은 이미지 후보를 더 만듭니다.준비 중"
+      },
+      {
+        "id": "mockup-composite",
+        "state": "disabled",
+        "text": "준비 중목업 합성보관한 디자인을 목업 화면에 합성합니다.준비 중"
+      },
+      {
+        "id": "detail-page-blocks",
+        "state": "disabled",
+        "text": "준비 중상세페이지 이미지 블록 생성상세페이지에 넣을 이미지 블록 구성을 만듭니다.준비 중"
+      }
+    ],
+    "generatorCardVisible": true
+  },
+  "initial": {
+    "emptyPromptBlocked": true,
+    "frameworkOverlay": false,
+    "hasGeneratorCopy": true
+  },
+  "uploadState": {
+    "pngVisible": true,
+    "svgReferenceVisible": true,
+    "svgVisible": true
+  },
+  "uploadsPage": {
+    "pngVisible": true,
+    "safeSvgVisible": true,
+    "svgMetadataVisible": true
+  }
+}

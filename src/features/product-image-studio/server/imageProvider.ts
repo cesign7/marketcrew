@@ -12,17 +12,28 @@ import {
   buildProductImageStudioValidationChecklist,
 } from "@/features/product-image-studio/domain/productionSettings";
 import { parseProductImageStudioProviderConfig, parseProductImageStudioProviderRuntimeConfig, type ProductImageStudioProviderEnv } from "@/features/product-image-studio/server/providerConfig";
+import { createFakeProductImageStudioImageProvider } from "@/features/product-image-studio/server/fakeImageProvider";
 import { createGeminiImageProvider } from "@/features/product-image-studio/server/geminiImageProvider";
 import { createOpenAiImageProvider } from "@/features/product-image-studio/server/openAiImageProvider";
 import { buildProductImageStudioPromptHarnessLines } from "@/features/product-image-studio/server/promptHarness";
+import { readRequiredProductImageStudioEnvCredential } from "@/features/product-image-studio/server/providerEnvCredential";
 import { getActiveProductImageStudioProviderSettings } from "@/features/product-image-studio/server/providerSettingsStore";
 import type { ProductImageStudioProjectRecord } from "@/lib/persistence/productImageStudioRepository";
+
+export {
+  createFakeProductImageStudioImageGeneratorProviderResult,
+  createFakeProductImageStudioImageProvider,
+} from "@/features/product-image-studio/server/fakeImageProvider";
+
+export type ProductImageStudioProviderResolution = "0.5k" | "1k" | "2k";
 
 export type ProductImageStudioPromptContext = {
   readonly assetRoles: readonly ProductImageStudioAssetRole[];
   readonly prompt: string;
   readonly qualityMode: ProductImageStudioQualityMode;
   readonly ratio: ProductImageStudioRatioPreset;
+  readonly resolution?: ProductImageStudioProviderResolution;
+  readonly resultIndex?: number;
 };
 
 export type ProductImageStudioPromptContextInput = {
@@ -109,21 +120,6 @@ export function buildProductImageStudioPromptContext(
   };
 }
 
-export function createFakeProductImageStudioImageProvider(): ImageGenerationProvider {
-  return {
-    name: "fake",
-    async editWithReferences(input) {
-      return createFakeImageResult("editWithReferences", input.promptContext);
-    },
-    async generateScene(input) {
-      return createFakeImageResult("generateScene", input.promptContext);
-    },
-    async regenerateRatio(input) {
-      return createFakeImageResult("regenerateRatio", input.promptContext);
-    },
-  };
-}
-
 export function resolveProductImageStudioImageProvider(
   env: ProductImageStudioProviderEnv = process.env,
   requestedProvider?: ProductImageStudioProviderName,
@@ -140,7 +136,7 @@ export function resolveProductImageStudioImageProvider(
   return {
     kind: "enabled",
     model: config.gate.model,
-    provider: createProviderAdapter(config.gate.provider, config.gate.model, readEnvProviderApiKey(config.gate.provider, env)),
+    provider: createProviderAdapter(config.gate.provider, config.gate.model, readRequiredProductImageStudioEnvCredential(config.gate.provider, env)),
   };
 }
 
@@ -180,30 +176,6 @@ function createProviderAdapter(
     case "openai":
       return createOpenAiImageProvider({ apiKey, model });
   }
-}
-
-function readEnvProviderApiKey(provider: "gemini" | "openai", env: ProductImageStudioProviderEnv): string {
-  switch (provider) {
-    case "gemini":
-      return env.GEMINI_API_KEY ?? env.GOOGLE_GENERATIVE_AI_API_KEY ?? "";
-    case "openai":
-      return env.OPENAI_API_KEY ?? "";
-  }
-}
-
-function createFakeImageResult(
-  _operation: string,
-  promptContext: ProductImageStudioPromptContext,
-): ProductImageStudioProviderImageResult {
-  return {
-    b64Json:
-      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC",
-    contentType: "image/png",
-    height: promptContext.ratio === "16:9" ? 1024 : 1200,
-    model: "fake-product-image-studio",
-    provider: "fake",
-    width: promptContext.ratio === "16:9" ? 1536 : 1200,
-  };
 }
 
 function getCardFormatFallbackGeometry(cardFormat: ProductImageStudioProjectRecord["cardFormat"]): string {

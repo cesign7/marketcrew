@@ -2,6 +2,9 @@ import { getDefaultProductImageStudioFileStore } from "@/features/product-image-
 import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
 import type { StoredProductImageFile } from "@/features/product-image-studio/server/fileStore";
 
+export const PRODUCT_IMAGE_STUDIO_SVG_PREVIEW_CONTENT_SECURITY_POLICY =
+  "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox";
+
 export type ProductImageStudioAssetImage =
   | {
       readonly fileName: string;
@@ -35,4 +38,19 @@ export async function readProductImageStudioAssetImage(
   }
 
   return { fileName: asset.originalFileName, image, ok: true };
+}
+
+export function createProductImageStudioAssetPreviewHeaders(input: {
+  readonly contentType: string;
+  readonly fileName: string;
+}): Headers {
+  const headers = new Headers({
+    "content-disposition": `inline; filename="${input.fileName}"`,
+    "content-type": input.contentType === "image/svg+xml" ? "image/svg+xml; charset=utf-8" : input.contentType,
+  });
+  if (input.contentType === "image/svg+xml") {
+    headers.set("Content-Security-Policy", PRODUCT_IMAGE_STUDIO_SVG_PREVIEW_CONTENT_SECURITY_POLICY);
+    headers.set("X-Content-Type-Options", "nosniff");
+  }
+  return headers;
 }

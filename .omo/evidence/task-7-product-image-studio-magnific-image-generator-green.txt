@@ -1,0 +1,13 @@
+Command:
+npm test -- --run tests/product-image-studio/imageGeneratorProxy.test.ts tests/product-image-studio/smokeContract.test.ts tests/product-image-studio/providerGate.test.ts
+
+Output:
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/imageGeneratorProxy.test.ts tests/product-image-studio/smokeContract.test.ts tests/product-image-studio/providerGate.test.ts
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+ Test Files  3 passed (3)
+      Tests  17 passed (17)
+   Start at  18:29:20
+   Duration  186ms (transform 100ms, setup 0ms, import 225ms, tests 25ms, environment 0ms)

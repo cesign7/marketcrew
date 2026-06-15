@@ -7,6 +7,7 @@ const checks = [
   checkPageRender(`${appUrl}/login?next=%2Fproduct-image-studio`, "대표 로그인 페이지 렌더", "대표 로그인"),
   checkLoginGate(`${appUrl}/operations`, "대표 로그인 보호"),
   checkLoginGate(`${appUrl}/product-image-studio`, "상품 이미지 스튜디오 로그인 보호"),
+  checkLoginGate(`${appUrl}/product-image-studio/ai-tools/image-generator`, "AI 이미지 생성기 로그인 보호"),
   checkApiLoginGate(`${appUrl}/api/product-image-studio/provider-status`, "상품 이미지 생성 상태 API 보호"),
   checkApiLoginGate(`${appUrl}/api/product-image-studio/provider-settings`, "상품 이미지 provider 설정 API 보호"),
 ];

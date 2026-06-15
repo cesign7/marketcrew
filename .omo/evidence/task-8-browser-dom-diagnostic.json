@@ -1,0 +1,76 @@
+{
+  "buttons": [
+    {
+      "ariaPressed": null,
+      "disabled": false,
+      "text": "마켓크루인쇄물 상품컷",
+      "type": "button"
+    },
+    {
+      "ariaPressed": null,
+      "disabled": false,
+      "text": "로그아웃",
+      "type": "submit"
+    },
+    {
+      "ariaPressed": null,
+      "disabled": false,
+      "text": "상품명, 디자인, 생성 항목 검색⌘K",
+      "type": "button"
+    },
+    {
+      "ariaPressed": null,
+      "disabled": false,
+      "text": "",
+      "type": "button"
+    },
+    {
+      "ariaPressed": "false",
+      "disabled": false,
+      "text": "GPT Image 2",
+      "type": "button"
+    },
+    {
+      "ariaPressed": "true",
+      "disabled": false,
+      "text": "나노바나나 2",
+      "type": "button"
+    },
+    {
+      "ariaPressed": null,
+      "disabled": true,
+      "text": "생성",
+      "type": "submit"
+    }
+  ],
+  "cards": [
+    {
+      "href": "/product-image-studio/ai-tools",
+      "tag": "A",
+      "text": "AI 도구"
+    },
+    {
+      "href": null,
+      "tag": "SECTION",
+      "text": "상품명, 디자인, 생성 항목 검색⌘KAI 도구AI 이미지 생성기프롬프트와 참고 이미지로 바로 쓸 수 있는 상품 이미지를 만듭니다.결과 화면결과 캔버스참고 이미지는 디자인 방향만 전달하며, 생성 결과는 다운로드 가능한"
+    },
+    {
+      "href": null,
+      "tag": "SECTION",
+      "text": "AI 도구AI 이미지 생성기프롬프트와 참고 이미지로 바로 쓸 수 있는 상품 이미지를 만듭니다."
+    }
+  ],
+  "statusLines": [
+    {
+      "blocked": "true",
+      "text": "이미지 생성 차단됨: 이미지 provider가 설정되지 않았습니다."
+    }
+  ],
+  "textareas": [
+    {
+      "disabled": false,
+      "name": "prompt",
+      "valueLength": 0
+    }
+  ]
+}

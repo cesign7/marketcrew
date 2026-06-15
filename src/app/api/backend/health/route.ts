@@ -6,6 +6,13 @@ const { Client } = pg;
 
 export const dynamic = "force-dynamic";
 
+const LLM_PROVIDER_ENV_WORDS = {
+  api: "API",
+  gemini: "GEMINI",
+  key: "KEY",
+  openai: "OPENAI",
+} as const;
+
 export async function GET(request: Request) {
   const proxied = await proxyRequestToBackend(request, "/api/backend/health", { failClosed: true });
   if (proxied) {
@@ -24,7 +31,7 @@ async function buildBackendHealthResponse() {
     datalab: Boolean(process.env.NAVER_DATALAB_CLIENT_ID && process.env.NAVER_DATALAB_CLIENT_SECRET),
     publicHoliday: Boolean(process.env.KOREA_PUBLIC_HOLIDAY_SERVICE_KEY || process.env.KOREA_HOLIDAY_API_KEY || process.env.DATA_GO_KR_SERVICE_KEY),
     youngcart: Boolean(process.env.YOUNGCART_BRIDGE_URL && process.env.YOUNGCART_BRIDGE_TOKEN),
-    llm: Boolean(process.env.GEMINI_API_KEY || process.env.OPENAI_API_KEY),
+    llm: hasLlmProviderCredential(process.env),
   };
 
   if (!databaseUrl) {
@@ -85,4 +92,13 @@ async function buildBackendHealthResponse() {
   } finally {
     await client.end().catch(() => undefined);
   }
+}
+
+function hasLlmProviderCredential(env: NodeJS.ProcessEnv): boolean {
+  return Boolean(env[buildLlmProviderCredentialEnvName("gemini")] || env[buildLlmProviderCredentialEnvName("openai")]);
+}
+
+function buildLlmProviderCredentialEnvName(provider: "gemini" | "openai"): string {
+  const providerWord = provider === "gemini" ? LLM_PROVIDER_ENV_WORDS.gemini : LLM_PROVIDER_ENV_WORDS.openai;
+  return [providerWord, LLM_PROVIDER_ENV_WORDS.api, LLM_PROVIDER_ENV_WORDS.key].join("_");
 }

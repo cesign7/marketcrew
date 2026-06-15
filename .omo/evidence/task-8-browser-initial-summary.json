@@ -1,0 +1,45 @@
+{
+  "hubChecks": {
+    "expectedLabels": [
+      {
+        "label": "상품컷 생성",
+        "visible": true
+      },
+      {
+        "label": "AI 이미지 생성기",
+        "visible": true
+      },
+      {
+        "label": "배경 제거",
+        "visible": false
+      },
+      {
+        "label": "화질 개선",
+        "visible": false
+      },
+      {
+        "label": "이미지 확장",
+        "visible": false
+      },
+      {
+        "label": "문구 추출",
+        "visible": false
+      },
+      {
+        "label": "일괄 리사이즈",
+        "visible": false
+      }
+    ],
+    "newGeneratorCardVisible": true,
+    "toolLabelVisibleCount": 2
+  },
+  "pageUrl": "http://127.0.0.1:3100/product-image-studio/ai-tools/image-generator",
+  "pageTitle": "마켓크루",
+  "generatorHasContent": true,
+  "emptyPromptBlocksGeneration": true,
+  "blockedState": {
+    "blockedText": "이미지 생성 차단됨: 이미지 provider가 설정되지 않았습니다.",
+    "generateDisabled": true,
+    "resultDownloadCount": 0
+  }
+}

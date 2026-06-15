@@ -33,12 +33,14 @@ export type ProductImageStudioResultArchiveItem = {
   readonly model: string | null;
   readonly outputType: ProductImageStudioOutputType;
   readonly previewUrl: string;
+  readonly promptPreview: string | null;
   readonly projectId: string;
   readonly projectName: string;
   readonly projectZipUrl: string;
   readonly provider: string | null;
   readonly ratio: ProductImageStudioRatioPreset;
   readonly resultId: string;
+  readonly workflow: string | null;
   readonly width: number;
 };
 
@@ -73,12 +75,14 @@ export function buildProductImageStudioResultArchiveItem(
     model: readSummaryString(generation.providerRequestSummary, "model"),
     outputType: result.outputType,
     previewUrl: toResultPreviewUrl(project.id, result.id),
+    promptPreview: readSummaryString(generation.providerRequestSummary, "promptPreview"),
     projectId: project.id,
     projectName: project.name,
     projectZipUrl: toProjectZipUrl(project.id),
     provider: readSummaryString(generation.providerRequestSummary, "provider"),
     ratio: result.ratio,
     resultId: result.id,
+    workflow: readSummaryString(generation.providerRequestSummary, "workflow"),
     width: result.width,
   };
 }

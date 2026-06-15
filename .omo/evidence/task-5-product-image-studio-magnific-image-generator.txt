@@ -1,0 +1,1 @@
+PASS generator UI surface pinned

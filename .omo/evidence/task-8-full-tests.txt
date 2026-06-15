@@ -1,0 +1,12 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  92 passed (92)
+      Tests  441 passed (441)
+   Start at  19:23:46
+   Duration  3.53s (transform 7.65s, setup 0ms, import 14.18s, tests 4.28s, environment 10ms)

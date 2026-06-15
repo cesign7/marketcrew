@@ -68,7 +68,67 @@ describe("product image studio upload archive", () => {
     ]);
   });
 
-  it("renders uploads as an image-only library", () => {
+  it("lists generator reference_mood uploads with SVG metadata and reuse links", async () => {
+    // Given: an image-generator project saved PNG and SVG reference files after generation.
+    const repository = createInMemoryProductImageStudioRepository({
+      createId: nextId(["project-ai", "asset-png", "asset-svg"]),
+      now: nextNow([
+        "2026-06-14T01:00:00.000Z",
+        "2026-06-14T01:01:00.000Z",
+        "2026-06-14T01:02:00.000Z",
+      ]),
+    });
+    const project = await repository.createProject({
+      cardFormat: "postcard_flat",
+      name: "AI 이미지 생성기 - 차분한 문구",
+      productType: "card_envelope_seal_set",
+      productionSettings: manualProductionSettings("postcard_flat"),
+      qualityMode: "draft",
+      ratios: ["1:1"],
+      requestedCardPoses: ["postcard_front_flat"],
+      requestedOutputs: ["card_single"],
+    });
+    await repository.addAsset({
+      byteSize: 1200,
+      contentType: "image/png",
+      originalFileName: "reference.png",
+      projectId: project.id,
+      role: "reference_mood",
+      storageKey: "product-image-studio/project-ai/reference_mood/asset-png.png",
+    });
+    await repository.addAsset({
+      byteSize: 300,
+      contentType: "image/svg+xml",
+      originalFileName: "safe-reference.svg",
+      projectId: project.id,
+      role: "reference_mood",
+      storageKey: "product-image-studio/project-ai/reference_mood/asset-svg.svg",
+    });
+
+    // When: the upload archive is read for the uploads page.
+    const uploads = await listProductImageStudioUploadArchiveItems(repository);
+
+    // Then: generator references are reusable stored assets with safe preview routes.
+    expect(uploads).toEqual([
+      expect.objectContaining({
+        assetId: "asset-svg",
+        contentType: "image/svg+xml",
+        designUseUrl: "/product-image-studio/designs?upload=asset-svg",
+        originalFileName: "safe-reference.svg",
+        previewUrl: "/api/product-image-studio/projects/project-ai/assets/asset-svg/preview",
+        projectName: "AI 이미지 생성기 - 차분한 문구",
+        role: "reference_mood",
+        templateUseUrl: "/product-image-studio/templates?upload=asset-svg",
+      }),
+      expect.objectContaining({
+        assetId: "asset-png",
+        contentType: "image/png",
+        role: "reference_mood",
+      }),
+    ]);
+  });
+
+  it("renders uploads with reusable asset metadata", () => {
     // Given: the uploads page receives archived source assets.
     const html = renderToStaticMarkup(
       createElement(ProductImageStudioUploadsWorkspacePage, {
@@ -76,15 +136,17 @@ describe("product image studio upload archive", () => {
       }),
     );
 
-    // Then: the page body only exposes uploaded image thumbnails.
+    // Then: the page exposes thumbnail, file metadata, and reuse actions.
     expect(html).toContain('src="/api/product-image-studio/projects/project-1/assets/asset-1/preview"');
+    expect(html).toContain("safe-card.svg");
+    expect(html).toContain("AI 이미지 생성기 - 참고");
+    expect(html).toContain("참고 이미지");
+    expect(html).toContain("image/svg+xml");
+    expect(html).toContain("디자인에 사용");
+    expect(html).toContain("템플릿에 적용");
     expect(html).not.toContain("새 상품컷");
     expect(html).not.toContain("새 업로드");
     expect(html).not.toContain("업로드 라이브러리");
-    expect(html).not.toContain("card-front.png");
-    expect(html).not.toContain("접이식 카드 앞면");
-    expect(html).not.toContain("디자인에서 사용");
-    expect(html).not.toContain("템플릿에 적용");
     expect(html).not.toContain("원본 보기");
     expect(html).not.toContain("저장된 업로드가 아직 없습니다");
   });
@@ -131,15 +193,15 @@ function uploadItem(): ProductImageStudioUploadArchiveItem {
   return {
     assetId: "asset-1",
     byteSize: 1500,
-    contentType: "image/png",
+    contentType: "image/svg+xml",
     createdAt: "2026-06-14T00:01:00.000Z",
     designUseUrl: "/product-image-studio/designs?upload=asset-1",
-    originalFileName: "card-front.png",
+    originalFileName: "safe-card.svg",
     previewUrl: "/api/product-image-studio/projects/project-1/assets/asset-1/preview",
     projectId: "project-1",
-    projectName: "봄 초대장 세트",
-    role: "folded_card_outer_front",
-    storageKey: "product-image-studio/project-1/folded_card_outer_front/asset-1.png",
+    projectName: "AI 이미지 생성기 - 참고",
+    role: "reference_mood",
+    storageKey: "product-image-studio/project-1/reference_mood/asset-1.svg",
     templateUseUrl: "/product-image-studio/templates?upload=asset-1",
   };
 }

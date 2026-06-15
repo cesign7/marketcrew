@@ -1,0 +1,26 @@
+tests/product-image-studio/svgAssetRasterizer.test.ts:2:import { rasterizeSanitizedSvgToPng } from "@/features/product-image-studio/server/svgAssetRasterizer";
+tests/product-image-studio/fileStore.test.ts:157:      contentType: "image/svg+xml",
+tests/product-image-studio/imageGeneratorDomain.test.ts:59:    expect(mimeTypes).toEqual(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]);
+tests/product-image-studio/imageGeneratorDomain.test.ts:175:    const references = [{ mimeType: "image/png" }, { mimeType: "image/svg+xml" }];
+tests/product-image-studio/imageGeneratorDomain.test.ts:186:        { mimeType: "image/svg+xml", sanitizerRequired: true },
+tests/product-image-studio/resultArchiveUi.test.ts:167:    expect(html).toContain("AI 생성 이미지");
+tests/product-image-studio/assetUploadApi.test.ts:101:        "image/svg+xml",
+tests/product-image-studio/assetUploadApi.test.ts:111:        contentType: "image/svg+xml",
+tests/product-image-studio/assetUploadApi.test.ts:124:    expect(previewResponse.headers.get("content-type")).toBe("image/svg+xml; charset=utf-8");
+tests/product-image-studio/assetUploadApi.test.ts:125:    expect(previewResponse.headers.get("x-content-type-options")).toBe("nosniff");
+tests/product-image-studio/assetUploadApi.test.ts:138:      uploadRequest(projectId, "reference_mood", "unsafe.svg", "image/svg+xml", stringBytes(svg)),
+tests/product-image-studio/svgAssetSanitizer.test.ts:2:import { sanitizeProductImageStudioSvgAsset } from "@/features/product-image-studio/server/svgAssetSanitizer";
+tests/product-image-studio/svgAssetSanitizer.test.ts:17:    expect(result.contentType).toBe("image/svg+xml");
+src/components/product-image-studio/productImageStudioArchiveCopy.ts:42:    return "AI 생성 이미지";
+src/features/product-image-studio/server/svgAssetRasterizer.ts:2:import { sanitizeProductImageStudioSvgAsset } from "@/features/product-image-studio/server/svgAssetSanitizer";
+src/features/product-image-studio/server/svgAssetSanitizer.ts:1:export const PRODUCT_IMAGE_STUDIO_SVG_MIME_TYPE = "image/svg+xml";
+src/features/product-image-studio/server/fileStoreMime.ts:4:} from "@/features/product-image-studio/server/svgAssetSanitizer";
+src/features/product-image-studio/server/fileStoreMime.ts:21:    case "image/svg+xml":
+src/features/product-image-studio/server/fileStoreMime.ts:47:    case "image/svg+xml":
+src/features/product-image-studio/server/fileStoreMime.ts:76:    return "image/svg+xml";
+src/features/product-image-studio/server/assetImageResponse.ts:49:    "content-type": input.contentType === "image/svg+xml" ? "image/svg+xml; charset=utf-8" : input.contentType,
+src/features/product-image-studio/server/assetImageResponse.ts:51:  if (input.contentType === "image/svg+xml") {
+src/features/product-image-studio/server/assetImageResponse.ts:52:    headers.set("Content-Security-Policy", PRODUCT_IMAGE_STUDIO_SVG_PREVIEW_CONTENT_SECURITY_POLICY);
+src/features/product-image-studio/server/assetImageResponse.ts:53:    headers.set("X-Content-Type-Options", "nosniff");
+src/features/product-image-studio/domain/imageGenerator.ts:36:export const PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_ALLOWED_REFERENCE_IMAGE_MIME_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"] as const;
+src/features/product-image-studio/domain/imageGenerator.ts:40:export const PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_SVG_REFERENCE_MIME_TYPE = "image/svg+xml";

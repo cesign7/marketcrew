@@ -1,0 +1,8 @@
+PASS generator SVG upload browser proof
+URL: http://127.0.0.1:57778/product-image-studio/ai-tools/image-generator
+Dev server: MARKETCREW_AUTH_DISABLED=1 npm run dev -- --hostname 127.0.0.1 --port 57778
+Command: NODE_PATH=<npx @playwright/test node_modules> MARKETCREW_TASK5_BASE_URL=http://127.0.0.1:57778 npx --yes @playwright/test@latest test .omo/evidence/task-5-generator-svg-upload.spec.ts --reporter=line
+Fixture: /Users/mini/Documents/marketcrew2/.omo/evidence/fixtures/safe-card.svg
+Action: page.setInputFiles('input[type=file]', ['.omo/evidence/fixtures/safe-card.svg'])
+Asserted: upload input accepts SVG, reference list is visible, safe-card.svg appears with SVG 참고
+Screenshot: /Users/mini/Documents/marketcrew2/.omo/evidence/task-5-generator-svg-upload.png

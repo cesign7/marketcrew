@@ -6,6 +6,7 @@ import {
   getConfiguredProductImageStudioProviderStatus,
   getDefaultProductImageStudioProviderModel,
 } from "@/features/product-image-studio/server/providerConfig";
+import { getProductImageStudioGenerationBlockedMessage } from "@/features/product-image-studio/domain/generationMessages";
 import {
   resetProductImageStudioProviderSettingsForTests,
   saveProductImageStudioProviderSettings,
@@ -30,6 +31,27 @@ describe("product image studio provider gate", () => {
     }
     expect(status.provider.configured).toBe(false);
     expect(status.provider.modelConfigured).toBe(false);
+  });
+
+  it("describes blocked generation causes clearly without provider env details", () => {
+    const messages = [
+      getProductImageStudioGenerationBlockedMessage("credential_missing"),
+      getProductImageStudioGenerationBlockedMessage("generation_disabled"),
+      getProductImageStudioGenerationBlockedMessage("provider_not_configured"),
+      getProductImageStudioGenerationBlockedMessage(undefined),
+    ];
+
+    expect(messages).toEqual([
+      "이미지 생성 차단됨: provider 키가 설정되지 않았습니다.",
+      "이미지 생성 차단됨: 생성 게이트가 닫혀 있습니다.",
+      "이미지 생성 차단됨: 이미지 provider가 설정되지 않았습니다.",
+      "이미지 생성 차단됨: 생성 상태를 확인해 주세요.",
+    ]);
+    expect(messages.join("\n")).not.toContain("OPENAI_API_KEY");
+    expect(messages.join("\n")).not.toContain("GEMINI_API_KEY");
+    expect(messages.join("\n")).not.toContain("PRODUCT_IMAGE_STUDIO");
+    expect(messages.join("\n")).not.toContain("gpt-image");
+    expect(messages.join("\n")).not.toContain("gemini-");
   });
 
   it("blocks generation unless provider, enabled flag, model, and credential are all present", () => {

@@ -1,0 +1,1 @@
+PASS namespaced script rejection pinned

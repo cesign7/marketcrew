@@ -32,6 +32,14 @@ const AI_TOOL_CARDS: readonly AiToolCard[] = [
     title: "상품 설정샷 생성",
   },
   {
+    description: "프롬프트와 참고 이미지를 넣어 새 이미지를 생성합니다.",
+    href: "/product-image-studio/ai-tools/image-generator",
+    icon: ImageIcon,
+    id: "image-generator",
+    state: "enabled",
+    title: "AI 이미지 생성기",
+  },
+  {
     description: "촬영 분위기에 맞는 배경과 소품 후보를 준비합니다.",
     icon: ImageIcon,
     id: "background-props",
@@ -76,7 +84,7 @@ export function ProductImageStudioAiToolsHub() {
           <p className={styles.kicker}>도구 목록</p>
           <h2>이미지 작업 도구</h2>
         </div>
-        <span className={styles.count}>6개 도구</span>
+        <span className={styles.count}>7개 도구</span>
       </div>
 
       <div className={styles.toolGrid}>

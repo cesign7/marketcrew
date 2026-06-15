@@ -1,0 +1,17 @@
+## H2 provider_gate/smoke evidence
+29:    const response = await fetch(url, { cache: "no-store" });
+47:    const response = await fetch(url, { cache: "no-store", redirect: "manual" });
+59:    const response = await fetch(url, { cache: "no-store", redirect: "manual" });
+81:    const response = await fetch(url, { cache: "no-store", redirect: "manual" });
+
+> marketcrew@0.0.0-reboot smoke:prod
+> node scripts/production-smoke.mjs
+
+PASS Railway API 상태: status=200, repositoryMode=db, totalRecords=0
+PASS Vercel -> Railway 연결: status=200, repositoryMode=db, totalRecords=0
+PASS 대표 로그인 페이지 렌더: status=200, expectedText=true, bodySafe=true
+PASS 대표 로그인 보호: status=307, location=/login?next=%2Foperations
+PASS 상품 이미지 스튜디오 로그인 보호: status=307, location=/login?next=%2Fproduct-image-studio
+PASS AI 이미지 생성기 로그인 보호: status=307, location=/login?next=%2Fproduct-image-studio%2Fai-tools%2Fimage-generator
+PASS 상품 이미지 생성 상태 API 보호: status=401, bodySafe=true
+PASS 상품 이미지 provider 설정 API 보호: status=401, bodySafe=true

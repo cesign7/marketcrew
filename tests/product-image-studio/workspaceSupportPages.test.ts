@@ -109,6 +109,7 @@ function archiveItem(): ProductImageStudioResultArchiveItem {
     model: "generation-model",
     outputType: "card_single",
     previewUrl: "/api/product-image-studio/projects/project-1/results/result-1/preview",
+    promptPreview: null,
     projectId: "project-1",
     projectName: "봄 초대장 세트",
     projectZipUrl: "/api/product-image-studio/projects/project-1/downloads.zip",
@@ -116,5 +117,6 @@ function archiveItem(): ProductImageStudioResultArchiveItem {
     ratio: "1:1",
     resultId: "result-1",
     width: 1200,
+    workflow: null,
   };
 }

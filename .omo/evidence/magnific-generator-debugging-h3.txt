@@ -1,0 +1,55 @@
+## H3 provider failure redaction evidence
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/imageGeneratorRouteFailures.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  20:56:49
+   Duration  371ms (transform 117ms, setup 0ms, import 264ms, tests 33ms, environment 0ms)
+
+## redaction implementation anchors
+HEAD:src/features/product-image-studio/server/imageGeneratorProviderFailure.ts:9:export function toPublicImageGeneratorProviderFailure(
+HEAD:src/features/product-image-studio/server/imageGeneratorRunner.ts:19:import { toPublicImageGeneratorProviderFailure } from "@/features/product-image-studio/server/imageGeneratorProviderFailure";
+HEAD:src/features/product-image-studio/server/imageGeneratorRunner.ts:109:    return NextResponse.json({ error: toPublicImageGeneratorProviderFailure(failures[0]?.error), ok: false }, { status: 502 });
+HEAD:tests/product-image-studio/aiTools.test.ts:77:    expect(html).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/generationRouteProvider.test.ts:19:    vi.stubEnv("OPENAI_API_KEY", "openai-test-key");
+HEAD:tests/product-image-studio/generationRouteProvider.test.ts:57:    vi.stubEnv("OPENAI_API_KEY", "openai-test-key");
+HEAD:tests/product-image-studio/generationRouteProvider.test.ts:88:    vi.stubEnv("OPENAI_API_KEY", "openai-test-key");
+HEAD:tests/product-image-studio/generationRouteProvider.test.ts:138:  vi.stubEnv("OPENAI_API_KEY", "");
+HEAD:tests/product-image-studio/imageGeneratorProxy.test.ts:51:    vi.stubEnv("OPENAI_API_KEY", "configured-test-secret");
+HEAD:tests/product-image-studio/imageGeneratorProxy.test.ts:83:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/imageGeneratorRouteFailures.test.ts:60:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/imageGeneratorRouteFailures.test.ts:61:    expect(bodyText).not.toContain("sk-live-route-leak");
+HEAD:tests/product-image-studio/imageGeneratorRouteFailures.test.ts:71:      new Error("provider failed with OPENAI_API_KEY=sk-live-route-leak at internal.marketcrew.local token=route-token"),
+HEAD:tests/product-image-studio/imageProviderRoute.test.ts:45:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/imageProviderRoute.test.ts:50:    vi.stubEnv("OPENAI_API_KEY", "secret-test-key");
+HEAD:tests/product-image-studio/imageProviderRoute.test.ts:93:    vi.stubEnv("OPENAI_API_KEY", "secret-test-key");
+HEAD:tests/product-image-studio/openAiImageProviderFallback.test.ts:37:    vi.stubEnv("OPENAI_API_KEY", "secret-openai-key");
+HEAD:tests/product-image-studio/openAiImageProviderRoute.test.ts:17:    vi.stubEnv("OPENAI_API_KEY", "secret-openai-key");
+HEAD:tests/product-image-studio/projectArchive.test.ts:109:    expect(JSON.stringify(allResultsBody)).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/providerGate.test.ts:50:    expect(messages.join("\n")).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/providerGate.test.ts:68:      OPENAI_API_KEY: "configured-test-secret",
+HEAD:tests/product-image-studio/providerGate.test.ts:127:    vi.stubEnv("OPENAI_API_KEY", "configured-test-secret");
+HEAD:tests/product-image-studio/providerGate.test.ts:147:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/providerSettings.test.ts:157:    expect(html).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/providerSettingsForm.test.ts:19:    expect(html).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/providerSettingsStorage.test.ts:16:  TEST_OPENAI_API_KEY,
+HEAD:tests/product-image-studio/providerSettingsStorage.test.ts:26:          apiKey: TEST_OPENAI_API_KEY,
+HEAD:tests/product-image-studio/providerSettingsStorage.test.ts:61:    expect(bodyText).not.toContain(TEST_OPENAI_API_KEY);
+HEAD:tests/product-image-studio/providerSettingsTestSupport.ts:5:export const TEST_OPENAI_API_KEY = "sk-.not-a-real-key.x";
+HEAD:tests/product-image-studio/resultArchiveUi.test.ts:37:    expect(html).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/smokeContract.test.ts:59:    vi.stubEnv("OPENAI_API_KEY", "configured-test-secret");
+HEAD:tests/product-image-studio/smokeContract.test.ts:74:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/smokeContract.test.ts:79:    vi.stubEnv("OPENAI_API_KEY", "configured-test-secret");
+HEAD:tests/product-image-studio/smokeContract.test.ts:94:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/statusPanel.test.ts:52:    expect(html).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/statusPanel.test.ts:66:          OPENAI_API_KEY: "configured-test-secret",
+HEAD:tests/product-image-studio/statusPanel.test.ts:91:    expect(html).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/statusPanel.test.ts:99:    vi.stubEnv("OPENAI_API_KEY", "configured-route-secret");
+HEAD:tests/product-image-studio/statusPanel.test.ts:130:    expect(html).not.toContain("OPENAI_API_KEY");
+HEAD:tests/product-image-studio/studioHome.test.ts:46:    expect(html).not.toContain("OPENAI_API_KEY");

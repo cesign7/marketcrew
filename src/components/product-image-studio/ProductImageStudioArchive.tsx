@@ -11,6 +11,7 @@ import {
   getProductImageStudioArchiveOutputLabel,
   getProductImageStudioArchivePoseLabel,
   getProductImageStudioArchiveProductTypeLabel,
+  getProductImageStudioArchiveResultProjectLabel,
   PRODUCT_IMAGE_STUDIO_ARCHIVE_OUTPUT_GROUPS,
 } from "./productImageStudioArchiveCopy";
 import styles from "./ProductImageStudioArchive.module.css";
@@ -138,12 +139,15 @@ function ResultGrid({
     <div className={styles.resultGrid}>
       {results.map((result) => (
         <article className={styles.resultCard} key={result.resultId}>
-          <img alt={`${result.projectName} ${getProductImageStudioArchiveOutputLabel(result.outputType)}`} src={result.previewUrl} />
+          <img
+            alt={`${getProductImageStudioArchiveResultProjectLabel(result)} ${getProductImageStudioArchiveOutputLabel(result.outputType, result.workflow)}`}
+            src={result.previewUrl}
+          />
           <div className={styles.resultBody}>
             <div className={styles.cardHeader}>
               <div>
-                <p>{getProductImageStudioArchiveOutputLabel(result.outputType)}</p>
-                <h2>{result.projectName}</h2>
+                <p>{getProductImageStudioArchiveOutputLabel(result.outputType, result.workflow)}</p>
+                <h2>{getProductImageStudioArchiveResultProjectLabel(result)}</h2>
               </div>
               <span>{result.ratio}</span>
             </div>
@@ -152,7 +156,10 @@ function ResultGrid({
               <Metric label="provider" value={formatProductImageStudioProviderValue(result.provider)} />
               <Metric label="model" value={formatProductImageStudioProviderValue(result.model)} />
               <Metric label="생성" value={formatProductImageStudioArchiveDate(result.createdAt)} />
-              {result.outputType === "card_single" ? <Metric label="카드 자세" value={getProductImageStudioArchivePoseLabel(result.cardPose)} /> : null}
+              {result.workflow === "image_generator" && result.promptPreview ? <Metric label="프롬프트" value={result.promptPreview} /> : null}
+              {result.outputType === "card_single" && result.workflow !== "image_generator" ? (
+                <Metric label="카드 자세" value={getProductImageStudioArchivePoseLabel(result.cardPose)} />
+              ) : null}
             </dl>
             <div className={styles.actions}>
               {showProjectLink ? <Link href={`/product-image-studio/designs/${encodeURIComponent(result.projectId)}`}>디자인 보기</Link> : null}

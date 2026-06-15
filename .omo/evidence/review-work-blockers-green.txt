@@ -1,0 +1,139 @@
+GREEN verification for review-work blockers
+started_at=2026-06-15T11:48:58Z
+
+command: npm test -- --run tests/product-image-studio/imageGeneratorRoute*.test.ts tests/product-image-studio/imageProvider*.test.ts tests/product-image-studio/openAiImageProvider*.test.ts tests/product-image-studio/geminiImageProvider*.test.ts tests/product-image-studio/fileStore*.test.ts tests/product-image-studio/resultArchive*.test.ts tests/product-image-studio/archivePageData.test.ts
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/imageGeneratorRoute.test.ts tests/product-image-studio/imageGeneratorRouteFailures.test.ts tests/product-image-studio/imageGeneratorRoutePersistence.test.ts tests/product-image-studio/imageProvider.test.ts tests/product-image-studio/imageProviderRoute.test.ts tests/product-image-studio/openAiImageProvider.test.ts tests/product-image-studio/openAiImageProviderFallback.test.ts tests/product-image-studio/openAiImageProviderRoute.test.ts tests/product-image-studio/geminiImageProvider.test.ts tests/product-image-studio/geminiImageProviderRoute.test.ts tests/product-image-studio/fileStore.test.ts tests/product-image-studio/fileStoreBlob.test.ts tests/product-image-studio/fileStoreGenerated.test.ts tests/product-image-studio/resultArchiveCss.test.ts tests/product-image-studio/resultArchiveRoutes.test.ts tests/product-image-studio/resultArchiveUi.test.ts tests/product-image-studio/archivePageData.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  17 passed (17)
+      Tests  65 passed (65)
+   Start at  20:48:59
+   Duration  769ms (transform 1.65s, setup 0ms, import 3.66s, tests 582ms, environment 2ms)
+
+targeted_exit=0
+
+command: npm run typecheck
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+typecheck_exit=0
+
+command: rg -n "as any|@ts-ignore|@ts-expect-error|OPENAI_API_KEY|GEMINI_API_KEY|sk-" src tests || true
+tests/product-image-studio/smokeContract.test.ts:59:    vi.stubEnv("OPENAI_API_KEY", "configured-test-secret");
+tests/product-image-studio/smokeContract.test.ts:74:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/smokeContract.test.ts:79:    vi.stubEnv("OPENAI_API_KEY", "configured-test-secret");
+tests/product-image-studio/smokeContract.test.ts:94:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/smokeContract.test.ts:99:    vi.stubEnv("GEMINI_API_KEY", "configured-test-secret");
+tests/product-image-studio/smokeContract.test.ts:114:    expect(bodyText).not.toContain("GEMINI_API_KEY");
+tests/product-image-studio/generationRouteProvider.test.ts:19:    vi.stubEnv("OPENAI_API_KEY", "openai-test-key");
+tests/product-image-studio/generationRouteProvider.test.ts:20:    vi.stubEnv("GEMINI_API_KEY", "gemini-test-key");
+tests/product-image-studio/generationRouteProvider.test.ts:57:    vi.stubEnv("OPENAI_API_KEY", "openai-test-key");
+tests/product-image-studio/generationRouteProvider.test.ts:88:    vi.stubEnv("OPENAI_API_KEY", "openai-test-key");
+tests/product-image-studio/generationRouteProvider.test.ts:132:  vi.stubEnv("GEMINI_API_KEY", "");
+tests/product-image-studio/generationRouteProvider.test.ts:138:  vi.stubEnv("OPENAI_API_KEY", "");
+tests/product-image-studio/imageGeneratorProxy.test.ts:51:    vi.stubEnv("OPENAI_API_KEY", "configured-test-secret");
+tests/product-image-studio/imageGeneratorProxy.test.ts:83:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/openAiImageProvider.test.ts:75:            message: "Incorrect API key provided: sk-live-secret-key. You can find your API key at https://platform.openai.com.",
+tests/product-image-studio/openAiImageProvider.test.ts:86:        "OpenAI 이미지 생성 요청이 실패했습니다: OpenAI API 키가 유효하지 않습니다. 설정에서 sk-... 키를 다시 저장해 주세요.",
+tests/product-image-studio/openAiImageProvider.test.ts:91:      /sk-live-secret-key/,
+tests/product-image-studio/aiTools.test.ts:77:    expect(html).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/aiTools.test.ts:78:    expect(html).not.toContain("GEMINI_API_KEY");
+tests/product-image-studio/statusPanel.test.ts:52:    expect(html).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/statusPanel.test.ts:66:          OPENAI_API_KEY: "configured-test-secret",
+tests/product-image-studio/statusPanel.test.ts:91:    expect(html).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/statusPanel.test.ts:99:    vi.stubEnv("OPENAI_API_KEY", "configured-route-secret");
+tests/product-image-studio/statusPanel.test.ts:100:    vi.stubEnv("GEMINI_API_KEY", "configured-gemini-route-secret");
+tests/product-image-studio/statusPanel.test.ts:130:    expect(html).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/statusPanel.test.ts:131:    expect(html).not.toContain("GEMINI_API_KEY");
+tests/product-image-studio/statusPanel.test.ts:138:    expect(html).not.toContain("sk-");
+tests/product-image-studio/providerGate.test.ts:50:    expect(messages.join("\n")).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/providerGate.test.ts:51:    expect(messages.join("\n")).not.toContain("GEMINI_API_KEY");
+tests/product-image-studio/providerGate.test.ts:68:      OPENAI_API_KEY: "configured-test-secret",
+tests/product-image-studio/providerGate.test.ts:81:      GEMINI_API_KEY: "configured-gemini-secret",
+tests/product-image-studio/providerGate.test.ts:127:    vi.stubEnv("OPENAI_API_KEY", "configured-test-secret");
+tests/product-image-studio/providerGate.test.ts:147:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/openAiImageProviderRoute.test.ts:17:    vi.stubEnv("OPENAI_API_KEY", "secret-openai-key");
+tests/product-image-studio/openAiImageProviderRoute.test.ts:28:            message: "Incorrect API key provided: sk-live-secret-key.",
+tests/product-image-studio/openAiImageProviderRoute.test.ts:48:    expect(bodyText).not.toContain("sk-live-secret-key");
+tests/product-image-studio/providerSettings.test.ts:15:  TEST_GEMINI_API_KEY,
+tests/product-image-studio/providerSettings.test.ts:25:          apiKey: TEST_GEMINI_API_KEY,
+tests/product-image-studio/providerSettings.test.ts:39:    expect(bodyText).not.toContain(TEST_GEMINI_API_KEY);
+tests/product-image-studio/providerSettings.test.ts:52:          apiKey: `export GEMINI_API_KEY="${TEST_GEMINI_API_KEY}"`,
+tests/product-image-studio/providerSettings.test.ts:64:    expect(bodyText).not.toContain(TEST_GEMINI_API_KEY);
+tests/product-image-studio/providerSettings.test.ts:66:      apiKey: TEST_GEMINI_API_KEY,
+tests/product-image-studio/providerSettings.test.ts:157:    expect(html).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/providerSettingsStorage.test.ts:15:  TEST_GEMINI_API_KEY,
+tests/product-image-studio/providerSettingsStorage.test.ts:16:  TEST_OPENAI_API_KEY,
+tests/product-image-studio/providerSettingsStorage.test.ts:26:          apiKey: TEST_OPENAI_API_KEY,
+tests/product-image-studio/providerSettingsStorage.test.ts:38:          apiKey: TEST_GEMINI_API_KEY,
+tests/product-image-studio/providerSettingsStorage.test.ts:61:    expect(bodyText).not.toContain(TEST_OPENAI_API_KEY);
+tests/product-image-studio/providerSettingsStorage.test.ts:62:    expect(bodyText).not.toContain(TEST_GEMINI_API_KEY);
+tests/product-image-studio/imageGeneratorRouteFailures.test.ts:60:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/imageGeneratorRouteFailures.test.ts:61:    expect(bodyText).not.toContain("sk-live-route-leak");
+tests/product-image-studio/imageGeneratorRouteFailures.test.ts:71:      new Error("provider failed with OPENAI_API_KEY=sk-live-route-leak at internal.marketcrew.local token=route-token"),
+tests/product-image-studio/providerSettingsTestSupport.ts:4:export const TEST_GEMINI_API_KEY = "AIza.not-a-real-key.x";
+tests/product-image-studio/providerSettingsTestSupport.ts:5:export const TEST_OPENAI_API_KEY = "sk-.not-a-real-key.x";
+tests/product-image-studio/imageProviderRoute.test.ts:45:    expect(bodyText).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/imageProviderRoute.test.ts:50:    vi.stubEnv("OPENAI_API_KEY", "secret-test-key");
+tests/product-image-studio/imageProviderRoute.test.ts:93:    vi.stubEnv("OPENAI_API_KEY", "secret-test-key");
+tests/product-image-studio/imageProviderRoute.test.ts:110:            message: "You exceeded your current quota. Secret key sk-live-secret-key.",
+tests/product-image-studio/imageProviderRoute.test.ts:142:    expect(bodyText).not.toContain("sk-live-secret-key");
+tests/product-image-studio/studioHome.test.ts:46:    expect(html).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/resultArchiveUi.test.ts:37:    expect(html).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/resultArchiveUi.test.ts:58:    expect(html).not.toContain("GEMINI_API_KEY");
+tests/product-image-studio/geminiImageProviderRoute.test.ts:17:    vi.stubEnv("GEMINI_API_KEY", "secret-gemini-key");
+tests/product-image-studio/openAiImageProviderFallback.test.ts:37:    vi.stubEnv("OPENAI_API_KEY", "secret-openai-key");
+tests/product-image-studio/projectArchive.test.ts:109:    expect(JSON.stringify(allResultsBody)).not.toContain("OPENAI_API_KEY");
+tests/product-image-studio/providerSettingsForm.test.ts:19:    expect(html).not.toContain("OPENAI_API_KEY");
+scan_exit=0 (production blockers absent; remaining matches are env-name handling and test sentinel fixtures)
+
+command: rg -n "as any|@ts-ignore|@ts-expect-error" src tests || true
+unsafe_escape_scan_exit=0
+
+command: pure LOC scan for touched src/tests files
+PASS 212 src/features/product-image-studio/server/imageGeneratorRunner.ts
+PASS 24 src/features/product-image-studio/server/imageGeneratorProviderFailure.ts
+PASS 167 src/lib/persistence/productImageStudioPostgresArchiveRepository.ts
+PASS 106 tests/product-image-studio/imageGeneratorRoute.test.ts
+PASS 75 tests/product-image-studio/imageGeneratorRouteFailures.test.ts
+PASS 141 tests/product-image-studio/imageGeneratorRoutePersistence.test.ts
+PASS 176 tests/product-image-studio/imageGeneratorRouteTestSupport.ts
+PASS 113 tests/product-image-studio/imageProvider.test.ts
+PASS 151 tests/product-image-studio/imageProviderRoute.test.ts
+PASS 135 tests/product-image-studio/imageProviderTestSupport.ts
+PASS 138 tests/product-image-studio/openAiImageProvider.test.ts
+PASS 69 tests/product-image-studio/openAiImageProviderRoute.test.ts
+PASS 204 tests/product-image-studio/geminiImageProvider.test.ts
+PASS 56 tests/product-image-studio/geminiImageProviderRoute.test.ts
+PASS 117 tests/product-image-studio/fileStore.test.ts
+PASS 44 tests/product-image-studio/fileStoreBlob.test.ts
+PASS 100 tests/product-image-studio/fileStoreGenerated.test.ts
+PASS 34 tests/product-image-studio/resultArchiveCss.test.ts
+PASS 58 tests/product-image-studio/resultArchiveRoutes.test.ts
+PASS 112 tests/product-image-studio/resultArchiveUi.test.ts
+PASS 81 tests/product-image-studio/resultArchiveTestSupport.ts
+PASS 160 tests/product-image-studio/archivePageData.test.ts
+
+command: npm test -- --run
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  101 passed (101)
+      Tests  442 passed (442)
+   Start at  20:49:01
+   Duration  2.80s (transform 4.51s, setup 0ms, import 10.71s, tests 3.41s, environment 9ms)
+
+full_test_exit=0
+
+completed_at=2026-06-15T11:49:03Z

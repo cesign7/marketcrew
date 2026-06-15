@@ -1,0 +1,77 @@
+cleanup and adversarial receipt for review-work blockers
+started_at=2026-06-15T11:51:02Z
+dev_server_started=no
+provider_calls=mocked_or_fake_only
+
+dirty_worktree before staging, path-limited to intentional paths plus excluded duplicate CSS:
+ M .omo/plans/product-image-studio-magnific-image-generator.md
+ M .omo/start-work/ledger.jsonl
+ M src/features/product-image-studio/server/imageGeneratorRunner.ts
+ M src/lib/persistence/productImageStudioPostgresArchiveRepository.ts
+ M tests/product-image-studio/fileStore.test.ts
+ M tests/product-image-studio/geminiImageProvider.test.ts
+ M tests/product-image-studio/imageGeneratorRoute.test.ts
+ M tests/product-image-studio/imageProvider.test.ts
+ M tests/product-image-studio/openAiImageProvider.test.ts
+ M tests/product-image-studio/resultArchiveUi.test.ts
+?? .omo/evidence/review-work-blockers-cleanup.txt
+?? .omo/evidence/review-work-blockers-green.txt
+?? .omo/evidence/review-work-blockers-http.txt
+?? .omo/evidence/review-work-blockers-red.txt
+?? "src/components/product-image-studio/ProductImageStudioUploadLibrary.module 2.css"
+?? src/features/product-image-studio/server/imageGeneratorProviderFailure.ts
+?? tests/product-image-studio/fileStoreBlob.test.ts
+?? tests/product-image-studio/fileStoreGenerated.test.ts
+?? tests/product-image-studio/geminiImageProviderRoute.test.ts
+?? tests/product-image-studio/imageGeneratorRouteFailures.test.ts
+?? tests/product-image-studio/imageGeneratorRoutePersistence.test.ts
+?? tests/product-image-studio/imageGeneratorRouteTestSupport.ts
+?? tests/product-image-studio/imageProviderRoute.test.ts
+?? tests/product-image-studio/imageProviderTestSupport.ts
+?? tests/product-image-studio/openAiImageProviderRoute.test.ts
+?? tests/product-image-studio/resultArchiveCss.test.ts
+?? tests/product-image-studio/resultArchiveRoutes.test.ts
+?? tests/product-image-studio/resultArchiveTestSupport.ts
+
+port 3100 listener check before commit:
+port_3100_listener=none
+
+adversarial classes:
+- dirty_worktree: exact path staging used; duplicate CSS excluded.
+- stale_state: amended HEAD is verified after commit and reported in the DoneClaim; embedding the final hash here would require another amend.
+- misleading_success_output: raw command outputs stored in green/http artifacts.
+- malformed_input/prompt_injection: route tests cover malformed multipart/SVG and injection-like prompt routing.
+- hung_or_long_commands: no dev server started; port 3100 checked closed.
+- flaky_tests: no new split test failures observed in required and full runs.
+- repeated_interruptions: prior silent worker noted; current verification reran from disk state.
+- cancel_resume: not observed.
+
+dirty_worktree after exact staging, path-limited to intentional paths plus excluded duplicate CSS:
+AM .omo/evidence/review-work-blockers-cleanup.txt
+A  .omo/evidence/review-work-blockers-green.txt
+A  .omo/evidence/review-work-blockers-http.txt
+A  .omo/evidence/review-work-blockers-red.txt
+M  .omo/plans/product-image-studio-magnific-image-generator.md
+M  .omo/start-work/ledger.jsonl
+A  src/features/product-image-studio/server/imageGeneratorProviderFailure.ts
+M  src/features/product-image-studio/server/imageGeneratorRunner.ts
+M  src/lib/persistence/productImageStudioPostgresArchiveRepository.ts
+M  tests/product-image-studio/fileStore.test.ts
+A  tests/product-image-studio/fileStoreBlob.test.ts
+A  tests/product-image-studio/fileStoreGenerated.test.ts
+M  tests/product-image-studio/geminiImageProvider.test.ts
+A  tests/product-image-studio/geminiImageProviderRoute.test.ts
+M  tests/product-image-studio/imageGeneratorRoute.test.ts
+A  tests/product-image-studio/imageGeneratorRouteFailures.test.ts
+A  tests/product-image-studio/imageGeneratorRoutePersistence.test.ts
+A  tests/product-image-studio/imageGeneratorRouteTestSupport.ts
+M  tests/product-image-studio/imageProvider.test.ts
+A  tests/product-image-studio/imageProviderRoute.test.ts
+A  tests/product-image-studio/imageProviderTestSupport.ts
+M  tests/product-image-studio/openAiImageProvider.test.ts
+A  tests/product-image-studio/openAiImageProviderRoute.test.ts
+A  tests/product-image-studio/resultArchiveCss.test.ts
+A  tests/product-image-studio/resultArchiveRoutes.test.ts
+A  tests/product-image-studio/resultArchiveTestSupport.ts
+M  tests/product-image-studio/resultArchiveUi.test.ts
+?? "src/components/product-image-studio/ProductImageStudioUploadLibrary.module 2.css"

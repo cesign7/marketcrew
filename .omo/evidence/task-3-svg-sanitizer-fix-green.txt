@@ -1,0 +1,16 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/svgAssetSanitizer.test.ts tests/product-image-studio/svgAssetRasterizer.test.ts tests/product-image-studio/assetUploadApi.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  18:15:28
+   Duration  337ms (transform 138ms, setup 0ms, import 304ms, tests 79ms, environment 0ms)
+
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json

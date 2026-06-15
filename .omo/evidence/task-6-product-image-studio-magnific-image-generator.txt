@@ -1,0 +1,16 @@
+Todo 6 Product Image Studio AI tools archive integration manual QA note
+
+Static archive PASS proof:
+- AI tools hub now renders 7 cards and links the enabled AI 이미지 생성기 card to /product-image-studio/ai-tools/image-generator.
+- Disabled placeholder tool ids remain disabled in tests: background-props, ratio-resize, similar-image, mockup-composite, detail-page-blocks.
+- Upload archive tests prove generator reference files saved as reference_mood appear with PNG/SVG metadata, safe asset preview route, design reuse URL, and template reuse URL.
+- Archive page data tests prove image_generator workflow, promptPreview, result download URL, and project ZIP URL survive the API/page-data boundary and render on the activity page as AI 생성 이미지.
+- Download tests prove generated tool project results use existing result download URLs and ZIP manifest entries through createProductImageStudioZipArchiveFromStore.
+
+Browser QA deferred:
+- Todo 6 browser scenario requires a completed fake generation through /product-image-studio/ai-tools/image-generator.
+- In the current worktree, Todo 4/5 generator route/page/client work is partial and outside this task; npm run typecheck fails on pre-existing tests/product-image-studio/imageGeneratorRoute.test.ts and tests/product-image-studio/imageGeneratorUi.test.ts references to missing/partial generator route/page/client helpers.
+- No dev server or browser session was started for Todo 6, so no server/browser cleanup was needed.
+
+Green output:
+- .omo/evidence/task-6-product-image-studio-magnific-image-generator-green.txt

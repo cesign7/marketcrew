@@ -1,0 +1,12 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/fileStore.test.ts tests/product-image-studio/blobFileStore.test.ts tests/product-image-studio/svgAssetSanitizer.test.ts tests/product-image-studio/svgAssetRasterizer.test.ts tests/product-image-studio/assetUploadApi.test.ts tests/product-image-studio/resultArchiveUi.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  6 passed (6)
+      Tests  40 passed (40)
+   Start at  18:05:18
+   Duration  429ms (transform 451ms, setup 0ms, import 828ms, tests 230ms, environment 1ms)

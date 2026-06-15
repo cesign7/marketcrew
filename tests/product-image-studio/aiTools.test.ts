@@ -6,6 +6,7 @@ import ProductStagingPage from "@/app/product-image-studio/ai-tools/product-stag
 
 const TOOL_NAMES = [
   "상품 설정샷 생성",
+  "AI 이미지 생성기",
   "배경/소품 생성",
   "비율 변경",
   "비슷한 이미지 생성",
@@ -27,12 +28,13 @@ describe("product image studio AI tools routes", () => {
     vi.unstubAllEnvs();
   });
 
-  it("renders six AI tool cards with only product staging enabled", () => {
+  it("renders seven AI tool cards with product staging and image generator enabled", () => {
     // Given: the AI tools hub is the entry point for image creation tools.
     const html = renderToStaticMarkup(createElement(AiToolsPage));
 
-    // Then: all planned tools are visible in Korean, with only the setting-shot tool linked.
-    expect(countOccurrences(html, "data-ai-tool-card=")).toBe(6);
+    // Then: all planned tools are visible in Korean, with only ready tools linked.
+    expect(countOccurrences(html, "data-ai-tool-card=")).toBe(7);
+    expect(html).toContain("7개 도구");
     for (const toolName of TOOL_NAMES) {
       expect(html).toContain(toolName);
     }
@@ -40,6 +42,10 @@ describe("product image studio AI tools routes", () => {
     expect(html).toContain('href="/product-image-studio/ai-tools/product-staging"');
     expect(extractToolCardHtml(html, "product-staging")).toContain("바로 시작");
     expect(extractToolCardHtml(html, "product-staging")).not.toContain('aria-disabled="true"');
+    expect(html).toContain('data-ai-tool-card="image-generator"');
+    expect(html).toContain('href="/product-image-studio/ai-tools/image-generator"');
+    expect(extractToolCardHtml(html, "image-generator")).toContain("바로 시작");
+    expect(extractToolCardHtml(html, "image-generator")).not.toContain('aria-disabled="true"');
 
     for (const toolId of DISABLED_TOOL_IDS) {
       const cardHtml = extractToolCardHtml(html, toolId);

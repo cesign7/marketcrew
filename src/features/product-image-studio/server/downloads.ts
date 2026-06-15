@@ -4,7 +4,12 @@ import type {
   ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
 import { createStoredZipArchive, type ProductImageStudioZipEntry } from "@/features/product-image-studio/server/zipArchive";
-import type { ProductImageFileStore } from "@/features/product-image-studio/server/fileStore";
+import {
+  getExtensionForContentType,
+  parseImageMimeTypeFromStorageKey,
+  type ProductImageFileStore,
+  type ProductImageStudioImageMimeType,
+} from "@/features/product-image-studio/server/fileStore";
 import type {
   ProductImageStudioProjectRecord,
   ProductImageStudioRepository,
@@ -18,6 +23,7 @@ export type ProductImageStudioImageDimensions = {
 
 export type ProductImageStudioDownloadItem = {
   readonly cardPose?: string;
+  readonly contentType: ProductImageStudioImageMimeType;
   readonly downloadUrl: string;
   readonly fileName: string;
   readonly height: number;
@@ -64,6 +70,7 @@ export function toProductImageStudioDownloadItems(
 ): readonly ProductImageStudioDownloadItem[] {
   return results.map((result) => ({
     cardPose: result.cardPose,
+    contentType: parseImageMimeTypeFromStorageKey(result.storageKey),
     downloadUrl: `/api/product-image-studio/projects/${encodeURIComponent(project.id)}/results/${encodeURIComponent(result.id)}/download`,
     fileName: toResultFileName(project.id, result),
     height: result.height,
@@ -210,7 +217,7 @@ function toResultFileName(projectId: string, result: ProductImageStudioResultRec
   ]
     .filter((segment) => typeof segment === "string" && segment.length > 0)
     .join("-");
-  return `${stem}.png`;
+  return `${stem}.${getExtensionForContentType(parseImageMimeTypeFromStorageKey(result.storageKey))}`;
 }
 
 function toRegeneratedStorageKey(

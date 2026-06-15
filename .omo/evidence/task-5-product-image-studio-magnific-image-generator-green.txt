@@ -1,0 +1,19 @@
+$ npm test -- --run tests/product-image-studio/imageGeneratorUi.test.ts tests/product-image-studio/aiTools.test.ts
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/imageGeneratorUi.test.ts tests/product-image-studio/aiTools.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  2 passed (2)
+      Tests  7 passed (7)
+   Start at  18:49:56
+   Duration  440ms (transform 291ms, setup 0ms, import 546ms, tests 41ms, environment 0ms)
+
+
+$ npm run typecheck
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json

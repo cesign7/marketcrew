@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "activityGenerated": true,
+  "cardCount": 7,
+  "downloadUrl": "/api/product-image-studio/projects/53c650be-5f9b-49c0-b91f-01ad201df16b/results/986659a9-6f3e-45c6-a71e-094bc12540e1/download",
+  "generatedImageCount": 2,
+  "safeSvgPreviewUrl": "/api/product-image-studio/projects/53c650be-5f9b-49c0-b91f-01ad201df16b/assets/0b28e947-704d-4ee6-ad9c-68e3b8b2b33d/preview"
+}

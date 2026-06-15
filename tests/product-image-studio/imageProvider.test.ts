@@ -1,14 +1,12 @@
+import { Buffer } from "node:buffer";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { GET as downloadResult } from "@/app/api/product-image-studio/projects/[id]/results/[resultId]/download/route";
-import { POST as uploadAsset } from "@/app/api/product-image-studio/projects/[id]/assets/route";
-import { POST as createProject } from "@/app/api/product-image-studio/projects/route";
-import { POST as startGeneration } from "@/app/api/product-image-studio/projects/[id]/generations/route";
-import { listCardSetConceptRecommendations } from "@/features/product-image-studio/domain/concepts";
-import { buildProductImageStudioPromptContext, createFakeProductImageStudioImageProvider, resolveProductImageStudioImageProvider } from "@/features/product-image-studio/server/imageProvider";
+import { createFakeProductImageStudioImageProvider, resolveProductImageStudioImageProvider } from "@/features/product-image-studio/server/imageProvider";
 import { createOpenAiImageProvider } from "@/features/product-image-studio/server/openAiImageProvider";
-import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
-import type { CardDisplayPose, CardFormat, ProductImageStudioAssetRole } from "@/features/product-image-studio/domain/types";
-import { manualCardOnlyProductionSettings, manualProductionSettings } from "./manualProductionSettings";
+import {
+  foldedProviderPromptContext,
+  postcardProviderPromptContext,
+  providerPromptContextForConcept,
+} from "./imageProviderTestSupport";
 
 describe("product image studio image provider", () => {
   afterEach(() => {
@@ -19,7 +17,7 @@ describe("product image studio image provider", () => {
 
   it("returns deterministic fake provider output for local blocked mode", async () => {
     const provider = createFakeProductImageStudioImageProvider();
-    const promptContext = foldedPromptContext(["folded_card_outer_front", "envelope_front", "seal_sticker"]);
+    const promptContext = foldedProviderPromptContext(["folded_card_outer_front", "envelope_front", "seal_sticker"]);
     const first = await provider.generateScene({ promptContext, referenceImages: [] });
     const second = await provider.generateScene({ promptContext, referenceImages: [] });
 
@@ -27,6 +25,29 @@ describe("product image studio image provider", () => {
     expect(first.provider).toBe("fake");
     expect(first.model).toBe("fake-product-image-studio");
     expect(first.b64Json).toMatch(/^[A-Za-z0-9+/=]+$/);
+  });
+
+  it("returns unique deterministic fake PNG output for prompt-generator count indexes", async () => {
+    const provider = createFakeProductImageStudioImageProvider();
+    const promptContext = foldedProviderPromptContext(["folded_card_outer_front", "envelope_front", "seal_sticker"]);
+    const first = await provider.generateScene({
+      promptContext: { ...promptContext, resolution: "1k", resultIndex: 0 },
+      referenceImages: [],
+    });
+    const second = await provider.generateScene({
+      promptContext: { ...promptContext, resolution: "1k", resultIndex: 1 },
+      referenceImages: [],
+    });
+    const secondRepeat = await provider.generateScene({
+      promptContext: { ...promptContext, resolution: "1k", resultIndex: 1 },
+      referenceImages: [],
+    });
+
+    expect(Buffer.from(first.b64Json, "base64").subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+    expect(first.b64Json).not.toBe(second.b64Json);
+    expect(second).toEqual(secondRepeat);
+    expect(first.width).toBe(1024);
+    expect(first.height).toBe(1024);
   });
 
   it("keeps the provider blocked by default and exposes a fake provider for local tests", () => {
@@ -40,8 +61,8 @@ describe("product image studio image provider", () => {
   });
 
   it("builds prompts with card format, pose, and asset role context", () => {
-    const folded = foldedPromptContext(["folded_card_outer_front", "folded_card_fold_metadata", "envelope_front"]);
-    const postcard = postcardPromptContext(["postcard_front", "envelope_front", "seal_sticker"]);
+    const folded = foldedProviderPromptContext(["folded_card_outer_front", "folded_card_fold_metadata", "envelope_front"]);
+    const postcard = postcardProviderPromptContext(["postcard_front", "envelope_front", "seal_sticker"]);
 
     expect(folded.prompt).toContain("cardFormat=folded_card");
     expect(folded.prompt).toContain("requestedCardPoses=folded_closed,folded_open_spread,folded_standing");
@@ -62,7 +83,7 @@ describe("product image studio image provider", () => {
     const conceptIds = ["tabletop-set", "premium-stationery", "seasonal-gift", "minimal-studio"] as const;
 
     for (const conceptId of conceptIds) {
-      const promptContext = promptContextForConcept(conceptId);
+      const promptContext = providerPromptContextForConcept(conceptId);
 
       expect(promptContext.prompt).toContain("designLock=uploaded_print_surface_locked");
       expect(promptContext.prompt).toContain("do not change text size, font, kerning, line breaks, text placement");
@@ -93,7 +114,7 @@ describe("product image studio image provider", () => {
       model: "gpt-image-2",
     });
     const result = await provider.generateScene({
-      promptContext: foldedPromptContext(["folded_card_outer_front", "seal_sticker"]),
+      promptContext: foldedProviderPromptContext(["folded_card_outer_front", "seal_sticker"]),
       referenceImages: [],
     });
 
@@ -103,260 +124,4 @@ describe("product image studio image provider", () => {
     expect(result.model).toBe("gpt-image-2");
     expect(JSON.stringify(result)).not.toContain("secret-test-key");
   });
-
-  it("returns a blocked generation response without provider billing in default env", async () => {
-    vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "0");
-    const projectId = await createProjectId("folded_card");
-    await getProductImageStudioProjectRepository().addAsset({
-      byteSize: 1024,
-      contentType: "image/png",
-      originalFileName: "card-front.png",
-      projectId,
-      role: "folded_card_outer_front",
-      storageKey: `product-image-studio/${projectId}/card-front.png`,
-    });
-    const response = await startGeneration(
-      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/generations`, {
-        body: JSON.stringify({
-          conceptId: "minimal-studio",
-          outputs: ["card_single"],
-          productionSettings: manualCardOnlyProductionSettings(),
-          qualityMode: "high",
-        }),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-      }),
-      { params: Promise.resolve({ id: projectId }) },
-    );
-    const bodyText = await response.text();
-    const bodyJson: unknown = JSON.parse(bodyText);
-
-    expect(response.status).toBe(423);
-    expect(bodyJson).toMatchObject({
-      data: {
-        generation: { reason: "generation_disabled", status: "blocked" },
-      },
-      ok: true,
-    });
-    expect(bodyText).not.toContain("OPENAI_API_KEY");
-    expect(bodyText).not.toContain("secret");
-  });
-
-  it("stores OpenAI generated image bytes and returns ready results when the provider is enabled", async () => {
-    vi.stubEnv("OPENAI_API_KEY", "secret-test-key");
-    vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "1");
-    vi.stubEnv("PRODUCT_IMAGE_STUDIO_OPENAI_IMAGE_MODEL", "gpt-image-2");
-    vi.stubEnv("PRODUCT_IMAGE_STUDIO_PROVIDER", "openai");
-    vi.stubGlobal(
-      "fetch",
-      async () =>
-        new Response(JSON.stringify({ data: [{ b64_json: Buffer.from("openai generated png").toString("base64") }] }), {
-          headers: { "content-type": "application/json", "x-request-id": "req-generated" },
-          status: 200,
-        }),
-    );
-    const projectId = await createProjectId("folded_card");
-    const uploadResponse = await uploadAsset(uploadRequest(projectId, "folded_card_outer_front"), {
-      params: Promise.resolve({ id: projectId }),
-    });
-    expect(uploadResponse.status).toBe(201);
-
-    const response = await startGeneration(
-      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/generations`, {
-        body: JSON.stringify({
-          conceptId: "minimal-studio",
-          outputs: ["card_single"],
-          productionSettings: manualCardOnlyProductionSettings(),
-          qualityMode: "draft",
-        }),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-      }),
-      { params: Promise.resolve({ id: projectId }) },
-    );
-    const bodyJson: unknown = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(bodyJson).toMatchObject({
-      data: {
-        generation: { status: "ready" },
-        results: [{ outputType: "card_single", ratio: "1:1" }],
-      },
-      ok: true,
-    });
-    const results = await getProductImageStudioProjectRepository().listResults(projectId);
-    const generated = results[0];
-    if (!generated) {
-      throw new Error("generated result missing");
-    }
-
-    const downloadResponse = await downloadResult(
-      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/results/${generated.id}/download`),
-      { params: Promise.resolve({ id: projectId, resultId: generated.id }) },
-    );
-    expect(new TextDecoder().decode(await downloadResponse.arrayBuffer())).toBe("openai generated png");
-  });
-
-  it("returns saved OpenAI results when another requested output fails", async () => {
-    vi.stubEnv("OPENAI_API_KEY", "secret-test-key");
-    vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "1");
-    vi.stubEnv("PRODUCT_IMAGE_STUDIO_OPENAI_IMAGE_MODEL", "gpt-image-2");
-    vi.stubEnv("PRODUCT_IMAGE_STUDIO_PROVIDER", "openai");
-    let callCount = 0;
-    vi.stubGlobal("fetch", async () => {
-      callCount += 1;
-      if (callCount === 1) {
-        return new Response(JSON.stringify({ data: [{ b64_json: Buffer.from("saved card png").toString("base64") }] }), {
-          headers: { "content-type": "application/json", "x-request-id": "req-card" },
-          status: 200,
-        });
-      }
-      return new Response(
-        JSON.stringify({
-          error: {
-            code: "insufficient_quota",
-            message: "You exceeded your current quota. Secret key sk-live-secret-key.",
-            type: "insufficient_quota",
-          },
-        }),
-        {
-          headers: { "content-type": "application/json", "x-request-id": "req-seal-failed" },
-          status: 429,
-        },
-      );
-    });
-    const projectId = await createProjectId("folded_card");
-    const cardUpload = await uploadAsset(uploadRequest(projectId, "folded_card_outer_front"), {
-      params: Promise.resolve({ id: projectId }),
-    });
-    const sealUpload = await uploadAsset(uploadRequest(projectId, "seal_sticker"), {
-      params: Promise.resolve({ id: projectId }),
-    });
-    expect(cardUpload.status).toBe(201);
-    expect(sealUpload.status).toBe(201);
-
-    const response = await startGeneration(
-      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/generations`, {
-        body: JSON.stringify({
-          conceptId: "minimal-studio",
-          outputs: ["card_single", "seal_sticker_single"],
-          productionSettings: manualProductionSettings("folded_card"),
-          qualityMode: "draft",
-        }),
-        headers: { "content-type": "application/json" },
-        method: "POST",
-      }),
-      { params: Promise.resolve({ id: projectId }) },
-    );
-    const bodyText = await response.text();
-    const bodyJson: unknown = JSON.parse(bodyText);
-
-    expect(response.status).toBe(207);
-    expect(bodyJson).toMatchObject({
-      data: {
-        generation: { status: "partial" },
-        results: [{ outputType: "card_single", ratio: "1:1" }],
-      },
-      ok: true,
-    });
-    expect(bodyText).toContain("일부 이미지만 준비되었습니다.");
-    expect(bodyText).not.toContain("sk-live-secret-key");
-    expect(await getProductImageStudioProjectRepository().listResults(projectId)).toHaveLength(1);
-  });
 });
-
-function foldedPromptContext(assetRoles: readonly ProductImageStudioAssetRole[]) {
-  return buildProductImageStudioPromptContext({
-    assetRoles,
-    cardPose: "folded_open_spread",
-    concept: readConcept("minimal-studio"),
-    outputType: "set_combined",
-    project: project("folded_card", ["folded_closed", "folded_open_spread", "folded_standing"]),
-    qualityMode: "high",
-    ratio: "1:1",
-  });
-}
-
-function postcardPromptContext(assetRoles: readonly ProductImageStudioAssetRole[]) {
-  return buildProductImageStudioPromptContext({
-    assetRoles,
-    cardPose: "postcard_front_flat",
-    concept: readConcept("minimal-studio"),
-    outputType: "set_combined",
-    project: project("postcard_flat", ["postcard_front_flat"]),
-    qualityMode: "draft",
-    ratio: "4:5",
-  });
-}
-
-function promptContextForConcept(conceptId: string) {
-  return buildProductImageStudioPromptContext({
-    assetRoles: ["postcard_front", "envelope_front", "seal_sticker"],
-    cardPose: "postcard_front_flat",
-    concept: readConcept(conceptId),
-    outputType: "set_combined",
-    project: project("postcard_flat", ["postcard_front_flat"]),
-    qualityMode: "draft",
-    ratio: "4:5",
-  });
-}
-
-function project(cardFormat: CardFormat, requestedCardPoses: readonly CardDisplayPose[]) {
-  return {
-    cardFormat,
-    createdAt: "2026-06-11T00:00:00.000Z",
-    id: `${cardFormat}-project`,
-    name: "봄 초대장 세트",
-    productType: "card_envelope_seal_set",
-    qualityMode: "draft",
-    productionSettings: manualProductionSettings(cardFormat),
-    ratios: ["1:1", "4:5"],
-    requestedCardPoses,
-    requestedOutputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],
-    updatedAt: "2026-06-11T00:00:00.000Z",
-  } as const;
-}
-
-async function createProjectId(cardFormat: CardFormat): Promise<string> {
-  const response = await createProject(
-    new Request("http://127.0.0.1:3000/api/product-image-studio/projects", {
-      body: JSON.stringify({
-        cardFormat,
-        name: "봄 초대장 세트",
-        productType: "card_envelope_seal_set",
-        qualityMode: "draft",
-        productionSettings: manualProductionSettings(cardFormat),
-        ratios: ["1:1"],
-        requestedCardPoses: cardFormat === "folded_card" ? ["folded_closed"] : ["postcard_front_flat"],
-        requestedOutputs: ["set_combined", "card_single", "envelope_single", "seal_sticker_single"],
-      }),
-      headers: { "content-type": "application/json" },
-      method: "POST",
-    }),
-  );
-  const body: unknown = await response.json();
-  if (typeof body === "object" && body !== null && "id" in body && typeof body.id === "string") {
-    return body.id;
-  }
-
-  throw new Error("project id missing");
-}
-
-function readConcept(id: string) {
-  const concept = listCardSetConceptRecommendations().find((candidate) => candidate.id === id);
-  if (!concept) {
-    throw new Error(`concept missing: ${id}`);
-  }
-  return concept;
-}
-
-function uploadRequest(projectId: string, role: ProductImageStudioAssetRole): Request {
-  const formData = new FormData();
-  formData.set("role", role);
-  formData.set("file", new File([Buffer.from("uploaded card bytes")], "card-front.png", { type: "image/png" }));
-
-  return new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/assets`, {
-    body: formData,
-    method: "POST",
-  });
-}

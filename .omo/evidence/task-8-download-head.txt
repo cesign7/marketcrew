@@ -1,0 +1,7 @@
+HTTP/1.1 200 OK
+vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+content-disposition: attachment; filename="53c650be-5f9b-49c0-b91f-01ad201df16b-card_single-postcard_front_flat-1x1.png"
+content-type: image/png
+Date: Mon, 15 Jun 2026 10:22:42 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5

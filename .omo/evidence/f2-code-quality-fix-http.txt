@@ -1,0 +1,13 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   502    0   248  100   254   1157   1185 --:--:-- --:--:-- --:--:--  2345
+HTTP/1.1 423 Locked
+vary: rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch
+content-type: application/json
+Date: Mon, 15 Jun 2026 10:59:40 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+{"data":{"generation":{"modelLabel":"gpt2","provider":"openai","reason":"generation_disabled","status":"blocked"},"promptSummary":{"modelLabel":"gpt2","promptPreview":"provider refactor smoke","referenceImageCount":0,"requestedCount":1}},"ok":true}
+exit=0

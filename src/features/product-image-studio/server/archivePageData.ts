@@ -175,6 +175,7 @@ function readArchiveItem(value: unknown): ProductImageStudioResultArchiveItem | 
     model: value["model"],
     outputType: value["outputType"],
     previewUrl: value["previewUrl"],
+    promptPreview: readOptionalDisplayString(value["promptPreview"]),
     projectId: value["projectId"],
     projectName: value["projectName"],
     projectZipUrl: value["projectZipUrl"],
@@ -182,6 +183,7 @@ function readArchiveItem(value: unknown): ProductImageStudioResultArchiveItem | 
     ratio: value["ratio"],
     resultId: value["resultId"],
     width: value["width"],
+    workflow: readOptionalDisplayString(value["workflow"]),
   };
   const cardPose = value["cardPose"];
   return isCardDisplayPose(cardPose) ? { ...base, cardPose } : base;
@@ -197,6 +199,10 @@ function isString(value: unknown): value is string {
 
 function isNullableString(value: unknown): value is string | null {
   return value === null || typeof value === "string";
+}
+
+function readOptionalDisplayString(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
 
 function isNumber(value: unknown): value is number {

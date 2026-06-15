@@ -1,0 +1,46 @@
+.workspace { --generator-blue: #006adc; --generator-green: #13795b; --generator-line: #e5e7eb; --generator-muted: #5f6472; --generator-surface: #ffffff; --generator-text: #171717; --generator-warn: #b45309; align-items: stretch; display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); min-height: calc(100vh - 190px); width: 100%; }
+.canvas, .controls { background: var(--generator-surface); border: 1px solid var(--generator-line); border-radius: 8px; min-width: 0; }
+.canvas { display: grid; gap: 14px; grid-template-rows: auto minmax(360px, 1fr); padding: 16px; }
+.controls { align-self: start; display: grid; gap: 14px; max-height: calc(100vh - 160px); overflow: auto; padding: 14px; }
+.canvasHeader { align-items: flex-start; display: flex; gap: 12px; justify-content: space-between; min-width: 0; }
+.controlHeader, .resultMeta { min-width: 0; }
+.kicker { color: var(--generator-blue); display: block; font-size: 12px; font-weight: 850; line-height: 1.3; margin: 0 0 4px; }
+.canvas h2, .controls h2 { color: var(--generator-text); font-size: 18px; line-height: 1.25; margin: 0; }
+.canvas p, .statusLine, .emptyCanvas span { color: var(--generator-muted); font-size: 13px; line-height: 1.55; margin: 0; }
+.statusBadge, .downloadLink, .generateButton, .segmentButton, .radioSegment, .uploadIcon, .referencePill { align-items: center; display: inline-flex; justify-content: center; }
+.statusBadge { border: 1px solid var(--generator-line); border-radius: 999px; color: var(--generator-muted); flex: 0 0 auto; font-size: 12px; font-weight: 850; gap: 6px; min-height: 30px; padding: 0 10px; white-space: nowrap; }
+.statusBadge[data-state="ready"] { background: rgba(19, 121, 91, 0.09); border-color: rgba(19, 121, 91, 0.28); color: var(--generator-green); }
+.resultGrid { align-content: start; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.resultCard { align-content: start; border: 1px solid var(--generator-line); border-radius: 8px; display: grid; gap: 10px; min-width: 0; padding: 10px; }
+.resultImage, .resultPlaceholder, .emptyCanvas { background: #f5f7fb; border: 1px solid var(--generator-line); border-radius: 8px; }
+.resultImage, .resultPlaceholder { aspect-ratio: 1 / 1; color: var(--generator-muted); display: block; font-size: 12px; font-weight: 800; object-fit: cover; width: 100%; }
+.resultPlaceholder, .emptyCanvas { align-content: center; display: grid; justify-items: center; text-align: center; }
+.emptyCanvas { color: var(--generator-muted); gap: 8px; min-height: 360px; padding: 24px; }
+.emptyCanvas strong { color: var(--generator-text); font-size: 15px; line-height: 1.4; margin: 0; }
+.resultMeta { display: grid; gap: 3px; }
+.resultMeta strong, .resultMeta span { margin: 0; overflow-wrap: anywhere; }
+.resultMeta strong { color: var(--generator-text); font-size: 14px; }
+.resultMeta span { color: var(--generator-muted); font-size: 12px; font-weight: 800; }
+.downloadLink { border: 1px solid var(--generator-line); border-radius: 8px; color: var(--generator-text); font-size: 13px; font-weight: 850; gap: 7px; min-height: 36px; text-decoration: none; }
+.promptField, .selectField, .optionGroup { border: 0; display: grid; gap: 8px; margin: 0; min-width: 0; padding: 0; }
+.promptField span, .selectField span, .optionGroup legend { color: var(--generator-text); font-size: 13px; font-weight: 850; letter-spacing: 0; }
+.promptField textarea, .selectField select { background: #ffffff; border: 1px solid var(--generator-line); border-radius: 8px; color: var(--generator-text); font: inherit; font-size: 13px; line-height: 1.45; min-width: 0; padding: 10px; width: 100%; }
+.promptField textarea { min-height: 118px; resize: vertical; }
+.uploadBox { border: 1px dashed #b9c0cc; border-radius: 8px; color: var(--generator-muted); cursor: pointer; display: grid; gap: 5px; justify-items: start; padding: 12px; position: relative; }
+.uploadBox input { cursor: pointer; inset: 0; opacity: 0.01; position: absolute; }
+.uploadIcon { background: rgba(0, 106, 220, 0.08); border: 1px solid rgba(0, 106, 220, 0.18); border-radius: 8px; color: var(--generator-blue); height: 34px; width: 34px; }
+.uploadBox strong, .uploadBox small { overflow-wrap: anywhere; }
+.uploadBox strong { color: var(--generator-text); font-size: 13px; }
+.uploadBox small { font-size: 12px; line-height: 1.45; }
+.referenceList, .segmented { display: flex; flex-wrap: wrap; gap: 6px; }
+.referencePill { background: #f5f7fb; border: 1px solid var(--generator-line); border-radius: 999px; color: var(--generator-muted); font-size: 12px; font-weight: 760; min-height: 28px; padding: 0 9px; }
+.compactGrid { display: grid; gap: 12px; }
+.segmentButton, .radioSegment { background: #ffffff; border: 1px solid var(--generator-line); border-radius: 8px; color: var(--generator-text); cursor: pointer; font: inherit; font-size: 12px; font-weight: 850; min-height: 34px; padding: 0 10px; }
+.segmentButton[data-selected="true"], .radioSegment[data-selected="true"] { background: rgba(0, 106, 220, 0.08); border-color: rgba(0, 106, 220, 0.36); color: var(--generator-blue); }
+.radioSegment input { inline-size: 1px; opacity: 0.01; position: absolute; }
+.statusLine { align-items: center; background: #f8fafc; border: 1px solid var(--generator-line); border-radius: 8px; display: flex; gap: 7px; min-height: 38px; padding: 8px 10px; }
+.statusLine[data-blocked="true"] { background: rgba(180, 83, 9, 0.08); border-color: rgba(180, 83, 9, 0.25); color: var(--generator-warn); }
+.generateButton { background: var(--generator-blue); border: 1px solid var(--generator-blue); border-radius: 8px; color: #ffffff; cursor: pointer; font: inherit; font-size: 14px; font-weight: 900; gap: 8px; min-height: 42px; width: 100%; }
+.generateButton:disabled { background: #d8dde6; border-color: #d8dde6; color: #717887; cursor: not-allowed; }
+@media (max-width: 1180px) { .workspace { grid-template-columns: minmax(0, 1fr); } .controls { max-height: none; order: -1; } }
+@media (max-width: 640px) { .workspace { gap: 10px; min-height: auto; } .canvas, .controls { padding: 12px; } .canvasHeader { display: grid; } .resultGrid { grid-template-columns: minmax(0, 1fr); } }

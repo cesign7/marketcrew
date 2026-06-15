@@ -37,7 +37,11 @@ export function getProductImageStudioArchiveCardFormatLabel(cardFormat: CardForm
   }
 }
 
-export function getProductImageStudioArchiveOutputLabel(outputType: ProductImageStudioOutputType): string {
+export function getProductImageStudioArchiveOutputLabel(outputType: ProductImageStudioOutputType, workflow?: string | null): string {
+  if (workflow === "image_generator") {
+    return "AI 생성 이미지";
+  }
+
   switch (outputType) {
     case "set_combined":
       return "세트컷";
@@ -63,6 +67,13 @@ export function getProductImageStudioArchiveProductTypeLabel(productType: Produc
     default:
       return assertNever(productType);
   }
+}
+
+export function getProductImageStudioArchiveResultProjectLabel(input: {
+  readonly projectName: string;
+  readonly workflow?: string | null;
+}): string {
+  return input.workflow === "image_generator" ? "AI 이미지 생성기" : input.projectName;
 }
 
 export function formatProductImageStudioProviderValue(value: string | null): string {

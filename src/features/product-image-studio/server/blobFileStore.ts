@@ -4,8 +4,11 @@ import {
   ProductImageStudioFileStoreError,
   buildStorageKey,
   getExtensionForContentType,
+  parseGeneratedImageMimeType,
   parseImageMimeType,
+  prepareProductImageAssetForStorage,
   sanitizeOriginalFileName,
+  toGeneratedProductImageFileName,
   toRelativeStoragePath,
   toSafePathSegment,
   type ProductImageFileStore,
@@ -74,27 +77,24 @@ class BlobProductImageFileStore implements ProductImageFileStore {
   }
 
   async saveImage(input: SaveProductImageInput): Promise<SavedProductImageFile> {
-    const contentType = parseImageMimeType(input.contentType);
-    const extension = getExtensionForContentType(contentType);
+    const prepared = prepareProductImageAssetForStorage(input.bytes, input.contentType);
+    const extension = getExtensionForContentType(prepared.contentType);
     return this.putImage({
-      bytes: input.bytes,
-      contentType,
+      bytes: prepared.bytes,
+      contentType: prepared.contentType,
       originalFileName: sanitizeOriginalFileName(input.originalFileName),
       storageKey: buildStorageKey(input.projectId, input.role, `${toSafePathSegment(this.createId())}.${extension}`),
     });
   }
 
   async saveGeneratedImage(input: SaveGeneratedProductImageInput): Promise<SavedProductImageFile> {
+    const contentType = parseGeneratedImageMimeType(input.contentType);
+    const fileName = toGeneratedProductImageFileName({ ...input, contentType });
     return this.putImage({
       bytes: input.bytes,
-      contentType: input.contentType,
-      originalFileName: `${input.outputType}.png`,
-      storageKey: buildStorageKey(
-        input.projectId,
-        "results",
-        input.generationRequestId,
-        `${input.outputType}-${input.ratio.replace(":", "x")}.png`,
-      ),
+      contentType,
+      originalFileName: fileName,
+      storageKey: buildStorageKey(input.projectId, "results", input.generationRequestId, fileName),
     });
   }
 

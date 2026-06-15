@@ -2,6 +2,7 @@ import { rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { GET as previewAsset } from "@/app/api/product-image-studio/projects/[id]/assets/[assetId]/preview/route";
 import { POST as uploadAsset } from "@/app/api/product-image-studio/projects/[id]/assets/route";
 import { POST as createProject } from "@/app/api/product-image-studio/projects/route";
 import type { CardFormat, ProductImageStudioAssetRole } from "@/features/product-image-studio/domain/types";
@@ -58,6 +59,91 @@ describe("product image studio asset upload API", () => {
       expect(response.status).toBe(201);
       expect(await response.json()).toMatchObject({ asset: { role }, ok: true });
     }
+  });
+
+  it("keeps legacy PNG, JPEG, and WebP uploads accepted", async () => {
+    const projectId = await createProjectId("postcard_flat");
+    const uploads = [
+      { contentType: "image/png", fileName: "postcard-front.png", role: "postcard_front" },
+      { contentType: "image/jpeg", fileName: "envelope-front.jpg", role: "envelope_front" },
+      { contentType: "image/webp", fileName: "seal.webp", role: "seal_sticker" },
+    ] as const satisfies readonly {
+      readonly contentType: string;
+      readonly fileName: string;
+      readonly role: ProductImageStudioAssetRole;
+    }[];
+
+    for (const upload of uploads) {
+      const response = await uploadAsset(
+        uploadRequest(projectId, upload.role, upload.fileName, upload.contentType),
+        { params: Promise.resolve({ id: projectId }) },
+      );
+
+      expect(response.status).toBe(201);
+      expect(await response.json()).toMatchObject({
+        asset: {
+          contentType: upload.contentType,
+          originalFileName: upload.fileName,
+          role: upload.role,
+        },
+        ok: true,
+      });
+    }
+  });
+
+  it("accepts safe SVG reference uploads and serves them with restrictive preview headers", async () => {
+    const projectId = await createProjectId("postcard_flat");
+    const uploadResponse = await uploadAsset(
+      uploadRequest(
+        projectId,
+        "reference_mood",
+        "safe-reference.svg",
+        "image/svg+xml",
+        stringBytes('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16"/></svg>'),
+      ),
+      { params: Promise.resolve({ id: projectId }) },
+    );
+    const uploadBody: unknown = await uploadResponse.json();
+
+    expect(uploadResponse.status).toBe(201);
+    expect(uploadBody).toMatchObject({
+      asset: {
+        contentType: "image/svg+xml",
+        originalFileName: "safe-reference.svg",
+        role: "reference_mood",
+      },
+      ok: true,
+    });
+    const assetId = readAssetId(uploadBody);
+    const previewResponse = await previewAsset(
+      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/assets/${assetId}/preview`),
+      { params: Promise.resolve({ assetId, id: projectId }) },
+    );
+
+    expect(previewResponse.status).toBe(200);
+    expect(previewResponse.headers.get("content-type")).toBe("image/svg+xml; charset=utf-8");
+    expect(previewResponse.headers.get("x-content-type-options")).toBe("nosniff");
+    expect(previewResponse.headers.get("content-security-policy")).toContain("default-src 'none'");
+  });
+
+  it.each([
+    ["script tag", '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'],
+    ["foreignObject", '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><div>HTML</div></foreignObject></svg>'],
+    ["event handler", '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"></svg>'],
+    ["external href", '<svg xmlns="http://www.w3.org/2000/svg"><image href="https://example.com/a.png"/></svg>'],
+    ["remote CSS url", '<svg xmlns="http://www.w3.org/2000/svg"><rect style="fill:url(https://example.com/pattern.svg#x)"/></svg>'],
+  ])("rejects unsafe SVG uploads with %s before storage", async (_label, svg) => {
+    const projectId = await createProjectId("postcard_flat");
+    const response = await uploadAsset(
+      uploadRequest(projectId, "reference_mood", "unsafe.svg", "image/svg+xml", stringBytes(svg)),
+      { params: Promise.resolve({ id: projectId }) },
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      error: { code: "UNSAFE_SVG_ASSET" },
+      ok: false,
+    });
   });
 
   it("rejects malformed multipart requests", async () => {
@@ -152,4 +238,24 @@ function uploadRequest(
     body: formData,
     method: "POST",
   });
+}
+
+function stringBytes(value: string): ArrayBuffer {
+  return new TextEncoder().encode(value).buffer;
+}
+
+function readAssetId(value: unknown): string {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "asset" in value &&
+    typeof value.asset === "object" &&
+    value.asset !== null &&
+    "id" in value.asset &&
+    typeof value.asset.id === "string"
+  ) {
+    return value.asset.id;
+  }
+
+  throw new Error("asset id missing");
 }

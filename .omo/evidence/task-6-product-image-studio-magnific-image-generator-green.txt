@@ -1,0 +1,12 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/uploadArchive.test.ts tests/product-image-studio/archivePageData.test.ts tests/product-image-studio/downloads.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  4 passed (4)
+      Tests  17 passed (17)
+   Start at  18:30:40
+   Duration  507ms (transform 641ms, setup 0ms, import 1.22s, tests 103ms, environment 0ms)

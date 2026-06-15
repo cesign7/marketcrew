@@ -1,9 +1,9 @@
-import type { ProductImageStudioQualityMode, ProductImageStudioRatioPreset } from "@/features/product-image-studio/domain/types";
 import type {
   ImageGenerationProvider,
   ProductImageStudioProviderCallInput,
   ProductImageStudioProviderImageResult,
 } from "@/features/product-image-studio/server/imageProvider";
+import { toGeminiImageConfig, type GeminiImageConfig } from "@/features/product-image-studio/server/geminiGenerationConfig";
 
 export type GeminiImageProviderOptions = {
   readonly apiKey: string;
@@ -52,11 +52,6 @@ export type GeminiGenerateContentRequestBody = {
   };
 };
 
-type GeminiImageConfig = {
-  readonly aspectRatio: string;
-  readonly imageSize?: "512" | "1K" | "2K";
-};
-
 type GeminiRequestPart =
   | {
       readonly text: string;
@@ -94,7 +89,7 @@ export function buildGeminiGenerateContentRequestBody(
   return {
     contents,
     generationConfig: {
-      imageConfig: toGeminiImageConfig(model, input.promptContext.qualityMode, input.promptContext.ratio),
+      imageConfig: toGeminiImageConfig(model, input.promptContext.qualityMode, input.promptContext.ratio, input.promptContext.resolution),
       responseModalities: ["IMAGE"],
     },
   };
@@ -248,36 +243,6 @@ function readInlineData(value: unknown): string | null {
   }
 
   return inlineData["data"];
-}
-
-function toGeminiImageConfig(
-  model: string,
-  qualityMode: ProductImageStudioQualityMode,
-  ratio: ProductImageStudioRatioPreset,
-): GeminiImageConfig {
-  const base = { aspectRatio: toGeminiAspectRatio(ratio) };
-  if (model === "gemini-3.1-flash-image") {
-    return { ...base, imageSize: "512" };
-  }
-  if (model.startsWith("gemini-2.5")) {
-    return base;
-  }
-  return qualityMode === "high" ? { ...base, imageSize: "2K" } : { ...base, imageSize: "1K" };
-}
-
-function toGeminiAspectRatio(ratio: ProductImageStudioRatioPreset): string {
-  switch (ratio) {
-    case "1:1":
-      return "1:1";
-    case "4:5":
-      return "4:5";
-    case "3:4":
-      return "3:4";
-    case "16:9":
-      return "16:9";
-    case "custom":
-      return "1:1";
-  }
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {

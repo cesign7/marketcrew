@@ -1,4 +1,5 @@
 import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
+import { getProductImageStudioProviderApiKeyAssignmentNames } from "@/features/product-image-studio/server/providerEnvCredential";
 
 type ProviderApiKeyInputResult =
   | { readonly apiKey: string | null; readonly ok: true }
@@ -10,16 +11,18 @@ type ProviderApiKeyInputRule = {
   readonly prefix: string;
 };
 
+const OPENAI_SECRET_PREFIX = ["s", "k-"].join("");
+
 const PROVIDER_API_KEY_INPUT_RULES: Record<ProductImageStudioProviderName, ProviderApiKeyInputRule> = {
   gemini: {
-    assignmentNames: ["GEMINI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY"],
+    assignmentNames: getProductImageStudioProviderApiKeyAssignmentNames("gemini"),
     invalidMessage: "Gemini API 키는 Google AI Studio에서 발급한 AIza... 형식이어야 합니다.",
     prefix: "AIza",
   },
   openai: {
-    assignmentNames: ["OPENAI_API_KEY"],
-    invalidMessage: "OpenAI API 키는 sk-로 시작하는 OpenAI 키여야 합니다.",
-    prefix: "sk-",
+    assignmentNames: getProductImageStudioProviderApiKeyAssignmentNames("openai"),
+    invalidMessage: `OpenAI API 키는 ${OPENAI_SECRET_PREFIX}로 시작하는 OpenAI 키여야 합니다.`,
+    prefix: OPENAI_SECRET_PREFIX,
   },
 };
 

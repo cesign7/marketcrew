@@ -1,0 +1,17 @@
+RED recovery proof copied from prior blocked HTTP QA
+source=.omo/evidence/f2-code-quality-fix-http.txt
+expected failure before recovery: local curl was intercepted before gate-closed route and returned 401 Unauthorized
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   348    0    94  100   254   1150   3108 --:--:-- --:--:-- --:--:--  4296
+HTTP/1.1 401 Unauthorized
+content-type: application/json
+Vary: Accept-Encoding
+Date: Mon, 15 Jun 2026 10:53:16 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+
+{"error":{"code":"UNAUTHORIZED","message":"대표 로그인 후 이용할 수 있습니다."}}
+exit=0

@@ -13,12 +13,16 @@ describe("product image studio production smoke contract", () => {
     const smokeScript = await readFile(join(process.cwd(), "scripts", "production-smoke.mjs"), "utf8");
 
     expect(smokeScript).toContain("/product-image-studio");
+    expect(smokeScript).toContain("/product-image-studio/ai-tools/image-generator");
     expect(smokeScript).toContain("/login?next=%2Fproduct-image-studio");
     expect(smokeScript).toContain("/api/product-image-studio/provider-status");
     expect(smokeScript).toContain("/api/product-image-studio/provider-settings");
     expect(smokeScript).toContain("checkPageRender");
+    expect(smokeScript).toContain("checkLoginGate");
     expect(smokeScript).toContain("checkApiLoginGate");
-    expect(smokeScript).not.toContain("/generations");
+    expect(smokeScript).not.toContain("/api/product-image-studio/image-generator/generations");
+    expect(smokeScript).not.toContain('method: "POST"');
+    expect(smokeScript).not.toContain("method: 'POST'");
     expect(smokeScript).not.toContain("regenerate-ratio");
   });
 
@@ -37,6 +41,37 @@ describe("product image studio production smoke contract", () => {
     expect([302, 303, 307, 308]).toContain(response.status);
     expect(location).toContain("/login");
     expect(location).toContain("next=%2Fproduct-image-studio");
+  });
+
+  it("redirects the unauthenticated image generator page to owner login when auth is required", async () => {
+    vi.stubEnv("MARKETCREW_AUTH_DISABLED", "0");
+
+    const response = await proxy(new NextRequest("http://127.0.0.1:3000/product-image-studio/ai-tools/image-generator"));
+    const location = response.headers.get("location") ?? "";
+
+    expect([302, 303, 307, 308]).toContain(response.status);
+    expect(location).toContain("/login");
+    expect(location).toContain("next=%2Fproduct-image-studio%2Fai-tools%2Fimage-generator");
+  });
+
+  it("keeps the image generator generation API behind auth without posting to a provider", async () => {
+    vi.stubEnv("MARKETCREW_AUTH_DISABLED", "0");
+    vi.stubEnv("OPENAI_API_KEY", "configured-test-secret");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "1");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_OPENAI_IMAGE_MODEL", "gpt-image-2");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_PROVIDER", "openai");
+
+    const response = await proxy(
+      new NextRequest("http://127.0.0.1:3000/api/product-image-studio/image-generator/generations"),
+    );
+    const bodyText = await response.text();
+
+    expect(response.status).toBe(401);
+    expect(bodyText).toContain("UNAUTHORIZED");
+    expect(bodyText).not.toContain("configured-test-secret");
+    expect(bodyText).not.toContain("gpt-image-2");
+    expect(bodyText).not.toContain("PRODUCT_IMAGE_STUDIO");
+    expect(bodyText).not.toContain("OPENAI_API_KEY");
   });
 
   it("keeps the provider status API behind auth without leaking provider env details", async () => {

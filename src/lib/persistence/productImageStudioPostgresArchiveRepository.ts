@@ -91,12 +91,14 @@ function toResultArchiveItem(row: Readonly<Record<string, unknown>>): ProductIma
     model: readSummaryString(summary, "model"),
     outputType: readOneOf(row, "output_type", PRODUCT_IMAGE_STUDIO_OUTPUT_TYPES),
     previewUrl: toResultPreviewUrl(projectId, resultId),
+    promptPreview: readSummaryString(summary, "promptPreview"),
     projectId,
     projectName: readString(row, "project_name"),
     projectZipUrl: toProjectZipUrl(projectId),
     provider: readSummaryString(summary, "provider"),
     ratio: readOneOf(row, "ratio_preset", PRODUCT_IMAGE_STUDIO_RATIO_PRESETS),
     resultId,
+    workflow: readSummaryString(summary, "workflow"),
     width: readIntegerLike(row, "width"),
   };
 }
@@ -162,7 +164,17 @@ function readOptionalCardPose(row: Readonly<Record<string, unknown>>, key: strin
 
 function readJsonSummary(row: Readonly<Record<string, unknown>>, key: string): ProductImageStudioJsonSummary {
   const value = row[key];
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as ProductImageStudioJsonSummary)
-    : {};
+  return isJsonSummary(value) ? value : {};
+}
+
+function isJsonSummary(value: unknown): value is ProductImageStudioJsonSummary {
+  return isRecord(value) && Object.values(value).every(isJsonSummaryValue);
+}
+
+function isJsonSummaryValue(value: unknown): value is ProductImageStudioJsonSummary[string] {
+  return value === null || typeof value === "boolean" || typeof value === "number" || typeof value === "string";
+}
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -1,0 +1,50 @@
+Todo 7 evidence - provider gate/backend proxy/production smoke safety
+
+Timestamp: 2026-06-15 18:29 KST
+
+Scope receipt:
+- Implemented only Todo 7 safety/proxy/smoke coverage.
+- Did not call any billed image generation endpoint.
+- Did not touch unrelated untracked `src/components/product-image-studio/ProductImageStudioUploadLibrary.module 2.css`.
+- Did not commit.
+
+Red baseline:
+- Command: `npm test -- --run tests/product-image-studio/imageGeneratorProxy.test.ts tests/product-image-studio/smokeContract.test.ts tests/product-image-studio/providerGate.test.ts`
+- Result before implementation: failed as expected because `@/app/api/product-image-studio/image-generator/generations/route` was missing and `scripts/production-smoke.mjs` did not include `/product-image-studio/ai-tools/image-generator`.
+
+Green tests:
+- Command: `npm test -- --run tests/product-image-studio/imageGeneratorProxy.test.ts tests/product-image-studio/smokeContract.test.ts tests/product-image-studio/providerGate.test.ts`
+- Result: PASS, 3 test files passed, 17 tests passed.
+- Green transcript: `.omo/evidence/task-7-product-image-studio-magnific-image-generator-green.txt`
+
+Production smoke safety audit:
+- Confirmed `scripts/production-smoke.mjs` has no `method: "POST"`, no `method: 'POST'`, and no request body.
+- The generation endpoint is used only through `checkApiLoginGate`, which performs an unauthenticated GET auth check.
+- Smoke output does not print the generation endpoint path, API keys, model env values, or provider secrets.
+
+Production smoke:
+- Command: `npm run smoke:prod`
+- Result: PASS.
+- Output:
+  PASS Railway API 상태: status=200, repositoryMode=db, totalRecords=0
+  PASS Vercel -> Railway 연결: status=200, repositoryMode=db, totalRecords=0
+  PASS 대표 로그인 페이지 렌더: status=200, expectedText=true, bodySafe=true
+  PASS 대표 로그인 보호: status=307, location=/login?next=%2Foperations
+  PASS 상품 이미지 스튜디오 로그인 보호: status=307, location=/login?next=%2Fproduct-image-studio
+  PASS AI 이미지 생성기 로그인 보호: status=307, location=/login?next=%2Fproduct-image-studio%2Fai-tools%2Fimage-generator
+  PASS AI 이미지 생성 요청 API 보호: status=401, bodySafe=true
+  PASS 상품 이미지 생성 상태 API 보호: status=401, bodySafe=true
+  PASS 상품 이미지 provider 설정 API 보호: status=401, bodySafe=true
+
+Manual QA:
+- Exact invocation: `curl -i https://marketcrew.app/product-image-studio/ai-tools/image-generator`
+- Result: PASS. Unauthenticated production request redirected to login without server error.
+- Relevant response:
+  HTTP/2 307
+  location: /login?next=%2Fproduct-image-studio%2Fai-tools%2Fimage-generator
+  server: Vercel
+  body: Redirecting...
+
+Risks:
+- The new `/api/product-image-studio/image-generator/generations` route is intentionally a proxy-first safety seam with a local 423 blocked fallback. Full generator execution still belongs to the separate Todo 4 implementation.
+- The production image-generator page path currently proves login protection only; this Todo did not implement the UI page.

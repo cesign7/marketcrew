@@ -1,0 +1,19 @@
+src/features/product-image-studio/server/openAiImageProvider.ts:74:  | "1536x2048"
+src/features/product-image-studio/server/openAiImageProvider.ts:75:  | "1632x2048"
+src/features/product-image-studio/server/openAiImageProvider.ts:76:  | "2048x1152"
+src/features/product-image-studio/server/openAiImageProvider.ts:77:  | "2048x2048"
+src/features/product-image-studio/server/openAiImageProvider.ts:242:      return "2048x2048";
+src/features/product-image-studio/server/openAiImageProvider.ts:244:      return "1632x2048";
+src/features/product-image-studio/server/openAiImageProvider.ts:246:      return "1536x2048";
+src/features/product-image-studio/server/openAiImageProvider.ts:248:      return "2048x1152";
+src/features/product-image-studio/server/geminiImageProvider.ts:58:  readonly imageSize?: "512" | "1K" | "2K";
+src/features/product-image-studio/server/geminiImageProvider.ts:274:  return qualityMode === "high" ? { ...base, imageSize: "2K" } : { ...base, imageSize: "1K" };
+tests/product-image-studio/openAiImageProvider.test.ts:40:      quality: "low",
+tests/product-image-studio/openAiImageProvider.test.ts:52:    expect(body.quality).toBe("low");
+tests/product-image-studio/openAiImageProvider.test.ts:68:    { ratio: "1:1", size: "2048x2048" },
+tests/product-image-studio/openAiImageProvider.test.ts:69:    { ratio: "4:5", size: "1632x2048" },
+tests/product-image-studio/openAiImageProvider.test.ts:70:    { ratio: "3:4", size: "1536x2048" },
+tests/product-image-studio/openAiImageProvider.test.ts:71:    { ratio: "16:9", size: "2048x1152" },
+tests/product-image-studio/geminiImageProvider.test.ts:48:    { imageSize: "2K", resolution: "2k" },
+tests/product-image-studio/geminiImageProvider.test.ts:49:  ] satisfies readonly { readonly imageSize: "512" | "1K" | "2K"; readonly resolution: PromptGeneratorResolution }[])(
+tests/product-image-studio/geminiImageProvider.test.ts:170:    expect(capturedBodies[0]).toContain("\"imageSize\":\"2K\"");

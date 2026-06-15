@@ -1,0 +1,13 @@
+# Debugging Runtime Audit - product-image-studio-magnific-image-generator
+2026-06-15T20:56:48+09:00
+## Environment
+v24.15.0
+11.12.1
+5141a5a3c3ab65f0a9bf3de9638d33492c183c67
+dbaa5791579fdbdf86c6042aa5e0452ce4dd80fe
+0	1
+## Ports before
+## Hypotheses
+H1 stale_state: committed plan/ledger might not reflect completed F1-F4.
+H2 provider_gate: smoke or local routes might call generation/provider unexpectedly.
+H3 provider_failure_redaction: provider errors might leak raw key/token/internal text.

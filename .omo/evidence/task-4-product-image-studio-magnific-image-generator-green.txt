@@ -1,0 +1,26 @@
+===== exact requested test command =====
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/imageGeneratorRoute.test.ts tests/product-image-studio/providerGate.test.ts tests/product-image-studio/svgAssetSanitizer.test.ts tests/product-image-studio/svgAssetRasterizer.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  4 passed (4)
+      Tests  30 passed (30)
+   Start at  18:45:27
+   Duration  324ms (transform 194ms, setup 0ms, import 383ms, tests 57ms, environment 0ms)
+
+real 0.59
+user 0.99
+sys 0.28
+
+===== npm run typecheck =====
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+real 1.11
+user 1.76
+sys 0.28

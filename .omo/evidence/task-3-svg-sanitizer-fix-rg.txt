@@ -1,0 +1,13 @@
+src/features/product-image-studio/server/svgAssetSanitizer.ts:9:  readonly code: "UNSAFE_SVG_ASSET";
+src/features/product-image-studio/server/svgAssetSanitizer.ts:23:  /<\s*(?:[A-Za-z_][A-Za-z0-9_.-]*:)?(?:script|foreignObject|iframe|object|embed|link|meta|base|form|input|button|textarea|select|audio|video|canvas|applet|frame|frameset)(?=[\s/>])/i,
+src/features/product-image-studio/server/svgAssetSanitizer.ts:25:  /(?:href|xlink:href)\s*=\s*["']?\s*(?:https?:|\/\/|ftp:|file:|javascript:|data:text\/html|data:application\/xhtml\+xml|data:image\/svg\+xml)/i,
+src/features/product-image-studio/server/svgAssetSanitizer.ts:26:  /url\(\s*["']?\s*(?:https?:|\/\/|ftp:|file:|javascript:|data:text\/html|data:application\/xhtml\+xml|data:image\/svg\+xml)/i,
+src/features/product-image-studio/server/svgAssetSanitizer.ts:71:  return { error: { code: "UNSAFE_SVG_ASSET", message }, ok: false };
+tests/product-image-studio/svgAssetSanitizer.test.ts:22:    ["script tag", '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'],
+tests/product-image-studio/svgAssetSanitizer.test.ts:23:    ["foreignObject", '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><div>HTML</div></foreignObject></svg>'],
+tests/product-image-studio/svgAssetSanitizer.test.ts:28:    ["javascript href", '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript:alert(1)">x</a></svg>'],
+tests/product-image-studio/svgAssetSanitizer.test.ts:30:    ["executable namespace", '<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml"><html:script>alert(1)</html:script></svg>'],
+tests/product-image-studio/svgAssetSanitizer.test.ts:35:      error: { code: "UNSAFE_SVG_ASSET" },
+tests/product-image-studio/svgAssetSanitizer.test.ts:40:  it("rejects namespaced SVG script elements before storage", () => {
+tests/product-image-studio/svgAssetSanitizer.test.ts:42:      '<svg xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg"><svg:script>alert(1)</svg:script></svg>';
+tests/product-image-studio/svgAssetSanitizer.test.ts:47:      error: { code: "UNSAFE_SVG_ASSET" },

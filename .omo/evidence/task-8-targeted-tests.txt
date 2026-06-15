@@ -1,0 +1,12 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/imageGeneratorRoute.test.ts tests/product-image-studio/imageGeneratorUi.test.ts tests/product-image-studio/aiTools.test.ts tests/product-image-studio/smokeContract.test.ts
+
+
+ RUN  v4.1.7 /Users/mini/Documents/marketcrew2
+
+
+ Test Files  4 passed (4)
+      Tests  27 passed (27)
+   Start at  19:30:02
+   Duration  483ms (transform 478ms, setup 0ms, import 997ms, tests 95ms, environment 0ms)
