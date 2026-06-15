@@ -52,7 +52,7 @@ describe("product image studio workspace support pages", () => {
         activeHref: "/product-image-studio/specs",
         html: renderToStaticMarkup(createElement(ProductImageStudioProductSpecsWorkspacePage)),
         label: "specs",
-        requiredCopy: ["상품 규격", "새 규격", "저장된 규격", "접이식 카드", "엽서형 카드"],
+        requiredCopy: ["상품 규격", "개별 규격", "세트 규격", "아이콘으로 규격 추가", "카드(접이식)", "엽서(비접이)"],
       },
       {
         activeHref: "/product-image-studio/usage",

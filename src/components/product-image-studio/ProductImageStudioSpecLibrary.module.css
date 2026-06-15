@@ -1,7 +1,38 @@
-.layout {
+.tabBar {
+  background: #f5f5f5;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  display: inline-grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  padding: 4px;
+  width: fit-content;
+}
+
+.tabBar button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #666666;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.tabBar button[aria-selected="true"] {
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+  color: #171717;
+}
+
+.layout,
+.setLayout {
   display: grid;
   gap: 14px;
-  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
 }
 
 .panel {
@@ -21,10 +52,19 @@
   justify-content: space-between;
 }
 
+.specTop {
+  align-items: start;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
 .panelHeader div,
-.listHeader div {
+.listHeader div,
+.specTitle {
   display: grid;
   gap: 5px;
+  min-width: 0;
 }
 
 .panelHeader h2,
@@ -42,7 +82,9 @@
 .meta,
 .message,
 .emptyText,
-.specDetails dd {
+.pickItem small,
+.typeCard small,
+.selectedTypeCard small {
   color: #666666;
   font-size: 13px;
   line-height: 1.5;
@@ -50,75 +92,99 @@
 }
 
 .countBadge,
-.formatBadge {
+.iconBadge {
+  align-items: center;
   background: #e6f2ff;
   border-radius: 999px;
   color: #0070f3;
+  display: inline-flex;
   flex: 0 0 auto;
   font-size: 12px;
   font-weight: 900;
-  padding: 6px 9px;
+  min-height: 30px;
+  padding: 0 10px;
 }
 
-.nameField {
+.typeGrid {
   display: grid;
-  gap: 7px;
+  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
-.nameField span,
-.formatGroup legend,
-.specDetails dt {
+.typeCard,
+.selectedTypeCard {
+  align-items: stretch;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  color: #171717;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  min-height: 118px;
+  padding: 12px;
+  text-align: left;
+}
+
+.selectedTypeCard {
+  background: #f0f7ff;
+  border-color: #0070f3;
+}
+
+.typeCard span,
+.selectedTypeCard span {
+  display: grid;
+  gap: 4px;
+}
+
+.typeCard strong,
+.selectedTypeCard strong,
+.field span,
+.pickItem strong {
   color: #171717;
   font-size: 13px;
   font-weight: 900;
 }
 
-.nameField input {
+.typeIcon {
+  align-items: center;
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  color: #0070f3;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.formStack {
+  display: grid;
+  gap: 12px;
+}
+
+.fieldGrid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.field input,
+.field select {
   background: #ffffff;
   border: 1px solid #e5e5e5;
   border-radius: 8px;
   color: #171717;
   font: inherit;
   min-height: 40px;
+  min-width: 0;
   padding: 0 10px;
-}
-
-.formatGroup {
-  border: 0;
-  display: grid;
-  gap: 9px;
-  margin: 0;
-  padding: 0;
-}
-
-.formatOptions {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.formatOption,
-.selectedFormatOption {
-  align-items: center;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  gap: 8px;
-  min-height: 40px;
-  padding: 0 11px;
-}
-
-.selectedFormatOption {
-  background: #f0f7ff;
-  border-color: #0070f3;
-}
-
-.formatOption span,
-.selectedFormatOption span {
-  color: #171717;
-  font-size: 13px;
-  font-weight: 850;
 }
 
 .actions {
@@ -147,13 +213,24 @@
   color: #ffffff;
 }
 
+.primaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
 .secondaryButton {
   background: #ffffff;
   border: 1px solid #e5e5e5;
   color: #171717;
+  justify-self: start;
+  min-height: 32px;
+  padding: 0 10px;
+  white-space: nowrap;
+  width: fit-content;
 }
 
-.specList {
+.specList,
+.pickList {
   display: grid;
   gap: 10px;
   list-style: none;
@@ -161,45 +238,36 @@
   padding: 0;
 }
 
-.specItem {
+.specItem,
+.pickItem,
+.emptyText {
   border: 1px solid #e5e5e5;
   border-radius: 8px;
+  padding: 12px;
+}
+
+.specItem {
+  align-items: start;
   display: grid;
   gap: 12px;
-  padding: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.specTop {
-  align-items: start;
+.pickItem {
+  align-items: center;
+  cursor: pointer;
   display: flex;
   gap: 10px;
-  justify-content: space-between;
 }
 
-.specTitle {
+.pickItem span {
   display: grid;
-  gap: 5px;
-}
-
-.specDetails {
-  display: grid;
-  gap: 8px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 0;
-}
-
-.specDetails div {
-  background: #fafafa;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  display: grid;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
-  padding: 9px;
 }
 
 .message[data-tone="error"] {
-  color: #666666;
+  color: #b00020;
 }
 
 .message[data-tone="success"] {
@@ -208,26 +276,32 @@
 
 .emptyText {
   background: #fafafa;
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  padding: 14px;
+}
+
+@media (max-width: 1180px) {
+  .typeGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 980px) {
-  .layout {
+  .layout,
+  .setLayout {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 640px) {
+  .tabBar,
+  .fieldGrid,
+  .typeGrid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
   .panelHeader,
   .listHeader,
   .specTop {
     display: grid;
-  }
-
-  .formatOptions,
-  .specDetails {
-    grid-template-columns: 1fr;
   }
 }
