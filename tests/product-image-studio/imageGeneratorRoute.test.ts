@@ -4,6 +4,10 @@ import {
   handleProductImageStudioImageGeneratorGeneration,
   type ProductImageStudioImageGeneratorProviderResolver,
 } from "@/features/product-image-studio/server/imageGeneratorRunner";
+import type {
+  ImageGenerationProvider,
+  ProductImageStudioProviderImageResult,
+} from "@/features/product-image-studio/server/imageProvider";
 import {
   enabledImageGeneratorRouteResolver,
   expectNoImageGeneratorRouteArchiveWrites,
@@ -114,4 +118,45 @@ describe("product image studio image-generator route validation and gate", () =>
     expect(bodyText).not.toContain("secret");
     await expectNoImageGeneratorRouteArchiveWrites(state);
   });
+
+  it("returns 502 instead of leaving a hung provider request pending", async () => {
+    vi.useFakeTimers();
+    try {
+      const state = imageGeneratorRouteTestState();
+      const provider = neverSettlingImageGeneratorRouteProvider();
+      const responsePromise = handleProductImageStudioImageGeneratorGeneration(
+        multipartImageGeneratorRouteRequest(validImageGeneratorRoutePayload()),
+        {
+          ...state,
+          env: { ...state.env, PRODUCT_IMAGE_STUDIO_PROVIDER_TIMEOUT_MS: "1000" },
+          resolveProvider: enabledImageGeneratorRouteResolver("gpt-image-2", provider),
+        },
+      );
+      let settled = false;
+      void responsePromise.then(() => {
+        settled = true;
+      });
+
+      await vi.advanceTimersByTimeAsync(1000);
+      await Promise.resolve();
+
+      expect(settled).toBe(true);
+      const response = await responsePromise;
+      expect(response.status).toBe(502);
+      expect(await response.json()).toMatchObject({ error: { code: "IMAGE_PROVIDER_FAILED" }, ok: false });
+      await expectNoImageGeneratorRouteArchiveWrites(state);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
+
+function neverSettlingImageGeneratorRouteProvider(): ImageGenerationProvider {
+  const pending = () => new Promise<ProductImageStudioProviderImageResult>(() => undefined);
+  return {
+    editWithReferences: pending,
+    generateScene: pending,
+    name: "openai",
+    regenerateRatio: pending,
+  };
+}

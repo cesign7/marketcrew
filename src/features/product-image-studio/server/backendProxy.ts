@@ -1,6 +1,6 @@
 import { proxyRequestToBackend } from "@/lib/backend/proxy";
 
-const PRODUCT_IMAGE_STUDIO_BACKEND_PROXY_TIMEOUT_MS = 180_000;
+const PRODUCT_IMAGE_STUDIO_BACKEND_PROXY_TIMEOUT_MS = 125_000;
 
 export function proxyProductImageStudioRequestToBackend(request: Request) {
   return proxyRequestToBackend(request, undefined, {

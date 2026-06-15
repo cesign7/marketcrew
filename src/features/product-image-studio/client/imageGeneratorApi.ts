@@ -56,6 +56,7 @@ export async function startProductImageStudioImageGeneratorGeneration(
   const response = await fetch("/api/product-image-studio/image-generator/generations", {
     body: buildProductImageStudioImageGeneratorRequestFormData(input),
     method: "POST",
+    signal: AbortSignal.timeout(130_000),
   });
   const payload = await readJsonPayload(response);
   return readProductImageStudioImageGeneratorGenerationResponse(payload, response.status);

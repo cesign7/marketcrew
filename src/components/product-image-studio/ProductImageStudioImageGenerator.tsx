@@ -202,7 +202,7 @@ function RadioGroup<Option extends string>({ label, name, onSelect, options, sel
 }
 
 function getStatusMessage(input: { readonly blockedReason: GeneratorBlockedReason | null; readonly fileMessage: string | null; readonly generationResult: ProductImageStudioImageGeneratorGenerationClientResult | null; readonly phase: GeneratorPhase; readonly promptTooLong: boolean }): string {
-  if (input.phase === "generating") return "생성 요청을 보내는 중입니다.";
+  if (input.phase === "generating") return "이미지를 생성하는 중입니다. 보통 30초에서 2분 정도 걸립니다.";
   if (input.fileMessage) return input.fileMessage;
   if (input.promptTooLong) return "프롬프트는 3000자 이하로 입력해 주세요.";
   if (input.generationResult) return input.generationResult.message;

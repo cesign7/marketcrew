@@ -31,6 +31,8 @@ import { getProductImageStudioProjectRepository } from "@/features/product-image
 import type { ProductImageStudioRepository } from "@/lib/persistence/productImageStudioRepository";
 import type { ProductImageFileStore } from "@/features/product-image-studio/server/fileStore";
 
+const DEFAULT_IMAGE_GENERATOR_PROVIDER_TIMEOUT_MS = 110_000;
+
 export type ProductImageStudioImageGeneratorProviderResolver = (
   env: ProductImageStudioProviderEnv,
   provider: ProductImageStudioProviderName,
@@ -55,6 +57,13 @@ type ProviderAttempt =
       readonly kind: "rejected";
       readonly sequence: number;
     };
+
+class ProductImageStudioImageGeneratorProviderTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(`이미지 provider 응답 시간이 ${Math.round(timeoutMs / 1000)}초를 넘었습니다.`);
+    this.name = "ProductImageStudioImageGeneratorProviderTimeoutError";
+  }
+}
 
 export async function handleProductImageStudioImageGeneratorGeneration(
   request: Request,
@@ -102,7 +111,13 @@ export async function handleProductImageStudioImageGeneratorGeneration(
   }
 
   const providerReferences = parsed.request.references.map(toProviderReferenceImage);
-  const attempts = await createProviderAttempts(parsed.request.payload, parsed.request.references.length, resolvedProvider.provider, providerReferences);
+  const attempts = await createProviderAttempts(
+    parsed.request.payload,
+    parsed.request.references.length,
+    resolvedProvider.provider,
+    providerReferences,
+    getImageGeneratorProviderTimeoutMs(env),
+  );
   const successes = attempts.filter(isFulfilledAttempt);
   const failures = attempts.filter(isRejectedAttempt);
   if (successes.length === 0) {
@@ -158,9 +173,10 @@ async function createProviderAttempts(
   referenceCount: number,
   provider: ImageGenerationProvider,
   referenceImages: readonly ProductImageStudioProviderReferenceImage[],
+  timeoutMs: number,
 ): Promise<readonly ProviderAttempt[]> {
   return Promise.all(
-    Array.from({ length: payload.count }, (_value, index) => callProvider({ payload, provider, referenceCount, referenceImages, sequence: index + 1 })),
+    Array.from({ length: payload.count }, (_value, index) => callProvider({ payload, provider, referenceCount, referenceImages, sequence: index + 1, timeoutMs })),
   );
 }
 
@@ -170,6 +186,7 @@ async function callProvider(input: {
   readonly referenceCount: number;
   readonly referenceImages: readonly ProductImageStudioProviderReferenceImage[];
   readonly sequence: number;
+  readonly timeoutMs: number;
 }): Promise<ProviderAttempt> {
   const promptContext: ProductImageStudioPromptContext = {
     assetRoles: input.referenceImages.map((image) => image.role),
@@ -180,12 +197,27 @@ async function callProvider(input: {
     resultIndex: input.sequence - 1,
   };
   try {
-    const image = input.referenceImages.length > 0
-      ? await input.provider.editWithReferences({ promptContext, referenceImages: input.referenceImages })
-      : await input.provider.generateScene({ promptContext, referenceImages: [] });
+    const providerRequest = input.referenceImages.length > 0
+      ? input.provider.editWithReferences({ promptContext, referenceImages: input.referenceImages })
+      : input.provider.generateScene({ promptContext, referenceImages: [] });
+    const image = await withImageGeneratorProviderTimeout(providerRequest, input.timeoutMs);
     return { image, kind: "fulfilled", sequence: input.sequence };
   } catch (error) {
     return { error, kind: "rejected", sequence: input.sequence };
+  }
+}
+
+async function withImageGeneratorProviderTimeout<T>(request: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | null = null;
+  try {
+    return await Promise.race([
+      request,
+      new Promise<T>((_resolve, reject) => {
+        timeout = setTimeout(() => reject(new ProductImageStudioImageGeneratorProviderTimeoutError(timeoutMs)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
   }
 }
 
@@ -215,6 +247,14 @@ function withDefaultModel(
     case "gemini":
       return env.PRODUCT_IMAGE_STUDIO_GEMINI_IMAGE_MODEL ? env : { ...env, PRODUCT_IMAGE_STUDIO_GEMINI_IMAGE_MODEL: defaultModel };
   }
+}
+
+function getImageGeneratorProviderTimeoutMs(env: ProductImageStudioProviderEnv): number {
+  const parsed = Number.parseInt(env.PRODUCT_IMAGE_STUDIO_PROVIDER_TIMEOUT_MS ?? "", 10);
+  if (Number.isFinite(parsed)) {
+    return Math.max(1_000, parsed);
+  }
+  return DEFAULT_IMAGE_GENERATOR_PROVIDER_TIMEOUT_MS;
 }
 
 function isFulfilledAttempt(attempt: ProviderAttempt): attempt is Extract<ProviderAttempt, { readonly kind: "fulfilled" }> {
