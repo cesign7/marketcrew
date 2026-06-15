@@ -2,8 +2,14 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ProductImageStudioUploadSection } from "@/components/product-image-studio/ProductImageStudioUploadSection";
+import { ProductImageStudioAiMaterialSelectionPanel } from "@/components/product-image-studio/ProductImageStudioAiMaterialSelectionPanel";
 import { ProductImageStudioWizard } from "@/components/product-image-studio/ProductImageStudioWizard";
 import { readProductImageStudioConceptCards } from "@/features/product-image-studio/client/projectWizardApi";
+import {
+  createProductImageStudioMaterialRecord,
+  type ProductImageStudioMaterialRecord,
+  type ProductImageStudioMaterialTarget,
+} from "@/features/product-image-studio/domain/materialLibrary";
 import { getProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
 import {
   canRequestProductImageStudioConcepts,
@@ -62,12 +68,40 @@ describe("product image studio project wizard UI", () => {
     expect(html).toContain("콘셉트 추천");
     expect(html).toContain("추천 콘셉트");
     expect(html).toContain("생성 명령");
+    expect(html).toContain("용지·재질 선택");
+    expect(html).toContain("상품 규격 관리에서 용지·재질을 먼저 저장해 주세요.");
+    expect(html).toContain("용지·재질 관리로 이동");
     expect(html).toContain("빠른 초안");
     expect(html).toContain("고품질");
     expect(html).toMatch(/<button[^>]*disabled/);
     expect(html).not.toContain("접이식 100x150");
     expect(html).not.toContain("네이버 검색광고");
     expect(html).not.toContain("광고유형");
+  });
+
+  it("groups saved materials into AI-ready material choices", () => {
+    const html = renderToStaticMarkup(
+      createElement(ProductImageStudioAiMaterialSelectionPanel, {
+        initialMaterials: [
+          createMaterial("material-card", "랑데뷰 내추럴 240g", ["folded_card", "postcard"]),
+          createMaterial("material-envelope", "미색 봉투지 120g", ["envelope"]),
+          createMaterial("material-sticker", "무광 스티커지", ["sticker"]),
+          createMaterial("material-business-card", "명함 매트 코팅지", ["business_card"]),
+        ],
+      }),
+    );
+
+    expect(html).toContain("용지·재질 선택");
+    expect(html).toContain("카드·엽서");
+    expect(html).toContain("봉투");
+    expect(html).toContain("스티커");
+    expect(html).toContain("명함");
+    expect(html).toContain("랑데뷰 내추럴 240g");
+    expect(html).toContain("미색 봉투지 120g");
+    expect(html).toContain("무광 스티커지");
+    expect(html).toContain("명함 매트 코팅지");
+    expect(html).toContain("카드·엽서 재질 고정");
+    expect(html).toContain("봉투 재질 변경");
   });
 
   it("separates postcard upload slots from folded-card upload copy", () => {
@@ -177,3 +211,24 @@ describe("product image studio project wizard UI", () => {
     ]);
   });
 });
+
+function createMaterial(
+  id: string,
+  name: string,
+  compatibleTargets: readonly ProductImageStudioMaterialTarget[],
+): ProductImageStudioMaterialRecord {
+  const material = createProductImageStudioMaterialRecord({
+    colorHex: "#F7F1E3",
+    colorName: "내추럴 화이트",
+    compatibleTargets,
+    createdAt: "2026-06-15T00:00:00.000Z",
+    id,
+    name,
+    surface: "매트",
+    thickness: { unit: "gsm", value: 240 },
+  });
+  if (!material) {
+    throw new Error("Expected valid material fixture");
+  }
+  return material;
+}

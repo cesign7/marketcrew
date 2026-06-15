@@ -1,0 +1,51 @@
+.optionSection {
+  display: grid;
+  gap: 12px;
+}
+
+.sectionTitle {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.sectionTitle h3 {
+  font-size: 15px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.sectionTitle p,
+.emptyText {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.outputChipList {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.outputChip {
+  background: #e6f2ff;
+  border: 1px solid #b8dcff;
+  border-radius: 999px;
+  color: #0070f3;
+  font-size: 13px;
+  font-weight: 900;
+  padding: 10px 11px;
+}
+
+@media (max-width: 920px) {
+  .outputChipList {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionTitle {
+    display: grid;
+  }
+}

@@ -7,7 +7,7 @@ import {
   type ProductImageStudioSpecItem,
   type ProductImageStudioSpecSet,
 } from "@/features/product-image-studio/domain/specLibrary";
-import styles from "./ProductImageStudioSpecLibrary.module.css";
+import styles from "./ProductImageStudioSpecSetBuilder.module.css";
 
 type ProductImageStudioSpecSetBuilderProps = {
   readonly items: readonly ProductImageStudioSpecItem[];

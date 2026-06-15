@@ -1,0 +1,71 @@
+.typeGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.typeCard,
+.selectedTypeCard {
+  align-items: stretch;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  color: #171717;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  min-height: 118px;
+  padding: 12px;
+  text-align: left;
+}
+
+.selectedTypeCard {
+  background: #f0f7ff;
+  border-color: #0070f3;
+}
+
+.typeCard span,
+.selectedTypeCard span {
+  display: grid;
+  gap: 4px;
+}
+
+.typeCard strong,
+.selectedTypeCard strong {
+  color: #171717;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.typeCard small,
+.selectedTypeCard small {
+  color: #666666;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.typeIcon {
+  align-items: center;
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  color: #0070f3;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+@media (max-width: 1180px) {
+  .typeGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .typeGrid {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+}

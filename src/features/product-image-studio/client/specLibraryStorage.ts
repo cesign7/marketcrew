@@ -3,7 +3,6 @@ import {
   createProductImageStudioSpecSet,
   PRODUCT_IMAGE_STUDIO_SPEC_ITEM_TYPES,
   type ProductImageStudioEnvelopeFlapStyle,
-  type ProductImageStudioPaperFinish,
   type ProductImageStudioPrintSides,
   type ProductImageStudioSpecItem,
   type ProductImageStudioSpecItemType,
@@ -124,11 +123,9 @@ function readPostcard(
   value: Readonly<Record<string, unknown>>,
 ): ProductImageStudioSpecItem | null {
   const sizeMm = readSize(value["sizeMm"]);
-  const paperFinish = readPaperFinish(value["paperFinish"]);
-  const paperWeightGsm = readNumber(value["paperWeightGsm"]);
   const sides = readSides(value["sides"]);
-  return sizeMm && paperFinish && paperWeightGsm !== null && sides
-    ? createProductImageStudioSpecItem({ ...base, paperFinish, paperWeightGsm, sides, sizeMm, type: "postcard" })
+  return sizeMm && sides
+    ? createProductImageStudioSpecItem({ ...base, sides, sizeMm, type: "postcard" })
     : null;
 }
 
@@ -138,17 +135,13 @@ function readFoldedCard(
 ): ProductImageStudioSpecItem | null {
   const foldedSizeMm = readSize(value["foldedSizeMm"]);
   const openSizeMm = readSize(value["openSizeMm"]);
-  const paperFinish = readPaperFinish(value["paperFinish"]);
-  const paperWeightGsm = readNumber(value["paperWeightGsm"]);
   const foldDirection = value["foldDirection"] === "top_fold" ? "top_fold" : "left_fold";
-  return foldedSizeMm && openSizeMm && paperFinish && paperWeightGsm !== null
+  return foldedSizeMm && openSizeMm
     ? createProductImageStudioSpecItem({
         ...base,
         foldedSizeMm,
         foldDirection,
         openSizeMm,
-        paperFinish,
-        paperWeightGsm,
         type: "folded_card",
       })
     : null;
@@ -241,10 +234,6 @@ function readString(value: unknown): string | null {
 
 function readStringArray(value: readonly unknown[]): readonly string[] {
   return value.filter((item) => typeof item === "string");
-}
-
-function readPaperFinish(value: unknown): ProductImageStudioPaperFinish | null {
-  return value === "glossy" || value === "textured" || value === "matte" ? value : null;
 }
 
 function readSides(value: unknown): ProductImageStudioPrintSides | null {

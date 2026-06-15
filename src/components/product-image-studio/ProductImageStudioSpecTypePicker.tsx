@@ -7,7 +7,7 @@ import {
   PRODUCT_IMAGE_STUDIO_SPEC_ITEM_TYPES,
   type ProductImageStudioSpecItemType,
 } from "@/features/product-image-studio/domain/specLibrary";
-import styles from "./ProductImageStudioSpecLibrary.module.css";
+import styles from "./ProductImageStudioSpecTypePicker.module.css";
 
 type ProductImageStudioSpecTypePickerProps = {
   readonly onSelect: (type: ProductImageStudioSpecItemType) => void;

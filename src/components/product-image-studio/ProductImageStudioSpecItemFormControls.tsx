@@ -23,30 +23,6 @@ export function SizeFields({
   );
 }
 
-export function PaperFields({
-  draft,
-  onPaperFinishChange,
-  onPaperWeightChange,
-}: {
-  readonly draft: Extract<ProductImageStudioSpecItemDraft, { readonly type: "folded_card" | "postcard" }>;
-  readonly onPaperFinishChange: (value: string) => void;
-  readonly onPaperWeightChange: (value: number) => void;
-}) {
-  return (
-    <div className={styles.fieldGrid}>
-      <label className={styles.field}>
-        <span>종이 표면</span>
-        <select onChange={(event) => onPaperFinishChange(event.currentTarget.value)} value={draft.paperFinish}>
-          <option value="matte">무광</option>
-          <option value="glossy">유광</option>
-          <option value="textured">질감지</option>
-        </select>
-      </label>
-      <NumberField label="용지 두께(gsm)" onChange={onPaperWeightChange} value={draft.paperWeightGsm} />
-    </div>
-  );
-}
-
 export function SidesField({
   setDraft,
   value,

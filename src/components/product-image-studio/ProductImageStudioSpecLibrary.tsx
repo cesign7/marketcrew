@@ -10,6 +10,7 @@ import {
   readProductImageStudioSpecLibraryFromStorage,
   writeProductImageStudioSpecLibraryToStorage,
 } from "@/features/product-image-studio/client/specLibraryStorage";
+import type { ProductImageStudioMaterialRecord } from "@/features/product-image-studio/domain/materialLibrary";
 import {
   createDefaultProductImageStudioSpecItemDraft,
   createProductImageStudioSpecItem,
@@ -29,16 +30,18 @@ import {
 } from "@/features/product-image-studio/domain/specLibrary";
 import { createProductImageStudioProductionPresetFromSpecSet } from "@/features/product-image-studio/domain/specLibraryToProductionPreset";
 import { ProductImageStudioIndividualSpecPanel } from "./ProductImageStudioIndividualSpecPanel";
+import { ProductImageStudioMaterialPanel } from "./ProductImageStudioMaterialPanel";
 import { ProductImageStudioSpecSetBuilder } from "./ProductImageStudioSpecSetBuilder";
 import styles from "./ProductImageStudioSpecLibrary.module.css";
 
 type ProductImageStudioProductSpecsWorkspacePageProps = {
   readonly initialActiveTab?: ProductImageStudioSpecLibraryTab;
   readonly initialItems?: readonly ProductImageStudioSpecItem[];
+  readonly initialMaterials?: readonly ProductImageStudioMaterialRecord[];
   readonly initialSets?: readonly ProductImageStudioSpecSet[];
 };
 
-type ProductImageStudioSpecLibraryTab = "items" | "sets";
+type ProductImageStudioSpecLibraryTab = "items" | "sets" | "materials";
 
 type ProductImageStudioSpecLibraryMessage = {
   readonly text: string;
@@ -48,6 +51,7 @@ type ProductImageStudioSpecLibraryMessage = {
 export function ProductImageStudioProductSpecsWorkspacePage({
   initialActiveTab = "items",
   initialItems = [],
+  initialMaterials = [],
   initialSets = [],
 }: ProductImageStudioProductSpecsWorkspacePageProps) {
   const [activeTab, setActiveTab] = useState<ProductImageStudioSpecLibraryTab>(initialActiveTab);
@@ -70,7 +74,7 @@ export function ProductImageStudioProductSpecsWorkspacePage({
   return (
     <WorkspaceSupportShell
       activePath="/product-image-studio/specs"
-      description="개별 인쇄물 규격을 저장하고 필요한 조합을 세트로 묶습니다."
+      description="개별 인쇄물 규격과 세트, 용지·재질을 로컬 라이브러리로 관리합니다."
       showPrimaryAction={false}
       title="상품 규격"
     >
@@ -81,33 +85,54 @@ export function ProductImageStudioProductSpecsWorkspacePage({
         <button aria-selected={activeTab === "sets"} onClick={() => setActiveTab("sets")} role="tab" type="button">
           세트 규격
         </button>
+        <button
+          aria-selected={activeTab === "materials"}
+          onClick={() => setActiveTab("materials")}
+          role="tab"
+          type="button"
+        >
+          용지·재질
+        </button>
       </div>
 
-      {activeTab === "items" ? (
-        <ProductImageStudioIndividualSpecPanel
-          draft={draft}
-          items={items}
-          message={message}
-          onRemoveItem={handleRemoveItem}
-          onSaveItem={handleSaveItem}
-          onSelectType={handleSelectType}
-          selectedType={draft.type}
-          setDraft={setDraft}
-        />
-      ) : (
-        <ProductImageStudioSpecSetBuilder
-          items={items}
-          onRemoveSet={handleRemoveSet}
-          onSaveSet={handleSaveSet}
-          selectedItemIds={selectedItemIds}
-          setName={setName}
-          sets={sets}
-          setSelectedItemIds={setSelectedItemIds}
-          setSetName={setSetName}
-        />
-      )}
+      {renderActiveTab()}
     </WorkspaceSupportShell>
   );
+
+  function renderActiveTab() {
+    switch (activeTab) {
+      case "items":
+        return (
+          <ProductImageStudioIndividualSpecPanel
+            draft={draft}
+            items={items}
+            message={message}
+            onRemoveItem={handleRemoveItem}
+            onSaveItem={handleSaveItem}
+            onSelectType={handleSelectType}
+            selectedType={draft.type}
+            setDraft={setDraft}
+          />
+        );
+      case "sets":
+        return (
+          <ProductImageStudioSpecSetBuilder
+            items={items}
+            onRemoveSet={handleRemoveSet}
+            onSaveSet={handleSaveSet}
+            selectedItemIds={selectedItemIds}
+            setName={setName}
+            sets={sets}
+            setSelectedItemIds={setSelectedItemIds}
+            setSetName={setSetName}
+          />
+        );
+      case "materials":
+        return <ProductImageStudioMaterialPanel initialMaterials={initialMaterials} />;
+    }
+    const unreachableTab: never = activeTab;
+    return unreachableTab;
+  }
 
   function handleSelectType(type: ProductImageStudioSpecItemType): void {
     setDraft(createDefaultProductImageStudioSpecItemDraft(type));

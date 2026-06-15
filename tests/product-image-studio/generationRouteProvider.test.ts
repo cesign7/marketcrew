@@ -82,6 +82,50 @@ describe("product image studio generation route provider selection", () => {
     });
     expect(fetchSpy).not.toHaveBeenCalled();
   });
+
+  it("ignores extra material selection before provider prompt and summary calls", async () => {
+    stubLocalRouteEnv();
+    vi.stubEnv("OPENAI_API_KEY", "openai-test-key");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_GENERATION_ENABLED", "1");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_OPENAI_IMAGE_MODEL", "gpt-image-2");
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_PROVIDER", "openai");
+    const capturedProviderBodies: string[] = [];
+    vi.stubGlobal("fetch", async (_input: string | URL | Request, init?: RequestInit) => {
+      if (typeof init?.body === "string") {
+        capturedProviderBodies.push(init.body);
+      }
+      return openAiImageResponse("openai generated png");
+    });
+    const createGenerationSpy = vi.spyOn(getProductImageStudioProjectRepository(), "createGenerationRequest");
+
+    const projectId = await createProjectId("folded_card");
+    const uploadResponse = await uploadAsset(uploadRequest(projectId, "folded_card_outer_front"), {
+      params: Promise.resolve({ id: projectId }),
+    });
+    expect(uploadResponse.status).toBe(201);
+
+    const response = await startGeneration(
+      generationRequest(projectId, "openai", {
+        materialSelection: {
+          card: "랑데뷰 내추럴 240g",
+          promptInjection: "provider prompt에 들어가면 안 되는 재질",
+        },
+      }),
+      {
+        params: Promise.resolve({ id: projectId }),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    const createGenerationCall = createGenerationSpy.mock.calls[0]?.[0];
+    if (!createGenerationCall) {
+      throw new Error("Expected provider generation request to be stored");
+    }
+    expect(JSON.stringify(createGenerationCall.providerRequestSummary)).not.toContain("materialSelection");
+    expect(JSON.stringify(createGenerationCall.providerRequestSummary)).not.toContain("랑데뷰 내추럴 240g");
+    expect(capturedProviderBodies.join("\n")).not.toContain("materialSelection");
+    expect(capturedProviderBodies.join("\n")).not.toContain("provider prompt에 들어가면 안 되는 재질");
+  });
 });
 
 function stubLocalRouteEnv(): void {
@@ -122,10 +166,15 @@ async function createProjectId(cardFormat: CardFormat): Promise<string> {
   throw new Error("project id missing");
 }
 
-function generationRequest(projectId: string, provider: "gemini" | "openai"): Request {
+function generationRequest(
+  projectId: string,
+  provider: "gemini" | "openai",
+  extraPayload: Readonly<Record<string, unknown>> = {},
+): Request {
   return new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${projectId}/generations`, {
     body: JSON.stringify({
       conceptId: "minimal-studio",
+      ...extraPayload,
       outputs: ["card_single"],
       productionSettings: manualCardOnlyProductionSettings(),
       provider,

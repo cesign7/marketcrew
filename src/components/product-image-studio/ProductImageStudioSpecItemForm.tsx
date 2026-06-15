@@ -5,11 +5,10 @@ import type { ProductImageStudioSizeMm } from "@/features/product-image-studio/d
 import {
   getProductImageStudioSpecItemTypeLabel,
   type ProductImageStudioEnvelopeFlapStyle,
-  type ProductImageStudioPaperFinish,
   type ProductImageStudioSpecItemDraft,
 } from "@/features/product-image-studio/domain/specLibrary";
 import { assertNever } from "@/features/product-image-studio/domain/types";
-import { NumberField, PaperFields, SidesField, SizeFields } from "./ProductImageStudioSpecItemFormControls";
+import { NumberField, SidesField, SizeFields } from "./ProductImageStudioSpecItemFormControls";
 import styles from "./ProductImageStudioSpecLibrary.module.css";
 
 type ProductImageStudioSpecItemFormProps = {
@@ -46,11 +45,6 @@ function renderTypedFields(
       return (
         <>
           <SizeFields labels={["엽서 가로(mm)", "엽서 세로(mm)"]} onChange={(update) => updateSize(setDraft, update)} size={draft.sizeMm} />
-          <PaperFields
-            draft={draft}
-            onPaperFinishChange={(value) => updatePaperFinish(setDraft, value)}
-            onPaperWeightChange={(paperWeightGsm) => updatePaperWeight(setDraft, paperWeightGsm)}
-          />
           <SidesField setDraft={setDraft} value={draft.sides} />
         </>
       );
@@ -77,11 +71,6 @@ function renderTypedFields(
               <option value="top_fold">위아래로 펼침</option>
             </select>
           </label>
-          <PaperFields
-            draft={draft}
-            onPaperFinishChange={(value) => updatePaperFinish(setDraft, value)}
-            onPaperWeightChange={(paperWeightGsm) => updatePaperWeight(setDraft, paperWeightGsm)}
-          />
         </>
       );
     case "envelope":
@@ -178,15 +167,6 @@ function updateStickerDiameter(setDraft: Dispatch<SetStateAction<ProductImageStu
   setDraft((current) => current.type === "sticker" && "diameter" in current.sizeMm
     ? { ...current, sizeMm: { diameter } }
     : current);
-}
-
-function updatePaperFinish(setDraft: Dispatch<SetStateAction<ProductImageStudioSpecItemDraft>>, value: string): void {
-  const paperFinish: ProductImageStudioPaperFinish = value === "glossy" || value === "textured" ? value : "matte";
-  setDraft((current) => current.type === "postcard" || current.type === "folded_card" ? { ...current, paperFinish } : current);
-}
-
-function updatePaperWeight(setDraft: Dispatch<SetStateAction<ProductImageStudioSpecItemDraft>>, paperWeightGsm: number): void {
-  setDraft((current) => current.type === "postcard" || current.type === "folded_card" ? { ...current, paperWeightGsm } : current);
 }
 
 function updateFoldDirection(setDraft: Dispatch<SetStateAction<ProductImageStudioSpecItemDraft>>, value: string): void {

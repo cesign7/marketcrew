@@ -1,0 +1,126 @@
+.materialSelectionPanel {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.sectionTitle {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.sectionTitle h3 {
+  font-size: 15px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.sectionTitle p,
+.materialEmptyState p,
+.materialChoiceMain small {
+  color: #666666;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.materialEmptyState {
+  background: #f8fbff;
+  border: 1px dashed #bfdbfe;
+  border-radius: 8px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.materialEmptyState a {
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.materialChoiceList {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.materialChoiceItem {
+  align-items: start;
+  background: #fbfdff;
+  border: 1px solid #e0e7ff;
+  border-radius: 8px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 10px;
+}
+
+.materialChoiceMain {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.materialChoiceMain strong {
+  color: #171717;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.materialTargetLabel {
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.materialChoiceActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.materialLockButton,
+.materialSwapButton {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #dbe4ef;
+  border-radius: 8px;
+  color: #171717;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 900;
+  gap: 5px;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 9px;
+}
+
+.materialLockButton[aria-pressed="true"] {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.materialSwapButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+@media (max-width: 920px) {
+  .sectionTitle {
+    display: grid;
+  }
+}

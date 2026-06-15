@@ -7,9 +7,7 @@
 }
 
 .mainPanel,
-.sidePanel {
-  min-width: 0;
-}
+.sidePanel { min-width: 0; }
 
 .mainPanel {
   align-content: start;
@@ -32,9 +30,7 @@
   top: 14px;
 }
 
-.sidePanel .sectionTitle {
-  display: grid;
-}
+.sidePanel .sectionTitle { display: grid; }
 
 .panelHeader,
 .sectionTitle {
@@ -46,17 +42,12 @@
 
 .panelHeader h2,
 .sectionTitle h3 {
-  letter-spacing: 0;
-  margin: 0;
+  letter-spacing: 0; margin: 0;
 }
 
-.panelHeader h2 {
-  font-size: 18px;
-}
+.panelHeader h2 { font-size: 18px; }
 
-.sectionTitle h3 {
-  font-size: 15px;
-}
+.sectionTitle h3 { font-size: 15px; }
 
 .panelHeader p,
 .sectionTitle p,
@@ -140,13 +131,7 @@
   color: #ffffff;
 }
 
-.optionSection {
-  display: grid;
-  gap: 12px;
-}
-
-.choiceGrid,
-.outputChipList {
+.choiceGrid {
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -160,16 +145,6 @@
 
 .checkChoice {
   justify-content: flex-start;
-}
-
-.outputChip {
-  background: #e6f2ff;
-  border: 1px solid #b8dcff;
-  border-radius: 999px;
-  color: #0070f3;
-  font-size: 13px;
-  font-weight: 900;
-  padding: 10px 11px;
 }
 
 .advancedDisclosure {
@@ -188,9 +163,7 @@
   padding: 12px;
 }
 
-.advancedDisclosure summary::-webkit-details-marker {
-  display: none;
-}
+.advancedDisclosure summary::-webkit-details-marker { display: none; }
 
 .advancedDisclosure summary span {
   color: #171717;
@@ -248,17 +221,12 @@
 }
 
 .primaryAction:disabled {
-  cursor: not-allowed;
-  opacity: 0.48;
+  cursor: not-allowed; opacity: 0.48;
 }
 
-.success {
-  color: #0070f3;
-}
+.success { color: #0070f3; }
 
-.error {
-  color: #666666;
-}
+.error { color: #666666; }
 
 @media (max-width: 920px) {
   .layout {
@@ -269,8 +237,7 @@
     position: static;
   }
 
-  .choiceGrid,
-  .outputChipList {
+  .choiceGrid {
     grid-template-columns: 1fr;
   }
 

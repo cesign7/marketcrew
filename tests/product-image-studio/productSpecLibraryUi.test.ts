@@ -16,8 +16,6 @@ describe("product image studio product spec library UI", () => {
       id: "spec-folded-card",
       name: "A6 접이식 카드",
       openSizeMm: { height: 150, width: 200 },
-      paperFinish: "matte",
-      paperWeightGsm: 300,
       type: "folded_card",
     });
     const envelope = createProductImageStudioSpecItem({
@@ -46,6 +44,7 @@ describe("product image studio product spec library UI", () => {
     expect(html).toContain("상품 규격");
     expect(html).toContain("개별 규격");
     expect(html).toContain("세트 규격");
+    expect(html).toContain("용지·재질");
     expect(html).toContain("아이콘으로 규격 추가");
     expect(html).toContain("규격 이름");
     expect(html).toContain("엽서(비접이)");
@@ -54,6 +53,8 @@ describe("product image studio product spec library UI", () => {
     expect(html).toContain("스티커");
     expect(html).toContain("명함");
     expect(html).toContain("접은 카드 가로(mm)");
+    expect(html).not.toContain("종이 표면");
+    expect(html).not.toContain("용지 두께(gsm)");
     expect(html).toContain("저장된 개별 규격");
     expect(html).toContain("A6 접이식 카드");
     expect(html).toContain("A6 자켓 봉투");

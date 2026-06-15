@@ -8,7 +8,7 @@ import {
   createProductImageStudioProductionSettingsPreset,
   type ProductImageStudioProductionSettingsPreset,
 } from "@/features/product-image-studio/domain/productionSettingsPresets";
-import type { CardFormat } from "@/features/product-image-studio/domain/types";
+import { assertNever } from "@/features/product-image-studio/domain/types";
 import type { ProductImageStudioSpecItem, ProductImageStudioSpecSet } from "./specLibrary";
 
 type CreateProductImageStudioProductionPresetFromSpecSetInput = {
@@ -17,6 +17,16 @@ type CreateProductImageStudioProductionPresetFromSpecSetInput = {
   readonly items: readonly ProductImageStudioSpecItem[];
   readonly set: ProductImageStudioSpecSet;
 };
+
+type ProductImageStudioSpecLibraryCard =
+  | {
+      readonly cardFormat: "postcard_flat";
+      readonly item: Extract<ProductImageStudioSpecItem, { readonly type: "postcard" }>;
+    }
+  | {
+      readonly cardFormat: "folded_card";
+      readonly item: Extract<ProductImageStudioSpecItem, { readonly type: "folded_card" }>;
+    };
 
 export function createProductImageStudioProductionPresetFromSpecSet({
   createdAt,
@@ -30,6 +40,10 @@ export function createProductImageStudioProductionPresetFromSpecSet({
     return null;
   }
   const settings = createDefaultProductImageStudioProductionSettings(card.cardFormat);
+  const cardSettings = createCardSpecFromDefaults(settings.card, card);
+  if (!cardSettings) {
+    return null;
+  }
   const envelope = getFirstEnvelopeSpec(setItems);
   const sealSticker = getFirstSealStickerSpec(setItems);
   return createProductImageStudioProductionSettingsPreset({
@@ -39,7 +53,7 @@ export function createProductImageStudioProductionPresetFromSpecSet({
     name: set.name,
     settings: {
       ...settings,
-      card: card.card,
+      card: cardSettings,
       envelope: envelope ?? settings.envelope,
       sealSticker: sealSticker ?? settings.sealSticker,
     },
@@ -55,30 +69,18 @@ function getSetItems(
 
 function getFirstCardSpec(
   items: readonly ProductImageStudioSpecItem[],
-): { readonly card: ProductImageStudioCardSpec; readonly cardFormat: CardFormat } | null {
+): ProductImageStudioSpecLibraryCard | null {
   for (const item of items) {
     switch (item.type) {
       case "postcard":
         return {
-          card: {
-            format: "postcard_flat",
-            paperFinish: item.paperFinish,
-            paperWeightGsm: item.paperWeightGsm,
-            sizeMm: item.sizeMm,
-          },
           cardFormat: "postcard_flat",
+          item,
         };
       case "folded_card":
         return {
-          card: {
-            foldedSizeMm: item.foldedSizeMm,
-            foldDirection: item.foldDirection,
-            format: "folded_card",
-            openSizeMm: item.openSizeMm,
-            paperFinish: item.paperFinish,
-            paperWeightGsm: item.paperWeightGsm,
-          },
           cardFormat: "folded_card",
+          item,
         };
       case "business_card":
       case "envelope":
@@ -87,6 +89,27 @@ function getFirstCardSpec(
     }
   }
   return null;
+}
+
+function createCardSpecFromDefaults(
+  defaultCard: ProductImageStudioCardSpec,
+  card: ProductImageStudioSpecLibraryCard,
+): ProductImageStudioCardSpec | null {
+  switch (card.cardFormat) {
+    case "postcard_flat":
+      return defaultCard.format === "postcard_flat" ? { ...defaultCard, sizeMm: card.item.sizeMm } : null;
+    case "folded_card":
+      return defaultCard.format === "folded_card"
+        ? {
+            ...defaultCard,
+            foldedSizeMm: card.item.foldedSizeMm,
+            foldDirection: card.item.foldDirection,
+            openSizeMm: card.item.openSizeMm,
+          }
+        : null;
+    default:
+      return assertNever(card);
+  }
 }
 
 function getFirstEnvelopeSpec(items: readonly ProductImageStudioSpecItem[]): ProductImageStudioEnvelopeSpec | null {
