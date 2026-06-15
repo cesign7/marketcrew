@@ -7,7 +7,7 @@
 .kicker { color: var(--generator-blue); display: block; font-size: 12px; font-weight: 850; line-height: 1.3; margin: 0 0 4px; }
 .canvas h2, .controls h2 { color: var(--generator-text); font-size: 18px; line-height: 1.25; margin: 0; }
 .canvas p, .statusLine, .emptyCanvas span { color: var(--generator-muted); font-size: 13px; line-height: 1.55; margin: 0; }
-.statusBadge, .downloadLink, .generateButton, .segmentButton, .radioSegment, .uploadIcon, .referencePill { align-items: center; display: inline-flex; justify-content: center; }
+.statusBadge, .downloadLink, .generateButton, .segmentButton, .radioSegment, .uploadIcon, .referencePill, .clearReferenceButton { align-items: center; display: inline-flex; justify-content: center; }
 .statusBadge { border: 1px solid var(--generator-line); border-radius: 999px; color: var(--generator-muted); flex: 0 0 auto; font-size: 12px; font-weight: 850; gap: 6px; min-height: 30px; padding: 0 10px; white-space: nowrap; }
 .statusBadge[data-state="ready"] { background: rgba(19, 121, 91, 0.09); border-color: rgba(19, 121, 91, 0.28); color: var(--generator-green); }
 .resultGrid { align-content: start; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
@@ -34,6 +34,7 @@
 .uploadBox small { font-size: 12px; line-height: 1.45; }
 .referenceList, .segmented { display: flex; flex-wrap: wrap; gap: 6px; }
 .referencePill { background: #f5f7fb; border: 1px solid var(--generator-line); border-radius: 999px; color: var(--generator-muted); font-size: 12px; font-weight: 760; min-height: 28px; padding: 0 9px; }
+.clearReferenceButton { background: #ffffff; border: 1px solid var(--generator-line); border-radius: 8px; color: var(--generator-text); cursor: pointer; font: inherit; font-size: 12px; font-weight: 850; gap: 6px; min-height: 34px; padding: 0 10px; width: fit-content; }
 .compactGrid { display: grid; gap: 12px; }
 .segmentButton, .radioSegment { background: #ffffff; border: 1px solid var(--generator-line); border-radius: 8px; color: var(--generator-text); cursor: pointer; font: inherit; font-size: 12px; font-weight: 850; min-height: 34px; padding: 0 10px; }
 .segmentButton[data-selected="true"], .radioSegment[data-selected="true"] { background: rgba(0, 106, 220, 0.08); border-color: rgba(0, 106, 220, 0.36); color: var(--generator-blue); }

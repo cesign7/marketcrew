@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertTriangle, Download, Image, Sparkles, UploadCloud } from "lucide-react";
-import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { AlertTriangle, Download, Image, Sparkles, UploadCloud, X } from "lucide-react";
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { startProductImageStudioImageGeneratorGeneration, type ProductImageStudioImageGeneratorGenerationClientResult } from "@/features/product-image-studio/client/imageGeneratorApi";
 import { PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_ALLOWED_REFERENCE_IMAGE_MIME_TYPES, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_COUNTS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MAX_PROMPT_LENGTH, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MAX_REFERENCE_IMAGES, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_LABELS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RATIOS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RESOLUTIONS, type ProductImageStudioImageGeneratorCount, type ProductImageStudioImageGeneratorModelLabel, type ProductImageStudioImageGeneratorRatio, type ProductImageStudioImageGeneratorResolution } from "@/features/product-image-studio/domain/imageGenerator";
 import { getProductImageStudioGenerationBlockedMessage } from "@/features/product-image-studio/domain/generationMessages";
@@ -28,6 +28,7 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
   const [fileMessage, setFileMessage] = useState<string | null>(null);
   const [phase, setPhase] = useState<GeneratorPhase>("idle");
   const [generationResult, setGenerationResult] = useState<ProductImageStudioImageGeneratorGenerationClientResult | null>(null);
+  const referenceInputRef = useRef<HTMLInputElement>(null);
   const blockedReason = getSelectedProviderBlockedReason(providerStatus, modelLabel);
   const trimmedPrompt = prompt.trim();
   const promptTooLong = trimmedPrompt.length > PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MAX_PROMPT_LENGTH;
@@ -89,7 +90,7 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
         ) : (
           <div className={styles.emptyCanvas}>
             <Image size={34} strokeWidth={1.8} aria-hidden="true" />
-            <strong>프롬프트와 참고 이미지를 넣으면 결과가 여기에 표시됩니다.</strong>
+            <strong>프롬프트만 입력해도 결과가 여기에 표시됩니다.</strong>
             <span>생성 결과는 PNG 같은 래스터 이미지로 저장됩니다.</span>
           </div>
         )}
@@ -107,11 +108,12 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
         </label>
 
         <label className={styles.uploadBox}>
-          <input accept={REFERENCE_ACCEPT} multiple name="referenceImages" onChange={handleReferenceImagesChange} type="file" />
+          <input accept={REFERENCE_ACCEPT} multiple name="referenceImages" onChange={handleReferenceImagesChange} ref={referenceInputRef} type="file" />
           <span className={styles.uploadIcon} aria-hidden="true">
             <UploadCloud size={18} strokeWidth={2.25} />
           </span>
-          <strong>참고 이미지 업로드</strong>
+          <strong>참고 이미지 업로드 선택</strong>
+          <small>참고 이미지 없이도 프롬프트만으로 생성할 수 있습니다.</small>
           <small>PNG · JPEG · WebP · SVG</small>
           <small>SVG는 디자인 참고용이며 생성 결과는 벡터 파일이 아닙니다.</small>
         </label>
@@ -124,6 +126,12 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
               </span>
             ))}
           </div>
+        ) : null}
+
+        {referenceSummaries.length > 0 || fileMessage ? (
+          <button className={styles.clearReferenceButton} onClick={clearReferenceImages} type="button">
+            <X size={14} strokeWidth={2.35} aria-hidden="true" /> 참고 이미지 없이 생성
+          </button>
         ) : null}
 
         <fieldset className={styles.optionGroup}>
@@ -168,6 +176,7 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
     if (files.length > PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MAX_REFERENCE_IMAGES) {
       setFileMessage("참고 이미지는 최대 4개까지 업로드할 수 있습니다.");
       setReferenceImages([]);
+      event.currentTarget.value = "";
       return;
     }
 
@@ -175,11 +184,20 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
     if (unsupported) {
       setFileMessage("PNG, JPEG, WebP, SVG 이미지만 참고 이미지로 사용할 수 있습니다.");
       setReferenceImages([]);
+      event.currentTarget.value = "";
       return;
     }
 
     setFileMessage(null);
     setReferenceImages(files);
+  }
+
+  function clearReferenceImages(): void {
+    setFileMessage(null);
+    setReferenceImages([]);
+    if (referenceInputRef.current) {
+      referenceInputRef.current.value = "";
+    }
   }
 }
 
