@@ -26,6 +26,7 @@ export type ProductImageStudioImageGeneratorResultPreview = {
   readonly label: string;
   readonly previewUrl?: string;
   readonly ratio: ProductImageStudioImageGeneratorRatio;
+  readonly vectorSvgUrl?: string;
 };
 
 export type ProductImageStudioImageGeneratorGenerationSummary = {
@@ -180,9 +181,22 @@ function readResults(
         label: "AI 생성 이미지",
         previewUrl: readSafeApiPath(item["previewUrl"]),
         ratio: readRatio(item["ratio"]),
+        vectorSvgUrl: readSafeApiPath(item["vectorSvgUrl"]) ?? toProductImageStudioVectorSvgUrl(downloadUrl),
       },
     ];
   });
+}
+
+export function toProductImageStudioVectorSvgUrl(downloadUrl: string | undefined): string | undefined {
+  if (!downloadUrl) {
+    return undefined;
+  }
+  const queryStart = downloadUrl.indexOf("?");
+  const path = queryStart >= 0 ? downloadUrl.slice(0, queryStart) : downloadUrl;
+  if (!path.endsWith("/download")) {
+    return undefined;
+  }
+  return `${path.slice(0, -"/download".length)}/vector.svg?style=flat_illustration`;
 }
 
 function toDownloadUrl(projectId: string | null, resultId: string): string | undefined {

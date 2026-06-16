@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Download, Image, Sparkles, UploadCloud, X } from "lucide-react";
+import { AlertTriangle, Download, FileDown, Image, Sparkles, UploadCloud, X } from "lucide-react";
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { startProductImageStudioImageGeneratorGeneration, type ProductImageStudioImageGeneratorGenerationClientResult } from "@/features/product-image-studio/client/imageGeneratorApi";
 import { PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_ALLOWED_REFERENCE_IMAGE_MIME_TYPES, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_COUNTS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MAX_PROMPT_LENGTH, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MAX_REFERENCE_IMAGES, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_LABELS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RATIOS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RESOLUTIONS, type ProductImageStudioImageGeneratorCount, type ProductImageStudioImageGeneratorModelLabel, type ProductImageStudioImageGeneratorRatio, type ProductImageStudioImageGeneratorResolution } from "@/features/product-image-studio/domain/imageGenerator";
@@ -67,7 +67,7 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
           <div>
             <span className={styles.kicker}>결과 화면</span>
             <h2>결과 캔버스</h2>
-            <p>참고 이미지는 디자인 방향만 전달하며, 생성 결과는 다운로드 가능한 래스터 이미지로 저장됩니다.</p>
+            <p>참고 이미지는 디자인 방향만 전달하며, 캐릭터·아이콘형 결과는 벡터 SVG로 다시 그릴 수 있습니다.</p>
           </div>
           <span className={styles.statusBadge} data-state={generationResult?.ok === true ? "ready" : phase}>
             <Image size={15} strokeWidth={2.25} aria-hidden="true" /> {resultCards.length > 0 ? `${resultCards.length}장 준비` : "대기"}
@@ -81,9 +81,14 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
                 {result.previewUrl ? <img className={styles.resultImage} alt={`AI 생성 이미지 ${index + 1}`} src={result.previewUrl} /> : <div className={styles.resultPlaceholder}>미리보기 준비 중</div>}
                 <div className={styles.resultMeta}>
                   <strong>{result.label}</strong>
-                  <span>{result.ratio} · 래스터</span>
+                  <span>{result.ratio} · 래스터 · SVG 가능</span>
                 </div>
-                {result.downloadUrl ? <a className={styles.downloadLink} href={result.downloadUrl}><Download size={15} strokeWidth={2.25} aria-hidden="true" /> 다운로드</a> : null}
+                {result.downloadUrl ? (
+                  <div className={styles.downloadActions}>
+                    <a className={styles.downloadLink} href={result.downloadUrl}><Download size={15} strokeWidth={2.25} aria-hidden="true" /> 다운로드</a>
+                    {result.vectorSvgUrl ? <a className={styles.downloadLink} href={result.vectorSvgUrl}><FileDown size={15} strokeWidth={2.25} aria-hidden="true" /> 벡터 SVG</a> : null}
+                  </div>
+                ) : null}
               </article>
             ))}
           </div>
@@ -91,7 +96,7 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
           <div className={styles.emptyCanvas}>
             <Image size={34} strokeWidth={1.8} aria-hidden="true" />
             <strong>프롬프트만 입력해도 결과가 여기에 표시됩니다.</strong>
-            <span>생성 결과는 PNG 같은 래스터 이미지로 저장됩니다.</span>
+            <span>캐릭터·아이콘형 결과는 벡터 SVG로 다시 그릴 수 있습니다.</span>
           </div>
         )}
       </section>

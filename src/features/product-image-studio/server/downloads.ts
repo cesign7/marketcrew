@@ -31,6 +31,7 @@ export type ProductImageStudioDownloadItem = {
   readonly ratio: ProductImageStudioRatioPreset;
   readonly resultId: string;
   readonly storageKey: string;
+  readonly vectorSvgUrl: string;
   readonly width: number;
 };
 
@@ -78,6 +79,7 @@ export function toProductImageStudioDownloadItems(
     ratio: result.ratio,
     resultId: result.id,
     storageKey: result.storageKey,
+    vectorSvgUrl: `/api/product-image-studio/projects/${encodeURIComponent(project.id)}/results/${encodeURIComponent(result.id)}/vector.svg?style=flat_illustration`,
     width: result.width,
   }));
 }

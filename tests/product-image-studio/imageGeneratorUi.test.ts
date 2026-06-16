@@ -58,7 +58,7 @@ describe("product image studio image generator UI", () => {
     expect(html).toContain("참고 이미지 없이도 프롬프트만으로 생성할 수 있습니다.");
     expect(html).toContain("PNG · JPEG · WebP · SVG");
     expect(html).toContain("SVG는 디자인 참고용");
-    expect(html).toContain("생성 결과는 PNG 같은 래스터 이미지로 저장됩니다.");
+    expect(html).toContain("캐릭터·아이콘형 결과는 벡터 SVG로 다시 그릴 수 있습니다.");
     expect(html).toContain("GPT Image 2");
     expect(html).toContain("나노바나나 2");
     expect(html).toContain('name="count"');

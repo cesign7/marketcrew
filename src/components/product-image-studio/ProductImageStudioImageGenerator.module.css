@@ -21,6 +21,7 @@
 .resultMeta strong, .resultMeta span { margin: 0; overflow-wrap: anywhere; }
 .resultMeta strong { color: var(--generator-text); font-size: 14px; }
 .resultMeta span { color: var(--generator-muted); font-size: 12px; font-weight: 800; }
+.downloadActions { display: grid; gap: 6px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .downloadLink { border: 1px solid var(--generator-line); border-radius: 8px; color: var(--generator-text); font-size: 13px; font-weight: 850; gap: 7px; min-height: 36px; text-decoration: none; }
 .promptField, .selectField, .optionGroup { border: 0; display: grid; gap: 8px; margin: 0; min-width: 0; padding: 0; }
 .promptField span, .selectField span, .optionGroup legend { color: var(--generator-text); font-size: 13px; font-weight: 850; letter-spacing: 0; }

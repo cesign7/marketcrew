@@ -2,6 +2,7 @@ import type { ProductImageStudioResultRecord } from "@/lib/persistence/productIm
 
 export type ProductImageStudioResultPreviewResponse = ProductImageStudioResultRecord & {
   readonly previewUrl: string;
+  readonly vectorSvgUrl: string;
 };
 
 export function toProductImageStudioResultPreviewResponse(
@@ -11,5 +12,6 @@ export function toProductImageStudioResultPreviewResponse(
   return {
     ...result,
     previewUrl: `/api/product-image-studio/projects/${encodeURIComponent(projectId)}/results/${encodeURIComponent(result.id)}/preview`,
+    vectorSvgUrl: `/api/product-image-studio/projects/${encodeURIComponent(projectId)}/results/${encodeURIComponent(result.id)}/vector.svg?style=flat_illustration`,
   };
 }

@@ -33,6 +33,9 @@ describe("product image studio downloads", () => {
       "project-download-1-seal_sticker_single-4x5.png",
     ]);
     expect(items[0]?.downloadUrl).toBe("/api/product-image-studio/projects/project-download-1/results/result-1/download");
+    expect(items[0]).toMatchObject({
+      vectorSvgUrl: "/api/product-image-studio/projects/project-download-1/results/result-1/vector.svg?style=flat_illustration",
+    });
     for (const item of items) {
       expect(item.fileName).not.toContain("..");
       expect(item.fileName).not.toContain("/");
