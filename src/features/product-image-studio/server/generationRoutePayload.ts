@@ -9,6 +9,18 @@ import {
   type ProductImageStudioQualityMode,
 } from "@/features/product-image-studio/domain/types";
 import {
+  PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_COUNTS,
+  PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS,
+  PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_LABELS,
+  PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RATIOS,
+  PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RESOLUTIONS,
+  getProductImageStudioImageGeneratorModelLabelForProvider,
+  type ProductImageStudioImageGeneratorCount,
+  type ProductImageStudioImageGeneratorModelLabel,
+  type ProductImageStudioImageGeneratorRatio,
+  type ProductImageStudioImageGeneratorResolution,
+} from "@/features/product-image-studio/domain/imageGenerator";
+import {
   getProductImageStudioProductionSettingsIssueForOutput,
   parseProductImageStudioProductionSettings,
   type ProductImageStudioProductionSettings,
@@ -16,10 +28,14 @@ import {
 
 export type ParsedProductImageStudioGenerationPayload = {
   readonly conceptId: string;
+  readonly count: ProductImageStudioImageGeneratorCount;
+  readonly modelLabel?: ProductImageStudioImageGeneratorModelLabel;
   readonly outputs: readonly ProductImageStudioOutputType[];
   readonly productionSettings: ProductImageStudioProductionSettings;
   readonly provider?: ProductImageStudioProviderName;
   readonly qualityMode: ProductImageStudioQualityMode;
+  readonly ratio?: ProductImageStudioImageGeneratorRatio;
+  readonly resolution?: ProductImageStudioImageGeneratorResolution;
 };
 
 export function parseProductImageStudioGenerationPayload(
@@ -42,6 +58,10 @@ export function parseProductImageStudioGenerationPayload(
   const outputs = parseOutputs(payload["outputs"]);
   const productionSettings = parseProductImageStudioProductionSettings(payload["productionSettings"], cardFormat);
   const provider = parseOptionalProvider(payload["provider"]);
+  const count = parseOptionalCount(payload["count"]);
+  const modelLabel = parseOptionalModelLabel(payload["modelLabel"], provider || undefined);
+  const ratio = parseOptionalRatio(payload["ratio"]);
+  const resolution = parseOptionalResolution(payload["resolution"]);
   const qualityMode = parseQualityMode(payload["qualityMode"]);
   if (typeof conceptId !== "string" || conceptId.length === 0) {
     return invalidPayload("CONCEPT_REQUIRED", "생성할 콘셉트를 선택해 주세요.");
@@ -55,6 +75,21 @@ export function parseProductImageStudioGenerationPayload(
   if (provider === false) {
     return invalidPayload("PROVIDER_REQUIRED", "OpenAI 또는 Gemini provider를 선택해 주세요.");
   }
+  if (!count) {
+    return invalidPayload("COUNT_INVALID", "이미지 개수는 1개부터 4개까지 선택해 주세요.");
+  }
+  if (modelLabel === false) {
+    return invalidPayload("MODEL_LABEL_INVALID", "이미지 생성 모델을 다시 선택해 주세요.");
+  }
+  if (provider && modelLabel && PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS[modelLabel].provider !== provider) {
+    return invalidPayload("MODEL_PROVIDER_MISMATCH", "모델과 provider 선택이 서로 맞지 않습니다.");
+  }
+  if (ratio === false) {
+    return invalidPayload("RATIO_INVALID", "이미지 비율을 다시 선택해 주세요.");
+  }
+  if (resolution === false) {
+    return invalidPayload("RESOLUTION_INVALID", "이미지 해상도를 다시 선택해 주세요.");
+  }
   if (!qualityMode) {
     return invalidPayload("QUALITY_MODE_REQUIRED", "생성 품질을 선택해 주세요.");
   }
@@ -63,10 +98,14 @@ export function parseProductImageStudioGenerationPayload(
     ok: true,
     payload: {
       conceptId,
+      count,
+      ...(modelLabel ? { modelLabel } : {}),
       outputs,
       productionSettings: productionSettings.settings,
       ...(provider ? { provider } : {}),
       qualityMode,
+      ...(ratio ? { ratio } : {}),
+      ...(resolution ? { resolution } : {}),
     },
   };
 }
@@ -137,6 +176,49 @@ function parseOptionalProvider(value: unknown): ProductImageStudioProviderName |
     }
   }
   return false;
+}
+
+function parseOptionalCount(value: unknown): ProductImageStudioImageGeneratorCount | null {
+  if (value === undefined || value === null || value === "") {
+    return 1;
+  }
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    return null;
+  }
+  return PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_COUNTS.find((count) => count === value) ?? null;
+}
+
+function parseOptionalModelLabel(
+  value: unknown,
+  provider: ProductImageStudioProviderName | undefined,
+): ProductImageStudioImageGeneratorModelLabel | false | undefined {
+  if (value === undefined || value === null || value === "") {
+    return provider ? getProductImageStudioImageGeneratorModelLabelForProvider(provider) : undefined;
+  }
+  if (typeof value !== "string") {
+    return false;
+  }
+  return PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_LABELS.find((modelLabel) => modelLabel === value) ?? false;
+}
+
+function parseOptionalRatio(value: unknown): ProductImageStudioImageGeneratorRatio | false | undefined {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    return false;
+  }
+  return PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RATIOS.find((ratio) => ratio === value) ?? false;
+}
+
+function parseOptionalResolution(value: unknown): ProductImageStudioImageGeneratorResolution | false | undefined {
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    return false;
+  }
+  return PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RESOLUTIONS.find((resolution) => resolution === value) ?? false;
 }
 
 function parseQualityMode(value: unknown): ProductImageStudioQualityMode | null {

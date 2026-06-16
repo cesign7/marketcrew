@@ -163,6 +163,10 @@
   padding: 0 12px;
 }
 
+.advancedDisclosure[open] .manualSpecGrid {
+  padding: 0 12px;
+}
+
 .specList {
   display: grid;
   gap: 8px;

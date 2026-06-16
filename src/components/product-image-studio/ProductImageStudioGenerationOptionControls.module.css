@@ -1,0 +1,97 @@
+.panel {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.header {
+  display: grid;
+  gap: 4px;
+}
+
+.header h3 {
+  color: #171717;
+  font-size: 15px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.header p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.optionGroup,
+.selectField {
+  border: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  min-width: 0;
+  padding: 0;
+}
+
+.optionGroup legend,
+.selectField span {
+  color: #171717;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.compactGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.segmentButton,
+.radioSegment {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #171717;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.segmentButton[data-selected="true"],
+.radioSegment[data-selected="true"] {
+  background: #e6f2ff;
+  border-color: #9ccfff;
+  color: #0070f3;
+}
+
+.radioSegment input {
+  inline-size: 1px;
+  opacity: 0.01;
+  position: absolute;
+}
+
+.selectField select {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.45;
+  min-height: 40px;
+  min-width: 0;
+  padding: 0 10px;
+  width: 100%;
+}

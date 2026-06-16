@@ -106,7 +106,7 @@ describe("product image studio spec library production preset adapter", () => {
     );
   });
 
-  it("does not create a generation preset from a set without a card spec", () => {
+  it("creates a flat generation preset from a business card set", () => {
     const businessCard = createProductImageStudioSpecItem({
       createdAt: "2026-06-12T00:00:00.000Z",
       id: "business-card",
@@ -129,6 +129,10 @@ describe("product image studio spec library production preset adapter", () => {
       set,
     });
 
-    expect(preset).toBeNull();
+    expect(preset?.cardFormat).toBe("postcard_flat");
+    expect(preset?.settings.card).toMatchObject({
+      format: "postcard_flat",
+      sizeMm: { height: 50, width: 90 },
+    });
   });
 });

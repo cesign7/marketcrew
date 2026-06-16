@@ -29,10 +29,14 @@ describe("product image studio project wizard API recovery", () => {
 
     const state = await startProductImageStudioGeneration("project-1", {
       conceptId: "minimal-studio",
+      count: 1,
+      modelLabel: "gpt2",
       outputs: ["card_single"],
       productionSettings: manualCardOnlyProductionSettings(),
       provider: "openai",
       qualityMode: "draft",
+      ratio: "1:1",
+      resolution: "1k",
     });
 
     expect(state.phase).toBe("ready");

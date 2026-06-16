@@ -1,0 +1,158 @@
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.heading h4 {
+  color: #171717;
+  font-size: 15px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.emptyState strong {
+  color: #171717;
+  display: block;
+  font-size: 13px;
+  font-weight: 900;
+  margin-bottom: 3px;
+}
+
+.heading p,
+.message,
+.emptyState p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.heading a,
+.emptyState a {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: #171717;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 900;
+  min-height: 34px;
+  padding: 0 10px;
+  text-decoration: none;
+}
+
+.segmented {
+  background: #f5f7fb;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 4px;
+}
+
+.segmented button,
+.controlRow button {
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  min-height: 38px;
+}
+
+.segmented button {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+}
+
+.segmented button[aria-selected="true"] {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: #0070f3;
+}
+
+.controlRow {
+  align-items: end;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.selectField {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.selectField span {
+  color: #171717;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.selectField select {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  min-height: 40px;
+  min-width: 0;
+  padding: 0 10px;
+  width: 100%;
+}
+
+.controlRow button {
+  background: #0070f3;
+  border: 1px solid #0070f3;
+  color: #ffffff;
+  padding: 0 12px;
+}
+
+.controlRow button:disabled {
+  background: #d8dde6;
+  border-color: #d8dde6;
+  color: #717887;
+  cursor: not-allowed;
+}
+
+.emptyState {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.message[data-tone="success"] {
+  color: #0070f3;
+}
+
+.message[data-tone="error"] {
+  color: #b45309;
+}
+
+@media (max-width: 720px) {
+  .heading,
+  .controlRow,
+  .emptyState {
+    align-items: stretch;
+    display: grid;
+  }
+}

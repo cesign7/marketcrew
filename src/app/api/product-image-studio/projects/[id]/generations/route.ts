@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { listCardSetConceptRecommendations } from "@/features/product-image-studio/domain/concepts";
+import { PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS } from "@/features/product-image-studio/domain/imageGenerator";
 import { getDefaultProductImageStudioFileStore } from "@/features/product-image-studio/server/assetUploadApi";
 import { proxyProductImageStudioRequestToBackend } from "@/features/product-image-studio/server/backendProxy";
 import {
@@ -20,6 +21,7 @@ import {
   getProductImageStudioGenerationOutputBlockReason,
   parseProductImageStudioGenerationPayload,
 } from "@/features/product-image-studio/server/generationRoutePayload";
+import { withDefaultProductImageStudioProviderModel } from "@/features/product-image-studio/server/providerDefaultModel";
 import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
 
 type ProductImageStudioGenerationRouteContext = {
@@ -72,7 +74,15 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     );
   }
 
-  const projectForGeneration = { ...project, productionSettings: parsed.payload.productionSettings };
+  const generationRatio = parsed.payload.ratio ?? project.ratios[0] ?? "1:1";
+  const projectForGeneration = { ...project, productionSettings: parsed.payload.productionSettings, ratios: [generationRatio] };
+  const modelContract = parsed.payload.modelLabel
+    ? PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS[parsed.payload.modelLabel]
+    : null;
+  const requestedProvider = parsed.payload.provider ?? modelContract?.provider;
+  const providerEnv = modelContract
+    ? withDefaultProductImageStudioProviderModel(process.env, modelContract.provider, modelContract.defaultModel)
+    : process.env;
   if (isFakeGenerationEnabled()) {
     const generation = await repository.createGenerationRequest({
       conceptId: concept.id,
@@ -80,7 +90,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
       providerRequestSummary: {
         assetRoleCount: assetRoles.length,
         model: "fake-product-image-studio",
-        outputCount: parsed.payload.outputs.length,
+        outputCount: parsed.payload.outputs.length * parsed.payload.count,
         provider: "fake",
       },
       qualityMode: parsed.payload.qualityMode,
@@ -90,13 +100,16 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     const results = await createStoredProductImageStudioGenerationResults({
       assets,
       concept,
+      count: parsed.payload.count,
       fileStore: getDefaultProductImageStudioFileStore(),
       generation,
       project: projectForGeneration,
       provider: createFakeProductImageStudioImageProvider(),
+      ratio: generationRatio,
       referenceImages: [],
       repository,
       requestedOutputs: parsed.payload.outputs,
+      ...(parsed.payload.resolution ? { resolution: parsed.payload.resolution } : {}),
     });
 
     return NextResponse.json({
@@ -111,7 +124,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     });
   }
 
-  const resolvedProvider = await resolveConfiguredProductImageStudioImageProvider(process.env, parsed.payload.provider);
+  const resolvedProvider = await resolveConfiguredProductImageStudioImageProvider(providerEnv, requestedProvider);
   if (resolvedProvider.kind === "blocked") {
     const promptContext = buildProductImageStudioPromptContext({
       assetRoles,
@@ -120,13 +133,14 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
       outputType: parsed.payload.outputs[0] ?? "set_combined",
       project: projectForGeneration,
       qualityMode: parsed.payload.qualityMode,
-      ratio: project.ratios[0] ?? "1:1",
+      ratio: generationRatio,
+      ...(parsed.payload.resolution ? { resolution: parsed.payload.resolution } : {}),
     });
     return NextResponse.json(
       {
         data: {
           generation: {
-            provider: parsed.payload.provider ?? null,
+            provider: requestedProvider ?? null,
             reason: resolvedProvider.reason,
             status: "blocked",
           },
@@ -149,7 +163,7 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     providerRequestSummary: {
       assetRoleCount: assetRoles.length,
       model: resolvedProvider.model,
-      outputCount: parsed.payload.outputs.length,
+      outputCount: parsed.payload.outputs.length * parsed.payload.count,
       provider: resolvedProvider.provider.name,
     },
     qualityMode: parsed.payload.qualityMode,
@@ -167,13 +181,16 @@ export async function POST(request: Request, context: ProductImageStudioGenerati
     const generationResult = await createStoredProductImageStudioGenerationResultBatch({
       assets,
       concept,
+      count: parsed.payload.count,
       fileStore,
       generation,
       project: projectForGeneration,
       provider: resolvedProvider.provider,
+      ratio: generationRatio,
       referenceImages: referenceImages.images,
       repository,
       requestedOutputs: parsed.payload.outputs,
+      ...(parsed.payload.resolution ? { resolution: parsed.payload.resolution } : {}),
     });
     const unexpectedFailure = generationResult.failures.find((failure) => !isImageProviderError(failure.error));
     if (unexpectedFailure) {

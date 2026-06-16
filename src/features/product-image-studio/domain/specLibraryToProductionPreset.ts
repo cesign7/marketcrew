@@ -18,10 +18,14 @@ type CreateProductImageStudioProductionPresetFromSpecSetInput = {
   readonly set: ProductImageStudioSpecSet;
 };
 
+type ProductImageStudioSpecLibraryFlatCard =
+  | Extract<ProductImageStudioSpecItem, { readonly type: "postcard" }>
+  | Extract<ProductImageStudioSpecItem, { readonly type: "business_card" }>;
+
 type ProductImageStudioSpecLibraryCard =
   | {
       readonly cardFormat: "postcard_flat";
-      readonly item: Extract<ProductImageStudioSpecItem, { readonly type: "postcard" }>;
+      readonly item: ProductImageStudioSpecLibraryFlatCard;
     }
   | {
       readonly cardFormat: "folded_card";
@@ -73,6 +77,7 @@ function getFirstCardSpec(
   for (const item of items) {
     switch (item.type) {
       case "postcard":
+      case "business_card":
         return {
           cardFormat: "postcard_flat",
           item,
@@ -82,7 +87,6 @@ function getFirstCardSpec(
           cardFormat: "folded_card",
           item,
         };
-      case "business_card":
       case "envelope":
       case "sticker":
         break;

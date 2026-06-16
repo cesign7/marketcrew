@@ -1,6 +1,14 @@
 import { Buffer } from "node:buffer";
 import type { ProductImageStudioConceptRecommendation } from "@/features/product-image-studio/domain/concepts";
-import type { ProductImageStudioAssetRole, ProductImageStudioOutputType } from "@/features/product-image-studio/domain/types";
+import type {
+  ProductImageStudioAssetRole,
+  ProductImageStudioOutputType,
+  ProductImageStudioRatioPreset,
+} from "@/features/product-image-studio/domain/types";
+import type {
+  ProductImageStudioImageGeneratorCount,
+  ProductImageStudioImageGeneratorResolution,
+} from "@/features/product-image-studio/domain/imageGenerator";
 import { getProductImageStudioDimensionsForRatio } from "@/features/product-image-studio/server/downloads";
 import {
   buildProductImageStudioPromptContext,
@@ -50,17 +58,24 @@ export type ProductImageStudioGenerationBatchResult = {
   readonly results: readonly ProductImageStudioResultRecord[];
 };
 
-export async function createStoredProductImageStudioGenerationResults(input: {
+type ProductImageStudioGenerationRunnerInput = {
   readonly assets: readonly ProductImageStudioAssetRecord[];
   readonly concept: ProductImageStudioConceptRecommendation;
+  readonly count: ProductImageStudioImageGeneratorCount;
   readonly fileStore: ProductImageFileStore;
   readonly generation: ProductImageStudioGenerationRequestRecord;
   readonly project: ProductImageStudioProjectRecord;
   readonly provider: ImageGenerationProvider;
+  readonly ratio: ProductImageStudioRatioPreset;
   readonly referenceImages: readonly ProductImageStudioProviderReferenceImage[];
   readonly repository: ProductImageStudioRepository;
   readonly requestedOutputs: readonly ProductImageStudioOutputType[];
-}): Promise<readonly ProductImageStudioResultRecord[]> {
+  readonly resolution?: ProductImageStudioImageGeneratorResolution;
+};
+
+export async function createStoredProductImageStudioGenerationResults(
+  input: ProductImageStudioGenerationRunnerInput,
+): Promise<readonly ProductImageStudioResultRecord[]> {
   const batch = await createStoredProductImageStudioGenerationResultBatch(input);
   const firstFailure = batch.failures[0];
   if (firstFailure) {
@@ -69,19 +84,15 @@ export async function createStoredProductImageStudioGenerationResults(input: {
   return batch.results;
 }
 
-export async function createStoredProductImageStudioGenerationResultBatch(input: {
-  readonly assets: readonly ProductImageStudioAssetRecord[];
-  readonly concept: ProductImageStudioConceptRecommendation;
-  readonly fileStore: ProductImageFileStore;
-  readonly generation: ProductImageStudioGenerationRequestRecord;
-  readonly project: ProductImageStudioProjectRecord;
-  readonly provider: ImageGenerationProvider;
-  readonly referenceImages: readonly ProductImageStudioProviderReferenceImage[];
-  readonly repository: ProductImageStudioRepository;
-  readonly requestedOutputs: readonly ProductImageStudioOutputType[];
-}): Promise<ProductImageStudioGenerationBatchResult> {
+export async function createStoredProductImageStudioGenerationResultBatch(
+  input: ProductImageStudioGenerationRunnerInput,
+): Promise<ProductImageStudioGenerationBatchResult> {
   const attempts = await Promise.all(
-    input.requestedOutputs.map((outputType) => createStoredProductImageStudioGenerationAttempt(input, outputType)),
+    input.requestedOutputs.flatMap((outputType) =>
+      Array.from({ length: input.count }, (_value, variantIndex) =>
+        createStoredProductImageStudioGenerationAttempt(input, outputType, variantIndex),
+      ),
+    ),
   );
   const results: ProductImageStudioResultRecord[] = [];
   const failures: ProductImageStudioGenerationFailure[] = [];
@@ -99,38 +110,22 @@ export async function createStoredProductImageStudioGenerationResultBatch(input:
 }
 
 function createStoredProductImageStudioGenerationAttempt(
-  input: {
-    readonly assets: readonly ProductImageStudioAssetRecord[];
-    readonly concept: ProductImageStudioConceptRecommendation;
-    readonly fileStore: ProductImageFileStore;
-    readonly generation: ProductImageStudioGenerationRequestRecord;
-    readonly project: ProductImageStudioProjectRecord;
-    readonly provider: ImageGenerationProvider;
-    readonly referenceImages: readonly ProductImageStudioProviderReferenceImage[];
-    readonly repository: ProductImageStudioRepository;
-  },
+  input: ProductImageStudioGenerationRunnerInput,
   outputType: ProductImageStudioOutputType,
+  variantIndex: number,
 ): Promise<ProductImageStudioGenerationAttempt> {
-  return createStoredProductImageStudioGenerationResult(input, outputType).then(
+  return createStoredProductImageStudioGenerationResult(input, outputType, variantIndex).then(
     (result): ProductImageStudioGenerationAttempt => ({ kind: "fulfilled", result }),
     (error: unknown): ProductImageStudioGenerationAttempt => ({ error, kind: "rejected", outputType }),
   );
 }
 
 async function createStoredProductImageStudioGenerationResult(
-  input: {
-    readonly assets: readonly ProductImageStudioAssetRecord[];
-    readonly concept: ProductImageStudioConceptRecommendation;
-    readonly fileStore: ProductImageFileStore;
-    readonly generation: ProductImageStudioGenerationRequestRecord;
-    readonly project: ProductImageStudioProjectRecord;
-    readonly provider: ImageGenerationProvider;
-    readonly referenceImages: readonly ProductImageStudioProviderReferenceImage[];
-    readonly repository: ProductImageStudioRepository;
-  },
+  input: ProductImageStudioGenerationRunnerInput,
   outputType: ProductImageStudioOutputType,
+  variantIndex: number,
 ): Promise<ProductImageStudioResultRecord> {
-  const ratio = input.project.ratios[0] ?? "1:1";
+  const ratio = input.ratio;
   const dimensions = getProductImageStudioDimensionsForRatio(ratio);
   const promptContext = buildProductImageStudioPromptContext({
     assetRoles: input.assets.map((asset) => asset.role),
@@ -140,6 +135,8 @@ async function createStoredProductImageStudioGenerationResult(
     project: input.project,
     qualityMode: input.generation.qualityMode,
     ratio,
+    resolution: input.resolution,
+    resultIndex: variantIndex,
   });
   const generatedImage =
     input.referenceImages.length > 0

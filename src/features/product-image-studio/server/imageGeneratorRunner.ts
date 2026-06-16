@@ -16,6 +16,7 @@ import {
   IMAGE_GENERATOR_QUALITY_MODE,
   persistProductImageStudioImageGeneratorSuccess,
 } from "@/features/product-image-studio/server/imageGeneratorPersistence";
+import { withDefaultProductImageStudioProviderModel } from "@/features/product-image-studio/server/providerDefaultModel";
 import { toPublicImageGeneratorProviderFailure } from "@/features/product-image-studio/server/imageGeneratorProviderFailure";
 import {
   buildProductImageStudioImageGeneratorPromptSummary,
@@ -165,7 +166,7 @@ async function resolveImageGeneratorProvider(
   if (env.PRODUCT_IMAGE_STUDIO_FAKE_PROVIDER_ENABLED === "1") {
     return { kind: "enabled", model: "fake-product-image-studio", provider: createFakeProductImageStudioImageProvider() };
   }
-  return resolveProvider(withDefaultModel(env, payload.provider, payload.defaultModel), payload.provider);
+  return resolveProvider(withDefaultProductImageStudioProviderModel(env, payload.provider, payload.defaultModel), payload.provider);
 }
 
 async function createProviderAttempts(
@@ -234,19 +235,6 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   const buffer = new ArrayBuffer(bytes.byteLength);
   new Uint8Array(buffer).set(bytes);
   return buffer;
-}
-
-function withDefaultModel(
-  env: ProductImageStudioProviderEnv,
-  provider: ProductImageStudioProviderName,
-  defaultModel: string,
-): ProductImageStudioProviderEnv {
-  switch (provider) {
-    case "openai":
-      return env.PRODUCT_IMAGE_STUDIO_OPENAI_IMAGE_MODEL ? env : { ...env, PRODUCT_IMAGE_STUDIO_OPENAI_IMAGE_MODEL: defaultModel };
-    case "gemini":
-      return env.PRODUCT_IMAGE_STUDIO_GEMINI_IMAGE_MODEL ? env : { ...env, PRODUCT_IMAGE_STUDIO_GEMINI_IMAGE_MODEL: defaultModel };
-  }
 }
 
 function getImageGeneratorProviderTimeoutMs(env: ProductImageStudioProviderEnv): number {

@@ -36,10 +36,14 @@ export type ProductImageStudioGenerationState = {
 
 export type ProductImageStudioGenerationPayload = {
   readonly conceptId: string;
+  readonly count: ProductImageStudioWizardState["generationCount"];
+  readonly modelLabel: ProductImageStudioWizardState["generationModelLabel"];
   readonly outputs: readonly ProductImageStudioOutputType[];
   readonly productionSettings: ProductImageStudioProductionSettings;
   readonly provider: ProductImageStudioProviderName;
   readonly qualityMode: ProductImageStudioWizardState["qualityMode"];
+  readonly ratio: ProductImageStudioWizardState["generationRatio"];
+  readonly resolution: ProductImageStudioWizardState["generationResolution"];
 };
 
 export type ProductImageStudioGenerationProviderOption = {
@@ -139,10 +143,14 @@ export function buildProductImageStudioGenerationPayload(
 
   return {
     conceptId: generationState.selectedConceptId,
+    count: wizardState.generationCount,
+    modelLabel: wizardState.generationModelLabel,
     outputs,
     productionSettings: wizardState.productionSettings,
     provider: generationState.selectedProvider,
     qualityMode: wizardState.qualityMode,
+    ratio: wizardState.generationRatio,
+    resolution: wizardState.generationResolution,
   };
 }
 

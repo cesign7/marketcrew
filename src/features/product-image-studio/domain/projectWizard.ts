@@ -10,6 +10,13 @@ import {
   type ProductImageStudioProductionSettings,
 } from "@/features/product-image-studio/domain/productionSettings";
 import {
+  getProductImageStudioQualityModeForResolution,
+  type ProductImageStudioImageGeneratorCount,
+  type ProductImageStudioImageGeneratorModelLabel,
+  type ProductImageStudioImageGeneratorRatio,
+  type ProductImageStudioImageGeneratorResolution,
+} from "@/features/product-image-studio/domain/imageGenerator";
+import {
   getProductImageStudioPoseLabel,
   getProductImageStudioUploadSlotLabel,
 } from "@/features/product-image-studio/domain/projectWizardLabels";
@@ -25,6 +32,10 @@ import {
 
 export type ProductImageStudioWizardState = {
   readonly cardFormat: CardFormat;
+  readonly generationCount: ProductImageStudioImageGeneratorCount;
+  readonly generationModelLabel: ProductImageStudioImageGeneratorModelLabel;
+  readonly generationRatio: ProductImageStudioImageGeneratorRatio;
+  readonly generationResolution: ProductImageStudioImageGeneratorResolution;
   readonly productionSettings: ProductImageStudioProductionSettings;
   readonly projectName: string;
   readonly qualityMode: ProductImageStudioQualityMode;
@@ -67,6 +78,10 @@ const DEFAULT_RATIOS = ["1:1"] as const satisfies readonly ProductImageStudioRat
 export function createInitialProductImageStudioWizardState(): ProductImageStudioWizardState {
   return {
     cardFormat: "folded_card",
+    generationCount: 1,
+    generationModelLabel: "gpt2",
+    generationRatio: "1:1",
+    generationResolution: "1k",
     productionSettings: createDefaultProductImageStudioProductionSettings("folded_card"),
     projectName: "",
     qualityMode: "draft",
@@ -165,6 +180,17 @@ export function setProductImageStudioQualityMode(
   qualityMode: ProductImageStudioQualityMode,
 ): ProductImageStudioWizardState {
   return { ...state, qualityMode };
+}
+
+export function setProductImageStudioGenerationResolution(
+  state: ProductImageStudioWizardState,
+  generationResolution: ProductImageStudioImageGeneratorResolution,
+): ProductImageStudioWizardState {
+  return {
+    ...state,
+    generationResolution,
+    qualityMode: getProductImageStudioQualityModeForResolution(generationResolution),
+  };
 }
 
 export function toggleProductImageStudioPose(

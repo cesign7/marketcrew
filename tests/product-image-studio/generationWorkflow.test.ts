@@ -52,11 +52,15 @@ describe("product image studio generation workflow", () => {
     const parsed = parseProductImageStudioGenerationPayload(
       {
         conceptId: "minimal-studio",
+        count: 3,
         materialSelection: { card: "material-card", note: "provider prompt에 들어가면 안 되는 재질" },
+        modelLabel: "nano-banana-2",
         outputs: ["card_single"],
         productionSettings: manualCardOnlyProductionSettings(),
-        provider: "openai",
+        provider: "gemini",
         qualityMode: "draft",
+        ratio: "4:5",
+        resolution: "0.5k",
       },
       "folded_card",
     );
@@ -67,6 +71,10 @@ describe("product image studio generation workflow", () => {
     }
     expect(Object.prototype.hasOwnProperty.call(parsed.payload, "materialSelection")).toBe(false);
     expect(JSON.stringify(parsed.payload)).not.toContain("provider prompt에 들어가면 안 되는 재질");
+    expect(parsed.payload.count).toBe(3);
+    expect(parsed.payload.modelLabel).toBe("nano-banana-2");
+    expect(parsed.payload.ratio).toBe("4:5");
+    expect(parsed.payload.resolution).toBe("0.5k");
   });
 
   it("sets, locks, and swaps material choices in client-only state", () => {

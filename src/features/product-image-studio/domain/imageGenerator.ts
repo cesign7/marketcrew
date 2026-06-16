@@ -1,4 +1,7 @@
-import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
+import type {
+  ProductImageStudioProviderName,
+  ProductImageStudioQualityMode,
+} from "@/features/product-image-studio/domain/types";
 
 export const PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_LABELS = ["gpt2", "nano-banana-2"] as const;
 export type ProductImageStudioImageGeneratorModelLabel =
@@ -49,6 +52,23 @@ export type ProductImageStudioImageGeneratorPayload = {
   readonly ratio: ProductImageStudioImageGeneratorRatio;
   readonly resolution: ProductImageStudioImageGeneratorResolution;
 };
+
+export function getProductImageStudioImageGeneratorModelLabelForProvider(
+  provider: ProductImageStudioProviderName,
+): ProductImageStudioImageGeneratorModelLabel {
+  for (const modelLabel of PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_LABELS) {
+    if (PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS[modelLabel].provider === provider) {
+      return modelLabel;
+    }
+  }
+  return "gpt2";
+}
+
+export function getProductImageStudioQualityModeForResolution(
+  resolution: ProductImageStudioImageGeneratorResolution,
+): ProductImageStudioQualityMode {
+  return resolution === "2k" ? "high" : "draft";
+}
 
 type ProductImageStudioImageGeneratorValidationErrorCode =
   | "COUNT_INVALID"

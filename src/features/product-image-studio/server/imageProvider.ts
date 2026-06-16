@@ -44,6 +44,8 @@ export type ProductImageStudioPromptContextInput = {
   readonly project: ProductImageStudioProjectRecord;
   readonly qualityMode: ProductImageStudioQualityMode;
   readonly ratio: ProductImageStudioRatioPreset;
+  readonly resolution?: ProductImageStudioProviderResolution;
+  readonly resultIndex?: number;
 };
 
 export type ProductImageStudioProviderReferenceImage = {
@@ -101,6 +103,8 @@ export function buildProductImageStudioPromptContext(
     `assetRoles=${input.assetRoles.join(",")}`,
     `outputType=${input.outputType}`,
     `ratio=${input.ratio}`,
+    ...(input.resolution ? [`resolution=${input.resolution}`] : []),
+    ...(input.resultIndex !== undefined ? [`variantIndex=${input.resultIndex + 1}`] : []),
     `qualityMode=${input.qualityMode}`,
     `concept=${input.concept.label}`,
     `conceptSummary=${input.concept.summary}`,
@@ -117,6 +121,8 @@ export function buildProductImageStudioPromptContext(
     prompt,
     qualityMode: input.qualityMode,
     ratio: input.ratio,
+    ...(input.resolution ? { resolution: input.resolution } : {}),
+    ...(input.resultIndex !== undefined ? { resultIndex: input.resultIndex } : {}),
   };
 }
 

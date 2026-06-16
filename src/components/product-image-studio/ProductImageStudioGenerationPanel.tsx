@@ -8,7 +8,6 @@ import {
   getProductImageStudioAvailableOutputChoices,
   type ProductImageStudioWizardState,
 } from "@/features/product-image-studio/domain/projectWizard";
-import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
 import { ProductImageStudioDownloadPanel } from "./ProductImageStudioDownloadPanel";
 import { ProductImageStudioResultGallery } from "./ProductImageStudioResultGallery";
 import styles from "./ProductImageStudioGenerationPanel.module.css";
@@ -20,7 +19,6 @@ type ProductImageStudioGenerationPanelProps = {
   readonly onRegeneratedResult: (result: ProductImageStudioGenerationResultPreview) => void;
   readonly onRetry: () => void;
   readonly onSelectConcept: (conceptId: string) => void;
-  readonly onSelectProvider: (provider: ProductImageStudioProviderName) => void;
   readonly onSimilarVersion: () => void;
   readonly providerOptions: readonly ProductImageStudioGenerationProviderOption[];
   readonly providerStatus: "blocked" | "enabled";
@@ -42,7 +40,6 @@ export function ProductImageStudioGenerationPanel({
   onRegeneratedResult,
   onRetry,
   onSelectConcept,
-  onSelectProvider,
   onSimilarVersion,
   providerOptions,
   providerStatus,
@@ -95,30 +92,17 @@ export function ProductImageStudioGenerationPanel({
       </div>
       {outputChoices.length === 0 ? <p className={styles.summary}>생성 가능한 출력이 아직 없습니다.</p> : null}
 
-      <div className={styles.heading}>
-        <h3>이번 생성 엔진</h3>
-        <p>{selectedProviderOption?.helper ?? "생성 엔진 연결 상태를 확인해 주세요."}</p>
-      </div>
-      <div className={styles.providerList}>
-        {providerOptions.map((option) => (
-          <button
-            aria-pressed={generationState.selectedProvider === option.provider}
-            className={styles.providerChoice}
-            data-selected={generationState.selectedProvider === option.provider ? "true" : "false"}
-            disabled={option.disabled}
-            key={option.provider}
-            onClick={() => onSelectProvider(option.provider)}
-            type="button"
-          >
-            <strong>{option.label}</strong>
-            <span>{option.connected ? `${option.label} 연결됨` : `${option.label} 연결 안됨`}</span>
-          </button>
-        ))}
+      <div className={styles.modelStatus}>
+        <div>
+          <h3>모델 연결</h3>
+          <p>{selectedProviderOption?.helper ?? "선택한 모델의 연결 상태를 확인해 주세요."}</p>
+        </div>
+        <strong>{selectedProviderLabel}</strong>
       </div>
 
       <div className={styles.heading}>
         <h3>생성 명령</h3>
-        <p>위에서 고른 빠른 초안 또는 고품질 모드로 요청합니다.</p>
+        <p>위에서 고른 모델, 개수, 비율, 해상도로 요청합니다.</p>
       </div>
       <div className={styles.actionBox}>
         <p className={`${styles.status} ${statusClassName}`}>{generationState.message}</p>

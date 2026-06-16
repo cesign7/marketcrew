@@ -10,7 +10,7 @@ import {
 } from "@/features/product-image-studio/domain/productionSettings";
 import type { ProductImageStudioWizardState } from "@/features/product-image-studio/domain/projectWizard";
 import { ProductImageStudioManualSpecFields } from "./ProductImageStudioManualSpecFields";
-import { ProductImageStudioProductionSettingsPresetControls } from "./ProductImageStudioProductionSettingsPresetControls";
+import { ProductImageStudioStagingProductSetupPanel } from "./ProductImageStudioStagingProductSetupPanel";
 import styles from "./ProductImageStudioProductionSettingsPanel.module.css";
 
 type ProductImageStudioProductionSettingsPanelProps = {
@@ -28,15 +28,21 @@ export function ProductImageStudioProductionSettingsPanel({
     <section className={styles.panel} aria-labelledby="production-settings-heading">
       <div className={styles.heading}>
         <div>
-          <h3 id="production-settings-heading">규격 편집</h3>
-          <p>상품 사양과 실제 mm 규격을 입력하면 업로드한 구성품 기준으로 목업 장면을 만듭니다.</p>
+          <h3 id="production-settings-heading">상품 사양</h3>
+          <p>저장된 상품 규격과 용지 재질을 우선 적용하고, 필요한 값만 직접 수정합니다.</p>
         </div>
         <span>{state.productionSettings.scene.designPreservation === "exact_composite" ? "디자인 원본 보존" : "AI 보정 허용"}</span>
       </div>
 
-      <ProductImageStudioProductionSettingsPresetControls setState={setState} />
+      <ProductImageStudioStagingProductSetupPanel setState={setState} />
 
-      <ProductImageStudioManualSpecFields setState={setState} state={state} />
+      <details className={styles.advancedDisclosure}>
+        <summary>
+          <span>세부 규격 직접 수정</span>
+          <small>{state.cardFormat === "folded_card" ? "접이식 카드" : "평면 상품"}</small>
+        </summary>
+        <ProductImageStudioManualSpecFields setState={setState} state={state} />
+      </details>
 
       <div className={styles.controlGrid}>
         <label className={styles.selectField}>

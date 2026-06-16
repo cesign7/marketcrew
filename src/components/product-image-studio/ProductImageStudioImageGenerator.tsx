@@ -3,9 +3,10 @@
 import { AlertTriangle, Download, FileDown, Image, Sparkles, UploadCloud, X } from "lucide-react";
 import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { startProductImageStudioImageGeneratorGeneration, type ProductImageStudioImageGeneratorGenerationClientResult } from "@/features/product-image-studio/client/imageGeneratorApi";
-import { PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_ALLOWED_REFERENCE_IMAGE_MIME_TYPES, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_COUNTS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MAX_PROMPT_LENGTH, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MAX_REFERENCE_IMAGES, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_LABELS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RATIOS, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RESOLUTIONS, type ProductImageStudioImageGeneratorCount, type ProductImageStudioImageGeneratorModelLabel, type ProductImageStudioImageGeneratorRatio, type ProductImageStudioImageGeneratorResolution } from "@/features/product-image-studio/domain/imageGenerator";
+import { PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_ALLOWED_REFERENCE_IMAGE_MIME_TYPES, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MAX_PROMPT_LENGTH, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MAX_REFERENCE_IMAGES, PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS, type ProductImageStudioImageGeneratorCount, type ProductImageStudioImageGeneratorModelLabel, type ProductImageStudioImageGeneratorRatio, type ProductImageStudioImageGeneratorResolution } from "@/features/product-image-studio/domain/imageGenerator";
 import { getProductImageStudioGenerationBlockedMessage } from "@/features/product-image-studio/domain/generationMessages";
 import type { ProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
+import { ProductImageStudioGenerationOptionControls } from "./ProductImageStudioGenerationOptionControls";
 import styles from "./ProductImageStudioImageGenerator.module.css";
 
 type ProductImageStudioImageGeneratorProps = { readonly initialPrompt?: string; readonly providerStatus: ProductImageStudioProviderStatus };
@@ -139,31 +140,16 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
           </button>
         ) : null}
 
-        <fieldset className={styles.optionGroup}>
-          <legend>모델</legend>
-          <div className={styles.segmented}>
-            {PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_LABELS.map((option) => (
-              <button aria-pressed={modelLabel === option} className={styles.segmentButton} data-selected={modelLabel === option ? "true" : "false"} key={option} onClick={() => setModelLabel(option)} type="button">
-                {PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS[option].displayLabel}
-              </button>
-            ))}
-          </div>
-        </fieldset>
-
-        <div className={styles.compactGrid}>
-          <label className={styles.selectField}>
-            <span>개수</span>
-            <select name="count" onChange={(event) => setCount(parseCount(event.currentTarget.value, count))} value={count}>
-              {PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_COUNTS.map((option) => (
-                <option key={option} value={option}>
-                  {option}장
-                </option>
-              ))}
-            </select>
-          </label>
-          <RadioGroup label="비율" name="ratio" options={PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RATIOS} selected={ratio} onSelect={setRatio} />
-          <RadioGroup label="해상도" name="resolution" options={PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_RESOLUTIONS} selected={resolution} onSelect={setResolution} />
-        </div>
+        <ProductImageStudioGenerationOptionControls
+          count={count}
+          modelLabel={modelLabel}
+          onCountChange={setCount}
+          onModelLabelChange={setModelLabel}
+          onRatioChange={setRatio}
+          onResolutionChange={setResolution}
+          ratio={ratio}
+          resolution={resolution}
+        />
 
         <p aria-live="polite" className={styles.statusLine} data-blocked={blockedReason ? "true" : "false"}>
           {blockedReason ? <AlertTriangle size={14} strokeWidth={2.25} aria-hidden="true" /> : null} {statusMessage}
@@ -206,24 +192,6 @@ export function ProductImageStudioImageGenerator({ initialPrompt = "", providerS
   }
 }
 
-type RadioGroupProps<Option extends string> = { readonly label: string; readonly name: string; readonly onSelect: (option: Option) => void; readonly options: readonly Option[]; readonly selected: Option };
-
-function RadioGroup<Option extends string>({ label, name, onSelect, options, selected }: RadioGroupProps<Option>) {
-  return (
-    <fieldset className={styles.optionGroup}>
-      <legend>{label}</legend>
-      <div className={styles.segmented}>
-        {options.map((option) => (
-          <label className={styles.radioSegment} data-selected={selected === option ? "true" : "false"} key={option}>
-            <input checked={selected === option} name={name} onChange={() => onSelect(option)} type="radio" value={option} />
-            <span>{option}</span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-
 function getStatusMessage(input: { readonly blockedReason: GeneratorBlockedReason | null; readonly fileMessage: string | null; readonly generationResult: ProductImageStudioImageGeneratorGenerationClientResult | null; readonly phase: GeneratorPhase; readonly promptTooLong: boolean }): string {
   if (input.phase === "generating") return "이미지를 생성하는 중입니다. 보통 30초에서 2분 정도 걸립니다.";
   if (input.fileMessage) return input.fileMessage;
@@ -241,14 +209,6 @@ function getSelectedProviderBlockedReason(providerStatus: ProductImageStudioProv
   const provider = PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_MODEL_CONTRACTS[modelLabel].provider;
   const providerEntry = providerStatus.providers[provider];
   return providerEntry.status === "blocked" ? providerEntry.reason : null;
-}
-
-function parseCount(value: string, fallback: ProductImageStudioImageGeneratorCount): ProductImageStudioImageGeneratorCount {
-  const numericValue = Number(value);
-  for (const option of PRODUCT_IMAGE_STUDIO_IMAGE_GENERATOR_COUNTS) {
-    if (option === numericValue) return option;
-  }
-  return fallback;
 }
 
 function isAllowedReferenceFile(file: File): boolean {

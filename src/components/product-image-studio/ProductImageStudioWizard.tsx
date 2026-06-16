@@ -3,6 +3,9 @@
 import { useCallback, useRef, useState, type ChangeEvent, type SetStateAction } from "react";
 import type { ProductImageStudioAssetRole } from "@/features/product-image-studio/domain/types";
 import {
+  getProductImageStudioImageGeneratorModelLabelForProvider,
+} from "@/features/product-image-studio/domain/imageGenerator";
+import {
   createProductImageStudioProject,
   fetchProductImageStudioConcepts,
   startProductImageStudioGeneration,
@@ -26,17 +29,16 @@ import {
   recordProductImageStudioUploadedRole,
   type ProductImageStudioWizardState,
 } from "@/features/product-image-studio/domain/projectWizard";
-import type { ProductImageStudioProviderName } from "@/features/product-image-studio/domain/types";
 import type { ProductImageStudioProviderStatus } from "@/features/product-image-studio/server/providerConfig";
 import type { ProductImageStudioProviderSettingsSummary } from "@/features/product-image-studio/server/providerSettingsStore";
 import { ProductImageStudioGenerationPanel } from "./ProductImageStudioGenerationPanel";
 import { ProductImageStudioOutputControls } from "./ProductImageStudioOutputControls";
 import { ProductImageStudioProductionSettingsPanel } from "./ProductImageStudioProductionSettingsPanel";
 import { ProductImageStudioProjectSettings } from "./ProductImageStudioProjectSettings";
-import { ProductImageStudioQualityOption } from "./ProductImageStudioQualityOption";
 import { ProductImageStudioUploadSection } from "./ProductImageStudioUploadSection";
 import { ProductImageStudioWorkbenchIntro } from "./ProductImageStudioWorkbenchIntro";
 import { ProductImageStudioWorkflowSteps } from "./ProductImageStudioWorkflowSteps";
+import { ProductImageStudioWizardGenerationOptions } from "./ProductImageStudioWizardGenerationOptions";
 import {
   createProductImageStudioGenerationProviderOptions,
   getInitialProductImageStudioGenerationProvider,
@@ -54,16 +56,18 @@ type ProductImageStudioWizardProps = {
 };
 
 export function ProductImageStudioWizard({ initialProviderSettings, providerStatus }: ProductImageStudioWizardProps) {
-  const [state, setState] = useState<ProductImageStudioWizardState>(createInitialProductImageStudioWizardState);
+  const initialProvider = getInitialProductImageStudioGenerationProvider(initialProviderSettings, providerStatus);
+  const [state, setState] = useState<ProductImageStudioWizardState>(() => ({
+    ...createInitialProductImageStudioWizardState(),
+    generationModelLabel: getProductImageStudioImageGeneratorModelLabelForProvider(initialProvider),
+  }));
   const stateRef = useRef<ProductImageStudioWizardState>(state);
   const projectIdRef = useRef<string | null>(null);
   const projectRequestRef = useRef<Promise<string | null> | null>(null);
   const [concepts, setConcepts] = useState<readonly ProductImageStudioConceptCard[]>([]);
   const [generationState, setGenerationState] = useState<ProductImageStudioGenerationState>(
     () =>
-      createInitialProductImageStudioGenerationState(
-        getInitialProductImageStudioGenerationProvider(initialProviderSettings, providerStatus),
-      ),
+      createInitialProductImageStudioGenerationState(initialProvider),
   );
   const [statusMessage, setStatusMessage] = useState<StatusMessage>({
     text: "프로젝트 이름, 실제 규격, 생성할 구성품 이미지를 준비하면 콘셉트를 추천받을 수 있습니다.",
@@ -93,13 +97,8 @@ export function ProductImageStudioWizard({ initialProviderSettings, providerStat
       </section>
 
       <aside className={styles.sidePanel} aria-label="추천 준비 설정">
+        <ProductImageStudioWizardGenerationOptions setGenerationState={setGenerationState} setWizardState={setWizardState} state={state} />
         <ProductImageStudioOutputControls state={state} />
-
-        <fieldset className={styles.qualityGroup}>
-          <legend>품질 모드</legend>
-          <ProductImageStudioQualityOption current={state.qualityMode} label="빠른 초안" mode="draft" setState={setWizardState} />
-          <ProductImageStudioQualityOption current={state.qualityMode} label="고품질" mode="high" setState={setWizardState} />
-        </fieldset>
 
         <div className={styles.actionBox}>
           <p className={styles[statusMessage.tone]}>{statusMessage.text}</p>
@@ -131,7 +130,6 @@ export function ProductImageStudioWizard({ initialProviderSettings, providerStat
             onSelectConcept={(conceptId) =>
               setGenerationState((current) => selectProductImageStudioConcept(current, conceptId))
             }
-            onSelectProvider={handleSelectProvider}
             onSimilarVersion={() => void handleStartGeneration()}
             providerOptions={providerOptions}
             providerStatus={providerStatus.generation.status}
@@ -226,10 +224,6 @@ export function ProductImageStudioWizard({ initialProviderSettings, providerStat
         results: nextResults,
       };
     });
-  }
-
-  function handleSelectProvider(provider: ProductImageStudioProviderName): void {
-    setGenerationState((current) => selectProductImageStudioGenerationProvider(current, provider));
   }
 
   async function ensureProjectId(snapshot: ProductImageStudioWizardState): Promise<string | null> {
