@@ -26,10 +26,10 @@ describe("product image studio production smoke contract", () => {
     expect(smokeScript).not.toContain("regenerate-ratio");
   });
 
-  it("keeps Next app route output compatible with the current ESM build", async () => {
+  it("keeps Next app route output compatible with Vercel's CommonJS launcher", async () => {
     const packageJson: unknown = JSON.parse(await readFile(join(process.cwd(), "package.json"), "utf8"));
 
-    expect(readPackageType(packageJson)).toBe("module");
+    expect(readPackageType(packageJson)).toBeNull();
   });
 
   it("redirects the unauthenticated studio page to owner login when auth is required", async () => {
