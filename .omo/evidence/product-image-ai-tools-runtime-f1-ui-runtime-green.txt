@@ -1,0 +1,54 @@
+COMMAND 1
+npm test -- --run tests/product-image-studio/aiToolRuntime.test.ts --fileParallelism=false
+
+OUTPUT 1
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiToolRuntime.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  17:37:56
+   Duration  164ms (transform 47ms, setup 0ms, import 101ms, tests 7ms, environment 0ms)
+
+
+COMMAND 2
+npm run typecheck
+
+OUTPUT 2
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+
+COMMAND 3
+rg -n "@ts-ignore|@ts-expect-error|as any|useFakeTimers|advanceTimersByTimeAsync" src/components/product-image-studio tests/product-image-studio/aiToolRuntime.test.ts
+
+OUTPUT 3
+No forbidden matches.
+
+POST TRACKED STATUS
+ M .omo/start-work/ledger.jsonl
+ M src/components/product-image-studio/ProductImageStudioAiToolCatalog.ts
+ M src/components/product-image-studio/ProductImageStudioAiToolGeneratorControls.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolPreviewPanel.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolUploads.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspace.module.css
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceModal.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceOptions.ts
+ M src/components/product-image-studio/ProductImageStudioAiTools.tsx
+ M tests/product-image-studio/aiTools.test.ts
+ M tests/product-image-studio/imageGeneratorRoute.test.ts
+
+ASSERTED TEST NAMES
+32:  it("does not present an uploaded object URL as generated output when the modal is ready", () => {
+70:  it("renders generated API preview, download, and vector URLs in the right panel", () => {
+121:  it("builds generator input from controlled prompt, instruction, and uploaded files", () => {
+145:  it("blocks malformed modal input before calling the generator client", () => {
+170:  it("treats generated results without preview, download, or vector URLs as missing output", () => {
+186:  it("keeps the newer generated result when an older generation promise resolves later", async () => {
+218:  it("revokes upload object URLs on replace, remove, and cleanup", () => {

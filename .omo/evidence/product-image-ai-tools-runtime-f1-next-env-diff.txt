@@ -1,0 +1,3 @@
+COMMAND: git diff -- next-env.d.ts
+
+EXIT_STATUS=0

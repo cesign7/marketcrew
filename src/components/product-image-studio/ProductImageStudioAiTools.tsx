@@ -2,12 +2,21 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  findProductImageStudioAiTool,
   PRODUCT_IMAGE_STUDIO_AI_TOOLS,
   type ProductImageStudioAiTool,
 } from "./ProductImageStudioAiToolCatalog";
+import {
+  findProductImageStudioAiTool,
+  isProductImageStudioAiToolRunnable,
+} from "./ProductImageStudioAiToolLookup";
 import { ProductImageStudioAiToolWorkspaceModal } from "./ProductImageStudioAiToolWorkspaceModal";
-import { CompactActionCard, CompactCardGrid, CompactPageHeader } from "./ProductImageStudioSaasPrimitives";
+import {
+  CompactActionCard,
+  CompactCardGrid,
+  CompactEmptyState,
+  CompactPageHeader,
+  CompactWorkModal,
+} from "./ProductImageStudioSaasPrimitives";
 import type { ProductImageStudioSvgConversionState } from "./ProductImageStudioSvgConversionModal";
 
 type ProductImageStudioAiToolsHubProps = {
@@ -28,6 +37,10 @@ export function ProductImageStudioAiToolsHub({
   const closeTool = useCallback(() => {
     setSelectedTool(null);
   }, []);
+  const selectedRunnableTool =
+    selectedTool && isProductImageStudioAiToolRunnable(selectedTool) ? selectedTool : null;
+  const selectedPlannedTool =
+    selectedTool && isProductImageStudioAiToolRunnable(selectedTool) === false ? selectedTool : null;
 
   useEffect(() => {
     setIsHydrated(true);
@@ -53,15 +66,33 @@ export function ProductImageStudioAiToolsHub({
         </CompactCardGrid>
       </div>
 
-      {selectedTool ? (
+      {selectedRunnableTool ? (
         <ProductImageStudioAiToolWorkspaceModal
           onClose={closeTool}
           svgConversionInitialState={svgConversionInitialState}
           svgConversionInitialTitle={svgConversionInitialTitle}
-          tool={selectedTool}
+          tool={selectedRunnableTool}
         />
       ) : null}
+      {selectedPlannedTool ? <PlannedAiToolModal onClose={closeTool} tool={selectedPlannedTool} /> : null}
     </section>
+  );
+}
+
+function PlannedAiToolModal({
+  onClose,
+  tool,
+}: {
+  readonly onClose: () => void;
+  readonly tool: ProductImageStudioAiTool;
+}) {
+  return (
+    <CompactWorkModal description={tool.description} onClose={onClose} open title={tool.title}>
+      <CompactEmptyState
+        description={`${tool.title} 워크플로를 곧 연결할 예정입니다. 지금은 생성 요청을 보내지 않습니다.`}
+        title="준비 중"
+      />
+    </CompactWorkModal>
   );
 }
 
@@ -74,22 +105,24 @@ function AiToolCardItem({
   readonly onSelect: (tool: ProductImageStudioAiTool) => void;
   readonly tool: ProductImageStudioAiTool;
 }) {
+  const isRunnable = isProductImageStudioAiToolRunnable(tool);
+
   return (
     <CompactActionCard
       actionKind="button"
-      actionLabel="열기"
+      actionLabel={isRunnable ? "열기" : "준비 중"}
       dataAttributes={{
         "data-ai-tool-card": tool.id,
-        "data-ai-tool-card-ready": disabled ? "false" : "true",
-        "data-ai-tool-state": "modal",
+        "data-ai-tool-card-ready": disabled || !isRunnable ? "false" : "true",
+        "data-ai-tool-state": isRunnable ? "modal" : "planned",
       }}
       description={tool.description}
       disabled={disabled}
       icon={tool.icon}
       id={tool.id}
       onSelect={() => onSelect(tool)}
-      statusLabel={tool.statusLabel}
-      statusTone={tool.statusLabel === "계획" ? "pending" : "ready"}
+      statusLabel={isRunnable ? tool.statusLabel : "준비 중"}
+      statusTone={isRunnable ? "ready" : "pending"}
       title={tool.title}
     />
   );

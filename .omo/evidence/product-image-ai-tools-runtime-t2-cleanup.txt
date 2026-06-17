@@ -1,0 +1,99 @@
+=== pre-start port check ===
+
+=== start dev server ===
+pid=47315
+port=32217
+url=http://127.0.0.1:32217
+
+=== post-start port check ===
+COMMAND   PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+node    47333 mini   13u  IPv4 0xb9a899b6aec0ac0b      0t0  TCP 127.0.0.1:32217 (LISTEN)
+
+=== dev server log head ===
+
+> marketcrew@0.0.0-reboot dev
+> next dev --hostname 127.0.0.1 --port 32217
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://127.0.0.1:32217
+- Network:       http://127.0.0.1:32217
+- Environments: .env
+✓ Ready in 213ms
+
+
+=== Browser plugin fallback ===
+Browser path attempted first via in-app Browser Playwright API. Node REPL execution timed out at 60000ms before artifact write; falling back to regular Playwright per task Browser/Playwright allowance.
+
+=== browser artifact precheck ===
+
+=== connection refused recovery ===
+Checking recorded dev server pid/port after Browser reported ERR_CONNECTION_REFUSED.
+
+PID 47333 alive:
+
+Port 32217 listen:
+
+Dev server log tail:
+
+> marketcrew@0.0.0-reboot dev
+> next dev --hostname 127.0.0.1 --port 32217
+
+▲ Next.js 16.2.6 (Turbopack)
+- Local:         http://127.0.0.1:32217
+- Network:       http://127.0.0.1:32217
+- Environments: .env
+✓ Ready in 213ms
+
+
+=== restart dev server ===
+restarted_pid=71232
+port=32217
+url=http://127.0.0.1:32217
+
+=== post-restart port check ===
+
+=== restarted dev server log head ===
+
+> marketcrew@0.0.0-reboot dev
+> next dev --hostname 127.0.0.1 --port 32217
+
+
+=== post-restart delayed port check ===
+
+=== restarted dev server log tail ===
+
+> marketcrew@0.0.0-reboot dev
+> next dev --hostname 127.0.0.1 --port 32217
+
+
+=== restarted pid alive ===
+restarted_pid=71232
+
+=== pty dev server check ===
+dev_server_shell_pid=76940
+76940  1433 npm run dev --hostname 127.0.0.1 --port 32217
+
+
+port 32217:
+
+=== pty dev server ready ===
+COMMAND   PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+node    78817 mini   17u  IPv4 0x71d88f35f76fdc67      0t0  TCP 127.0.0.1:32217 (LISTEN)
+
+=== root cleanup verification after delayed t2 browser artifact ===
+2026-06-17T15:10:31+0900
+
+next-env diff:
+
+scoped status:
+ M src/components/product-image-studio/ProductImageStudioAiToolCatalog.ts
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceOptions.ts
+ M src/components/product-image-studio/ProductImageStudioAiTools.tsx
+ M tests/product-image-studio/aiTools.test.ts
+?? tests/product-image-studio/aiToolOptions.test.ts
+
+marketcrew qa port check:
+
+openclaw gateway left untouched:
+  PID COMMAND
+ 1395 openclaw-gateway

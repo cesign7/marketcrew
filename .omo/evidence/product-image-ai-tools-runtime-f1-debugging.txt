@@ -1,0 +1,50 @@
+# Product Image AI Tools Runtime F1 Debugging Audit
+
+Command: `node .omo/qa/product-image-ai-tools-runtime-f1-qa.mjs`
+Started: 2026-06-17T08:45:57.996Z
+Completed: 2026-06-17T08:46:01.269Z
+Status: pass
+
+Partial-runtime evidence note: real provider is intentionally not called; request-shape and UI behavior are verified through local Playwright route interception.
+
+## Hypotheses
+
+### H1 stale generated/upload blob confusion
+Result: REFUTED: generated output is API-backed and distinct from upload blob previews
+Runtime evidence: generatedUrls=["/api/product-image-studio/qa/f1-generated-preview.png","/api/product-image-studio/qa/f1-generated-preview.png","/api/product-image-studio/qa/f1-generated-download.png","/api/product-image-studio/qa/f1-generated-vector.svg"]; uploadPreviewSummary={"apiRouteCount":0,"blobCount":1,"kinds":["browser-blob-url"],"localPathCount":0,"rawValueCount":0,"total":1}
+
+### H2 provider escape/real paid call
+Result: REFUTED: generation stayed on intercepted local route with no provider escape
+Runtime evidence: providerEscapes=[]; generationRequestCount=1; requestSummary={"contentType":"multipart/form-data","payloadSummary":{"count":1,"hasPrompt":true,"modelLabel":"gpt2","promptHash":"38f285b04d9f","promptLength":61,"ratio":"1:1","resolution":"1k"},"fileSummary":{"contentTypes":["image/png"],"fieldCount":2,"fileCount":1,"hasExpectedFixtureName":true,"hasPayloadField":true,"hasReferenceImagesField":true,"hasBinaryPngMarker":false,"imageContentTypeCount":1}}
+
+### H3 disabled planned tools still expose fake generation
+Result: REFUTED: planned tool shows prepared-soon state and no generation workflow
+Runtime evidence: plannedTool={"hasGenerateButton":false,"hasReadySoonCopy":true,"hasWorkspace":false,"requestCountBeforeOpen":1,"requestCountAfterOpen":1}
+
+### H4 archive/upload route regression or server error
+Result: REFUTED: result archive and uploads routes rendered without server error
+Runtime evidence: results={"hasFrameworkOverlay":false,"hasMeaningfulProductImageStudioContent":true,"routePath":"/product-image-studio/results","status":200,"textHash":"e2c89e556775","textLength":261}; uploads={"hasFrameworkOverlay":false,"hasMeaningfulProductImageStudioContent":true,"routePath":"/product-image-studio/uploads","status":200,"textHash":"a57aa5cb1d73","textLength":170}
+
+## Runtime Observations
+Generation request count: 1
+Provider escapes: []
+Generated preview URLs: ["/api/product-image-studio/qa/f1-generated-preview.png"]
+Upload preview summary: {"apiRouteCount":0,"blobCount":1,"kinds":["browser-blob-url"],"localPathCount":0,"rawValueCount":0,"total":1}
+Planned tool summary: {"hasReadySoonCopy":true,"textLength":88}
+Results route: 200 /product-image-studio/results
+Uploads route: 200 /product-image-studio/uploads
+
+## UltraQA Notes
+- malformed_input: recorded Todo 1/3 malformed evidence is reused; this F1 script does not add a new malformed-response branch.
+- stale_state: H1 directly compares generated API URLs against upload blob preview URLs; Todo 4 also recorded a two-tool stale-state check.
+- dirty_worktree: pre/post tracked status is in browser JSON under statusEvidence.
+- hung_or_long_commands: cleanup records dev-server PID, port, lsof output, and port-closed state.
+- misleading_success_output: browser JSON includes DOM observations and request summaries.
+- flaky_tests: no timing rerun was needed if status is pass; rerun once on timing failure.
+- prompt_injection: not applicable.
+- cancel_resume: not applicable.
+- repeated_interruptions: pre-existing F1 and T1-T4 artifacts are noted in browser JSON.
+
+## Risks
+- Real paid-provider behavior remains intentionally untested by this QA pass.
+- Existing worktree dirt predates this F1 browser run and was not reverted, staged, committed, or pushed.

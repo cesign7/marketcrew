@@ -1,0 +1,127 @@
+# Product Image AI Tools Runtime F1 Final QA Summary
+
+Status: PASS
+Generated at: 2026-06-17T08:51:05.077Z
+
+## Exact Commands Run
+1. npm run typecheck > .omo/evidence/product-image-ai-tools-runtime-f1-typecheck.txt 2>&1; code=$?; printf '\nexit_code=%s\n' "$code" >> .omo/evidence/product-image-ai-tools-runtime-f1-typecheck.txt; exit "$code"
+2. npm test -- --run > .omo/evidence/product-image-ai-tools-runtime-f1-tests.txt 2>&1; code=$?; printf '\nexit_code=%s\n' "$code" >> .omo/evidence/product-image-ai-tools-runtime-f1-tests.txt; exit "$code"
+3. npm run build > .omo/evidence/product-image-ai-tools-runtime-f1-build.txt 2>&1; code=$?; printf '\nexit_code=%s\n' "$code" >> .omo/evidence/product-image-ai-tools-runtime-f1-build.txt; exit "$code"
+4. node .omo/qa/product-image-ai-tools-runtime-f1-qa.mjs
+5. lsof -nP -iTCP:59800 -sTCP:LISTEN
+6. node inline redaction-and-summary script > .omo/evidence/product-image-ai-tools-runtime-f1-final-qa-summary.txt
+
+## Command Results
+- typecheck exit_code=0
+- full tests exit_code=0; observed 108 test files and 497 tests passed
+- build exit_code=0
+- browser QA status=pass
+
+## Browser Assertions
+- generationRequests length=1
+- providerEscapes=[]
+- generated preview=/api/product-image-studio/qa/f1-generated-preview.png
+- planned tool generate button=false; workspace=false; request count before/after=1/1
+- results route=200 /product-image-studio/results; uploads route=200 /product-image-studio/uploads
+- cleanup portClosed=true; direct lsof exit=1; output=no-listeners
+
+## UltraQA Notes
+- stale_state: F1 H1 result=REFUTED: generated output is API-backed and distinct from upload blob previews; T4 status=pass; firstToolUrlAbsentAfterSecondTool=true; secondToolUsedOwnPreviewUrl=true
+- malformed_input: T1 emptyPrompt passed=true; T1 malformedResponse passed=true; T3 malformed response recorded as malformed-empty-results with failedHasKoreanError=true
+- dirty_worktree before browser QA:
+```
+M .omo/start-work/ledger.jsonl
+ M src/components/product-image-studio/ProductImageStudioAiToolCatalog.ts
+ M src/components/product-image-studio/ProductImageStudioAiToolGeneratorControls.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolPreviewPanel.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolUploads.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspace.module.css
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceModal.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceOptions.ts
+ M src/components/product-image-studio/ProductImageStudioAiTools.tsx
+ M tests/product-image-studio/aiTools.test.ts
+ M tests/product-image-studio/imageGeneratorRoute.test.ts
+```
+- dirty_worktree after browser QA:
+```
+M .omo/start-work/ledger.jsonl
+ M src/components/product-image-studio/ProductImageStudioAiToolCatalog.ts
+ M src/components/product-image-studio/ProductImageStudioAiToolGeneratorControls.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolPreviewPanel.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolUploads.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspace.module.css
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceModal.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceOptions.ts
+ M src/components/product-image-studio/ProductImageStudioAiTools.tsx
+ M tests/product-image-studio/aiTools.test.ts
+ M tests/product-image-studio/imageGeneratorRoute.test.ts
+```
+- final tracked status before summary write:
+```
+ M .omo/start-work/ledger.jsonl
+ M src/components/product-image-studio/ProductImageStudioAiToolCatalog.ts
+ M src/components/product-image-studio/ProductImageStudioAiToolGeneratorControls.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolPreviewPanel.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolUploads.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspace.module.css
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceModal.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceOptions.ts
+ M src/components/product-image-studio/ProductImageStudioAiTools.tsx
+ M tests/product-image-studio/aiTools.test.ts
+ M tests/product-image-studio/imageGeneratorRoute.test.ts
+```
+- hung_or_long_commands: each required command has an exit code; QA cleanup recorded devServerPid=4569, port=59800, portClosed=true
+- flaky_tests: full test command passed once; no timing-only rerun performed
+- misleading_success_output: JSON parsed for status/checks/request count/provider escapes/routes/cleanup
+- prompt_injection: not applicable
+- cancel_resume: not applicable
+- repeated_interruptions: Pre-existing F1 evidence files and prior T1-T4 artifacts were present before this run; this script records a fresh F1 browser/debug/cleanup artifact set.
+
+## Redaction Scan
+- filesScanned=10
+  - .omo/evidence/product-image-ai-tools-runtime-f1-typecheck.txt
+  - .omo/evidence/product-image-ai-tools-runtime-f1-build.txt
+  - .omo/evidence/product-image-ai-tools-runtime-f1-browser.json
+  - .omo/evidence/product-image-ai-tools-runtime-f1-debugging.txt
+  - .omo/evidence/product-image-ai-tools-runtime-f1-cleanup.txt
+  - .omo/evidence/product-image-ai-tools-runtime-t3-browser.json
+  - .omo/evidence/product-image-ai-tools-runtime-t3-cleanup.txt
+  - .omo/evidence/product-image-ai-tools-runtime-t3-dev-server.txt
+  - .omo/evidence/product-image-ai-tools-runtime-t4-browser.json
+  - .omo/evidence/product-image-ai-tools-runtime-t4-cleanup.txt
+- excluded per not-tests constraint: F1/T3/T4 red, green, code-quality, UI-runtime, security-redaction, and full-test transcript files
+- matchCount=0
+
+## Artifacts
+- .omo/evidence/product-image-ai-tools-runtime-f1-typecheck.txt
+- .omo/evidence/product-image-ai-tools-runtime-f1-tests.txt
+- .omo/evidence/product-image-ai-tools-runtime-f1-build.txt
+- .omo/evidence/product-image-ai-tools-runtime-f1-browser.json
+- .omo/evidence/product-image-ai-tools-runtime-f1-debugging.txt
+- .omo/evidence/product-image-ai-tools-runtime-f1-cleanup.txt
+- .omo/evidence/product-image-ai-tools-runtime-f1-final-qa-summary.txt
+- .omo/evidence/product-image-ai-tools-runtime-f1-preview.png (pre-existing screenshot artifact refreshed by the requested QA script)
+
+## Cleanup
+- temporary fixture removed=true
+- temporary browser profile removed=true
+- browser context=closed
+- dev server terminated; cleanup lsof=no-listeners
+- no staging, commit, push, source edit, test edit, provider call, or external ledger write performed by this final QA pass
+
+## Failures
+- none
+- final tracked status after summary write:
+```
+ M .omo/start-work/ledger.jsonl
+ M src/components/product-image-studio/ProductImageStudioAiToolCatalog.ts
+ M src/components/product-image-studio/ProductImageStudioAiToolGeneratorControls.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolPreviewPanel.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolUploads.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspace.module.css
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceModal.tsx
+ M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceOptions.ts
+ M src/components/product-image-studio/ProductImageStudioAiTools.tsx
+ M tests/product-image-studio/aiTools.test.ts
+ M tests/product-image-studio/imageGeneratorRoute.test.ts
+```

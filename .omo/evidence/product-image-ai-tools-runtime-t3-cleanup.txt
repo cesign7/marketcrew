@@ -1,0 +1,10 @@
+START 2026-06-17T08:38:02.152Z
+port=58896
+dev_server_pid=69766
+browser=closed
+dev_server_sigterm=69766
+dev_server_log_lines=9
+port_check=clear
+openclaw_18789=left-untouched-listening
+next_env_diff=check-with-git-status
+END 2026-06-17T08:38:09.825Z

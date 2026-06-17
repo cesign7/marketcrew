@@ -1,0 +1,110 @@
+{
+  "schema_version": 2,
+  "active_work_id": null,
+  "works": {
+    "ai-print-product-image-studio": {
+      "work_id": "ai-print-product-image-studio",
+      "active_plan": ".omo/plans/ai-print-product-image-studio.md",
+      "plan_name": "ai-print-product-image-studio",
+      "session_ids": [
+        "codex:019eb503-50a4-7b52-ae84-7308f219d677"
+      ],
+      "status": "completed",
+      "worktree_path": null
+    },
+    "product-image-studio-provider-selection-and-result-archive": {
+      "work_id": "product-image-studio-provider-selection-and-result-archive",
+      "active_plan": ".omo/plans/product-image-studio-provider-selection-and-result-archive.md",
+      "plan_name": "product-image-studio-provider-selection-and-result-archive",
+      "session_ids": [
+        "codex:019eb503-50a4-7b52-ae84-7308f219d677"
+      ],
+      "status": "completed",
+      "worktree_path": null
+    },
+    "product-image-studio-photoroom-lovable-layout": {
+      "work_id": "product-image-studio-photoroom-lovable-layout",
+      "active_plan": ".omo/plans/product-image-studio-photoroom-lovable-layout.md",
+      "plan_name": "product-image-studio-photoroom-lovable-layout",
+      "session_ids": [
+        "codex:019eb503-50a4-7b52-ae84-7308f219d677"
+      ],
+      "status": "completed",
+      "worktree_path": null
+    },
+    "product-image-studio-marketcrew-saas-frame": {
+      "work_id": "product-image-studio-marketcrew-saas-frame",
+      "active_plan": ".omo/plans/product-image-studio-marketcrew-saas-frame.md",
+      "plan_name": "product-image-studio-marketcrew-saas-frame",
+      "session_ids": [
+        "codex:019eb503-50a4-7b52-ae84-7308f219d677"
+      ],
+      "status": "completed",
+      "worktree_path": null
+    },
+    "product-image-workspace-photoroom-ia": {
+      "work_id": "product-image-workspace-photoroom-ia",
+      "active_plan": ".omo/plans/product-image-workspace-photoroom-ia.md",
+      "plan_name": "product-image-workspace-photoroom-ia",
+      "session_ids": [
+        "codex:019eb503-50a4-7b52-ae84-7308f219d677"
+      ],
+      "status": "completed",
+      "worktree_path": null
+    },
+    "product-image-studio-upload-spec-classification": {
+      "work_id": "product-image-studio-upload-spec-classification",
+      "active_plan": ".omo/plans/product-image-studio-upload-spec-classification.md",
+      "plan_name": "product-image-studio-upload-spec-classification",
+      "session_ids": [
+        "codex:019eb503-50a4-7b52-ae84-7308f219d677"
+      ],
+      "status": "blocked",
+      "worktree_path": null,
+      "blocked_reason": "multi_agent_v1.spawn_agent failed with agent thread limit reached for Wave 2 Todo 3 and Todo 5; start-work forbids root implementation."
+    },
+    "product-image-studio-paper-material-library": {
+      "work_id": "product-image-studio-paper-material-library",
+      "active_plan": ".omo/plans/product-image-studio-paper-material-library.md",
+      "plan_name": "product-image-studio-paper-material-library",
+      "session_ids": [
+        "codex:019eb503-50a4-7b52-ae84-7308f219d677"
+      ],
+      "status": "paused",
+      "worktree_path": null
+    },
+    "product-image-studio-magnific-image-generator": {
+      "work_id": "product-image-studio-magnific-image-generator",
+      "active_plan": ".omo/plans/product-image-studio-magnific-image-generator.md",
+      "plan_name": "product-image-studio-magnific-image-generator",
+      "session_ids": [
+        "codex:019eb503-50a4-7b52-ae84-7308f219d677"
+      ],
+      "status": "completed",
+      "worktree_path": null,
+      "completed_at": "2026-06-15T11:57:23.107Z"
+    },
+    "product-image-saas-ui-rollout": {
+      "work_id": "product-image-saas-ui-rollout",
+      "active_plan": ".omo/plans/product-image-saas-ui-rollout.md",
+      "plan_name": "product-image-saas-ui-rollout",
+      "session_ids": [
+        "codex:019eb503-50a4-7b52-ae84-7308f219d677"
+      ],
+      "status": "completed",
+      "worktree_path": null,
+      "completed_at": "2026-06-16T19:50:00.313Z"
+    },
+    "product-image-studio-photoroom-ai-tools-runtime": {
+      "work_id": "product-image-studio-photoroom-ai-tools-runtime",
+      "active_plan": ".omo/plans/product-image-studio-photoroom-ai-tools-runtime.md",
+      "plan_name": "product-image-studio-photoroom-ai-tools-runtime",
+      "session_ids": [
+        "codex:019eb503-50a4-7b52-ae84-7308f219d677"
+      ],
+      "status": "completed",
+      "worktree_path": null,
+      "completed_at": "2026-06-17T18:09:30+09:00"
+    }
+  }
+}

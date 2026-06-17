@@ -1,7 +1,8 @@
+// SIZE_OK - pure AI tool data table; lookup and runnable behavior live in ProductImageStudioAiToolLookup.ts.
 import { Activity, FileDown, FileText, Image as ImageIcon, Layers, Settings, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-export type ProductImageStudioAiToolKind = "generator" | "svg";
+export type ProductImageStudioAiToolKind = "generator" | "planned" | "svg";
 
 export type ProductImageStudioAiToolUploadSlot = {
   readonly accept: string;
@@ -166,7 +167,7 @@ export const PRODUCT_IMAGE_STUDIO_AI_TOOLS = [
     id: "background-props",
     initialInstruction: "계절 소품은 상품보다 작게 배치하고 인쇄물 디자인을 가리지 않습니다.",
     initialPrompt: "크리스마스 소품, 리본, 따뜻한 조명으로 카드 세트에 어울리는 배경을 만듭니다.",
-    kind: "generator",
+    kind: "planned",
     previewLabel: "배경/소품 컷",
     statusLabel: "계획",
     title: "배경/소품 생성",
@@ -203,7 +204,7 @@ export const PRODUCT_IMAGE_STUDIO_AI_TOOLS = [
     id: "ratio-resize",
     initialInstruction: "원본 디자인 영역은 유지하고 빈 공간만 자연스럽게 확장합니다.",
     initialPrompt: "상품 이미지를 스마트스토어 대표 이미지에 맞는 정사각형 비율로 재구성합니다.",
-    kind: "generator",
+    kind: "planned",
     previewLabel: "비율 변경 결과",
     statusLabel: "계획",
     title: "비율 변경",
@@ -239,7 +240,7 @@ export const PRODUCT_IMAGE_STUDIO_AI_TOOLS = [
     id: "similar-image",
     initialInstruction: "구도와 톤은 유지하되 소품과 배경만 조금씩 변형합니다.",
     initialPrompt: "선택한 상품 설정샷과 거의 비슷한 느낌의 대체 이미지를 생성합니다.",
-    kind: "generator",
+    kind: "planned",
     previewLabel: "비슷한 이미지",
     statusLabel: "계획",
     title: "비슷한 이미지 생성",
@@ -276,7 +277,7 @@ export const PRODUCT_IMAGE_STUDIO_AI_TOOLS = [
     id: "mockup-composite",
     initialInstruction: "목업의 원근, 종이 두께, 그림자를 기준으로 디자인을 자연스럽게 합성합니다.",
     initialPrompt: "업로드한 디자인을 카드, 봉투, 스티커 목업에 정확한 비율로 합성합니다.",
-    kind: "generator",
+    kind: "planned",
     previewLabel: "목업 합성 결과",
     statusLabel: "계획",
     title: "목업 합성",
@@ -313,7 +314,7 @@ export const PRODUCT_IMAGE_STUDIO_AI_TOOLS = [
     id: "detail-page-blocks",
     initialInstruction: "대표컷, 구성품컷, 재질컷, 크기 비교컷 순서로 자연스럽게 배치합니다.",
     initialPrompt: "상품 상세페이지에 사용할 이미지 블록을 간결한 판매 흐름으로 구성합니다.",
-    kind: "generator",
+    kind: "planned",
     previewLabel: "상세 이미지 블록",
     statusLabel: "계획",
     title: "상세 이미지 블록",
@@ -326,8 +327,3 @@ export const PRODUCT_IMAGE_STUDIO_AI_TOOLS = [
     uploadTitle: "상세 이미지 자료 업로드",
   },
 ] as const satisfies readonly ProductImageStudioAiTool[];
-
-export function findProductImageStudioAiTool(toolId: string | undefined): ProductImageStudioAiTool | null {
-  if (!toolId) return null;
-  return PRODUCT_IMAGE_STUDIO_AI_TOOLS.find((candidate) => candidate.id === toolId) ?? null;
-}

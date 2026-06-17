@@ -1,0 +1,111 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/generationUi.test.ts tests/product-image-studio/aiToolPreviewPanel.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  3 passed (3)
+      Tests  16 passed (16)
+   Start at  15:35:22
+   Duration  639ms (transform 212ms, setup 0ms, import 409ms, tests 71ms, environment 0ms)
+
+
+--- npm run typecheck ---
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+
+--- rerun 2026-06-17 Todo 3 exact automated verification ---
+$ npm test -- --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/generationUi.test.ts --fileParallelism=false
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/generationUi.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+[HUNG_OR_LONG_COMMANDS]
+The exact combined test command above stopped after the Vitest RUN banner with no test results for ~60s. Terminated PIDs: shell 47310, npm 47319, vitest 47384, worker 91035. Rerunning the same target set in isolated files and then rechecking the focused UI regression.
+
+--- isolated rerun: aiTools.test.ts ---
+$ npm test -- --run tests/product-image-studio/aiTools.test.ts --fileParallelism=false
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  15:47:15
+   Duration  3.25s (transform 258ms, setup 0ms, import 443ms, tests 63ms, environment 0ms)
+
+
+--- isolated rerun: generationUi.test.ts ---
+$ npm test -- --run tests/product-image-studio/generationUi.test.ts --fileParallelism=false
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/generationUi.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  15:48:41
+   Duration  626ms (transform 80ms, setup 0ms, import 108ms, tests 8ms, environment 0ms)
+
+
+--- focused Todo 3 UI regression rerun: aiToolPreviewPanel.test.ts ---
+$ npm test -- --run tests/product-image-studio/aiToolPreviewPanel.test.ts --fileParallelism=false
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiToolPreviewPanel.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  15:50:00
+   Duration  1.41s (transform 50ms, setup 0ms, import 109ms, tests 7ms, environment 0ms)
+
+
+--- exact Todo 3 command rerun after isolated passes ---
+$ npm test -- --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/generationUi.test.ts --fileParallelism=false
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/generationUi.test.ts --fileParallelism=false
+
+
+=== root Todo 3 focused verification rerun ===
+2026-06-17T15:59:17+0900
+$ npm test -- --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/generationUi.test.ts tests/product-image-studio/aiToolRuntime.test.ts --fileParallelism=false
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/generationUi.test.ts tests/product-image-studio/aiToolRuntime.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  3 passed (3)
+      Tests  19 passed (19)
+   Start at  16:00:00
+   Duration  6.00s (transform 324ms, setup 0ms, import 625ms, tests 78ms, environment 0ms)
+
+[npm test exit=0]
+$ npm run typecheck
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+[npm run typecheck exit=0]

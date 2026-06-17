@@ -1,0 +1,134 @@
+
+> marketcrew@0.0.0-reboot build
+> next build
+
+▲ Next.js 16.2.6 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+Turbopack build encountered 1 warnings:
+./next.config.mjs
+Encountered unexpected file in NFT list
+A file was traced that indicates that the whole project was traced unintentionally. Somewhere in the import trace below, there are:
+- filesystem operations (like path.join, path.resolve or fs.readFile), or
+- very dynamic requires (like require('./' + foo)).
+To resolve this, you can
+- remove them if possible, or
+- only use them in development, or
+- make sure they are statically scoped to some subfolder: path.join(process.cwd(), 'data', bar), or
+- add ignore comments: path.join(/*turbopackIgnore: true*/ process.cwd(), bar)
+
+Import trace:
+  App Route:
+    ./next.config.mjs
+    ./src/features/product-image-studio/server/fileStore.ts
+    ./src/features/product-image-studio/server/assetUploadApi.ts
+    ./src/app/api/product-image-studio/projects/[id]/generations/route.ts
+
+
+✓ Compiled successfully in 2.1s
+  Running TypeScript ...
+  Finished TypeScript in 2.8s ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/13) ...
+  Generating static pages using 9 workers (3/13)
+
+  Generating static pages using 9 workers (6/13)
+
+  Generating static pages using 9 workers (9/13)
+
+✓ Generating static pages using 9 workers (13/13) in 97ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /action-logs
+├ ƒ /adgroups
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/backend/health
+├ ƒ /api/cron/search-ad-daily-retry
+├ ƒ /api/cron/search-ad-daily-sync
+├ ƒ /api/cron/search-ad-operation-calendar
+├ ƒ /api/product-image-studio/concepts
+├ ƒ /api/product-image-studio/image-generator/generations
+├ ƒ /api/product-image-studio/projects
+├ ƒ /api/product-image-studio/projects/[id]
+├ ƒ /api/product-image-studio/projects/[id]/assets
+├ ƒ /api/product-image-studio/projects/[id]/assets/[assetId]
+├ ƒ /api/product-image-studio/projects/[id]/assets/[assetId]/preview
+├ ƒ /api/product-image-studio/projects/[id]/downloads.zip
+├ ƒ /api/product-image-studio/projects/[id]/generations
+├ ƒ /api/product-image-studio/projects/[id]/results
+├ ƒ /api/product-image-studio/projects/[id]/results/[resultId]
+├ ƒ /api/product-image-studio/projects/[id]/results/[resultId]/download
+├ ƒ /api/product-image-studio/projects/[id]/results/[resultId]/preview
+├ ƒ /api/product-image-studio/projects/[id]/results/[resultId]/regenerate-ratio
+├ ƒ /api/product-image-studio/projects/[id]/results/[resultId]/vector.svg
+├ ƒ /api/product-image-studio/provider-settings
+├ ƒ /api/product-image-studio/provider-status
+├ ƒ /api/product-image-studio/results
+├ ƒ /api/product-image-studio/svg-conversions
+├ ƒ /api/product-image-studio/uploads
+├ ƒ /api/search-ad/action-apply
+├ ƒ /api/search-ad/action-logs
+├ ƒ /api/search-ad/action-preview
+├ ƒ /api/search-ad/ad-extensions/sync
+├ ƒ /api/search-ad/keyword-insights
+├ ƒ /api/search-ad/keywords/cleanup
+├ ƒ /api/search-ad/media-master/sync
+├ ƒ /api/search-ad/operation-calendar/preview
+├ ƒ /api/search-ad/operation-strategies
+├ ƒ /api/search-ad/overview
+├ ƒ /api/search-ad/reports
+├ ƒ /api/search-ad/reports/[id]
+├ ƒ /api/search-ad/reports/backfill
+├ ƒ /api/search-ad/reports/sync
+├ ƒ /api/search-ad/rule-criteria
+├ ƒ /api/search-ad/rule-results
+├ ƒ /api/search-ad/rule-results/[id]
+├ ƒ /api/search-ad/rules/rebuild
+├ ƒ /api/search-ad/search-terms
+├ ƒ /api/search-ad/state
+├ ƒ /api/search-ad/state/sync
+├ ƒ /campaigns
+├ ƒ /keyword-insights
+├ ƒ /keywords
+├ ƒ /login
+├ ƒ /operations
+├ ƒ /product-image-studio
+├ ƒ /product-image-studio/activity
+├ ○ /product-image-studio/ai-tools
+├ ƒ /product-image-studio/ai-tools/image-generator
+├ ƒ /product-image-studio/ai-tools/product-staging
+├ ○ /product-image-studio/batch
+├ ƒ /product-image-studio/designs
+├ ƒ /product-image-studio/designs/[id]
+├ ○ /product-image-studio/invite
+├ ○ /product-image-studio/library
+├ ƒ /product-image-studio/projects
+├ ƒ /product-image-studio/projects/[id]
+├ ƒ /product-image-studio/results
+├ ƒ /product-image-studio/settings
+├ ○ /product-image-studio/specs
+├ ○ /product-image-studio/templates
+├ ƒ /product-image-studio/uploads
+├ ○ /product-image-studio/usage
+├ ƒ /reports
+├ ƒ /reports/[id]
+├ ƒ /reports/backfill
+├ ƒ /rule-results
+├ ƒ /rule-results/[id]
+├ ƒ /rules
+├ ƒ /search-terms
+└ ƒ /settings
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+
+exit_code=0

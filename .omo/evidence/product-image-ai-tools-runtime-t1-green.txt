@@ -1,0 +1,89 @@
+COMMAND: npm test -- --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/aiToolRuntime.test.ts --fileParallelism=false
+START: 2026-06-17T13:06:17+09:00
+
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/aiToolRuntime.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  2 passed (2)
+      Tests  12 passed (12)
+   Start at  13:06:18
+   Duration  704ms (transform 250ms, setup 0ms, import 488ms, tests 93ms, environment 0ms)
+
+
+TEST_EXIT_STATUS: 0
+TEST_END: 2026-06-17T13:06:18+09:00
+
+COMMAND: npm run typecheck
+START: 2026-06-17T13:06:18+09:00
+
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+
+TYPECHECK_EXIT_STATUS: 0
+END: 2026-06-17T13:06:20+09:00
+
+COMMAND: npm test -- --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/aiToolRuntime.test.ts --fileParallelism=false
+START: 2026-06-17T13:22:38+09:00
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/aiToolRuntime.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  2 passed (2)
+      Tests  12 passed (12)
+   Start at  13:22:39
+   Duration  1.70s (transform 701ms, setup 0ms, import 1.15s, tests 185ms, environment 0ms)
+
+TEST_EXIT_STATUS: 0
+TEST_END: 2026-06-17T13:22:40+09:00
+
+COMMAND: npm run typecheck
+START: 2026-06-17T13:22:40+09:00
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+TYPECHECK_EXIT_STATUS: 0
+END: 2026-06-17T13:22:42+09:00
+
+
+COMMAND: npm test -- --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/aiToolRuntime.test.ts --fileParallelism=false
+START: 2026-06-17T13:35:16+09:00
+
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/aiToolRuntime.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  2 passed (2)
+      Tests  12 passed (12)
+   Start at  13:35:16
+   Duration  1.53s (transform 638ms, setup 0ms, import 1.12s, tests 198ms, environment 0ms)
+
+
+EXIT_STATUS: 0
+END: 2026-06-17T13:35:18+09:00
+
+COMMAND: npm run typecheck
+START: 2026-06-17T13:35:18+09:00
+
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+
+EXIT_STATUS: 0
+END: 2026-06-17T13:35:20+09:00

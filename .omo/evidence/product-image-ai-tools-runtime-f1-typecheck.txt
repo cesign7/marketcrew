@@ -1,0 +1,6 @@
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+
+exit_code=0

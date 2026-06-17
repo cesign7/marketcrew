@@ -1,11 +1,13 @@
 "use client";
 
 import { Image as ImageIcon, UploadCloud, X } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useId, useState, type ChangeEvent } from "react";
 import type { ProductImageStudioAiToolUploadSlot } from "./ProductImageStudioAiToolCatalog";
+import { createProductImageStudioAiToolUploadObjectUrlRuntime } from "./ProductImageStudioAiToolUploadObjectUrlRuntime";
 import styles from "./ProductImageStudioAiToolWorkspace.module.css";
 
 export type ProductImageStudioAiToolUploadedAsset = {
+  readonly file: File;
   readonly fileName: string;
   readonly fileSizeLabel: string;
   readonly id: string;
@@ -35,25 +37,25 @@ const EMPTY_UPLOAD_STATE: UploadState = { assets: [], selectedAssetId: null };
 
 export function useProductImageStudioAiToolUploads() {
   const [state, setState] = useState<UploadState>(EMPTY_UPLOAD_STATE);
-  const objectUrlsRef = useRef<Set<string>>(new Set());
+  const [objectUrls] = useState(() =>
+    createProductImageStudioAiToolUploadObjectUrlRuntime({
+      createObjectUrl: (file) => URL.createObjectURL(file),
+      revokeObjectUrl: (previewUrl) => URL.revokeObjectURL(previewUrl),
+    }),
+  );
 
   useEffect(() => {
-    return () => {
-      for (const previewUrl of objectUrlsRef.current) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      objectUrlsRef.current.clear();
-    };
-  }, []);
+    return () => objectUrls.revokeAll();
+  }, [objectUrls]);
 
   const uploadSlot = useCallback((slot: ProductImageStudioAiToolUploadSlot, event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
     if (!file) return;
 
-    const previewUrl = URL.createObjectURL(file);
-    objectUrlsRef.current.add(previewUrl);
+    const previewUrl = objectUrls.createForSlot(slot.id, file);
     const uploadedAsset: ProductImageStudioAiToolUploadedAsset = {
+      file,
       fileName: file.name,
       fileSizeLabel: formatFileSize(file.size),
       id: `${slot.id}-${file.name}-${file.lastModified}-${Date.now()}`,
@@ -64,28 +66,22 @@ export function useProductImageStudioAiToolUploads() {
     };
 
     setState((current) => {
-      const replaced = current.assets.find((asset) => asset.slotId === slot.id);
-      if (replaced) {
-        URL.revokeObjectURL(replaced.previewUrl);
-        objectUrlsRef.current.delete(replaced.previewUrl);
-      }
       const keptAssets = current.assets.filter((asset) => asset.slotId !== slot.id);
       return { assets: [...keptAssets, uploadedAsset], selectedAssetId: uploadedAsset.id };
     });
-  }, []);
+  }, [objectUrls]);
 
   const removeAsset = useCallback((assetId: string): void => {
     setState((current) => {
       const removed = current.assets.find((asset) => asset.id === assetId);
       if (removed) {
-        URL.revokeObjectURL(removed.previewUrl);
-        objectUrlsRef.current.delete(removed.previewUrl);
+        objectUrls.revokeForSlot(removed.slotId);
       }
       const nextAssets = current.assets.filter((asset) => asset.id !== assetId);
       const nextSelectedAssetId = current.selectedAssetId === assetId ? nextAssets[0]?.id ?? null : current.selectedAssetId;
       return { assets: nextAssets, selectedAssetId: nextSelectedAssetId };
     });
-  }, []);
+  }, [objectUrls]);
 
   const selectAsset = useCallback((assetId: string): void => {
     setState((current) => ({ ...current, selectedAssetId: assetId }));
@@ -149,6 +145,7 @@ export function ProductImageStudioAiToolUploadSlots({
               </label>
               <input
                 accept={slot.accept}
+                aria-label={`${slot.title} 업로드`}
                 className={styles.uploadInput}
                 data-ai-tool-upload-input={slot.id}
                 id={`${inputPrefix}-${slot.id}`}

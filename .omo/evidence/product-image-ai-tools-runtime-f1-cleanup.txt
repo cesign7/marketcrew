@@ -1,0 +1,19 @@
+START 2026-06-17T08:45:57.996Z
+command=node .omo/qa/product-image-ai-tools-runtime-f1-qa.mjs
+qa_port=59800
+debug_journal=not-written-user-scope-limited-to-f1-evidence
+temp_fixture=created
+port_free_before_start=true
+dev_server_pid=4569
+temp_profile=created
+browser_context=closed
+temp_profile=removed
+dev_server_terminate=sigterm pid=4569 exited=true
+temp_fixture=removed
+next_env_cleanup=restored-drift
+port_check=clear
+lsof_command=lsof -nP -iTCP:59800 -sTCP:LISTEN
+lsof_output=no-listeners
+dev_server_log_lines=12
+status=pass
+END 2026-06-17T08:46:01.375Z

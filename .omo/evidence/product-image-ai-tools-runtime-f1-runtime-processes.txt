@@ -1,0 +1,3 @@
+COMMAND: pgrep -afil "next dev|next-server|vite|playwright|chromium|Google Chrome|Chrome|npm run dev" filtered to <workspace>
+
+EXIT_STATUS=0

@@ -1,3 +1,4 @@
+/* SIZE_OK - cohesive AI tool workspace modal stylesheet; this wave splits catalog logic, while CSS decomposition remains a separate visual-risk task. */
 .workspace {
   display: grid;
   grid-template-columns: minmax(440px, 560px) minmax(560px, 1fr);
@@ -51,6 +52,7 @@
 .previewText strong,
 .resultMeta strong,
 .resultMeta span,
+.resultNotice,
 .resultHeader p,
 .resultHeader h3,
 .sizePreviewMeta strong,
@@ -387,11 +389,11 @@
   position: relative;
 }
 
-.generatedImage[data-has-upload="true"] {
+.generatedImage[data-has-preview="true"] {
   background: #f5f7fb;
 }
 
-.generatedImage[data-has-upload="true"] img {
+.generatedImage[data-has-preview="true"] img {
   height: 100%;
   object-fit: contain;
   position: relative;
@@ -409,8 +411,8 @@
   position: absolute;
 }
 
-.generatedImage[data-has-upload="true"]::before,
-.generatedImage[data-has-upload="true"]::after {
+.generatedImage[data-has-preview="true"]::before,
+.generatedImage[data-has-preview="true"]::after {
   content: none;
 }
 
@@ -441,6 +443,7 @@
 }
 
 .resultMeta {
+  align-items: center;
   grid-template-columns: minmax(0, 1fr) auto;
   padding: 12px;
 }
@@ -453,6 +456,31 @@
 .resultMeta span {
   color: #666666;
   font-size: 12px;
+}
+
+.resultNotice {
+  background: #fff8e8;
+  border: 1px solid #f3d48a;
+  border-radius: 8px;
+  color: #7a4b00;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.45;
+  padding: 9px 11px;
+  width: min(100%, 520px);
+}
+
+.resultActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.resultActions .secondaryButton {
+  min-height: 34px;
+  padding: 0 10px;
 }
 
 .sizePreview {
@@ -628,5 +656,21 @@
   .countGrid,
   .choiceGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .previewStage {
+    padding: 14px;
+  }
+
+  .resultMeta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .resultActions {
+    justify-content: stretch;
+  }
+
+  .resultActions .secondaryButton {
+    flex: 1 1 min(100%, 150px);
   }
 }

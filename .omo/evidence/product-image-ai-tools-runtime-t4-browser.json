@@ -1,0 +1,230 @@
+{
+  "archiveCompatibility": {
+    "results": {
+      "hasMeaningfulProductImageStudioContent": true,
+      "hasServerErrorText": false,
+      "status": 200,
+      "textHash": "e2c89e556775",
+      "textLength": 261,
+      "title": "마켓크루",
+      "routePath": "/product-image-studio/results"
+    },
+    "uploads": {
+      "hasMeaningfulProductImageStudioContent": true,
+      "hasServerErrorText": false,
+      "status": 200,
+      "textHash": "a57aa5cb1d73",
+      "textLength": 170,
+      "title": "마켓크루",
+      "routePath": "/product-image-studio/uploads"
+    },
+    "archiveRouteMismatch": "No /product-image-studio/archive page exists; /product-image-studio/results is the implemented result archive route."
+  },
+  "archiveRoute": {
+    "implementedArchive": "/product-image-studio/results",
+    "planRoute": "/product-image-studio/archive",
+    "routeExistsInSource": false
+  },
+  "checks": {
+    "archiveRouteMismatchRecorded": true,
+    "bothToolsObserved": true,
+    "generatedPreviewsMatchApiResponses": true,
+    "noGeneratedBlobUrls": true,
+    "noProviderRequestEscaped": true,
+    "resultsRouteRenders": true,
+    "staleStateClearedAcrossTools": true,
+    "uploadsRouteRenders": true
+  },
+  "cleanup": {
+    "browserContext": "closed",
+    "devServerPid": 71374,
+    "lsofCommand": "lsof -nP -iTCP:58923 -sTCP:LISTEN",
+    "lsofOutput": "no-listeners",
+    "nextEnvCleanup": "unchanged",
+    "port": 58923,
+    "portClosed": true,
+    "tempFixtureRemoved": true,
+    "tempFixtureWasCreated": true,
+    "tempProfileRemoved": true,
+    "tempProfileWasCreated": true
+  },
+  "commands": {
+    "invocation": "node .omo/qa/product-image-ai-tools-runtime-t4-qa.mjs",
+    "devServer": "./node_modules/.bin/next dev --hostname 127.0.0.1 --port 58923",
+    "lsof": "lsof -nP -iTCP:58923 -sTCP:LISTEN",
+    "scopedEvidenceStatus": "git status --short -- .omo/qa/product-image-ai-tools-runtime-t4-qa.mjs .omo/evidence/product-image-ai-tools-runtime-t4-browser.json .omo/evidence/product-image-ai-tools-runtime-t4-cleanup.txt .omo/evidence/product-image-ai-tools-runtime-t4-red-artifact.txt .omo/evidence/product-image-ai-tools-runtime-t4-green.txt next-env.d.ts",
+    "trackedStatus": "git -c status.showUntrackedFiles=no status --short"
+  },
+  "completedAt": "2026-06-17T08:38:22.406Z",
+  "errors": [],
+  "invocation": "node .omo/qa/product-image-ai-tools-runtime-t4-qa.mjs",
+  "browserPath": {
+    "playwrightResolved": true
+  },
+  "providerEscapes": [],
+  "requests": [
+    {
+      "contentType": "multipart/form-data",
+      "fileSummary": {
+        "contentTypes": [
+          "image/png"
+        ],
+        "fieldCount": 2,
+        "fileCount": 1,
+        "hasExpectedFixtureName": true,
+        "hasPayloadField": true,
+        "hasReferenceImagesField": true,
+        "imageContentTypeCount": 1
+      },
+      "hasFile": true,
+      "hasPrompt": true,
+      "method": "POST",
+      "mode": "ai-generator",
+      "payloadSummary": {
+        "count": 1,
+        "hasPrompt": true,
+        "modelLabel": "gpt2",
+        "promptHash": "38f285b04d9f",
+        "promptLength": 61,
+        "ratio": "1:1",
+        "resolution": "1k"
+      },
+      "responsePreviewUrl": "/api/product-image-studio/qa/t4-ai-generator-preview.png",
+      "uploadSlotSummary": "reference-image"
+    },
+    {
+      "contentType": "multipart/form-data",
+      "fileSummary": {
+        "contentTypes": [
+          "image/png"
+        ],
+        "fieldCount": 2,
+        "fileCount": 1,
+        "hasExpectedFixtureName": true,
+        "hasPayloadField": true,
+        "hasReferenceImagesField": true,
+        "imageContentTypeCount": 1
+      },
+      "hasFile": true,
+      "hasPrompt": true,
+      "method": "POST",
+      "mode": "product-staging",
+      "payloadSummary": {
+        "count": 1,
+        "hasPrompt": true,
+        "modelLabel": "gpt2",
+        "promptHash": "c51bf790f42e",
+        "promptLength": 79,
+        "ratio": "1:1",
+        "resolution": "1k"
+      },
+      "responsePreviewUrl": "/api/product-image-studio/qa/t4-product-staging-preview.png",
+      "uploadSlotSummary": "card-design"
+    }
+  ],
+  "risks": {
+    "cancelResume": "not applicable; the modal runtime has no cancel/resume flow in this QA path",
+    "flakyTests": "if this script fails from timing, rerun the exact invocation once and preserve both JSON attempts",
+    "malformedInput": "not newly triggered in Todo 4; covered by prior Todo 1/3 route and malformed-response evidence",
+    "promptInjection": "not applicable; no untrusted external page text is consumed",
+    "repeatedInterruptions": "previous Todo 4 worker appears to have left a partial QA script/evidence state; this run records fresh browser evidence"
+  },
+  "startedAt": "2026-06-17T08:38:19.722Z",
+  "status": "pass",
+  "statusEvidence": {
+    "preTracked": {
+      "command": "git -c status.showUntrackedFiles=no status --short",
+      "exitStatus": 0,
+      "stderr": "",
+      "stdout": "M .omo/start-work/ledger.jsonl\n M next-env.d.ts\n M src/components/product-image-studio/ProductImageStudioAiToolCatalog.ts\n M src/components/product-image-studio/ProductImageStudioAiToolGeneratorControls.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolPreviewPanel.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolUploads.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspace.module.css\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceModal.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceOptions.ts\n M src/components/product-image-studio/ProductImageStudioAiTools.tsx\n M tests/product-image-studio/aiTools.test.ts\n M tests/product-image-studio/imageGeneratorRoute.test.ts",
+      "timedOut": false
+    },
+    "preScoped": {
+      "command": "git status --short -- .omo/qa/product-image-ai-tools-runtime-t4-qa.mjs .omo/evidence/product-image-ai-tools-runtime-t4-browser.json .omo/evidence/product-image-ai-tools-runtime-t4-cleanup.txt .omo/evidence/product-image-ai-tools-runtime-t4-red-artifact.txt .omo/evidence/product-image-ai-tools-runtime-t4-green.txt next-env.d.ts",
+      "exitStatus": 0,
+      "stderr": "",
+      "stdout": "M next-env.d.ts\n?? .omo/evidence/product-image-ai-tools-runtime-t4-browser.json\n?? .omo/evidence/product-image-ai-tools-runtime-t4-cleanup.txt\n?? .omo/evidence/product-image-ai-tools-runtime-t4-green.txt\n?? .omo/evidence/product-image-ai-tools-runtime-t4-red-artifact.txt\n?? .omo/qa/product-image-ai-tools-runtime-t4-qa.mjs",
+      "timedOut": false
+    },
+    "postTracked": {
+      "command": "git -c status.showUntrackedFiles=no status --short",
+      "exitStatus": 0,
+      "stderr": "",
+      "stdout": "M .omo/start-work/ledger.jsonl\n M next-env.d.ts\n M src/components/product-image-studio/ProductImageStudioAiToolCatalog.ts\n M src/components/product-image-studio/ProductImageStudioAiToolGeneratorControls.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolPreviewPanel.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolUploads.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspace.module.css\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceModal.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceOptions.ts\n M src/components/product-image-studio/ProductImageStudioAiTools.tsx\n M tests/product-image-studio/aiTools.test.ts\n M tests/product-image-studio/imageGeneratorRoute.test.ts",
+      "timedOut": false
+    },
+    "postScoped": {
+      "command": "git status --short -- .omo/qa/product-image-ai-tools-runtime-t4-qa.mjs .omo/evidence/product-image-ai-tools-runtime-t4-browser.json .omo/evidence/product-image-ai-tools-runtime-t4-cleanup.txt .omo/evidence/product-image-ai-tools-runtime-t4-red-artifact.txt .omo/evidence/product-image-ai-tools-runtime-t4-green.txt next-env.d.ts",
+      "exitStatus": 0,
+      "stderr": "",
+      "stdout": "M next-env.d.ts\n?? .omo/evidence/product-image-ai-tools-runtime-t4-browser.json\n?? .omo/evidence/product-image-ai-tools-runtime-t4-cleanup.txt\n?? .omo/evidence/product-image-ai-tools-runtime-t4-green.txt\n?? .omo/evidence/product-image-ai-tools-runtime-t4-red-artifact.txt\n?? .omo/qa/product-image-ai-tools-runtime-t4-qa.mjs",
+      "timedOut": false
+    }
+  },
+  "tools": [
+    {
+      "expectedPreviewUrl": "/api/product-image-studio/qa/t4-ai-generator-preview.png",
+      "promptHash": "95425f459788",
+      "promptLength": 19,
+      "requestUploadSlot": "reference-image",
+      "tool": "AI 이미지 생성기",
+      "dialogTextLength": 349,
+      "generatedDownloadHrefs": [
+        "/api/product-image-studio/qa/t4-ai-generator-download.png"
+      ],
+      "generatedPreviewSrcs": [
+        "/api/product-image-studio/qa/t4-ai-generator-preview.png"
+      ],
+      "generatedResultCount": 1,
+      "generatedUrls": [
+        "/api/product-image-studio/qa/t4-ai-generator-preview.png",
+        "/api/product-image-studio/qa/t4-ai-generator-download.png",
+        "/api/product-image-studio/qa/t4-ai-generator-vector.png"
+      ],
+      "uploadPreviewSummary": {
+        "apiRouteCount": 0,
+        "blobCount": 1,
+        "kinds": [
+          "browser-blob-url"
+        ],
+        "localPathCount": 0,
+        "total": 1
+      }
+    },
+    {
+      "expectedPreviewUrl": "/api/product-image-studio/qa/t4-product-staging-preview.png",
+      "promptHash": "82a9e02f167e",
+      "promptLength": 27,
+      "requestUploadSlot": "card-design",
+      "tool": "상품 설정샷 생성",
+      "dialogTextLength": 448,
+      "generatedDownloadHrefs": [
+        "/api/product-image-studio/qa/t4-product-staging-download.png"
+      ],
+      "generatedPreviewSrcs": [
+        "/api/product-image-studio/qa/t4-product-staging-preview.png"
+      ],
+      "generatedResultCount": 1,
+      "generatedUrls": [
+        "/api/product-image-studio/qa/t4-product-staging-preview.png",
+        "/api/product-image-studio/qa/t4-product-staging-download.png",
+        "/api/product-image-studio/qa/t4-product-staging-vector.png"
+      ],
+      "uploadPreviewSummary": {
+        "apiRouteCount": 0,
+        "blobCount": 1,
+        "kinds": [
+          "browser-blob-url"
+        ],
+        "localPathCount": 0,
+        "total": 1
+      }
+    }
+  ],
+  "staleState": {
+    "firstToolExpectedPreviewUrl": "/api/product-image-studio/qa/t4-ai-generator-preview.png",
+    "secondToolExpectedPreviewUrl": "/api/product-image-studio/qa/t4-product-staging-preview.png",
+    "firstToolUrlAbsentAfterSecondTool": true,
+    "secondToolUsedOwnPreviewUrl": true
+  }
+}

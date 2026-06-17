@@ -1,0 +1,270 @@
+{
+  "browserPath": {
+    "classification": "regular Playwright required by user exact invocation",
+    "note": "Browser plugin was available in the session, but this F1 task requires node .omo/qa/product-image-ai-tools-runtime-f1-qa.mjs.",
+    "playwrightResolved": true
+  },
+  "checks": {
+    "aiToolsRouteHealthy": true,
+    "archiveResultsRouteHealthy": true,
+    "cleanupPortClosed": true,
+    "disabledFutureToolHasNoGenerateWorkflow": true,
+    "disabledFutureToolShowsReadySoonCopy": true,
+    "generatedActionsObserved": true,
+    "generatedPreviewObserved": true,
+    "noGeneratedBlobUrls": true,
+    "noPageErrors": true,
+    "noProviderEscape": true,
+    "requestIncludesFileSummary": true,
+    "requestIncludesPrompt": true,
+    "scriptHadNoErrors": true,
+    "uploadPreviewIsSummarizedButGeneratedIsApi": true,
+    "uploadsRouteHealthy": true
+  },
+  "cleanup": {
+    "browserContext": "closed",
+    "devServerPid": 4569,
+    "lsofCommand": "lsof -nP -iTCP:59800 -sTCP:LISTEN",
+    "lsofOutput": "no-listeners",
+    "nextEnvCleanup": "restored-drift",
+    "port": 59800,
+    "portClosed": true,
+    "tempFixtureRemoved": true,
+    "tempFixtureWasCreated": true,
+    "tempProfileRemoved": true,
+    "tempProfileWasCreated": true
+  },
+  "commands": {
+    "invocation": "node .omo/qa/product-image-ai-tools-runtime-f1-qa.mjs",
+    "devServer": "./node_modules/.bin/next dev --hostname 127.0.0.1 --port 59800",
+    "lsof": "lsof -nP -iTCP:59800 -sTCP:LISTEN",
+    "postScopedStatus": "git status --short -- .omo/qa/product-image-ai-tools-runtime-f1-qa.mjs .omo/evidence/product-image-ai-tools-runtime-f1-browser.json .omo/evidence/product-image-ai-tools-runtime-f1-debugging.txt .omo/evidence/product-image-ai-tools-runtime-f1-cleanup.txt .omo/evidence/product-image-ai-tools-runtime-f1-preview.png next-env.d.ts",
+    "trackedStatus": "git -c status.showUntrackedFiles=no status --short"
+  },
+  "completedAt": "2026-06-17T08:46:01.269Z",
+  "console": {
+    "errors": [],
+    "warnings": [],
+    "pageErrors": [],
+    "failedRequests": [],
+    "nonOkResponses": []
+  },
+  "debuggingHypotheses": [
+    {
+      "evidence": "generatedUrls=[\"/api/product-image-studio/qa/f1-generated-preview.png\",\"/api/product-image-studio/qa/f1-generated-preview.png\",\"/api/product-image-studio/qa/f1-generated-download.png\",\"/api/product-image-studio/qa/f1-generated-vector.svg\"]; uploadPreviewSummary={\"apiRouteCount\":0,\"blobCount\":1,\"kinds\":[\"browser-blob-url\"],\"localPathCount\":0,\"rawValueCount\":0,\"total\":1}",
+      "id": "H1",
+      "result": "REFUTED: generated output is API-backed and distinct from upload blob previews",
+      "title": "stale generated/upload blob confusion"
+    },
+    {
+      "evidence": "providerEscapes=[]; generationRequestCount=1; requestSummary={\"contentType\":\"multipart/form-data\",\"payloadSummary\":{\"count\":1,\"hasPrompt\":true,\"modelLabel\":\"gpt2\",\"promptHash\":\"38f285b04d9f\",\"promptLength\":61,\"ratio\":\"1:1\",\"resolution\":\"1k\"},\"fileSummary\":{\"contentTypes\":[\"image/png\"],\"fieldCount\":2,\"fileCount\":1,\"hasExpectedFixtureName\":true,\"hasPayloadField\":true,\"hasReferenceImagesField\":true,\"hasBinaryPngMarker\":false,\"imageContentTypeCount\":1}}",
+      "id": "H2",
+      "result": "REFUTED: generation stayed on intercepted local route with no provider escape",
+      "title": "provider escape/real paid call"
+    },
+    {
+      "evidence": "plannedTool={\"hasGenerateButton\":false,\"hasReadySoonCopy\":true,\"hasWorkspace\":false,\"requestCountBeforeOpen\":1,\"requestCountAfterOpen\":1}",
+      "id": "H3",
+      "result": "REFUTED: planned tool shows prepared-soon state and no generation workflow",
+      "title": "disabled planned tools still expose fake generation"
+    },
+    {
+      "evidence": "results={\"hasFrameworkOverlay\":false,\"hasMeaningfulProductImageStudioContent\":true,\"routePath\":\"/product-image-studio/results\",\"status\":200,\"textHash\":\"e2c89e556775\",\"textLength\":261}; uploads={\"hasFrameworkOverlay\":false,\"hasMeaningfulProductImageStudioContent\":true,\"routePath\":\"/product-image-studio/uploads\",\"status\":200,\"textHash\":\"a57aa5cb1d73\",\"textLength\":170}",
+      "id": "H4",
+      "result": "REFUTED: result archive and uploads routes rendered without server error",
+      "title": "archive/upload route regression or server error"
+    }
+  ],
+  "errors": [],
+  "generationRequests": [
+    {
+      "contentType": "multipart/form-data",
+      "fileSummary": {
+        "contentTypes": [
+          "image/png"
+        ],
+        "fieldCount": 2,
+        "fileCount": 1,
+        "hasExpectedFixtureName": true,
+        "hasPayloadField": true,
+        "hasReferenceImagesField": true,
+        "hasBinaryPngMarker": false,
+        "imageContentTypeCount": 1
+      },
+      "hasExpectedFixtureName": true,
+      "hasPrompt": true,
+      "method": "POST",
+      "payloadSummary": {
+        "count": 1,
+        "hasPrompt": true,
+        "modelLabel": "gpt2",
+        "promptHash": "38f285b04d9f",
+        "promptLength": 61,
+        "ratio": "1:1",
+        "resolution": "1k"
+      },
+      "url": "http://127.0.0.1:59800/api/product-image-studio/image-generator/generations"
+    }
+  ],
+  "observations": {
+    "aiToolsRoute": {
+      "hasFrameworkOverlay": false,
+      "hasMeaningfulProductImageStudioContent": true,
+      "label": "ai-tools",
+      "routePath": "/product-image-studio/ai-tools",
+      "status": null,
+      "textHash": "20ec16f94cab",
+      "textLength": 579,
+      "title": "마켓크루"
+    },
+    "plannedTool": {
+      "buttonCount": 1,
+      "hasGenerateButton": false,
+      "hasReadySoonCopy": true,
+      "hasWorkspace": false,
+      "textLength": 88,
+      "generationRequestCountAfterOpen": 1,
+      "generationRequestCountBeforeOpen": 1,
+      "textSummary": {
+        "hasReadySoonCopy": true,
+        "textLength": 88
+      }
+    },
+    "resultModal": {
+      "dialogTextLength": 349,
+      "generatedDownloadHrefs": [
+        "/api/product-image-studio/qa/f1-generated-download.png"
+      ],
+      "generatedPreviewActionHrefs": [
+        "/api/product-image-studio/qa/f1-generated-preview.png"
+      ],
+      "generatedPreviewSrcs": [
+        "/api/product-image-studio/qa/f1-generated-preview.png"
+      ],
+      "generatedResultCount": 1,
+      "generatedUrls": [
+        "/api/product-image-studio/qa/f1-generated-preview.png",
+        "/api/product-image-studio/qa/f1-generated-preview.png",
+        "/api/product-image-studio/qa/f1-generated-download.png",
+        "/api/product-image-studio/qa/f1-generated-vector.svg"
+      ],
+      "generatedVectorHrefs": [
+        "/api/product-image-studio/qa/f1-generated-vector.svg"
+      ],
+      "resultPanelTextLength": 84,
+      "uploadPreviewSummary": {
+        "apiRouteCount": 0,
+        "blobCount": 1,
+        "kinds": [
+          "browser-blob-url"
+        ],
+        "localPathCount": 0,
+        "rawValueCount": 0,
+        "total": 1
+      },
+      "uploadInputExists": true,
+      "screenshotCaptured": true
+    },
+    "resultsRoute": {
+      "hasFrameworkOverlay": false,
+      "hasMeaningfulProductImageStudioContent": true,
+      "label": "results",
+      "routePath": "/product-image-studio/results",
+      "status": 200,
+      "textHash": "e2c89e556775",
+      "textLength": 261,
+      "title": "마켓크루"
+    },
+    "uploadsRoute": {
+      "hasFrameworkOverlay": false,
+      "hasMeaningfulProductImageStudioContent": true,
+      "label": "uploads",
+      "routePath": "/product-image-studio/uploads",
+      "status": 200,
+      "textHash": "a57aa5cb1d73",
+      "textLength": 170,
+      "title": "마켓크루"
+    }
+  },
+  "partialRuntimeEvidence": "Real provider is intentionally not called; request shape, provider containment, and UI behavior are verified through local Playwright route interception.",
+  "providerEscapes": [],
+  "repeatedInterruptions": {
+    "note": "Pre-existing F1 evidence files and prior T1-T4 artifacts were present before this run; this script records a fresh F1 browser/debug/cleanup artifact set.",
+    "preExistingF1Files": [
+      ".omo/evidence/product-image-ai-tools-runtime-f1-browser.json",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-build.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-cleanup.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-code-quality-green.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-code-quality-red-artifact.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-debugging.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-next-env-diff.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-preview.png",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-runtime-processes.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-security-redaction-green.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-security-redaction-red-artifact.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-security-redaction-status.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-status-post-tracked.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-status-pre-tracked.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-status-tracked-diff.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-tests.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-typecheck.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-ui-runtime-green.txt",
+      ".omo/evidence/product-image-ai-tools-runtime-f1-ui-runtime-red-artifact.txt"
+    ]
+  },
+  "risks": {
+    "cancelResume": "not applicable; no cancel/resume flow is exercised or added",
+    "dirtyWorktree": "pre/post tracked status is captured; unrelated product-code dirt is treated as pre-existing",
+    "flakyTests": "rerun the exact command once if this script fails from timing",
+    "malformedInput": "points to recorded Todo 1/3 malformed evidence unless a future F1 script adds a malformed-response check",
+    "promptInjection": "not applicable; no untrusted external text is consumed",
+    "staleState": "covered by H1 in this run and by prior Todo 4 two-tool stale-state evidence"
+  },
+  "screenshotPath": ".omo/evidence/product-image-ai-tools-runtime-f1-preview.png",
+  "startedAt": "2026-06-17T08:45:57.996Z",
+  "status": "pass",
+  "statusEvidence": {
+    "preTracked": {
+      "command": "git -c status.showUntrackedFiles=no status --short",
+      "exitStatus": 0,
+      "stderr": "",
+      "stdout": "M .omo/start-work/ledger.jsonl\n M src/components/product-image-studio/ProductImageStudioAiToolCatalog.ts\n M src/components/product-image-studio/ProductImageStudioAiToolGeneratorControls.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolPreviewPanel.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolUploads.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspace.module.css\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceModal.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceOptions.ts\n M src/components/product-image-studio/ProductImageStudioAiTools.tsx\n M tests/product-image-studio/aiTools.test.ts\n M tests/product-image-studio/imageGeneratorRoute.test.ts",
+      "timedOut": false
+    },
+    "preScoped": {
+      "command": "git status --short -- .omo/qa/product-image-ai-tools-runtime-f1-qa.mjs .omo/evidence/product-image-ai-tools-runtime-f1-browser.json .omo/evidence/product-image-ai-tools-runtime-f1-debugging.txt .omo/evidence/product-image-ai-tools-runtime-f1-cleanup.txt .omo/evidence/product-image-ai-tools-runtime-f1-preview.png next-env.d.ts",
+      "exitStatus": 0,
+      "stderr": "",
+      "stdout": "?? .omo/evidence/product-image-ai-tools-runtime-f1-browser.json\n?? .omo/evidence/product-image-ai-tools-runtime-f1-cleanup.txt\n?? .omo/evidence/product-image-ai-tools-runtime-f1-debugging.txt\n?? .omo/evidence/product-image-ai-tools-runtime-f1-preview.png\n?? .omo/qa/product-image-ai-tools-runtime-f1-qa.mjs",
+      "timedOut": false
+    },
+    "preRuntimeListeners": {
+      "command": "lsof -nP -iTCP -sTCP:LISTEN",
+      "exitStatus": 0,
+      "stderr": "",
+      "stdout": "COMMAND    PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\nrapportd  1051 mini   16u  IPv4 0xcfc1b9afa2bd89df      0t0  TCP *:49524 (LISTEN)\nrapportd  1051 mini   17u  IPv6 0x8ee98d760882faf1      0t0  TCP *:49524 (LISTEN)\nControlCe 1146 mini    9u  IPv4 0xbbc8c97c0e9ddf12      0t0  TCP *:7000 (LISTEN)\nControlCe 1146 mini   10u  IPv6 0x582f323c09f79c8c      0t0  TCP *:7000 (LISTEN)\nControlCe 1146 mini   11u  IPv4 0xa782f1cc580221cc      0t0  TCP *:5000 (LISTEN)\nControlCe 1146 mini   12u  IPv6 0x465cb7b7dcfc01ca      0t0  TCP *:5000 (LISTEN)\nnode      1395 mini   15u  IPv4 0x3c27cc10bb666fdd      0t0  TCP 127.0.0.1:18789 (LISTEN)\nnode      1395 mini   16u  IPv6 0x1ac75c05e0bb4359      0t0  TCP [::1]:18789 (LISTEN)\nnode      1395 mini   29u  IPv4 0x92fdfd2ffb13b079      0t0  TCP 127.0.0.1:18791 (LISTEN)\ncom.docke 1446 mini  170u  IPv6 0x48c346cd706cd8d5      0t0  TCP *:5678 (LISTEN)",
+      "timedOut": false
+    },
+    "postTracked": {
+      "command": "git -c status.showUntrackedFiles=no status --short",
+      "exitStatus": 0,
+      "stderr": "",
+      "stdout": "M .omo/start-work/ledger.jsonl\n M src/components/product-image-studio/ProductImageStudioAiToolCatalog.ts\n M src/components/product-image-studio/ProductImageStudioAiToolGeneratorControls.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolPreviewPanel.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolUploads.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspace.module.css\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceModal.tsx\n M src/components/product-image-studio/ProductImageStudioAiToolWorkspaceOptions.ts\n M src/components/product-image-studio/ProductImageStudioAiTools.tsx\n M tests/product-image-studio/aiTools.test.ts\n M tests/product-image-studio/imageGeneratorRoute.test.ts",
+      "timedOut": false
+    },
+    "postScoped": {
+      "command": "git status --short -- .omo/qa/product-image-ai-tools-runtime-f1-qa.mjs .omo/evidence/product-image-ai-tools-runtime-f1-browser.json .omo/evidence/product-image-ai-tools-runtime-f1-debugging.txt .omo/evidence/product-image-ai-tools-runtime-f1-cleanup.txt .omo/evidence/product-image-ai-tools-runtime-f1-preview.png next-env.d.ts",
+      "exitStatus": 0,
+      "stderr": "",
+      "stdout": "?? .omo/evidence/product-image-ai-tools-runtime-f1-browser.json\n?? .omo/evidence/product-image-ai-tools-runtime-f1-cleanup.txt\n?? .omo/evidence/product-image-ai-tools-runtime-f1-debugging.txt\n?? .omo/evidence/product-image-ai-tools-runtime-f1-preview.png\n?? .omo/qa/product-image-ai-tools-runtime-f1-qa.mjs",
+      "timedOut": false
+    },
+    "postRuntimeListeners": {
+      "command": "lsof -nP -iTCP -sTCP:LISTEN",
+      "exitStatus": 0,
+      "stderr": "",
+      "stdout": "COMMAND    PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\nrapportd  1051 mini   16u  IPv4 0xcfc1b9afa2bd89df      0t0  TCP *:49524 (LISTEN)\nrapportd  1051 mini   17u  IPv6 0x8ee98d760882faf1      0t0  TCP *:49524 (LISTEN)\nControlCe 1146 mini    9u  IPv4 0xbbc8c97c0e9ddf12      0t0  TCP *:7000 (LISTEN)\nControlCe 1146 mini   10u  IPv6 0x582f323c09f79c8c      0t0  TCP *:7000 (LISTEN)\nControlCe 1146 mini   11u  IPv4 0xa782f1cc580221cc      0t0  TCP *:5000 (LISTEN)\nControlCe 1146 mini   12u  IPv6 0x465cb7b7dcfc01ca      0t0  TCP *:5000 (LISTEN)\nnode      1395 mini   15u  IPv4 0x3c27cc10bb666fdd      0t0  TCP 127.0.0.1:18789 (LISTEN)\nnode      1395 mini   16u  IPv6 0x1ac75c05e0bb4359      0t0  TCP [::1]:18789 (LISTEN)\nnode      1395 mini   29u  IPv4 0x92fdfd2ffb13b079      0t0  TCP 127.0.0.1:18791 (LISTEN)\ncom.docke 1446 mini  170u  IPv6 0x48c346cd706cd8d5      0t0  TCP *:5678 (LISTEN)",
+      "timedOut": false
+    }
+  }
+}

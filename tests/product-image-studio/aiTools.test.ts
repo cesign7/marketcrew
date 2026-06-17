@@ -27,6 +27,9 @@ const TOOL_IDS = [
   "detail-page-blocks",
 ] as const;
 
+const RUNNABLE_TOOL_IDS = ["product-staging", "image-generator", "svg-conversion"] as const;
+const PLANNED_TOOL_IDS = ["background-props", "ratio-resize", "similar-image", "mockup-composite", "detail-page-blocks"] as const;
+
 describe("product image studio AI tools routes", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -47,13 +50,21 @@ describe("product image studio AI tools routes", () => {
     }
     expect(html).toContain('data-saas-card-grid="true"');
     expect(countOccurrences(html, 'data-saas-action-card="')).toBe(8);
-    for (const toolId of TOOL_IDS) {
+    for (const toolId of RUNNABLE_TOOL_IDS) {
       const cardHtml = extractToolCardHtml(html, toolId);
       expect(cardHtml).toContain('data-ai-tool-card-ready="false"');
       expect(cardHtml).toContain('data-ai-tool-state="modal"');
       expect(cardHtml).toContain("disabled");
       expect(cardHtml).toContain("열기");
       expect(cardHtml).not.toContain('aria-disabled="true"');
+      expect(cardHtml).not.toContain("href=");
+    }
+    for (const toolId of PLANNED_TOOL_IDS) {
+      const cardHtml = extractToolCardHtml(html, toolId);
+      expect(cardHtml).toContain('data-ai-tool-card-ready="false"');
+      expect(cardHtml).toContain('data-ai-tool-state="planned"');
+      expect(cardHtml).toContain("disabled");
+      expect(cardHtml).toContain("준비 중");
       expect(cardHtml).not.toContain("href=");
     }
 
@@ -73,8 +84,8 @@ describe("product image studio AI tools routes", () => {
     expect(svgCardHtml).not.toContain('aria-disabled="true"');
   });
 
-  it("opens every tool in the shared in-modal workspace without page navigation links", () => {
-    for (const toolId of TOOL_IDS) {
+  it("opens runnable tools in the shared in-modal workspace without page navigation links", () => {
+    for (const toolId of RUNNABLE_TOOL_IDS) {
       const html = renderToStaticMarkup(createElement(ProductImageStudioAiToolsHub, { initialToolId: toolId }));
 
       expect(html, toolId).toContain('role="dialog"');
@@ -107,7 +118,8 @@ describe("product image studio AI tools routes", () => {
     expect(productStagingHtml).toContain('data-ai-tool-quality-trigger="true"');
     expect(productStagingHtml).toContain("정사각형 1:1");
     expect(productStagingHtml).toContain("1k");
-    expect(productStagingHtml).toContain("8컷");
+    expect(productStagingHtml).toContain("4컷");
+    expect(productStagingHtml).not.toContain("8컷");
     expect(productStagingHtml).toContain('data-ai-tool-choice-group="product-kind"');
     expect(productStagingHtml).toContain('data-ai-tool-choice-group="scene-style"');
     expect(productStagingHtml).toContain("소품 밀도");
@@ -121,6 +133,7 @@ describe("product image studio AI tools routes", () => {
     expect(imageGeneratorHtml).toContain('data-ai-tool-quality-trigger="true"');
     expect(imageGeneratorHtml).toContain("2컷");
     expect(imageGeneratorHtml).toContain("4컷");
+    expect(imageGeneratorHtml).not.toContain("8컷");
     expect(imageGeneratorHtml).toContain('data-ai-tool-choice-group="image-type"');
     expect(imageGeneratorHtml).toContain('data-ai-tool-choice-group="render-style"');
   });
@@ -131,9 +144,6 @@ describe("product image studio AI tools routes", () => {
     );
     const imageGeneratorHtml = renderToStaticMarkup(
       createElement(ProductImageStudioAiToolsHub, { initialToolId: "image-generator" }),
-    );
-    const mockupHtml = renderToStaticMarkup(
-      createElement(ProductImageStudioAiToolsHub, { initialToolId: "mockup-composite" }),
     );
 
     expect(productStagingHtml).toContain('data-ai-tool-upload-slot="card-design"');
@@ -150,23 +160,21 @@ describe("product image studio AI tools routes", () => {
     expect(imageGeneratorHtml).toContain('data-ai-tool-upload-input="reference-image"');
     expect(imageGeneratorHtml).toContain("참고 이미지");
     expect(imageGeneratorHtml).not.toContain('data-ai-tool-upload-slot="envelope-design"');
-
-    expect(mockupHtml).toContain('data-ai-tool-upload-slot="design-source"');
-    expect(mockupHtml).toContain('data-ai-tool-upload-slot="mockup-base"');
-    expect(mockupHtml).toContain("목업 기준 이미지");
   });
 
-  it("opens future tool modals with the same workspace instead of planning-only forms", () => {
+  it("keeps future tool cards visible but out of fake generation workflows", () => {
     const html = renderToStaticMarkup(createElement(ProductImageStudioAiToolsHub, { initialToolId: "background-props" }));
+    const dialogHtml = extractDialogHtml(html);
 
-    expect(html).toContain('role="dialog"');
-    expect(html).toContain("배경/소품 생성");
-    expect(html).toContain('data-ai-tool-workspace="true"');
-    expect(html).toContain("프롬프트");
-    expect(html).toContain("추가 지시");
-    expect(html).toContain("오른쪽 미리보기");
-    expect(html).not.toContain('aria-disabled="true"');
-    expect(html).not.toContain("작업 계획 저장");
+    expect(dialogHtml).toContain('role="dialog"');
+    expect(dialogHtml).toContain("배경/소품 생성");
+    expect(dialogHtml).toContain("준비 중");
+    expect(dialogHtml).toContain("워크플로를 곧 연결할 예정입니다.");
+    expect(dialogHtml).not.toContain('data-ai-tool-workspace="true"');
+    expect(dialogHtml).not.toContain("프롬프트");
+    expect(dialogHtml).not.toContain("추가 지시");
+    expect(dialogHtml).not.toContain("생성하기");
+    expect(dialogHtml).not.toContain("작업 계획 저장");
   });
 
   it("renders the product staging route with the existing wizard and provider status", async () => {
@@ -205,6 +213,15 @@ function extractToolCardHtml(html: string, toolId: string): string {
 
   const nextStart = html.indexOf('data-ai-tool-card="', start + marker.length);
   return nextStart === -1 ? html.slice(start) : html.slice(start, nextStart);
+}
+
+function extractDialogHtml(html: string): string {
+  const roleStart = html.indexOf('role="dialog"');
+  expect(roleStart).toBeGreaterThanOrEqual(0);
+
+  const dialogStart = html.lastIndexOf("<section", roleStart);
+  expect(dialogStart).toBeGreaterThanOrEqual(0);
+  return html.slice(dialogStart);
 }
 
 function countKoreanCharacters(value: string): number {

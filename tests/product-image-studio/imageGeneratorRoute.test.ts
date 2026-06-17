@@ -120,33 +120,31 @@ describe("product image studio image-generator route validation and gate", () =>
   });
 
   it("returns 502 instead of leaving a hung provider request pending", async () => {
-    vi.useFakeTimers();
+    const state = imageGeneratorRouteTestState();
+    const provider = neverSettlingImageGeneratorRouteProvider();
+    const responsePromise = handleProductImageStudioImageGeneratorGeneration(
+      multipartImageGeneratorRouteRequest(validImageGeneratorRoutePayload()),
+      {
+        ...state,
+        env: { ...state.env, PRODUCT_IMAGE_STUDIO_PROVIDER_TIMEOUT_MS: "1" },
+        resolveProvider: enabledImageGeneratorRouteResolver("gpt-image-2", provider),
+      },
+    );
+    let guardTimer: ReturnType<typeof setTimeout> | undefined;
     try {
-      const state = imageGeneratorRouteTestState();
-      const provider = neverSettlingImageGeneratorRouteProvider();
-      const responsePromise = handleProductImageStudioImageGeneratorGeneration(
-        multipartImageGeneratorRouteRequest(validImageGeneratorRoutePayload()),
-        {
-          ...state,
-          env: { ...state.env, PRODUCT_IMAGE_STUDIO_PROVIDER_TIMEOUT_MS: "1000" },
-          resolveProvider: enabledImageGeneratorRouteResolver("gpt-image-2", provider),
-        },
-      );
-      let settled = false;
-      void responsePromise.then(() => {
-        settled = true;
-      });
-
-      await vi.advanceTimersByTimeAsync(1000);
-      await Promise.resolve();
-
-      expect(settled).toBe(true);
-      const response = await responsePromise;
+      const response = await Promise.race([
+        responsePromise,
+        new Promise<Response>((_resolve, reject) => {
+          guardTimer = setTimeout(() => reject(new Error("Hung provider test guard expired before route returned.")), 3_000);
+        }),
+      ]);
       expect(response.status).toBe(502);
       expect(await response.json()).toMatchObject({ error: { code: "IMAGE_PROVIDER_FAILED" }, ok: false });
       await expectNoImageGeneratorRouteArchiveWrites(state);
     } finally {
-      vi.useRealTimers();
+      if (guardTimer !== undefined) {
+        clearTimeout(guardTimer);
+      }
     }
   });
 });

@@ -1,0 +1,2 @@
+REDACTED RED ARTIFACT: pre-fix scan found unsafe evidence; raw matches removed.
+unsafe_match_count=52

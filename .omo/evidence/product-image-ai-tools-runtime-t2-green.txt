@@ -1,0 +1,52 @@
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/aiToolOptions.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  14:37:18
+   Duration  513ms (transform 207ms, setup 0ms, import 339ms, tests 64ms, environment 0ms)
+
+
+=== npm run typecheck ===
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+
+=== Todo 2 verification rerun 2026-06-17T14:49:29+09:00 ===
+
+$ npm test -- --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/aiToolOptions.test.ts --fileParallelism=false
+
+> marketcrew@0.0.0-reboot test
+> vitest run --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/aiToolOptions.test.ts --fileParallelism=false
+
+
+ RUN  v4.1.7 <workspace>
+
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  14:49:55
+   Duration  38.59s (transform 319ms, setup 0ms, import 520ms, tests 67ms, environment 0ms)
+
+
+[npm test exit=0]
+
+$ npm run typecheck
+
+> marketcrew@0.0.0-reboot typecheck
+> tsc --noEmit -p tsconfig.typecheck.json
+
+
+[npm run typecheck exit=0]
+
+=== root focused verification rerun 2026-06-17T15:11+09:00 ===
+$ npm test -- --run tests/product-image-studio/aiTools.test.ts tests/product-image-studio/aiToolOptions.test.ts --fileParallelism=false
+result: exit 0, 2 test files passed, 9 tests passed
+$ npm run typecheck
+result: exit 0

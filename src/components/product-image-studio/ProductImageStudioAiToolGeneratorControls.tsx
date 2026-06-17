@@ -28,12 +28,17 @@ type ProductImageStudioAiToolGeneratorControlsProps = {
   readonly onChoiceSelect: (groupId: string, optionId: string) => void;
   readonly onCountChange: (count: ProductImageStudioAiToolOutputCount) => void;
   readonly onGenerate: () => void;
+  readonly onInstructionChange: (instruction: string) => void;
   readonly onModelLabelChange: (modelLabel: ProductImageStudioImageGeneratorModelLabel) => void;
+  readonly onPromptChange: (prompt: string) => void;
   readonly onQualityOpen: () => void;
   readonly onRatioOpen: () => void;
+  readonly phase: "blocked" | "failed" | "generating" | "idle" | "partial" | "ready";
   readonly quality: ProductImageStudioAiToolOutputQuality;
   readonly ratio: ProductImageStudioAiToolOutputRatio;
   readonly selectedAssetId: string | null;
+  readonly instruction: string;
+  readonly prompt: string;
   readonly tool: ProductImageStudioAiTool;
 };
 
@@ -48,12 +53,17 @@ export function ProductImageStudioAiToolGeneratorControls({
   onChoiceSelect,
   onCountChange,
   onGenerate,
+  onInstructionChange,
   onModelLabelChange,
+  onPromptChange,
   onQualityOpen,
   onRatioOpen,
+  phase,
   quality,
   ratio,
   selectedAssetId,
+  instruction,
+  prompt,
   tool,
 }: ProductImageStudioAiToolGeneratorControlsProps) {
   return (
@@ -73,11 +83,21 @@ export function ProductImageStudioAiToolGeneratorControls({
         <section className={styles.section}>
           <label className={styles.field}>
             <span>프롬프트</span>
-            <textarea defaultValue={tool.initialPrompt} name={`${tool.id}-prompt`} />
+            <textarea
+              aria-invalid={prompt.trim().length === 0 ? "true" : undefined}
+              name={`${tool.id}-prompt`}
+              onChange={(event) => onPromptChange(event.currentTarget.value)}
+              value={prompt}
+            />
           </label>
           <label className={styles.field}>
             <span>추가 지시</span>
-            <textarea data-compact="true" defaultValue={tool.initialInstruction} name={`${tool.id}-instruction`} />
+            <textarea
+              data-compact="true"
+              name={`${tool.id}-instruction`}
+              onChange={(event) => onInstructionChange(event.currentTarget.value)}
+              value={instruction}
+            />
           </label>
         </section>
         <section className={styles.section}>
@@ -129,7 +149,9 @@ export function ProductImageStudioAiToolGeneratorControls({
       </div>
       <footer className={styles.controlFooter}>
         <button className={styles.secondaryButton} type="button">취소</button>
-        <button className={styles.primaryButton} onClick={onGenerate} type="button">생성하기</button>
+        <button className={styles.primaryButton} disabled={phase === "generating"} onClick={onGenerate} type="button">
+          {phase === "generating" ? "생성 중" : "생성하기"}
+        </button>
       </footer>
     </>
   );

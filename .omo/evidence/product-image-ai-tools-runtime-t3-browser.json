@@ -1,0 +1,98 @@
+{
+  "browser": "playwright-chromium",
+  "checks": {
+    "failedHasKoreanError": true,
+    "failedHasNoGeneratedResults": true,
+    "readyHasDownloadAction": true,
+    "readyHasNoBlobGeneratedUrls": true,
+    "readyHasPreview": true,
+    "readyHasSvgAction": true,
+    "requestHadFile": true,
+    "requestHadPrompt": true
+  },
+  "completedAt": "2026-06-17T08:38:08.800Z",
+  "mobileDialogBox": {
+    "x": 12,
+    "y": 55.53125,
+    "width": 366,
+    "height": 776.46875
+  },
+  "requests": [
+    {
+      "contentType": "multipart/form-data",
+      "fileSummary": {
+        "contentTypes": [
+          "image/png"
+        ],
+        "fieldCount": 2,
+        "fileCount": 1,
+        "hasExpectedFixtureName": true,
+        "hasPayloadField": true,
+        "hasReferenceImagesField": true,
+        "imageContentTypeCount": 1
+      },
+      "hasFile": true,
+      "hasPrompt": true,
+      "method": "POST",
+      "mode": "runtime-ready",
+      "payloadSummary": {
+        "count": 1,
+        "hasPrompt": true,
+        "modelLabel": "gpt2",
+        "promptHash": "38f285b04d9f",
+        "promptLength": 61,
+        "ratio": "1:1",
+        "resolution": "1k"
+      }
+    },
+    {
+      "contentType": "multipart/form-data",
+      "fileSummary": {
+        "contentTypes": [
+          "image/png"
+        ],
+        "fieldCount": 2,
+        "fileCount": 1,
+        "hasExpectedFixtureName": true,
+        "hasPayloadField": true,
+        "hasReferenceImagesField": true,
+        "imageContentTypeCount": 1
+      },
+      "hasFile": true,
+      "hasPrompt": true,
+      "method": "POST",
+      "mode": "malformed",
+      "payloadSummary": {
+        "count": 1,
+        "hasPrompt": true,
+        "modelLabel": "gpt2",
+        "promptHash": "b371d2285fca",
+        "promptLength": 50,
+        "ratio": "1:1",
+        "resolution": "1k"
+      }
+    }
+  ],
+  "responses": [
+    {
+      "mode": "runtime-ready",
+      "status": "ready",
+      "urls": {
+        "downloadUrl": "/api/product-image-studio/qa/runtime-ready-download.png",
+        "previewUrl": "/api/product-image-studio/qa/runtime-ready-preview.png",
+        "vectorSvgUrl": "/api/product-image-studio/qa/runtime-ready-vector.svg"
+      }
+    },
+    {
+      "mode": "malformed",
+      "status": "malformed-empty-results"
+    }
+  ],
+  "screenshots": {
+    "failed": ".omo/evidence/product-image-ai-tools-runtime-t3-failed.png",
+    "ready": ".omo/evidence/product-image-ai-tools-runtime-t3-ready.png"
+  },
+  "startedAt": "2026-06-17T08:38:02.152Z",
+  "status": "pass",
+  "routePath": "/product-image-studio/ai-tools"
+}

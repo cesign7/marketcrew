@@ -1,0 +1,15 @@
+START 2026-06-17T08:38:19.722Z
+qa_port=58923
+temp_fixture=created
+dev_server_pid=71374
+temp_profile=created
+browser_context=closed
+temp_profile=removed
+dev_server_sigterm=71374
+temp_fixture=removed
+next_env_cleanup=unchanged
+dev_server_log_lines=12
+port_check=clear
+lsof_command=lsof -nP -iTCP:58923 -sTCP:LISTEN
+lsof_output=no-listeners
+END 2026-06-17T08:38:24.006Z

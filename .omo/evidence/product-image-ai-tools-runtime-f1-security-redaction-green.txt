@@ -1,0 +1,1 @@
+PASS: no redaction matches for T3/T4/F1 browser/debug/cleanup artifacts.
