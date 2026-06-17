@@ -18,6 +18,7 @@ export type ProductImageStudioUploadArchiveItem = {
   readonly projectName: string;
   readonly role: ProductImageStudioAssetRole;
   readonly storageKey: string;
+  readonly svgConversionUrl: string;
   readonly templateUseUrl: string;
 };
 
@@ -40,6 +41,7 @@ export async function listProductImageStudioUploadArchiveItems(
         projectName: project.name,
         role: asset.role,
         storageKey: asset.storageKey,
+        svgConversionUrl: toSvgConversionUrl(asset.id),
         templateUseUrl: toTemplateUseUrl(asset.id),
       }));
     }),
@@ -58,4 +60,8 @@ function toDesignUseUrl(assetId: string): string {
 
 function toTemplateUseUrl(assetId: string): string {
   return `/product-image-studio/templates?upload=${encodeURIComponent(assetId)}`;
+}
+
+function toSvgConversionUrl(assetId: string): string {
+  return `/product-image-studio/ai-tools?tool=svg-conversion&upload=${encodeURIComponent(assetId)}`;
 }

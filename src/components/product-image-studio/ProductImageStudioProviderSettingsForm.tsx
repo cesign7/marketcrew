@@ -38,6 +38,16 @@ const PROVIDER_OPTIONS: readonly ProductImageStudioProviderCardOption[] = [
   },
 ];
 
+const PROVIDER_SETTINGS_DATE_TIME_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+  day: "numeric",
+  hour: "2-digit",
+  hour12: false,
+  minute: "2-digit",
+  month: "numeric",
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+});
+
 export function ProductImageStudioProviderSettingsForm({
   initialSettings,
   initialStorageMode,
@@ -259,5 +269,5 @@ function formatDateTime(value: string): string {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return date.toLocaleString("ko-KR", { dateStyle: "medium", timeStyle: "short" });
+  return PROVIDER_SETTINGS_DATE_TIME_FORMATTER.format(date);
 }

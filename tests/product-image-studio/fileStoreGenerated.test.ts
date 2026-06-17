@@ -68,6 +68,34 @@ describe("product image studio generated file store", () => {
     expect(new TextDecoder().decode((await store.readImage(second.storageKey))?.bytes)).toBe("second generated png");
   });
 
+  it("stores generated SVG conversion artifacts under a downloadable result path", async () => {
+    const rootDirectory = await mkdtemp(join(tmpdir(), "marketcrew-studio-result-svg-"));
+    const store = createLocalProductImageFileStore({
+      maxBytes: 1024,
+      publicBasePath: "/studio-assets",
+      rootDirectory,
+    });
+    const svg = new TextEncoder().encode(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="#111"/></svg>',
+    );
+
+    const result = await store.saveGeneratedImage({
+      bytes: svg,
+      contentType: "image/svg+xml",
+      generationRequestId: "generation-svg",
+      outputType: "seal_sticker_single",
+      projectId: "project-001",
+      ratio: "1:1",
+      suffix: "icon",
+    });
+    const stored = await store.readImage(result.storageKey);
+
+    expect(result.storageKey).toBe("product-image-studio/project-001/results/generation-svg/seal_sticker_single-icon-1x1.svg");
+    expect(result.contentType).toBe("image/svg+xml");
+    expect(stored?.contentType).toBe("image/svg+xml");
+    expect(new TextDecoder().decode(stored?.bytes)).toContain("<rect");
+  });
+
   it("preserves SVG content type and extension in download manifest metadata", () => {
     const manifest = buildProductImageStudioDownloadManifest(projectRecord(), [
       {

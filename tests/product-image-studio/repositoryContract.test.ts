@@ -1,16 +1,23 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   PRODUCT_IMAGE_STUDIO_TABLE_NAMES,
   createInMemoryProductImageStudioRepository,
 } from "@/lib/persistence/productImageStudioRepository";
 import { createPostgresProductImageStudioRepository } from "@/lib/persistence/productImageStudioPostgresRepository";
 import type { ProductImageStudioSqlQuery } from "@/lib/persistence/productImageStudioPostgresSchema";
-import { selectProductImageStudioRepositoryStorageMode } from "@/features/product-image-studio/server/projectApi";
+import {
+  getProductImageStudioProjectRepository,
+  selectProductImageStudioRepositoryStorageMode,
+} from "@/features/product-image-studio/server/projectApi";
 import { manualProductionSettings } from "./manualProductionSettings";
 
 describe("product image studio repository contract", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("declares the expected persistence tables in the workflow schema", () => {
     const expectedTableNames = [
       "product_image_studio_projects",
@@ -67,6 +74,28 @@ describe("product image studio repository contract", () => {
         PRODUCT_IMAGE_STUDIO_METADATA_STORE: "postgres",
       }),
     ).toBe("postgres");
+  });
+
+  it("keeps the default memory repository shared across route module reloads", async () => {
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_METADATA_STORE", "memory");
+    const firstRepository = getProductImageStudioProjectRepository();
+    const project = await firstRepository.createProject({
+      cardFormat: "postcard_flat",
+      name: "SVG 변환 결과",
+      productType: "card_envelope_seal_set",
+      productionSettings: manualProductionSettings("postcard_flat"),
+      qualityMode: "draft",
+      ratios: ["1:1"],
+      requestedCardPoses: ["postcard_front_flat"],
+      requestedOutputs: ["seal_sticker_single"],
+    });
+
+    vi.resetModules();
+    const { getProductImageStudioProjectRepository: getReloadedRepository } = await import(
+      "@/features/product-image-studio/server/projectApi"
+    );
+
+    expect(await getReloadedRepository().getProject(project.id)).toEqual(project);
   });
 
   it("stores a project lifecycle through the Postgres repository contract", async () => {

@@ -1,0 +1,284 @@
+.pageHeader,
+.actionCard,
+.itemCard,
+.emptyState,
+.modalPanel {
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+}
+
+.pageHeader {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 14px 16px;
+}
+
+.pageHeaderCopy,
+.cardCopy,
+.modalBody {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.pageHeaderCopy p,
+.pageHeaderCopy h2,
+.pageHeaderCopy span,
+.cardCopy h3,
+.cardCopy p,
+.modalHeader h2,
+.modalHeader p,
+.itemMeta {
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.pageHeaderCopy p {
+  color: #0070f3;
+  font-size: 12px;
+  font-weight: 840;
+  line-height: 1.25;
+}
+
+.pageHeaderCopy h2,
+.modalHeader h2 {
+  color: #171717;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.pageHeaderCopy span,
+.modalHeader p {
+  color: #666666;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pageHeaderMeta,
+.statusBadge,
+.itemMeta {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 840;
+  line-height: 1;
+  min-height: 28px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.pageHeaderMeta,
+.itemMeta {
+  background: #f5f5f5;
+  color: #171717;
+}
+
+.cardGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 208px), 1fr));
+  width: 100%;
+}
+
+.actionCard,
+.itemCard,
+.emptyState {
+  min-width: 0;
+  padding: 16px;
+}
+
+.actionCard {
+  align-content: space-between;
+  display: grid;
+  gap: 14px;
+  min-height: 190px;
+}
+
+.actionCard[data-saas-card-state="button"],
+.actionCard[data-saas-card-state="link"] {
+  border-color: rgba(0, 112, 243, 0.32);
+}
+
+.cardTop {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  min-width: 0;
+}
+
+.iconBox,
+.emptyIcon,
+.cardAction,
+.disabledAction,
+.modalClose,
+.modalFooter :where(a, button) {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.iconBox,
+.emptyIcon {
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  color: #171717;
+  flex: 0 0 auto;
+}
+
+.iconBox {
+  height: 40px;
+  width: 40px;
+}
+
+.emptyIcon {
+  height: 44px;
+  width: 44px;
+}
+
+.actionCard[data-saas-card-state="button"] .iconBox,
+.actionCard[data-saas-card-state="link"] .iconBox {
+  background: rgba(0, 112, 243, 0.08);
+  border-color: rgba(0, 112, 243, 0.2);
+  color: #0070f3;
+}
+
+.statusBadge[data-status-tone="ready"] {
+  background: rgba(0, 112, 243, 0.08);
+  color: #0070f3;
+}
+
+.statusBadge[data-status-tone="pending"],
+.statusBadge[data-status-tone="neutral"] {
+  background: #f5f5f5;
+  color: #666666;
+}
+
+.cardCopy h3 {
+  color: #171717;
+  font-size: 17px;
+  line-height: 1.3;
+}
+
+.cardCopy p {
+  color: #666666;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.cardAction,
+.disabledAction,
+.modalFooter :where(a, button) {
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 840;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px;
+  text-decoration: none;
+}
+
+.cardAction,
+.modalFooter :where(a, button) {
+  background: #0070f3;
+  border: 1px solid #0070f3;
+  color: #ffffff;
+}
+
+.disabledAction {
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+.itemCard,
+.emptyState {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+}
+
+.itemCard {
+  min-height: 116px;
+}
+
+.emptyState {
+  flex-direction: column;
+}
+
+.emptyAction {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modalOverlay {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.42);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 60;
+}
+
+.modalPanel {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+  display: grid;
+  gap: 16px;
+  max-height: min(720px, calc(100vh - 40px));
+  max-width: 560px;
+  min-width: min(100%, 320px);
+  overflow: auto;
+  padding: 18px;
+  width: min(100%, 560px);
+}
+
+.modalHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.modalClose {
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  color: #171717;
+  flex: 0 0 auto;
+  height: 36px;
+  width: 36px;
+}
+
+.modalFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 680px) {
+  .pageHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cardGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modalOverlay {
+    align-items: flex-end;
+    padding: 12px;
+  }
+}

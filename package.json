@@ -33,5 +33,6 @@
     "@types/react-dom": "latest",
     "typescript": "latest",
     "vitest": "^4.1.7"
-  }
+  },
+  "type": "module"
 }

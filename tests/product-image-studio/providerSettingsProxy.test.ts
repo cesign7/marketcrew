@@ -5,6 +5,7 @@ import { GET as LIST_PROJECT_RESULTS } from "@/app/api/product-image-studio/proj
 import { GET as LIST_PROJECTS } from "@/app/api/product-image-studio/projects/route";
 import { GET as LIST_RESULTS } from "@/app/api/product-image-studio/results/route";
 import { GET as GET_PROVIDER_STATUS } from "@/app/api/product-image-studio/provider-status/route";
+import { POST as SVG_CONVERSION } from "@/app/api/product-image-studio/svg-conversions/route";
 import { loadProductImageStudioProviderSettingsState } from "@/features/product-image-studio/server/providerSettingsState";
 
 describe("product image studio provider settings backend bridge", () => {
@@ -144,6 +145,61 @@ describe("product image studio provider settings backend bridge", () => {
     );
   });
 
+  it("proxies SVG conversion API requests to the Railway backend in hosted frontend runtime", async () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("MARKETCREW_BACKEND_API_URL", "https://api.marketcrew.app");
+    vi.stubEnv("MARKETCREW_BACKEND_API_TOKEN", "bridge-token");
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: {
+            contentType: "image/svg+xml",
+            downloadUrl: "/remote.svg",
+            fileName: "remote-line.svg",
+            svg: "<svg viewBox=\"0 0 10 10\"><path d=\"M1 1H9\" /></svg>",
+          },
+          ok: true,
+        }),
+        {
+          headers: { "content-type": "application/json" },
+          status: 200,
+        },
+      ),
+    );
+
+    const response = await SVG_CONVERSION(svgConversionRequest());
+    const bodyText = await response.text();
+    const requestInit = fetchMock.mock.calls[0]?.[1];
+    const requestHeaders = requestInit?.headers;
+
+    expect(response.status).toBe(200);
+    expect(bodyText).toContain("remote-line.svg");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "https://api.marketcrew.app/api/product-image-studio/svg-conversions",
+    );
+    expect(requestInit).toMatchObject({ method: "POST" });
+    expect(requestHeaders).toMatchObject({
+      accept: "application/json",
+      authorization: "Bearer bridge-token",
+    });
+    expect(readHeaderValue(requestHeaders, "content-type")).toContain("multipart/form-data");
+  });
+
+  it("fails closed for SVG conversion requests when hosted frontend has no backend API URL", async () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("MARKETCREW_BACKEND_API_URL", "");
+    vi.stubEnv("MARKETCREW_API_BASE_URL", "");
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+
+    const response = await SVG_CONVERSION(svgConversionRequest());
+    const bodyText = await response.text();
+
+    expect(response.status).toBe(503);
+    expect(bodyText).toContain("Railway 백엔드 API 주소가 설정되지 않았습니다.");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("loads the provider settings page state from the Railway backend", async () => {
     vi.stubEnv("VERCEL", "1");
     vi.stubEnv("MARKETCREW_BACKEND_API_URL", "https://api.marketcrew.app");
@@ -194,4 +250,24 @@ function remoteProviderSettingsState() {
     },
     storageMode: "postgres",
   };
+}
+
+function svgConversionRequest(): Request {
+  const formData = new FormData();
+  formData.set("file", new File([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], "card.png", { type: "image/png" }));
+  formData.set("style", "line_art");
+  return new Request("https://marketcrew.app/api/product-image-studio/svg-conversions", {
+    body: formData,
+    method: "POST",
+  });
+}
+
+function readHeaderValue(headers: HeadersInit | undefined, key: string): string {
+  if (headers instanceof Headers) {
+    return headers.get(key) ?? "";
+  }
+  if (Array.isArray(headers)) {
+    return headers.find(([candidate]) => candidate.toLowerCase() === key.toLowerCase())?.[1] ?? "";
+  }
+  return headers?.[key] ?? "";
 }

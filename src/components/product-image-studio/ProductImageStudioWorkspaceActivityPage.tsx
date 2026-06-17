@@ -3,6 +3,8 @@ import type { ProductImageStudioResultArchiveItem } from "@/lib/persistence/prod
 import {
   formatProductImageStudioArchiveDate,
   getProductImageStudioArchiveOutputLabel,
+  isProductImageStudioSvgArchiveResult,
+  toProductImageStudioSvgDownloadFileName,
 } from "./productImageStudioArchiveCopy";
 import { EmptyState, SectionHeading, WorkspaceSupportShell } from "./ProductImageStudioWorkspaceSupportLayout";
 import styles from "./ProductImageStudioWorkspaceSupportPages.module.css";
@@ -70,7 +72,13 @@ function RecentResultList({ results }: { readonly results: readonly ProductImage
           <p className={styles.activityMeta}>{formatProductImageStudioArchiveDate(result.createdAt)}</p>
           <div className={styles.activityActions}>
             <a href={result.previewUrl}>미리보기</a>
-            <a href={result.downloadUrl}>다운로드</a>
+            <a
+              aria-label={getDownloadActionLabel(result)}
+              download={isProductImageStudioSvgArchiveResult(result) ? toProductImageStudioSvgDownloadFileName(result.resultId) : undefined}
+              href={result.downloadUrl}
+            >
+              {getDownloadActionLabel(result)}
+            </a>
           </div>
         </li>
       ))}
@@ -117,4 +125,8 @@ function getLatestDate(left: string | undefined, right: string): string {
 
 function compareProjectUpdateByLatest(left: ProjectUpdate, right: ProjectUpdate): number {
   return Date.parse(right.latestAt) - Date.parse(left.latestAt);
+}
+
+function getDownloadActionLabel(result: ProductImageStudioResultArchiveItem): string {
+  return isProductImageStudioSvgArchiveResult(result) ? "SVG 다운로드" : "다운로드";
 }

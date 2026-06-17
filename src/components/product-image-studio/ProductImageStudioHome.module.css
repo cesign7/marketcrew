@@ -1,4 +1,4 @@
-.home { display: grid; gap: 14px; }
+.home { display: grid; gap: 12px; }
 
 .startBand {
   align-items: center;
@@ -217,7 +217,7 @@
   padding: 6px 9px;
 }
 
-.usageGrid { grid-template-columns: repeat(6, minmax(0, 1fr)); margin: 0; }
+.usageGrid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 144px), 1fr)); margin: 0; }
 
 .usageGrid div {
   background: #fafafa;

@@ -12,21 +12,23 @@ const EXPECTED_NAV_ITEMS = [
   { href: "/product-image-studio", label: "홈" },
   { href: "/product-image-studio/ai-tools", label: "AI 도구" },
   { href: "/product-image-studio/batch", label: "일괄처리" },
-  { href: "/product-image-studio/activity", label: "활동" },
-  { href: "/product-image-studio/designs", label: "디자인" },
-  { href: "/product-image-studio/templates", label: "템플릿" },
+  { href: "/product-image-studio/templates", label: "상품템플릿" },
   { href: "/product-image-studio/uploads", label: "업로드" },
-  { href: "/product-image-studio/specs", label: "상품 규격" },
+  { href: "/product-image-studio/library", label: "라이브러리" },
+  { href: "/product-image-studio/results", label: "결과 보관함" },
   { href: "/product-image-studio/usage", label: "사용량" },
+  { href: "/product-image-studio/invite", label: "회원초대" },
   { href: "/product-image-studio/settings", label: "환경설정" },
 ] as const;
+
+const OBSOLETE_PRIMARY_NAV_LABELS = ["활동", "디자인", "템플릿", "상품 규격"] as const;
 
 const SHELL_CSS_MODULE_PATTERN = /^ProductImageStudioShell(?:[A-Za-z]+)?\.module\.css$/;
 const SHELL_CSS_MODULE_MAX_PURE_LOC = 250;
 const PRODUCT_IMAGE_STUDIO_COMPONENT_DIR = join(process.cwd(), "src/components/product-image-studio");
 
 describe("product image studio shell", () => {
-  it("renders grouped workspace navigation without old primary labels or unrelated brand text", () => {
+  it("renders approved workspace navigation without old primary labels or unrelated brand text", () => {
     // Given: the product image workspace shell is rendered for the home route.
     const html = renderToStaticMarkup(
       createElement(
@@ -43,14 +45,11 @@ describe("product image studio shell", () => {
     // Then: the workspace chrome exposes the requested Korean IA and no unrelated product copy.
     expect(html).toContain("상품 이미지 스튜디오");
     expect(html).toContain("마켓크루");
-    expect(html).toContain("작업");
-    expect(html).toContain("내 콘텐츠");
-    expect(html).toContain("관리");
-    for (const item of EXPECTED_NAV_ITEMS) {
-      expect(html).toContain(item.label);
+    const linkSummaries = getShellLinkSummaries(html);
+    expect(linkSummaries).toEqual(EXPECTED_NAV_ITEMS);
+    for (const label of OBSOLETE_PRIMARY_NAV_LABELS) {
+      expect(linkSummaries.map((item) => item.label)).not.toContain(label);
     }
-    expect(html).toMatch(/aria-label="상품 이미지 스튜디오 메뉴"[\s\S]*<strong>디자인<\/strong>/);
-    expect(html).toMatch(/aria-label="상품 이미지 스튜디오 메뉴"[\s\S]*<strong>활동<\/strong>/);
     expect(html).not.toMatch(/<strong>프로젝트<\/strong>|<strong>결과<\/strong>/);
     expect(html).toContain("상품명, 디자인, 생성 항목 검색");
     expect(html).not.toContain("상품명, 프로젝트, 생성 결과 검색");
@@ -95,12 +94,12 @@ describe("product image studio shell", () => {
     // Given: tests need a stable public navigation contract.
     const navItems = getProductImageStudioNavItems();
 
-    // Then: all nine labels are returned in the exact requested order.
+    // Then: all visible labels are returned in the exact requested order.
     expect(navItems).toEqual(EXPECTED_NAV_ITEMS);
   });
 
-  it("marks the deepest matching studio navigation item as active", () => {
-    // Given: a nested design detail path is active.
+  it("marks legacy archive paths under the visible result archive item", () => {
+    // Given: a nested legacy design detail path is active.
     const html = renderToStaticMarkup(
       createElement(
         ProductImageStudioShell,
@@ -113,8 +112,8 @@ describe("product image studio shell", () => {
       ),
     );
 
-    // Then: the deepest matching design link is current, not the home link.
-    expect(html).toMatch(/aria-current="page"[^>]*href="\/product-image-studio\/designs"/);
+    // Then: the visible result archive link is current, not the home link.
+    expect(html).toMatch(/aria-current="page"[^>]*href="\/product-image-studio\/results"/);
     expect(html).not.toMatch(/aria-current="page"[^>]*href="\/product-image-studio"/);
   });
 
@@ -173,4 +172,11 @@ function countPureLoc(source: string): number {
       const trimmed = line.trim();
       return trimmed.length > 0 && !trimmed.startsWith("/*") && !trimmed.startsWith("*") && !trimmed.startsWith("//");
     }).length;
+}
+
+function getShellLinkSummaries(html: string): readonly { readonly href: string; readonly label: string }[] {
+  return Array.from(html.matchAll(/<a[^>]*href="([^"]+)"[\s\S]*?<strong>([^<]+)<\/strong>/g)).map((match) => ({
+    href: match[1] ?? "",
+    label: match[2] ?? "",
+  }));
 }

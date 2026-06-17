@@ -9,6 +9,7 @@ import type {
   ProductImageStudioProjectSummary,
   ProductImageStudioResultArchiveItem,
 } from "@/lib/persistence/productImageStudioArchiveReadModels";
+import type { ProductImageStudioImageMimeType } from "@/features/product-image-studio/server/fileStore";
 
 export type ProductImageStudioArchivePageProject = {
   readonly cardFormat: CardFormat;
@@ -167,7 +168,9 @@ function readArchiveItem(value: unknown): ProductImageStudioResultArchiveItem | 
   if (!isNullableString(value["provider"]) || !isString(value["resultId"]) || !isNumber(value["width"])) {
     return null;
   }
+  const contentType = readOptionalImageContentType(value["contentType"]);
   const base: Omit<ProductImageStudioResultArchiveItem, "cardPose"> = {
+    ...(contentType ? { contentType } : {}),
     createdAt: value["createdAt"],
     downloadUrl: value["downloadUrl"],
     generationId: value["generationId"],
@@ -235,6 +238,18 @@ function isCardDisplayPose(value: unknown): value is CardDisplayPose {
     value === "postcard_back_flat" ||
     value === "postcard_lifestyle_stack"
   );
+}
+
+function readOptionalImageContentType(value: unknown): ProductImageStudioImageMimeType | null {
+  switch (value) {
+    case "image/png":
+    case "image/jpeg":
+    case "image/webp":
+    case "image/svg+xml":
+      return value;
+    default:
+      return null;
+  }
 }
 
 function trimTrailingSlash(value: string): string {

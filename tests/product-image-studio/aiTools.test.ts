@@ -3,18 +3,23 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AiToolsPage from "@/app/product-image-studio/ai-tools/page";
 import ProductStagingPage from "@/app/product-image-studio/ai-tools/product-staging/page";
+import { ProductImageStudioAiToolsHub } from "@/components/product-image-studio/ProductImageStudioAiTools";
 
 const TOOL_NAMES = [
   "상품 설정샷 생성",
   "AI 이미지 생성기",
+  "SVG 변환",
   "배경/소품 생성",
   "비율 변경",
   "비슷한 이미지 생성",
   "목업 합성",
-  "상세페이지 이미지 블록 생성",
+  "상세 이미지 블록",
 ] as const;
 
-const DISABLED_TOOL_IDS = [
+const TOOL_IDS = [
+  "product-staging",
+  "image-generator",
+  "svg-conversion",
   "background-props",
   "ratio-resize",
   "similar-image",
@@ -28,31 +33,83 @@ describe("product image studio AI tools routes", () => {
     vi.unstubAllEnvs();
   });
 
-  it("renders seven AI tool cards with product staging and image generator enabled", () => {
+  it("renders eight modal-first AI tool cards with hydration-gated buttons", () => {
     // Given: the AI tools hub is the entry point for image creation tools.
     const html = renderToStaticMarkup(createElement(AiToolsPage));
 
-    // Then: all planned tools are visible in Korean, with only ready tools linked.
-    expect(countOccurrences(html, "data-ai-tool-card=")).toBe(7);
-    expect(html).toContain("7개 도구");
+    // Then: all planned tools are visible in Korean and every card opens a modal before navigation.
+    expect(countOccurrences(html, "data-ai-tool-card=")).toBe(8);
+    expect(html).toContain("8개 도구");
+    expect(html).toContain('data-ai-tool-hydrated="false"');
+    expect(html).not.toContain("상세페이지 이미지 블록 생성");
     for (const toolName of TOOL_NAMES) {
       expect(html).toContain(toolName);
     }
-    expect(html).toContain('data-ai-tool-card="product-staging"');
-    expect(html).toContain('href="/product-image-studio/ai-tools/product-staging"');
-    expect(extractToolCardHtml(html, "product-staging")).toContain("바로 시작");
-    expect(extractToolCardHtml(html, "product-staging")).not.toContain('aria-disabled="true"');
-    expect(html).toContain('data-ai-tool-card="image-generator"');
-    expect(html).toContain('href="/product-image-studio/ai-tools/image-generator"');
-    expect(extractToolCardHtml(html, "image-generator")).toContain("바로 시작");
-    expect(extractToolCardHtml(html, "image-generator")).not.toContain('aria-disabled="true"');
-
-    for (const toolId of DISABLED_TOOL_IDS) {
+    expect(html).toContain('data-saas-card-grid="true"');
+    expect(countOccurrences(html, 'data-saas-action-card="')).toBe(8);
+    for (const toolId of TOOL_IDS) {
       const cardHtml = extractToolCardHtml(html, toolId);
-      expect(cardHtml).toContain("준비 중");
-      expect(cardHtml).toContain('aria-disabled="true"');
+      expect(cardHtml).toContain('data-ai-tool-card-ready="false"');
+      expect(cardHtml).toContain('data-ai-tool-state="modal"');
+      expect(cardHtml).toContain("disabled");
+      expect(cardHtml).toContain("열기");
+      expect(cardHtml).not.toContain('aria-disabled="true"');
       expect(cardHtml).not.toContain("href=");
     }
+
+    const detailBlocksCardHtml = extractToolCardHtml(html, "detail-page-blocks");
+    expect(detailBlocksCardHtml).toContain("상세 이미지 블록");
+    expect(countKoreanCharacters("상세 이미지 블록")).toBeLessThanOrEqual(7);
+  });
+
+  it("keeps card buttons briefly disabled until client handlers are hydrated", () => {
+    const html = renderToStaticMarkup(createElement(ProductImageStudioAiToolsHub));
+    const svgCardHtml = extractToolCardHtml(html, "svg-conversion");
+
+    expect(html).toContain('data-ai-tool-hydrated="false"');
+    expect(svgCardHtml).toContain('data-ai-tool-card-ready="false"');
+    expect(svgCardHtml).toContain('aria-label="SVG 변환 열기"');
+    expect(svgCardHtml).toContain("disabled");
+    expect(svgCardHtml).not.toContain('aria-disabled="true"');
+  });
+
+  it("opens existing tool modals with generation controls before route actions", () => {
+    const productStagingHtml = renderToStaticMarkup(
+      createElement(ProductImageStudioAiToolsHub, { initialToolId: "product-staging" }),
+    );
+    const imageGeneratorHtml = renderToStaticMarkup(
+      createElement(ProductImageStudioAiToolsHub, { initialToolId: "image-generator" }),
+    );
+
+    expect(productStagingHtml).toContain('role="dialog"');
+    expect(productStagingHtml).toContain('data-ai-tool-background="true"');
+    expect(productStagingHtml).toContain('aria-hidden="true"');
+    expect(productStagingHtml).toContain("inert");
+    expect(productStagingHtml).toContain("상품 설정샷 생성 준비");
+    expect(productStagingHtml).toContain('href="/product-image-studio/ai-tools/product-staging"');
+    expect(productStagingHtml).toContain("모델");
+    expect(productStagingHtml).toContain('name="productStagingCount"');
+    expect(productStagingHtml).toContain('name="productStagingRatio"');
+    expect(productStagingHtml).toContain('name="productStagingResolution"');
+
+    expect(imageGeneratorHtml).toContain('role="dialog"');
+    expect(imageGeneratorHtml).toContain("AI 이미지 생성기 준비");
+    expect(imageGeneratorHtml).toContain('href="/product-image-studio/ai-tools/image-generator"');
+    expect(imageGeneratorHtml).toContain("모델");
+    expect(imageGeneratorHtml).toContain('name="imageGeneratorCount"');
+    expect(imageGeneratorHtml).toContain('name="imageGeneratorRatio"');
+    expect(imageGeneratorHtml).toContain('name="imageGeneratorResolution"');
+  });
+
+  it("opens future tool planning modals instead of disabling cards", () => {
+    const html = renderToStaticMarkup(createElement(ProductImageStudioAiToolsHub, { initialToolId: "background-props" }));
+
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain("배경/소품 생성 준비");
+    expect(html).toContain("작업 계획");
+    expect(html).toContain("요청 메모");
+    expect(html).toContain("자료 개수");
+    expect(html).not.toContain('aria-disabled="true"');
   });
 
   it("renders the product staging route with the existing wizard and provider status", async () => {
@@ -91,4 +148,8 @@ function extractToolCardHtml(html: string, toolId: string): string {
 
   const nextStart = html.indexOf('data-ai-tool-card="', start + marker.length);
   return nextStart === -1 ? html.slice(start) : html.slice(start, nextStart);
+}
+
+function countKoreanCharacters(value: string): number {
+  return Array.from(value.replaceAll(" ", "")).length;
 }

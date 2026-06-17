@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, BarChart3, Image, Plus, Sparkles, Upload } from "lucide-react";
+import { BookOpen, Plus, Sparkles, Upload } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ProductImageStudioFileStorageMode } from "@/features/product-image-studio/server/assetUploadApi";
 import type { ProductImageStudioRepositoryStorageMode } from "@/features/product-image-studio/server/projectApi";
@@ -14,6 +14,7 @@ import {
   formatProductImageStudioArchiveDate,
   getProductImageStudioArchiveCardFormatLabel,
 } from "./productImageStudioArchiveCopy";
+import { CompactActionCard, CompactCardGrid, CompactPageHeader } from "./ProductImageStudioSaasPrimitives";
 import styles from "./ProductImageStudioHome.module.css";
 
 const PRODUCT_STAGING_PATH = "/product-image-studio/ai-tools/product-staging";
@@ -29,21 +30,41 @@ type ProductImageStudioHomeProps = {
 
 type HomeAction = {
   readonly description: string;
-  readonly href?: string;
+  readonly href: string;
   readonly icon: LucideIcon;
+  readonly id: string;
   readonly title: string;
 };
 
-const QUICK_ACTIONS: readonly Required<HomeAction>[] = [
-  { description: "카드, 봉투, 봉합스티커를 바로 설정샷으로 만듭니다.", href: PRODUCT_STAGING_PATH, icon: Plus, title: "새 이미지 만들기" },
-  { description: "생성, 보정, 비율 작업을 한곳에서 확인합니다.", href: "/product-image-studio/ai-tools", icon: Sparkles, title: "AI 도구" },
-  { description: "최근 올린 원본과 작업 파일을 정리합니다.", href: "/product-image-studio/uploads", icon: Upload, title: "업로드" },
-] as const;
-
-const RECOMMENDED_TOOLS: readonly HomeAction[] = [
-  { description: "업로드한 인쇄물을 보존하면서 판매용 설정샷을 만듭니다.", href: PRODUCT_STAGING_PATH, icon: Sparkles, title: "상품 설정샷 생성" },
-  { description: "상세페이지에 맞는 배경과 소품 방향을 준비합니다.", icon: Image, title: "배경/소품 생성" },
-  { description: "대표 이미지와 상세 이미지 비율을 작업별로 맞춥니다.", icon: BarChart3, title: "비율 변경" },
+const WORKSPACE_SHORTCUTS: readonly HomeAction[] = [
+  {
+    description: "디자인을 올려 상품컷을 만듭니다.",
+    href: PRODUCT_STAGING_PATH,
+    icon: Plus,
+    id: "new-product-cut",
+    title: "새 상품컷",
+  },
+  {
+    description: "생성, 보정, 변환을 엽니다.",
+    href: "/product-image-studio/ai-tools",
+    icon: Sparkles,
+    id: "ai-tools",
+    title: "AI 도구",
+  },
+  {
+    description: "원본과 참고 이미지를 봅니다.",
+    href: "/product-image-studio/uploads",
+    icon: Upload,
+    id: "uploads",
+    title: "업로드",
+  },
+  {
+    description: "목업, 재질, 규격을 엽니다.",
+    href: "/product-image-studio/library",
+    icon: BookOpen,
+    id: "library",
+    title: "라이브러리",
+  },
 ] as const;
 
 export function ProductImageStudioHome({
@@ -57,89 +78,67 @@ export function ProductImageStudioHome({
 
   return (
     <section className={styles.home} aria-label="상품 이미지 스튜디오 홈">
-      <section className={styles.startBand} aria-labelledby="studio-home-start-heading">
-        <div className={styles.startCopy}>
-          <span>AI 도구 &gt; 상품 설정샷 생성</span>
-          <h2 id="studio-home-start-heading">새 이미지 만들기</h2>
-          <p>디자인 파일을 올리고 상품 설정샷 생성 흐름으로 바로 이어갑니다.</p>
-        </div>
-        <Link className={styles.primaryAction} href={PRODUCT_STAGING_PATH} prefetch={false}>
-          <Plus size={17} strokeWidth={2.35} aria-hidden="true" />
-          새 이미지 만들기
-        </Link>
-      </section>
+      <CompactPageHeader
+        eyebrow="홈"
+        title="작업 현황"
+        description="최근 디자인과 핵심 작업만 봅니다."
+        meta={`${projects.length}개 디자인`}
+      />
 
-      <section className={styles.quickActions} aria-label="빠른 실행">
-        {QUICK_ACTIONS.map((action) => (
-          <Link className={styles.quickAction} href={action.href} key={action.title} prefetch={false}>
-            <ActionIcon icon={action.icon} />
-            <span>
-              <strong>{action.title}</strong>
-              <small>{action.description}</small>
-            </span>
-            <ArrowUpRight size={15} strokeWidth={2.25} aria-hidden="true" />
-          </Link>
+      <SectionHeader title="작업 바로가기" />
+      <CompactCardGrid ariaLabel="작업 바로가기">
+        {WORKSPACE_SHORTCUTS.map((action) => (
+          <CompactActionCard
+            actionKind="link"
+            actionLabel="열기"
+            description={action.description}
+            href={action.href}
+            iconNode={renderCompactIcon(action.icon)}
+            id={action.id}
+            key={action.id}
+            title={action.title}
+          />
         ))}
-      </section>
+      </CompactCardGrid>
 
-      <div className={styles.twoColumnGrid}>
-        <section className={styles.sectionBlock} aria-labelledby="recent-designs-heading">
-          <SectionHeader actionHref="/product-image-studio/designs" actionLabel="디자인 보기" title="최근 디자인" />
-          {recentProjects.length === 0 ? (
-            <EmptyState title="저장된 디자인이 아직 없습니다." description="새 이미지 만들기에서 첫 작업을 시작해 주세요." />
-          ) : (
-            <div className={styles.designList}>
-              {recentProjects.map((project) => (
-                <Link
-                  className={styles.designItem}
-                  href={`/product-image-studio/designs/${encodeURIComponent(project.id)}`}
-                  key={project.id}
-                  prefetch={false}
-                >
-                  <span>
-                    <strong>{project.name}</strong>
-                    <small>{getProductImageStudioArchiveCardFormatLabel(project.cardFormat)}</small>
-                  </span>
-                  <span className={styles.itemMeta}>
-                    {project.resultCount}개 · {formatProductImageStudioArchiveDate(project.latestResultAt)}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className={styles.sectionBlock} aria-labelledby="recent-uploads-heading">
-          <SectionHeader actionHref="/product-image-studio/uploads" actionLabel="업로드 보기" title="최근 업로드" />
-          <EmptyState title="저장된 업로드가 아직 없습니다." description="업로드는 프로젝트 생성 흐름에서 연결됩니다." />
-        </section>
-      </div>
-
-      <section className={styles.sectionBlock} aria-labelledby="recommended-tools-heading">
-        <SectionHeader actionHref="/product-image-studio/ai-tools" actionLabel="AI 도구 보기" title="추천 AI 도구" />
-        <div className={styles.toolGrid}>
-          {RECOMMENDED_TOOLS.map((tool) => (
-            <RecommendedToolCard tool={tool} key={tool.title} />
+      <SectionHeader actionHref="/product-image-studio/designs" actionLabel="디자인 보기" title="최근 디자인" />
+      {recentProjects.length === 0 ? (
+        <EmptyState title="저장된 디자인이 아직 없습니다." description="새 상품컷에서 첫 작업을 시작해 주세요." />
+      ) : (
+        <div className={styles.designList}>
+          {recentProjects.map((project) => (
+            <Link
+              className={styles.designItem}
+              href={`/product-image-studio/designs/${encodeURIComponent(project.id)}`}
+              key={project.id}
+              prefetch={false}
+            >
+              <span>
+                <strong>{project.name}</strong>
+                <small>{getProductImageStudioArchiveCardFormatLabel(project.cardFormat)}</small>
+              </span>
+              <span className={styles.itemMeta}>
+                {project.resultCount}개 · {formatProductImageStudioArchiveDate(project.latestResultAt)}
+              </span>
+            </Link>
           ))}
         </div>
-      </section>
+      )}
 
-      <section className={styles.sectionBlock} aria-labelledby="usage-heading">
-        <SectionHeader actionHref="/product-image-studio/usage" actionLabel="사용량 보기" title="사용량" />
-        <dl className={styles.usageGrid}>
-          <Metric label="디자인" value={`${projects.length}개`} />
-          <Metric label="생성 결과" value={`${results.length}개`} />
-          <Metric label="최근 생성" value={formatLatestResultDate(results)} />
-          <Metric label="AI 생성" value={formatGenerationStatus(providerStatus)} />
-          <Metric label="저장" value={formatFileStorageMode(fileStorageMode)} />
-          <Metric label="기록" value={formatMetadataStorageMode(metadataStorageMode)} />
-        </dl>
-        <ProductImageStudioStatusPanel
-          fileStorageMode={fileStorageMode}
-          metadataStorageMode={metadataStorageMode}
-          status={providerStatus}
-        />
-      </section>
+      <SectionHeader actionHref="/product-image-studio/usage" actionLabel="사용량 보기" title="사용량" />
+      <dl className={styles.usageGrid}>
+        <Metric label="디자인" value={`${projects.length}개`} />
+        <Metric label="생성 결과" value={`${results.length}개`} />
+        <Metric label="최근 생성" value={formatLatestResultDate(results)} />
+        <Metric label="AI 생성" value={formatGenerationStatus(providerStatus)} />
+        <Metric label="저장" value={formatFileStorageMode(fileStorageMode)} />
+        <Metric label="기록" value={formatMetadataStorageMode(metadataStorageMode)} />
+      </dl>
+      <ProductImageStudioStatusPanel
+        fileStorageMode={fileStorageMode}
+        metadataStorageMode={metadataStorageMode}
+        status={providerStatus}
+      />
     </section>
   );
 }
@@ -149,48 +148,19 @@ function SectionHeader({
   actionLabel,
   title,
 }: {
-  readonly actionHref: string;
-  readonly actionLabel: string;
+  readonly actionHref?: string;
+  readonly actionLabel?: string;
   readonly title: string;
 }) {
   return (
     <div className={styles.sectionHeader}>
       <h2>{title}</h2>
-      <Link href={actionHref} prefetch={false}>
-        {actionLabel}
-      </Link>
+      {actionHref && actionLabel ? (
+        <Link href={actionHref} prefetch={false}>
+          {actionLabel}
+        </Link>
+      ) : null}
     </div>
-  );
-}
-
-function RecommendedToolCard({ tool }: { readonly tool: (typeof RECOMMENDED_TOOLS)[number] }) {
-  const content = (
-    <>
-      <ActionIcon icon={tool.icon} />
-      <span>
-        <strong>{tool.title}</strong>
-        <small>{tool.description}</small>
-      </span>
-      {tool.href ? <ArrowUpRight size={15} strokeWidth={2.25} aria-hidden="true" /> : <em>준비 중</em>}
-    </>
-  );
-
-  return tool.href ? (
-    <Link className={styles.toolCard} href={tool.href} prefetch={false}>
-      {content}
-    </Link>
-  ) : (
-    <article className={styles.toolCard} aria-label={`${tool.title}: 준비 중`}>
-      {content}
-    </article>
-  );
-}
-
-function ActionIcon({ icon: Icon }: { readonly icon: LucideIcon }) {
-  return (
-    <span className={styles.actionIcon} aria-hidden="true">
-      <Icon size={18} strokeWidth={2.25} />
-    </span>
   );
 }
 
@@ -201,6 +171,10 @@ function EmptyState({ description, title }: { readonly description: string; read
       <p>{description}</p>
     </div>
   );
+}
+
+function renderCompactIcon(Icon: LucideIcon) {
+  return <Icon size={20} strokeWidth={2.2} />;
 }
 
 function Metric({ label, value }: { readonly label: string; readonly value: string }) {

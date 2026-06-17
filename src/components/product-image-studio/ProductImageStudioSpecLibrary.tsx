@@ -66,6 +66,10 @@ export function ProductImageStudioProductSpecsWorkspacePage({
   const [sets, setSets] = useState<readonly ProductImageStudioSpecSet[]>(initialSets);
 
   useEffect(() => {
+    const queryTab = parseProductImageStudioSpecLibraryTab(globalThis.location.search);
+    if (queryTab) {
+      setActiveTab(queryTab);
+    }
     const storedLibrary = readProductImageStudioSpecLibraryFromStorage(window.localStorage);
     setItems(storedLibrary.items);
     setSets(storedLibrary.sets);
@@ -215,4 +219,16 @@ export function ProductImageStudioProductSpecsWorkspacePage({
 
 function createId(prefix: string): string {
   return globalThis.crypto?.randomUUID?.() ?? `${prefix}-${Date.now().toString(36)}`;
+}
+
+function parseProductImageStudioSpecLibraryTab(search: string): ProductImageStudioSpecLibraryTab | null {
+  const tab = new URLSearchParams(search).get("tab");
+  switch (tab) {
+    case "items":
+    case "materials":
+    case "sets":
+      return tab;
+    default:
+      return null;
+  }
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createProductImageStudioAssetPreviewHeaders } from "@/features/product-image-studio/server/assetImageResponse";
 import { proxyProductImageStudioRequestToBackend } from "@/features/product-image-studio/server/backendProxy";
 import {
   readProductImageStudioResultImage,
@@ -24,10 +25,10 @@ export async function GET(request: Request, context: ProductImageStudioResultPre
   }
 
   return new Response(toArrayBuffer(resultImage.image.bytes), {
-    headers: {
-      "content-disposition": `inline; filename="${resultImage.fileName}"`,
-      "content-type": resultImage.image.contentType,
-    },
+    headers: createProductImageStudioAssetPreviewHeaders({
+      contentType: resultImage.image.contentType,
+      fileName: resultImage.fileName,
+    }),
     status: 200,
   });
 }

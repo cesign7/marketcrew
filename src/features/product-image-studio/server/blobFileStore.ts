@@ -4,11 +4,11 @@ import {
   ProductImageStudioFileStoreError,
   buildStorageKey,
   getExtensionForContentType,
-  parseGeneratedImageMimeType,
+  parseGeneratedProductImageArtifactMimeType,
   parseImageMimeType,
   prepareProductImageAssetForStorage,
   sanitizeOriginalFileName,
-  toGeneratedProductImageFileName,
+  toGeneratedProductImageArtifactFileName,
   toRelativeStoragePath,
   toSafePathSegment,
   type ProductImageFileStore,
@@ -88,8 +88,8 @@ class BlobProductImageFileStore implements ProductImageFileStore {
   }
 
   async saveGeneratedImage(input: SaveGeneratedProductImageInput): Promise<SavedProductImageFile> {
-    const contentType = parseGeneratedImageMimeType(input.contentType);
-    const fileName = toGeneratedProductImageFileName({ ...input, contentType });
+    const contentType = parseGeneratedProductImageArtifactMimeType(input.contentType);
+    const fileName = toGeneratedProductImageArtifactFileName({ ...input, contentType });
     return this.putImage({
       bytes: input.bytes,
       contentType,

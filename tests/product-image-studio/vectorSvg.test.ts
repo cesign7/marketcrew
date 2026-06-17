@@ -1,5 +1,8 @@
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { GET as downloadVectorSvg } from "@/app/api/product-image-studio/projects/[id]/results/[resultId]/vector.svg/route";
+import { convertPngToProductImageStudioVectorSvg } from "@/features/product-image-studio/server/pngToVectorSvg";
 import { createProductImageStudioVectorSvg } from "@/features/product-image-studio/server/vectorSvg";
 import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
 import { manualProductionSettings } from "./manualProductionSettings";
@@ -25,6 +28,44 @@ describe("product image studio vector SVG export", () => {
     expect(svg).toMatch(/<(path|circle|rect)\b/);
     expect(svg).not.toContain("<image");
     expect(svg).not.toContain("base64");
+  });
+
+  it("derives deterministic and distinct vector SVGs from uploaded PNG fixture bytes", async () => {
+    const sealBytes = new Uint8Array(await readFile(".omo/fixtures/seal-sticker.png"));
+    const cardBytes = new Uint8Array(await readFile(".omo/fixtures/card-front.png"));
+
+    const seal = await convertPngToProductImageStudioVectorSvg({
+      bytes: sealBytes,
+      fileName: "seal-sticker.png",
+      style: "icon",
+      title: "봉합 스티커",
+    });
+    const card = await convertPngToProductImageStudioVectorSvg({
+      bytes: cardBytes,
+      fileName: "card-front.png",
+      style: "icon",
+      title: "카드 앞면",
+    });
+    const sealRepeat = await convertPngToProductImageStudioVectorSvg({
+      bytes: sealBytes,
+      fileName: "seal-sticker.png",
+      style: "icon",
+      title: "봉합 스티커",
+    });
+
+    if (seal.ok === false || card.ok === false || sealRepeat.ok === false) {
+      throw new Error("PNG fixture conversion should succeed");
+    }
+
+    const sealSvg = new TextDecoder().decode(seal.bytes);
+    const cardSvg = new TextDecoder().decode(card.bytes);
+    expect(seal.contentType).toBe("image/svg+xml");
+    expect(seal.fileName).toBe("seal-sticker-icon.svg");
+    expect(sealSvg).toMatch(/<(path|circle|rect|polygon|line)\b/);
+    expect(sealSvg).not.toMatch(/<image|data:image|base64|foreignObject/i);
+    expect(cardSvg).not.toMatch(/<image|data:image|base64|foreignObject/i);
+    expect(cardSvg).not.toBe(sealSvg);
+    expect(hashSvg(sealRepeat.bytes)).toBe(hashSvg(seal.bytes));
   });
 
   it("returns a downloadable vector SVG from the result route", async () => {
@@ -78,3 +119,7 @@ describe("product image studio vector SVG export", () => {
     expect(svg).not.toContain("base64");
   });
 });
+
+function hashSvg(bytes: Uint8Array): string {
+  return createHash("sha256").update(bytes).digest("hex");
+}

@@ -30,22 +30,45 @@ describe("product image studio home", () => {
 
     // Then: the page is a home dashboard, not the direct wizard screen.
     expect(html).toContain("홈");
-    expect(html).toContain("새 이미지 만들기");
+    expect(html).toContain('data-saas-page-header="true"');
+    expect(html).toContain("작업 현황");
+    expect(html).toContain("작업 바로가기");
+    expect(html).toContain("새 상품컷");
     expect(html).toContain("AI 도구");
-    expect(html).toContain("상품 설정샷 생성");
+    expect(countOccurrences(html, 'data-saas-action-card="')).toBe(4);
+    expect(html).toContain('data-saas-action-card="new-product-cut"');
+    expect(html).toContain('data-saas-action-card="ai-tools"');
+    expect(html).toContain('data-saas-action-card="uploads"');
+    expect(html).toContain('data-saas-action-card="library"');
+    expect(html).not.toContain('data-saas-action-card="batch"');
+    expect(html).not.toContain('data-saas-action-card="templates"');
+    expect(html).not.toContain('data-saas-action-card="usage"');
+    expect(html).not.toContain('data-saas-action-card="invite"');
+    expect(html).not.toContain('data-saas-action-card="settings"');
+    expect(html).toContain("라이브러리");
+    expect(html).toContain("회원초대");
+    expect(html).toContain("환경설정");
     expect(html).toContain("최근 디자인");
     expect(html).toContain("봄 초대장 세트");
-    expect(html).toContain("최근 업로드");
-    expect(html).toContain("저장된 업로드가 아직 없습니다.");
     expect(html).toContain("사용량");
     expect(html).toContain('href="/product-image-studio/ai-tools/product-staging"');
+    expect(html).toContain('href="/product-image-studio/uploads"');
+    expect(html).toContain('href="/product-image-studio/library"');
+    expect(html).toContain('href="/product-image-studio/invite"');
+    expect(html).toContain('href="/product-image-studio/settings"');
     expect(html).toContain('href="/product-image-studio/designs/project-1"');
     expect(html).not.toContain('href="/product-image-studio/projects/project-1"');
+    expect(html).not.toContain("디자인 파일을 올리고 상품 설정샷 생성 흐름으로 바로 이어갑니다.");
+    expect(html).not.toContain("추천 AI 도구");
     expect(html).not.toContain("Photoroom");
     expect(html).not.toContain("Vercel");
     expect(html).not.toContain("OPENAI_API_KEY");
   });
 });
+
+function countOccurrences(value: string, needle: string): number {
+  return value.split(needle).length - 1;
+}
 
 const homeArchiveFetch: typeof fetch = async (input) => {
   const url = String(input);

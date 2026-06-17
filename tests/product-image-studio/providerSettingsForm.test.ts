@@ -15,6 +15,11 @@ describe("product image studio provider settings form", () => {
     expect(html).toContain("실제 이미지 생성 허용");
     expect(html).toContain("저장됨");
     expect(html).toContain("연결 해제");
+    expect(html).toContain("마지막 저장: 2026. 6. 12. 09:00");
+    expect(html).not.toContain("AM");
+    expect(html).not.toContain("PM");
+    expect(html).not.toContain("오전");
+    expect(html).not.toContain("오후");
     expect(html).not.toContain("secret");
     expect(html).not.toContain("OPENAI_API_KEY");
   });

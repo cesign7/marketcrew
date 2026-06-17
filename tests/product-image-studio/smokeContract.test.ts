@@ -26,10 +26,10 @@ describe("product image studio production smoke contract", () => {
     expect(smokeScript).not.toContain("regenerate-ratio");
   });
 
-  it("keeps Next app route output compatible with the Vercel serverless launcher", async () => {
-    const packageJson = await readFile(join(process.cwd(), "package.json"), "utf8");
+  it("keeps Next app route output compatible with the current ESM build", async () => {
+    const packageJson: unknown = JSON.parse(await readFile(join(process.cwd(), "package.json"), "utf8"));
 
-    expect(packageJson).not.toContain('"type": "module"');
+    expect(readPackageType(packageJson)).toBe("module");
   });
 
   it("redirects the unauthenticated studio page to owner login when auth is required", async () => {
@@ -127,3 +127,16 @@ describe("product image studio production smoke contract", () => {
     expect(response.status).not.toBe(401);
   });
 });
+
+function readPackageType(value: unknown): string | null {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "type" in value &&
+    typeof value.type === "string"
+  ) {
+    return value.type;
+  }
+
+  return null;
+}

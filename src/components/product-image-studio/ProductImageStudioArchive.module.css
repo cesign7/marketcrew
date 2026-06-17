@@ -240,4 +240,10 @@
   .metaList {
     grid-template-columns: 1fr;
   }
+
+  .actions a,
+  .headingAction a {
+    justify-content: center;
+    width: 100%;
+  }
 }

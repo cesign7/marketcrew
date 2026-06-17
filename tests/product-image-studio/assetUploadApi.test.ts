@@ -1,16 +1,27 @@
-import { rm } from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { GET as previewAsset } from "@/app/api/product-image-studio/projects/[id]/assets/[assetId]/preview/route";
 import { POST as uploadAsset } from "@/app/api/product-image-studio/projects/[id]/assets/route";
 import { POST as createProject } from "@/app/api/product-image-studio/projects/route";
 import type { CardFormat, ProductImageStudioAssetRole } from "@/features/product-image-studio/domain/types";
 
 describe("product image studio asset upload API", () => {
+  let assetRootDirectory = "";
+
+  beforeAll(async () => {
+    assetRootDirectory = await mkdtemp(join(tmpdir(), "marketcrew-product-image-studio-assets-"));
+    vi.stubEnv("PRODUCT_IMAGE_STUDIO_ASSET_ROOT", assetRootDirectory);
+  });
+
   afterEach(async () => {
-    await rm(join(process.cwd(), ".marketcrew", "product-image-studio-assets"), { force: true, recursive: true });
-    await rm(join(tmpdir(), "marketcrew-product-image-studio-assets"), { force: true, recursive: true });
+    await rm(assetRootDirectory, { force: true, recursive: true });
+  });
+
+  afterAll(async () => {
+    await rm(assetRootDirectory, { force: true, recursive: true });
+    vi.unstubAllEnvs();
   });
 
   it("accepts every required folded-card asset role", async () => {

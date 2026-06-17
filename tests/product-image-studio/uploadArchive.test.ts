@@ -58,6 +58,7 @@ describe("product image studio upload archive", () => {
         originalFileName: "seal.png",
         previewUrl: "/api/product-image-studio/projects/project-1/assets/asset-2/preview",
         role: "seal_sticker",
+        svgConversionUrl: "/product-image-studio/ai-tools?tool=svg-conversion&upload=asset-2",
         templateUseUrl: "/product-image-studio/templates?upload=asset-2",
       }),
       expect.objectContaining({
@@ -118,6 +119,7 @@ describe("product image studio upload archive", () => {
         previewUrl: "/api/product-image-studio/projects/project-ai/assets/asset-svg/preview",
         projectName: "AI 이미지 생성기 - 차분한 문구",
         role: "reference_mood",
+        svgConversionUrl: "/product-image-studio/ai-tools?tool=svg-conversion&upload=asset-svg",
         templateUseUrl: "/product-image-studio/templates?upload=asset-svg",
       }),
       expect.objectContaining({
@@ -144,6 +146,8 @@ describe("product image studio upload archive", () => {
     expect(html).toContain("image/svg+xml");
     expect(html).toContain("디자인에 사용");
     expect(html).toContain("템플릿에 적용");
+    expect(html).toContain("SVG 변환");
+    expect(html).toContain("/product-image-studio/ai-tools?tool=svg-conversion&amp;upload=asset-1");
     expect(html).not.toContain("새 상품컷");
     expect(html).not.toContain("새 업로드");
     expect(html).not.toContain("업로드 라이브러리");
@@ -202,6 +206,7 @@ function uploadItem(): ProductImageStudioUploadArchiveItem {
     projectName: "AI 이미지 생성기 - 참고",
     role: "reference_mood",
     storageKey: "product-image-studio/project-1/reference_mood/asset-1.svg",
+    svgConversionUrl: "/product-image-studio/ai-tools?tool=svg-conversion&upload=asset-1",
     templateUseUrl: "/product-image-studio/templates?upload=asset-1",
   };
 }

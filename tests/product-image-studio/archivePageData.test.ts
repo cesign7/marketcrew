@@ -80,6 +80,36 @@ describe("product image studio archive page data", () => {
     expect(html).not.toContain("카드 단독컷");
   });
 
+  it("keeps converted SVG metadata through fresh archive API reads", async () => {
+    // Given: the archive route returns a freshly persisted local SVG conversion result.
+    const calls: FetchCall[] = [];
+    const result = svgConversionArchiveItem();
+
+    // When: the result archive page reads through the API boundary.
+    const results = await loadProductImageStudioResultArchivePageData({
+      fetcher: archiveFetch(calls, { ok: true, results: [result, archiveItem()] }),
+      origin: "https://marketcrew.app",
+    });
+    const html = renderToStaticMarkup(createElement(ProductImageStudioActivityWorkspacePage, { results }));
+
+    // Then: the SVG result stays discoverable and the original PNG result remains present.
+    expect(results.map((item) => item.resultId)).toEqual(["result-svg", "result-1"]);
+    expect(results[0]).toMatchObject({
+      contentType: "image/svg+xml",
+      downloadUrl: "/api/product-image-studio/projects/project-svg/results/result-svg/download",
+      promptPreview: "seal-sticker.png",
+      workflow: "svg_conversion",
+    });
+    expect(results[1]?.resultId).toBe("result-1");
+    expect(results[1]?.contentType).toBeUndefined();
+    expect(html).toContain("SVG 변환");
+    expect(html).toContain("/api/product-image-studio/projects/project-svg/results/result-svg/preview");
+    expect(html).toMatch(/<a[^>]*aria-label="SVG 다운로드"[^>]*href="\/api\/product-image-studio\/projects\/project-svg\/results\/result-svg\/download"[^>]*>/);
+    expect(html).toMatch(/<a[^>]*download="result-svg\.svg"[^>]*href="\/api\/product-image-studio\/projects\/project-svg\/results\/result-svg\/download"[^>]*>/);
+    expect(html).not.toMatch(/<a[^>]*aria-label="SVG 다운로드"[^>]*href="\/api\/product-image-studio\/projects\/project-1\/results\/result-1\/download"[^>]*>/);
+    expect(html.match(/<a[^>]*(?:aria-label="[^"]*SVG[^"]*"|>[^<]*SVG[^<]*<\/a>)/g)).toHaveLength(1);
+  });
+
   it("derives origin and cookie from request headers", () => {
     const options = createProductImageStudioArchivePageRequestOptions(headerStore());
 
@@ -177,5 +207,24 @@ function imageGeneratorArchiveItem() {
     promptPreview: "차분한 문구 사진",
     resultId: "result-ai",
     workflow: "image_generator",
+  };
+}
+
+function svgConversionArchiveItem() {
+  return {
+    ...archiveItem(),
+    cardPose: undefined,
+    contentType: "image/svg+xml",
+    downloadUrl: "/api/product-image-studio/projects/project-svg/results/result-svg/download",
+    generationId: "generation-svg",
+    model: "sharp-local-vectorizer",
+    previewUrl: "/api/product-image-studio/projects/project-svg/results/result-svg/preview",
+    projectId: "project-svg",
+    projectName: "원본 업로드 기록",
+    projectZipUrl: "/api/product-image-studio/projects/project-svg/downloads.zip",
+    promptPreview: "seal-sticker.png",
+    provider: "local",
+    resultId: "result-svg",
+    workflow: "svg_conversion",
   };
 }

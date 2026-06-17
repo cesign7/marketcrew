@@ -5,7 +5,7 @@
 .uploadGrid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 220px));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 220px));
   justify-content: start;
 }
 
@@ -78,5 +78,10 @@
 @media (max-width: 520px) {
   .uploadGrid {
     grid-template-columns: 1fr;
+  }
+
+  .uploadActions a {
+    justify-content: center;
+    width: 100%;
   }
 }

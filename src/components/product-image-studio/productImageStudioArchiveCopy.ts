@@ -38,6 +38,10 @@ export function getProductImageStudioArchiveCardFormatLabel(cardFormat: CardForm
 }
 
 export function getProductImageStudioArchiveOutputLabel(outputType: ProductImageStudioOutputType, workflow?: string | null): string {
+  if (workflow === "svg_conversion") {
+    return "SVG 변환";
+  }
+
   if (workflow === "image_generator") {
     return "AI 생성 이미지";
   }
@@ -74,6 +78,18 @@ export function getProductImageStudioArchiveResultProjectLabel(input: {
   readonly workflow?: string | null;
 }): string {
   return input.workflow === "image_generator" ? "AI 이미지 생성기" : input.projectName;
+}
+
+export function isProductImageStudioSvgArchiveResult(input: {
+  readonly contentType?: string;
+  readonly workflow?: string | null;
+}): boolean {
+  return input.contentType === "image/svg+xml" || input.workflow === "svg_conversion";
+}
+
+export function toProductImageStudioSvgDownloadFileName(resultId: string): string {
+  const segment = resultId.replaceAll(/[^A-Za-z0-9_-]/g, "-").replaceAll(/-+/g, "-").replace(/^-+|-+$/g, "");
+  return `${segment || "svg-result"}.svg`;
 }
 
 export function formatProductImageStudioProviderValue(value: string | null): string {

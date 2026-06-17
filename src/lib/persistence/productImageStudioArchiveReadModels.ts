@@ -11,6 +11,7 @@ import type {
   ProductImageStudioProjectRecord,
   ProductImageStudioResultRecord,
 } from "@/lib/persistence/productImageStudioRepository";
+import type { ProductImageStudioImageMimeType } from "@/features/product-image-studio/server/fileStore";
 
 export type ProductImageStudioProjectSummary = {
   readonly cardFormat: CardFormat;
@@ -26,6 +27,7 @@ export type ProductImageStudioProjectSummary = {
 
 export type ProductImageStudioResultArchiveItem = {
   readonly cardPose?: CardDisplayPose;
+  readonly contentType?: ProductImageStudioImageMimeType;
   readonly createdAt: string;
   readonly downloadUrl: string;
   readonly generationId: string;
@@ -68,6 +70,7 @@ export function buildProductImageStudioResultArchiveItem(
 ): ProductImageStudioResultArchiveItem {
   return {
     cardPose: result.cardPose,
+    contentType: inferImageContentTypeFromStorageKey(result.storageKey),
     createdAt: result.createdAt,
     downloadUrl: toResultDownloadUrl(project.id, result.id),
     generationId: generation.id,
@@ -123,4 +126,17 @@ function readActivityTime(value: {
   readonly updatedAt?: string;
 }): string {
   return value.latestResultAt ?? value.updatedAt ?? value.createdAt ?? "";
+}
+
+function inferImageContentTypeFromStorageKey(storageKey: string): ProductImageStudioImageMimeType {
+  if (storageKey.endsWith(".jpg") || storageKey.endsWith(".jpeg")) {
+    return "image/jpeg";
+  }
+  if (storageKey.endsWith(".webp")) {
+    return "image/webp";
+  }
+  if (storageKey.endsWith(".svg")) {
+    return "image/svg+xml";
+  }
+  return "image/png";
 }

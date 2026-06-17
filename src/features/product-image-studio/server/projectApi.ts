@@ -41,10 +41,26 @@ export type ProductImageStudioCreateProjectResult =
 
 export type ProductImageStudioRepositoryStorageMode = "memory" | "postgres";
 
-const projectRepository = createDefaultProductImageStudioProjectRepository();
+type ProductImageStudioRepositoryGlobalState = {
+  repository: ProductImageStudioRepository;
+  storageMode: ProductImageStudioRepositoryStorageMode;
+};
+
+type ProductImageStudioRepositoryGlobal = typeof globalThis & {
+  __marketcrewProductImageStudioRepository?: ProductImageStudioRepositoryGlobalState;
+};
 
 export function getProductImageStudioProjectRepository(): ProductImageStudioRepository {
-  return projectRepository;
+  const storageMode = selectProductImageStudioRepositoryStorageMode();
+  const repositoryGlobal = globalThis as ProductImageStudioRepositoryGlobal;
+  if (repositoryGlobal.__marketcrewProductImageStudioRepository?.storageMode !== storageMode) {
+    repositoryGlobal.__marketcrewProductImageStudioRepository = {
+      repository: createDefaultProductImageStudioProjectRepository(storageMode),
+      storageMode,
+    };
+  }
+
+  return repositoryGlobal.__marketcrewProductImageStudioRepository.repository;
 }
 
 export function getProductImageStudioRepositoryStorageMode(): ProductImageStudioRepositoryStorageMode {
@@ -53,7 +69,7 @@ export function getProductImageStudioRepositoryStorageMode(): ProductImageStudio
 
 export async function createProductImageStudioProjectFromPayload(
   payload: unknown,
-  repository: ProductImageStudioRepository = projectRepository,
+  repository: ProductImageStudioRepository = getProductImageStudioProjectRepository(),
 ): Promise<ProductImageStudioCreateProjectResult> {
   const parsed = parseCreateProjectPayload(payload);
   if (!parsed.ok) {
@@ -66,7 +82,7 @@ export async function createProductImageStudioProjectFromPayload(
 
 export async function getProductImageStudioProject(
   id: string,
-  repository: ProductImageStudioRepository = projectRepository,
+  repository: ProductImageStudioRepository = getProductImageStudioProjectRepository(),
 ): Promise<ProductImageStudioProjectRecord | null> {
   return repository.getProject(id);
 }
@@ -158,8 +174,10 @@ export function selectProductImageStudioRepositoryStorageMode(
   return env.VERCEL === "1" && hasDatabaseUrl(env) ? "postgres" : "memory";
 }
 
-function createDefaultProductImageStudioProjectRepository(): ProductImageStudioRepository {
-  return selectProductImageStudioRepositoryStorageMode() === "postgres"
+function createDefaultProductImageStudioProjectRepository(
+  storageMode: ProductImageStudioRepositoryStorageMode,
+): ProductImageStudioRepository {
+  return storageMode === "postgres"
     ? createPostgresProductImageStudioRepository()
     : createInMemoryProductImageStudioRepository();
 }

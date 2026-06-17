@@ -72,8 +72,13 @@ function readUploadArchiveItem(value: unknown): ProductImageStudioUploadArchiveI
     projectName: value["projectName"],
     role: value["role"],
     storageKey: value["storageKey"],
+    svgConversionUrl: readSvgConversionUrl(value["svgConversionUrl"], value["assetId"]),
     templateUseUrl: value["templateUseUrl"],
   };
+}
+
+function readSvgConversionUrl(value: unknown, assetId: string): string {
+  return isString(value) ? value : `/product-image-studio/ai-tools?tool=svg-conversion&upload=${encodeURIComponent(assetId)}`;
 }
 
 function isAssetRole(value: unknown): value is ProductImageStudioAssetRole {

@@ -69,19 +69,23 @@ export function toProductImageStudioDownloadItems(
   project: ProductImageStudioProjectRecord,
   results: readonly ProductImageStudioResultRecord[],
 ): readonly ProductImageStudioDownloadItem[] {
-  return results.map((result) => ({
-    cardPose: result.cardPose,
-    contentType: parseImageMimeTypeFromStorageKey(result.storageKey),
-    downloadUrl: `/api/product-image-studio/projects/${encodeURIComponent(project.id)}/results/${encodeURIComponent(result.id)}/download`,
-    fileName: toResultFileName(project.id, result),
-    height: result.height,
-    outputType: result.outputType,
-    ratio: result.ratio,
-    resultId: result.id,
-    storageKey: result.storageKey,
-    vectorSvgUrl: `/api/product-image-studio/projects/${encodeURIComponent(project.id)}/results/${encodeURIComponent(result.id)}/vector.svg?style=flat_illustration`,
-    width: result.width,
-  }));
+  return results.map((result) => {
+    const contentType = parseImageMimeTypeFromStorageKey(result.storageKey);
+    const downloadUrl = `/api/product-image-studio/projects/${encodeURIComponent(project.id)}/results/${encodeURIComponent(result.id)}/download`;
+    return {
+      cardPose: result.cardPose,
+      contentType,
+      downloadUrl,
+      fileName: toResultFileName(project.id, result),
+      height: result.height,
+      outputType: result.outputType,
+      ratio: result.ratio,
+      resultId: result.id,
+      storageKey: result.storageKey,
+      vectorSvgUrl: contentType === "image/svg+xml" ? downloadUrl : `/api/product-image-studio/projects/${encodeURIComponent(project.id)}/results/${encodeURIComponent(result.id)}/vector.svg?style=flat_illustration`,
+      width: result.width,
+    };
+  });
 }
 
 export function buildProductImageStudioDownloadManifest(

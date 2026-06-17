@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { ProductImageStudioLibraryWorkspacePage } from "@/components/product-image-studio/ProductImageStudioWorkspaceSupportPages";
 import { ProductImageStudioProductSpecsWorkspacePage } from "@/components/product-image-studio/ProductImageStudioSpecLibrary";
 import {
   createProductImageStudioSpecItem,
@@ -8,6 +9,20 @@ import {
 } from "@/features/product-image-studio/domain/specLibrary";
 
 describe("product image studio product spec library UI", () => {
+  it("exposes library shortcuts for mockups, background assets, materials, and product specs", () => {
+    const html = renderToStaticMarkup(createElement(ProductImageStudioLibraryWorkspacePage));
+
+    expect(html).toContain("목업");
+    expect(html).toContain("배경/소품");
+    expect(html).toContain("용지·재질");
+    expect(html).toContain("상품 규격");
+    expect(html).toContain('href="/product-image-studio/specs"');
+    expect(html).toContain('href="/product-image-studio/specs?tab=materials"');
+    expect(html).toContain('href="/product-image-studio/uploads?kind=mockups"');
+    expect(html).toContain('href="/product-image-studio/uploads?kind=backgrounds"');
+    expect(html).toContain('data-saas-action-card="product-specs"');
+  });
+
   it("renders individual product specs and spec sets with an icon-first creation flow", () => {
     const foldedCard = createProductImageStudioSpecItem({
       createdAt: "2026-06-12T00:00:00.000Z",
@@ -42,6 +57,8 @@ describe("product image studio product spec library UI", () => {
     );
 
     expect(html).toContain("상품 규격");
+    expect(html).toContain('href="/product-image-studio/library"');
+    expect(html).toMatch(/aria-current="page"[^>]*href="\/product-image-studio\/library"/);
     expect(html).toContain("개별 규격");
     expect(html).toContain("세트 규격");
     expect(html).toContain("용지·재질");

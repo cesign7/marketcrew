@@ -6,6 +6,7 @@ import type {
   ProductImageStudioOutputType,
   ProductImageStudioRatioPreset,
 } from "@/features/product-image-studio/domain/types";
+import { PRODUCT_IMAGE_STUDIO_SVG_MIME_TYPE } from "@/features/product-image-studio/server/svgAssetSanitizer";
 import {
   getExtensionForContentType,
   parseGeneratedImageMimeType,
@@ -54,9 +55,13 @@ export type SaveProductImageInput = {
   readonly role: ProductImageStudioAssetRole;
 };
 
+export type ProductImageStudioGeneratedArtifactMimeType =
+  | ProductImageStudioGeneratedImageMimeType
+  | typeof PRODUCT_IMAGE_STUDIO_SVG_MIME_TYPE;
+
 export type SaveGeneratedProductImageInput = {
   readonly bytes: Uint8Array;
-  readonly contentType: ProductImageStudioGeneratedImageMimeType;
+  readonly contentType: ProductImageStudioGeneratedArtifactMimeType;
   readonly generationRequestId: string;
   readonly outputType: ProductImageStudioOutputType;
   readonly projectId: string;
@@ -83,6 +88,24 @@ export interface ProductImageFileStore {
   saveImage(input: SaveProductImageInput): Promise<SavedProductImageFile>;
   saveGeneratedImage(input: SaveGeneratedProductImageInput): Promise<SavedProductImageFile>;
   readImage(storageKey: string): Promise<StoredProductImageFile | null>;
+}
+
+export function parseGeneratedProductImageArtifactMimeType(
+  contentType: ProductImageStudioGeneratedArtifactMimeType,
+): ProductImageStudioImageMimeType {
+  return contentType === PRODUCT_IMAGE_STUDIO_SVG_MIME_TYPE ? contentType : parseGeneratedImageMimeType(contentType);
+}
+
+export function toGeneratedProductImageArtifactFileName(input: {
+  readonly contentType: ProductImageStudioImageMimeType;
+  readonly outputType: ProductImageStudioOutputType;
+  readonly ratio: ProductImageStudioRatioPreset;
+  readonly sequence?: number;
+  readonly suffix?: string;
+}): string {
+  const suffix = toGeneratedResultSuffix(input.sequence, input.suffix);
+  const parts = [toSafePathSegment(input.outputType), suffix, toSafePathSegment(input.ratio.replace(":", "x"))].filter(isString);
+  return `${parts.join("-")}.${getExtensionForContentType(input.contentType)}`;
 }
 
 export type LocalProductImageFileStoreOptions = {
@@ -166,10 +189,10 @@ class LocalProductImageFileStore implements ProductImageFileStore {
   }
 
   async saveGeneratedImage(input: SaveGeneratedProductImageInput): Promise<SavedProductImageFile> {
-    const contentType = parseGeneratedImageMimeType(input.contentType);
+    const contentType = parseGeneratedProductImageArtifactMimeType(input.contentType);
     const safeProjectId = toSafePathSegment(input.projectId);
     const safeGenerationId = toSafePathSegment(input.generationRequestId);
-    const fileName = toGeneratedProductImageFileName({ ...input, contentType });
+    const fileName = toGeneratedProductImageArtifactFileName({ ...input, contentType });
     return this.writeImage({
       bytes: input.bytes,
       contentType,
@@ -228,4 +251,18 @@ function trimTrailingSlash(value: string): string {
 
 function isNodeErrorCode(error: unknown, code: string): boolean {
   return error instanceof Error && "code" in error && error.code === code;
+}
+
+function toGeneratedResultSuffix(sequence: number | undefined, suffix: string | undefined): string | null {
+  if (typeof sequence === "number" && Number.isSafeInteger(sequence) && sequence > 0) {
+    return String(sequence);
+  }
+  if (suffix && suffix.trim().length > 0) {
+    return toSafePathSegment(suffix);
+  }
+  return null;
+}
+
+function isString(value: string | null): value is string {
+  return value !== null;
 }

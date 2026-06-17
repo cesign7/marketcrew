@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   ProductImageStudioActivityWorkspacePage,
   ProductImageStudioBatchWorkspacePage,
+  ProductImageStudioInviteWorkspacePage,
+  ProductImageStudioLibraryWorkspacePage,
   ProductImageStudioProductSpecsWorkspacePage,
   ProductImageStudioTemplatesWorkspacePage,
   ProductImageStudioUploadsWorkspacePage,
@@ -13,8 +15,10 @@ import type { ProductImageStudioResultArchiveItem } from "@/lib/persistence/prod
 
 type WorkspaceSupportPageCase = {
   readonly activeHref: string;
+  readonly expectedActiveHref?: string;
   readonly html: string;
   readonly label: string;
+  readonly requiresCompactPrimitives?: boolean;
   readonly requiredCopy: readonly string[];
 };
 
@@ -28,10 +32,12 @@ describe("product image studio workspace support pages", () => {
         activeHref: "/product-image-studio/batch",
         html: renderToStaticMarkup(createElement(ProductImageStudioBatchWorkspacePage)),
         label: "batch",
-        requiredCopy: ["일괄처리", "파일을 끌어오거나 선택", "파일을 올리면 활성화됩니다"],
+        requiresCompactPrimitives: true,
+        requiredCopy: ["일괄처리", "작업 묶음", "파일 점검", "공통 설정", "예약 검토"],
       },
       {
         activeHref: "/product-image-studio/activity",
+        expectedActiveHref: "/product-image-studio/results",
         html: renderToStaticMarkup(createElement(ProductImageStudioActivityWorkspacePage, { results: [] })),
         label: "activity",
         requiredCopy: ["활동", "최근 생성 결과", "저장된 활동이 아직 없습니다"],
@@ -40,7 +46,8 @@ describe("product image studio workspace support pages", () => {
         activeHref: "/product-image-studio/templates",
         html: renderToStaticMarkup(createElement(ProductImageStudioTemplatesWorkspacePage)),
         label: "templates",
-        requiredCopy: ["템플릿", "카드 세트", "봉투", "봉합스티커", "대표이미지"],
+        requiresCompactPrimitives: true,
+        requiredCopy: ["상품템플릿", "기본 구성", "카드 세트", "봉투", "봉합스티커", "대표이미지"],
       },
       {
         activeHref: "/product-image-studio/uploads",
@@ -50,6 +57,7 @@ describe("product image studio workspace support pages", () => {
       },
       {
         activeHref: "/product-image-studio/specs",
+        expectedActiveHref: "/product-image-studio/library",
         html: renderToStaticMarkup(createElement(ProductImageStudioProductSpecsWorkspacePage)),
         label: "specs",
         requiredCopy: ["상품 규격", "개별 규격", "세트 규격", "아이콘으로 규격 추가", "카드(접이식)", "엽서(비접이)"],
@@ -58,7 +66,22 @@ describe("product image studio workspace support pages", () => {
         activeHref: "/product-image-studio/usage",
         html: renderToStaticMarkup(createElement(ProductImageStudioUsageWorkspacePage)),
         label: "usage",
-        requiredCopy: ["사용량", "이번 달 사용량", "저장된 사용량 기록이 아직 없습니다"],
+        requiresCompactPrimitives: true,
+        requiredCopy: ["사용량", "이번 달", "이미지 생성", "업로드 보관", "다운로드"],
+      },
+      {
+        activeHref: "/product-image-studio/library",
+        html: renderToStaticMarkup(createElement(ProductImageStudioLibraryWorkspacePage)),
+        label: "library",
+        requiresCompactPrimitives: true,
+        requiredCopy: ["라이브러리", "자료 바로가기", "목업", "배경/소품", "용지·재질", "상품 규격"],
+      },
+      {
+        activeHref: "/product-image-studio/invite",
+        html: renderToStaticMarkup(createElement(ProductImageStudioInviteWorkspacePage)),
+        label: "invite",
+        requiresCompactPrimitives: true,
+        requiredCopy: ["회원초대", "UI 전용", "이메일", "역할", "초대 메일은 발송하지 않습니다."],
       },
     ];
 
@@ -67,10 +90,67 @@ describe("product image studio workspace support pages", () => {
       for (const copy of pageCase.requiredCopy) {
         expect(pageCase.html, pageCase.label).toContain(copy);
       }
-      expectActiveNavHref(pageCase.html, pageCase.activeHref);
+      if (pageCase.requiresCompactPrimitives) {
+        expect(pageCase.html, pageCase.label).toContain('data-saas-page-header="true"');
+        expect(pageCase.html, pageCase.label).toContain('data-saas-card-grid="true"');
+      }
+      expectActiveNavHref(pageCase.html, pageCase.expectedActiveHref ?? pageCase.activeHref);
       expect(pageCase.html, pageCase.label).not.toMatch(FORBIDDEN_FAKE_DATA_COPY_PATTERN);
       expect(pageCase.html, pageCase.label).not.toContain("Photoroom");
       expect(pageCase.html, pageCase.label).not.toContain("Vercel");
+    }
+  });
+
+  it("keeps invite as a UI-only draft form without a real send path", () => {
+    // Given: the invite page is only a workspace planning surface.
+    const html = renderToStaticMarkup(createElement(ProductImageStudioInviteWorkspacePage));
+    const inviteForm =
+      Array.from(html.matchAll(/<form[\s\S]*?<\/form>/g), (match) => match[0]).find((formHtml) =>
+        formHtml.includes('data-invite-ui-only="true"'),
+      ) ?? "";
+
+    // Then: it may collect draft text, but it cannot submit to an email/account route.
+    expect(inviteForm).toContain('data-invite-ui-only="true"');
+    expect(inviteForm).toContain('type="email"');
+    expect(inviteForm).toContain('inputMode="email"');
+    expect(inviteForm).toContain('type="button"');
+    expect(inviteForm).not.toContain('type="submit"');
+    expect(inviteForm).not.toMatch(/\saction=/);
+    expect(inviteForm).not.toMatch(/\smethod=/);
+    expect(inviteForm).not.toContain("/api/");
+  });
+
+  it("uses actionable focused-flow cards for batch and template support pages", () => {
+    // Given: batch and template support pages should direct operators to existing focused flows.
+    const cases = [
+      {
+        expectedHrefs: [
+          "/product-image-studio/uploads",
+          "/product-image-studio/ai-tools",
+          "/product-image-studio/results",
+        ],
+        html: renderToStaticMarkup(createElement(ProductImageStudioBatchWorkspacePage)),
+        label: "batch",
+      },
+      {
+        expectedHrefs: [
+          "/product-image-studio/library",
+          "/product-image-studio/ai-tools",
+          "/product-image-studio/results",
+        ],
+        html: renderToStaticMarkup(createElement(ProductImageStudioTemplatesWorkspacePage)),
+        label: "templates",
+      },
+    ] as const;
+
+    // Then: cards expose real links and do not present disabled "coming soon" actions.
+    for (const pageCase of cases) {
+      for (const href of pageCase.expectedHrefs) {
+        expect(pageCase.html, pageCase.label).toContain(`href="${href}"`);
+      }
+      expect(pageCase.html, pageCase.label).not.toContain('data-saas-action-kind="disabled"');
+      expect(pageCase.html, pageCase.label).not.toContain('data-saas-card-state="disabled"');
+      expect(pageCase.html, pageCase.label).not.toContain("준비 중");
     }
   });
 

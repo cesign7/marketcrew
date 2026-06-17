@@ -3,13 +3,7 @@ import { GET as downloadZip } from "@/app/api/product-image-studio/projects/[id]
 import { GET as downloadResult } from "@/app/api/product-image-studio/projects/[id]/results/[resultId]/download/route";
 import { POST as createProject } from "@/app/api/product-image-studio/projects/route";
 import { POST as startGeneration } from "@/app/api/product-image-studio/projects/[id]/generations/route";
-import {
-  createProductImageStudioZipArchive,
-  createProductImageStudioZipArchiveFromStore,
-  parseProductImageStudioCustomRatio,
-  regenerateProductImageStudioRatio,
-  toProductImageStudioDownloadItems,
-} from "@/features/product-image-studio/server/downloads";
+import { createProductImageStudioZipArchive, createProductImageStudioZipArchiveFromStore, parseProductImageStudioCustomRatio, regenerateProductImageStudioRatio, toProductImageStudioDownloadItems } from "@/features/product-image-studio/server/downloads";
 import type { ProductImageFileStore } from "@/features/product-image-studio/server/fileStore";
 import { getProductImageStudioProjectRepository } from "@/features/product-image-studio/server/projectApi";
 import { createInMemoryProductImageStudioRepository, type ProductImageStudioProjectRecord, type ProductImageStudioResultRecord } from "@/lib/persistence/productImageStudioRepository";
@@ -26,16 +20,17 @@ describe("product image studio downloads", () => {
     const items = toProductImageStudioDownloadItems(project, [
       resultRecord("result-1", "set_combined", "folded_closed", "1:1"),
       resultRecord("result-2", "seal_sticker_single", undefined, "4:5"),
+      { ...resultRecord("result-svg", "seal_sticker_single", undefined, "1:1"), storageKey: "product-image-studio/project-download-1/results/generation-svg/seal-icon.svg" },
     ]);
 
     expect(items.map((item) => item.fileName)).toEqual([
       "project-download-1-set_combined-folded_closed-1x1.png",
       "project-download-1-seal_sticker_single-4x5.png",
+      "project-download-1-seal_sticker_single-1x1.svg",
     ]);
     expect(items[0]?.downloadUrl).toBe("/api/product-image-studio/projects/project-download-1/results/result-1/download");
-    expect(items[0]).toMatchObject({
-      vectorSvgUrl: "/api/product-image-studio/projects/project-download-1/results/result-1/vector.svg?style=flat_illustration",
-    });
+    expect(items[0]).toMatchObject({ vectorSvgUrl: "/api/product-image-studio/projects/project-download-1/results/result-1/vector.svg?style=flat_illustration" });
+    expect(items[2]).toMatchObject({ contentType: "image/svg+xml", downloadUrl: "/api/product-image-studio/projects/project-download-1/results/result-svg/download", vectorSvgUrl: "/api/product-image-studio/projects/project-download-1/results/result-svg/download" });
     for (const item of items) {
       expect(item.fileName).not.toContain("..");
       expect(item.fileName).not.toContain("/");

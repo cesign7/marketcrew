@@ -12,7 +12,9 @@ import {
   getProductImageStudioArchivePoseLabel,
   getProductImageStudioArchiveProductTypeLabel,
   getProductImageStudioArchiveResultProjectLabel,
+  isProductImageStudioSvgArchiveResult,
   PRODUCT_IMAGE_STUDIO_ARCHIVE_OUTPUT_GROUPS,
+  toProductImageStudioSvgDownloadFileName,
 } from "./productImageStudioArchiveCopy";
 import styles from "./ProductImageStudioArchive.module.css";
 
@@ -69,10 +71,10 @@ export function ProductImageStudioProjectArchive({ projects }: ProductImageStudi
 
 export function ProductImageStudioResultArchive({ results }: ProductImageStudioResultArchiveProps) {
   return (
-    <section className={styles.archive} aria-label="활동">
+    <section className={styles.archive} aria-label="결과 보관함">
       <ArchiveHeading
-        eyebrow="활동"
-        title="상품컷 갤러리"
+        eyebrow="결과"
+        title="결과 보관함"
         description="최근 생성 이미지를 한 번에 확인합니다."
       />
       {results.length === 0 ? (
@@ -140,13 +142,13 @@ function ResultGrid({
       {results.map((result) => (
         <article className={styles.resultCard} key={result.resultId}>
           <img
-            alt={`${getProductImageStudioArchiveResultProjectLabel(result)} ${getProductImageStudioArchiveOutputLabel(result.outputType, result.workflow)}`}
+            alt={`${getProductImageStudioArchiveResultProjectLabel(result)} ${getResultOutputLabel(result)}`}
             src={result.previewUrl}
           />
           <div className={styles.resultBody}>
             <div className={styles.cardHeader}>
               <div>
-                <p>{getProductImageStudioArchiveOutputLabel(result.outputType, result.workflow)}</p>
+                <p>{getResultOutputLabel(result)}</p>
                 <h2>{getProductImageStudioArchiveResultProjectLabel(result)}</h2>
               </div>
               <span>{result.ratio}</span>
@@ -163,14 +165,28 @@ function ResultGrid({
             </dl>
             <div className={styles.actions}>
               {showProjectLink ? <Link href={`/product-image-studio/designs/${encodeURIComponent(result.projectId)}`}>디자인 보기</Link> : null}
-              <a href={result.previewUrl}>미리보기</a>
-              <a href={result.downloadUrl}>다운로드</a>
+              <a href={result.previewUrl}>{getPreviewActionLabel(result)}</a>
+              <a aria-label={getDownloadActionLabel(result)} download={isProductImageStudioSvgArchiveResult(result) ? toProductImageStudioSvgDownloadFileName(result.resultId) : undefined} href={result.downloadUrl}>
+                {getDownloadActionLabel(result)}
+              </a>
             </div>
           </div>
         </article>
       ))}
     </div>
   );
+}
+
+function getResultOutputLabel(result: ProductImageStudioResultArchiveItem): string {
+  return getProductImageStudioArchiveOutputLabel(result.outputType, result.workflow);
+}
+
+function getPreviewActionLabel(result: ProductImageStudioResultArchiveItem): string {
+  return "미리보기";
+}
+
+function getDownloadActionLabel(result: ProductImageStudioResultArchiveItem): string {
+  return isProductImageStudioSvgArchiveResult(result) ? "SVG 다운로드" : "다운로드";
 }
 
 function ArchiveHeading({

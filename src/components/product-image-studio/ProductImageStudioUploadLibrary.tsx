@@ -29,6 +29,7 @@ export function ProductImageStudioUploadsWorkspacePage({
               <div className={styles.uploadActions}>
                 <a href={upload.designUseUrl}>디자인에 사용</a>
                 <a href={upload.templateUseUrl}>템플릿에 적용</a>
+                <a href={upload.svgConversionUrl}>SVG 변환</a>
               </div>
             </article>
           ))}
