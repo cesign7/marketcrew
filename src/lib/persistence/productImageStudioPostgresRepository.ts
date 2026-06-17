@@ -106,6 +106,13 @@ class PostgresProductImageStudioRepository implements ProductImageStudioReposito
     return result.rows.map(mapProductImageStudioAssetRow);
   }
 
+  async deleteAsset(projectId: string, assetId: string): Promise<ProductImageStudioAssetRecord | null> {
+    await this.ensureSchema();
+    const result = await this.query("DELETE FROM product_image_studio_assets WHERE project_id = $1 AND id = $2 RETURNING *", [projectId, assetId]);
+    const row = result.rows[0];
+    return row ? mapProductImageStudioAssetRow(row) : null;
+  }
+
   async createGenerationRequest(
     input: CreateProductImageStudioGenerationRequestInput,
   ): Promise<ProductImageStudioGenerationRequestRecord> {
@@ -158,6 +165,16 @@ class PostgresProductImageStudioRepository implements ProductImageStudioReposito
     await this.ensureSchema();
     const result = await this.query("SELECT * FROM product_image_studio_results WHERE project_id = $1 ORDER BY created_at ASC", [projectId]);
     return result.rows.map(mapProductImageStudioResultRow);
+  }
+
+  async deleteResult(projectId: string, resultId: string): Promise<ProductImageStudioResultRecord | null> {
+    await this.ensureSchema();
+    const result = await this.query(
+      "DELETE FROM product_image_studio_results WHERE project_id = $1 AND id = $2 RETURNING *",
+      [projectId, resultId],
+    );
+    const row = result.rows[0];
+    return row ? mapProductImageStudioResultRow(row) : null;
   }
 
   async listProjectSummaries(): Promise<readonly ProductImageStudioProjectSummary[]> {

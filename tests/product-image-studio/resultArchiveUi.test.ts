@@ -57,6 +57,16 @@ describe("product image studio result archive UI", () => {
     expect(html).not.toContain("GEMINI_API_KEY");
   });
 
+  it("renders result cards with modal preview and delete actions", () => {
+    const html = renderToStaticMarkup(createElement(ProductImageStudioResultArchive, { results: [resultArchiveItem()] }));
+
+    expect(html).toContain('type="button"');
+    expect(html).toContain('aria-label="봄 초대장 세트 카드 단독컷 미리보기 열기"');
+    expect(html).toContain('aria-label="봄 초대장 세트 카드 단독컷 삭제"');
+    expect(html).toContain('data-delete-url="/api/product-image-studio/projects/project-1/results/result-1"');
+    expect(html).not.toContain('href="/api/product-image-studio/projects/project-1/results/result-1/preview">미리보기');
+  });
+
   it("keeps legacy card, envelope, and seal archive labels unchanged", () => {
     const html = renderToStaticMarkup(
       createElement(ProductImageStudioProjectDetailArchive, {

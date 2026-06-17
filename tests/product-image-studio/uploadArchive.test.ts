@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { GET as previewAsset } from "@/app/api/product-image-studio/projects/[id]/assets/[assetId]/preview/route";
+import { DELETE as deleteAsset } from "@/app/api/product-image-studio/projects/[id]/assets/[assetId]/route";
 import { POST as uploadAsset } from "@/app/api/product-image-studio/projects/[id]/assets/route";
 import { POST as createProject } from "@/app/api/product-image-studio/projects/route";
 import { ProductImageStudioUploadsWorkspacePage } from "@/components/product-image-studio/ProductImageStudioUploadLibrary";
@@ -147,6 +148,9 @@ describe("product image studio upload archive", () => {
     expect(html).toContain("디자인에 사용");
     expect(html).toContain("템플릿에 적용");
     expect(html).toContain("SVG 변환");
+    expect(html).toContain("삭제");
+    expect(html).toContain('aria-label="safe-card.svg 삭제"');
+    expect(html).toContain('data-delete-url="/api/product-image-studio/projects/project-1/assets/asset-1"');
     expect(html).toContain("/product-image-studio/ai-tools?tool=svg-conversion&amp;upload=asset-1");
     expect(html).not.toContain("새 상품컷");
     expect(html).not.toContain("새 업로드");
@@ -182,6 +186,37 @@ describe("product image studio upload archive", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toBe("image/png");
     expect((await response.arrayBuffer()).byteLength).toBe(4);
+  });
+
+  it("deletes uploaded assets from the archive route", async () => {
+    // Given: a project has one uploaded image asset.
+    const projectResponse = await createProject(projectRequest());
+    const projectBody: unknown = await projectResponse.json();
+    if (!isProjectCreateBody(projectBody)) {
+      throw new Error("project create body missing");
+    }
+    const uploadResponse = await uploadAsset(uploadRequest(projectBody.project.id), {
+      params: Promise.resolve({ id: projectBody.project.id }),
+    });
+    const uploadBody: unknown = await uploadResponse.json();
+    if (!isUploadCreateBody(uploadBody)) {
+      throw new Error("asset create body missing");
+    }
+
+    // When: the uploaded asset is deleted through its project-scoped route.
+    const deleteResponse = await deleteAsset(
+      new Request(
+        `http://127.0.0.1:3000/api/product-image-studio/projects/${projectBody.project.id}/assets/${uploadBody.asset.id}`,
+        { method: "DELETE" },
+      ),
+      { params: Promise.resolve({ assetId: uploadBody.asset.id, id: projectBody.project.id }) },
+    );
+
+    // Then: the route confirms the deleted asset and the archive no longer lists it.
+    expect(deleteResponse.status).toBe(200);
+    expect(await deleteResponse.json()).toEqual({ deletedAssetId: uploadBody.asset.id, ok: true });
+    const uploads = await listProductImageStudioUploadArchiveItems();
+    expect(uploads.some((upload) => upload.assetId === uploadBody.asset.id)).toBe(false);
   });
 });
 

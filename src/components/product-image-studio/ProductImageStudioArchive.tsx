@@ -6,16 +6,12 @@ import type {
 import type { ProductImageStudioArchivePageProject } from "@/features/product-image-studio/server/archivePageData";
 import {
   formatProductImageStudioArchiveDate,
-  formatProductImageStudioProviderValue,
   getProductImageStudioArchiveCardFormatLabel,
   getProductImageStudioArchiveOutputLabel,
-  getProductImageStudioArchivePoseLabel,
   getProductImageStudioArchiveProductTypeLabel,
-  getProductImageStudioArchiveResultProjectLabel,
-  isProductImageStudioSvgArchiveResult,
   PRODUCT_IMAGE_STUDIO_ARCHIVE_OUTPUT_GROUPS,
-  toProductImageStudioSvgDownloadFileName,
 } from "./productImageStudioArchiveCopy";
+import { ProductImageStudioResultArchiveGrid } from "./ProductImageStudioResultArchiveGrid";
 import styles from "./ProductImageStudioArchive.module.css";
 
 type ProductImageStudioProjectArchiveProps = {
@@ -80,7 +76,7 @@ export function ProductImageStudioResultArchive({ results }: ProductImageStudioR
       {results.length === 0 ? (
         <ArchiveEmpty title="아직 생성 결과가 없습니다." description="카드, 봉투, 봉합스티커 설정샷을 생성하면 이곳에 표시됩니다." />
       ) : (
-        <ResultGrid results={results} showProjectLink />
+        <ProductImageStudioResultArchiveGrid results={results} showProjectLink />
       )}
     </section>
   );
@@ -119,7 +115,7 @@ export function ProductImageStudioProjectDetailArchive({
                 {groupResults.length === 0 ? (
                   <p className={styles.emptyLine}>아직 {getProductImageStudioArchiveOutputLabel(outputType)} 결과가 없습니다.</p>
                 ) : (
-                  <ResultGrid results={groupResults} />
+                  <ProductImageStudioResultArchiveGrid results={groupResults} />
                 )}
               </section>
             );
@@ -128,65 +124,6 @@ export function ProductImageStudioProjectDetailArchive({
       )}
     </section>
   );
-}
-
-function ResultGrid({
-  results,
-  showProjectLink = false,
-}: {
-  readonly results: readonly ProductImageStudioResultArchiveItem[];
-  readonly showProjectLink?: boolean;
-}) {
-  return (
-    <div className={styles.resultGrid}>
-      {results.map((result) => (
-        <article className={styles.resultCard} key={result.resultId}>
-          <img
-            alt={`${getProductImageStudioArchiveResultProjectLabel(result)} ${getResultOutputLabel(result)}`}
-            src={result.previewUrl}
-          />
-          <div className={styles.resultBody}>
-            <div className={styles.cardHeader}>
-              <div>
-                <p>{getResultOutputLabel(result)}</p>
-                <h2>{getProductImageStudioArchiveResultProjectLabel(result)}</h2>
-              </div>
-              <span>{result.ratio}</span>
-            </div>
-            <dl className={styles.metaList}>
-              <Metric label="크기" value={`${result.width}x${result.height}px`} />
-              <Metric label="provider" value={formatProductImageStudioProviderValue(result.provider)} />
-              <Metric label="model" value={formatProductImageStudioProviderValue(result.model)} />
-              <Metric label="생성" value={formatProductImageStudioArchiveDate(result.createdAt)} />
-              {result.workflow === "image_generator" && result.promptPreview ? <Metric label="프롬프트" value={result.promptPreview} /> : null}
-              {result.outputType === "card_single" && result.workflow !== "image_generator" ? (
-                <Metric label="카드 자세" value={getProductImageStudioArchivePoseLabel(result.cardPose)} />
-              ) : null}
-            </dl>
-            <div className={styles.actions}>
-              {showProjectLink ? <Link href={`/product-image-studio/designs/${encodeURIComponent(result.projectId)}`}>디자인 보기</Link> : null}
-              <a href={result.previewUrl}>{getPreviewActionLabel(result)}</a>
-              <a aria-label={getDownloadActionLabel(result)} download={isProductImageStudioSvgArchiveResult(result) ? toProductImageStudioSvgDownloadFileName(result.resultId) : undefined} href={result.downloadUrl}>
-                {getDownloadActionLabel(result)}
-              </a>
-            </div>
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function getResultOutputLabel(result: ProductImageStudioResultArchiveItem): string {
-  return getProductImageStudioArchiveOutputLabel(result.outputType, result.workflow);
-}
-
-function getPreviewActionLabel(result: ProductImageStudioResultArchiveItem): string {
-  return "미리보기";
-}
-
-function getDownloadActionLabel(result: ProductImageStudioResultArchiveItem): string {
-  return isProductImageStudioSvgArchiveResult(result) ? "SVG 다운로드" : "다운로드";
 }
 
 function ArchiveHeading({

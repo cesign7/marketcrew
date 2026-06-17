@@ -50,10 +50,15 @@
 }
 
 .headingAction a,
-.actions a {
+.actions a,
+.actions button,
+.modalActions a,
+.modalHeader button {
   border: 1px solid #d4d4d4;
   border-radius: 8px;
+  background: #ffffff;
   color: #171717;
+  cursor: pointer;
   font-size: 13px;
   font-weight: 900;
   line-height: 1;
@@ -68,9 +73,21 @@
 }
 
 .actions a:hover,
-.actions a:focus-visible {
+.actions a:focus-visible,
+.actions button:hover,
+.actions button:focus-visible,
+.modalActions a:hover,
+.modalActions a:focus-visible,
+.modalHeader button:hover,
+.modalHeader button:focus-visible {
   border-color: #0070f3;
   color: #0070f3;
+}
+
+.actions button:disabled {
+  border-color: #ededed;
+  color: #666666;
+  cursor: wait;
 }
 
 .projectGrid,
@@ -179,7 +196,8 @@
   overflow: hidden;
 }
 
-.resultCard img {
+.resultCard img,
+.previewModal img {
   aspect-ratio: 1 / 1;
   background: #fafafa;
   display: block;
@@ -187,11 +205,80 @@
   width: 100%;
 }
 
+.previewImageButton {
+  border: 0;
+  cursor: zoom-in;
+  display: block;
+  padding: 0;
+  width: 100%;
+}
+
+.previewImageButton:focus-visible {
+  outline: 2px solid #0070f3;
+  outline-offset: -2px;
+}
+
 .resultBody {
   display: grid;
   gap: 12px;
   grid-template-rows: auto 1fr auto;
   padding: 14px;
+}
+
+.inlineError {
+  color: #404040;
+  font-size: 12px;
+  font-weight: 800;
+  margin: -4px 0 0;
+}
+
+.modalBackdrop {
+  align-items: center;
+  background: #fafafa;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 50;
+}
+
+.previewModal {
+  background: #ffffff;
+  border: 1px solid #d4d4d4;
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  max-height: calc(100vh - 48px);
+  max-width: min(880px, 100%);
+  overflow: auto;
+  padding: 14px;
+  width: 100%;
+}
+
+.modalHeader {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.modalHeader h2 {
+  font-size: 18px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.modalHeader p {
+  color: #666666;
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .emptyState {
@@ -230,7 +317,8 @@
 @media (max-width: 720px) {
   .heading,
   .cardHeader,
-  .outputHeading {
+  .outputHeading,
+  .modalHeader {
     align-items: stretch;
     flex-direction: column;
   }
@@ -242,8 +330,15 @@
   }
 
   .actions a,
+  .actions button,
+  .modalActions a,
   .headingAction a {
     justify-content: center;
     width: 100%;
+  }
+
+  .modalBackdrop {
+    align-items: stretch;
+    padding: 12px;
   }
 }

@@ -126,11 +126,13 @@ export interface ProductImageStudioRepository {
   getProject(id: string): Promise<ProductImageStudioProjectRecord | null>;
   addAsset(input: AddProductImageStudioAssetInput): Promise<ProductImageStudioAssetRecord>;
   listAssets(projectId: string): Promise<readonly ProductImageStudioAssetRecord[]>;
+  deleteAsset(projectId: string, assetId: string): Promise<ProductImageStudioAssetRecord | null>;
   createGenerationRequest(
     input: CreateProductImageStudioGenerationRequestInput,
   ): Promise<ProductImageStudioGenerationRequestRecord>;
   addResult(input: AddProductImageStudioResultInput): Promise<ProductImageStudioResultRecord>;
   listResults(projectId: string): Promise<readonly ProductImageStudioResultRecord[]>;
+  deleteResult(projectId: string, resultId: string): Promise<ProductImageStudioResultRecord | null>;
   listProjectSummaries(): Promise<readonly ProductImageStudioProjectSummary[]>;
   listResultArchiveItems(projectId?: string): Promise<readonly ProductImageStudioResultArchiveItem[]>;
   addDownloadBundle(input: AddProductImageStudioDownloadBundleInput): Promise<ProductImageStudioDownloadBundleRecord>;
@@ -188,6 +190,15 @@ class InMemoryProductImageStudioRepository implements ProductImageStudioReposito
     return [...this.assets.values()].filter((asset) => asset.projectId === projectId);
   }
 
+  async deleteAsset(projectId: string, assetId: string): Promise<ProductImageStudioAssetRecord | null> {
+    const asset = this.assets.get(assetId);
+    if (!asset || asset.projectId !== projectId) {
+      return null;
+    }
+    this.assets.delete(asset.id);
+    return asset;
+  }
+
   async createGenerationRequest(
     input: CreateProductImageStudioGenerationRequestInput,
   ): Promise<ProductImageStudioGenerationRequestRecord> {
@@ -212,6 +223,15 @@ class InMemoryProductImageStudioRepository implements ProductImageStudioReposito
 
   async listResults(projectId: string): Promise<readonly ProductImageStudioResultRecord[]> {
     return [...this.results.values()].filter((result) => result.projectId === projectId);
+  }
+
+  async deleteResult(projectId: string, resultId: string): Promise<ProductImageStudioResultRecord | null> {
+    const result = this.results.get(resultId);
+    if (!result || result.projectId !== projectId) {
+      return null;
+    }
+    this.results.delete(result.id);
+    return result;
   }
 
   async listProjectSummaries(): Promise<readonly ProductImageStudioProjectSummary[]> {

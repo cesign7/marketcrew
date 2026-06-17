@@ -108,6 +108,53 @@ describe("product image studio project archive", () => {
     expect(JSON.stringify(projectListBody)).not.toContain("secret");
     expect(JSON.stringify(allResultsBody)).not.toContain("OPENAI_API_KEY");
   });
+
+  it("deletes one archived result through the project result API", async () => {
+    const createResponse = await projectsRoute.POST(projectRequest("삭제 테스트 디자인"));
+    const createBody: unknown = await createResponse.json();
+    if (!isProjectCreateBody(createBody)) {
+      throw new Error("project create body missing");
+    }
+    const repository = getProductImageStudioProjectRepository();
+    const generation = await repository.createGenerationRequest({
+      conceptId: "minimal-studio",
+      projectId: createBody.project.id,
+      providerRequestSummary: { model: "gpt-image-1", provider: "openai" },
+      qualityMode: "draft",
+      requestedCardPoses: ["folded_closed"],
+      requestedOutputs: ["card_single"],
+    });
+    const result = await repository.addResult({
+      cardPose: "folded_closed",
+      generationRequestId: generation.id,
+      height: 1200,
+      outputType: "card_single",
+      projectId: createBody.project.id,
+      ratio: "1:1",
+      storageKey: `product-image-studio/${createBody.project.id}/delete-test-result.png`,
+      width: 1200,
+    });
+    const route = await import("@/app/api/product-image-studio/projects/[id]/results/[resultId]/route");
+
+    const deleteResponse = await route.DELETE(
+      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${createBody.project.id}/results/${result.id}`),
+      { params: Promise.resolve({ id: createBody.project.id, resultId: result.id }) },
+    );
+    const missingResponse = await route.DELETE(
+      new Request(`http://127.0.0.1:3000/api/product-image-studio/projects/${createBody.project.id}/results/${result.id}`),
+      { params: Promise.resolve({ id: createBody.project.id, resultId: result.id }) },
+    );
+    const remaining = await repository.listResultArchiveItems(createBody.project.id);
+    const deleteBody: unknown = await deleteResponse.json();
+    const missingBody: unknown = await missingResponse.json();
+
+    expect(deleteResponse.status).toBe(200);
+    expect(deleteBody).toMatchObject({ deletedResultId: result.id, ok: true });
+    expect(remaining).toEqual([]);
+    expect(missingResponse.status).toBe(404);
+    expect(missingBody).toMatchObject({ error: { code: "RESULT_NOT_FOUND" }, ok: false });
+    expect(JSON.stringify(deleteBody)).not.toContain("secret");
+  });
 });
 
 type ProjectCreateBody = {

@@ -61,13 +61,16 @@
   gap: 8px;
 }
 
-.uploadActions a {
+.uploadActions a,
+.uploadActions button {
   align-items: center;
   background: #fafafa;
   border: 1px solid #e5e5e5;
   border-radius: 8px;
   color: #171717;
+  cursor: pointer;
   display: inline-flex;
+  font-family: inherit;
   font-size: 12px;
   font-weight: 780;
   min-height: 32px;
@@ -75,12 +78,52 @@
   text-decoration: none;
 }
 
+.uploadActions button:disabled {
+  color: #999999;
+  cursor: wait;
+}
+
+.inlineError {
+  color: #b42318;
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.emptyState {
+  align-items: start;
+  background: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  padding: 24px;
+}
+
+.emptyState h2 {
+  color: #171717;
+  font-size: 16px;
+  letter-spacing: 0;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.emptyState p {
+  color: #666666;
+  font-size: 13px;
+  letter-spacing: 0;
+  line-height: 1.5;
+  margin: 0;
+}
+
 @media (max-width: 520px) {
   .uploadGrid {
     grid-template-columns: 1fr;
   }
 
-  .uploadActions a {
+  .uploadActions a,
+  .uploadActions button {
     justify-content: center;
     width: 100%;
   }
