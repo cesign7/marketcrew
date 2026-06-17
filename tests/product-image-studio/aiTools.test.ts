@@ -73,7 +73,25 @@ describe("product image studio AI tools routes", () => {
     expect(svgCardHtml).not.toContain('aria-disabled="true"');
   });
 
-  it("opens existing tool modals with generation controls before route actions", () => {
+  it("opens every tool in the shared in-modal workspace without page navigation links", () => {
+    for (const toolId of TOOL_IDS) {
+      const html = renderToStaticMarkup(createElement(ProductImageStudioAiToolsHub, { initialToolId: toolId }));
+
+      expect(html, toolId).toContain('role="dialog"');
+      expect(html, toolId).toContain('data-ai-tool-background="true"');
+      expect(html, toolId).toContain('aria-hidden="true"');
+      expect(html, toolId).toContain("inert");
+      expect(html, toolId).toContain('data-ai-tool-workspace="true"');
+      expect(html, toolId).toContain('data-ai-tool-result-panel="true"');
+      expect(html, toolId).toContain("오른쪽 미리보기");
+      expect(html, toolId).toContain("생성 결과가 이곳에 표시됩니다.");
+      expect(html, toolId).not.toContain("작업 화면 열기");
+      expect(html, toolId).not.toContain('href="/product-image-studio/ai-tools/product-staging"');
+      expect(html, toolId).not.toContain('href="/product-image-studio/ai-tools/image-generator"');
+    }
+  });
+
+  it("opens route-like generation tools with shared prompt, quality, size, and count controls", () => {
     const productStagingHtml = renderToStaticMarkup(
       createElement(ProductImageStudioAiToolsHub, { initialToolId: "product-staging" }),
     );
@@ -81,35 +99,37 @@ describe("product image studio AI tools routes", () => {
       createElement(ProductImageStudioAiToolsHub, { initialToolId: "image-generator" }),
     );
 
-    expect(productStagingHtml).toContain('role="dialog"');
-    expect(productStagingHtml).toContain('data-ai-tool-background="true"');
-    expect(productStagingHtml).toContain('aria-hidden="true"');
-    expect(productStagingHtml).toContain("inert");
-    expect(productStagingHtml).toContain("상품 설정샷 생성 준비");
-    expect(productStagingHtml).toContain('href="/product-image-studio/ai-tools/product-staging"');
+    expect(productStagingHtml).toContain("상품 설정샷 생성");
+    expect(productStagingHtml).toContain("프롬프트");
+    expect(productStagingHtml).toContain("추가 지시");
     expect(productStagingHtml).toContain("모델");
-    expect(productStagingHtml).toContain('name="productStagingCount"');
-    expect(productStagingHtml).toContain('name="productStagingRatio"');
-    expect(productStagingHtml).toContain('name="productStagingResolution"');
+    expect(productStagingHtml).toContain('data-ai-tool-size-trigger="true"');
+    expect(productStagingHtml).toContain('data-ai-tool-quality-trigger="true"');
+    expect(productStagingHtml).toContain("정사각형 1:1");
+    expect(productStagingHtml).toContain("1k");
+    expect(productStagingHtml).toContain("8컷");
 
-    expect(imageGeneratorHtml).toContain('role="dialog"');
-    expect(imageGeneratorHtml).toContain("AI 이미지 생성기 준비");
-    expect(imageGeneratorHtml).toContain('href="/product-image-studio/ai-tools/image-generator"');
+    expect(imageGeneratorHtml).toContain("AI 이미지 생성기");
+    expect(imageGeneratorHtml).toContain("프롬프트");
+    expect(imageGeneratorHtml).toContain("추가 지시");
     expect(imageGeneratorHtml).toContain("모델");
-    expect(imageGeneratorHtml).toContain('name="imageGeneratorCount"');
-    expect(imageGeneratorHtml).toContain('name="imageGeneratorRatio"');
-    expect(imageGeneratorHtml).toContain('name="imageGeneratorResolution"');
+    expect(imageGeneratorHtml).toContain('data-ai-tool-size-trigger="true"');
+    expect(imageGeneratorHtml).toContain('data-ai-tool-quality-trigger="true"');
+    expect(imageGeneratorHtml).toContain("2컷");
+    expect(imageGeneratorHtml).toContain("4컷");
   });
 
-  it("opens future tool planning modals instead of disabling cards", () => {
+  it("opens future tool modals with the same workspace instead of planning-only forms", () => {
     const html = renderToStaticMarkup(createElement(ProductImageStudioAiToolsHub, { initialToolId: "background-props" }));
 
     expect(html).toContain('role="dialog"');
-    expect(html).toContain("배경/소품 생성 준비");
-    expect(html).toContain("작업 계획");
-    expect(html).toContain("요청 메모");
-    expect(html).toContain("자료 개수");
+    expect(html).toContain("배경/소품 생성");
+    expect(html).toContain('data-ai-tool-workspace="true"');
+    expect(html).toContain("프롬프트");
+    expect(html).toContain("추가 지시");
+    expect(html).toContain("오른쪽 미리보기");
     expect(html).not.toContain('aria-disabled="true"');
+    expect(html).not.toContain("작업 계획 저장");
   });
 
   it("renders the product staging route with the existing wizard and provider status", async () => {

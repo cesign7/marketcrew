@@ -11,6 +11,7 @@ type CompactWorkModalProps = {
   readonly footer?: ReactNode;
   readonly onClose: () => void;
   readonly open: boolean;
+  readonly size?: "compact" | "workspace";
   readonly title: string;
 };
 
@@ -23,7 +24,7 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-export function CompactWorkModal({ children, description, footer, onClose, open, title }: CompactWorkModalProps) {
+export function CompactWorkModal({ children, description, footer, onClose, open, size = "compact", title }: CompactWorkModalProps) {
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -78,6 +79,7 @@ export function CompactWorkModal({ children, description, footer, onClose, open,
         aria-labelledby={titleId}
         aria-modal="true"
         className={styles.modalPanel}
+        data-modal-size={size}
         ref={panelRef}
         role="dialog"
         tabIndex={-1}
