@@ -84,7 +84,7 @@ describe("product image studio AI tools routes", () => {
       expect(html, toolId).toContain('data-ai-tool-workspace="true"');
       expect(html, toolId).toContain('data-ai-tool-result-panel="true"');
       expect(html, toolId).toContain("오른쪽 미리보기");
-      expect(html, toolId).toContain("생성 결과가 이곳에 표시됩니다.");
+      expect(html, toolId).toContain("업로드하면 이 영역에서 바로 확인합니다.");
       expect(html, toolId).not.toContain("작업 화면 열기");
       expect(html, toolId).not.toContain('href="/product-image-studio/ai-tools/product-staging"');
       expect(html, toolId).not.toContain('href="/product-image-studio/ai-tools/image-generator"');
@@ -108,6 +108,10 @@ describe("product image studio AI tools routes", () => {
     expect(productStagingHtml).toContain("정사각형 1:1");
     expect(productStagingHtml).toContain("1k");
     expect(productStagingHtml).toContain("8컷");
+    expect(productStagingHtml).toContain('data-ai-tool-choice-group="product-kind"');
+    expect(productStagingHtml).toContain('data-ai-tool-choice-group="scene-style"');
+    expect(productStagingHtml).toContain("소품 밀도");
+    expect(productStagingHtml).not.toContain('aria-label="AI 작업 선택"');
 
     expect(imageGeneratorHtml).toContain("AI 이미지 생성기");
     expect(imageGeneratorHtml).toContain("프롬프트");
@@ -117,6 +121,39 @@ describe("product image studio AI tools routes", () => {
     expect(imageGeneratorHtml).toContain('data-ai-tool-quality-trigger="true"');
     expect(imageGeneratorHtml).toContain("2컷");
     expect(imageGeneratorHtml).toContain("4컷");
+    expect(imageGeneratorHtml).toContain('data-ai-tool-choice-group="image-type"');
+    expect(imageGeneratorHtml).toContain('data-ai-tool-choice-group="render-style"');
+  });
+
+  it("renders real tool-specific upload inputs and a large size preview surface", () => {
+    const productStagingHtml = renderToStaticMarkup(
+      createElement(ProductImageStudioAiToolsHub, { initialToolId: "product-staging" }),
+    );
+    const imageGeneratorHtml = renderToStaticMarkup(
+      createElement(ProductImageStudioAiToolsHub, { initialToolId: "image-generator" }),
+    );
+    const mockupHtml = renderToStaticMarkup(
+      createElement(ProductImageStudioAiToolsHub, { initialToolId: "mockup-composite" }),
+    );
+
+    expect(productStagingHtml).toContain('data-ai-tool-upload-slot="card-design"');
+    expect(productStagingHtml).toContain('data-ai-tool-upload-input="card-design"');
+    expect(productStagingHtml).toContain('type="file"');
+    expect(productStagingHtml).toContain("카드 디자인");
+    expect(productStagingHtml).toContain("봉투 디자인");
+    expect(productStagingHtml).toContain("봉합스티커");
+    expect(productStagingHtml).toContain('data-ai-tool-size-preview="true"');
+    expect(productStagingHtml).toContain('data-ai-tool-size-preview-frame="true"');
+    expect(productStagingHtml).toContain('data-output-ratio="1:1"');
+
+    expect(imageGeneratorHtml).toContain('data-ai-tool-upload-slot="reference-image"');
+    expect(imageGeneratorHtml).toContain('data-ai-tool-upload-input="reference-image"');
+    expect(imageGeneratorHtml).toContain("참고 이미지");
+    expect(imageGeneratorHtml).not.toContain('data-ai-tool-upload-slot="envelope-design"');
+
+    expect(mockupHtml).toContain('data-ai-tool-upload-slot="design-source"');
+    expect(mockupHtml).toContain('data-ai-tool-upload-slot="mockup-base"');
+    expect(mockupHtml).toContain("목업 기준 이미지");
   });
 
   it("opens future tool modals with the same workspace instead of planning-only forms", () => {

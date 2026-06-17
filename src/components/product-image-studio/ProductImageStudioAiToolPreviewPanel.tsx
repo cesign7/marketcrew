@@ -2,27 +2,35 @@
 
 import { Download, Image as ImageIcon, Loader2 } from "lucide-react";
 import type { ProductImageStudioAiTool } from "./ProductImageStudioAiToolCatalog";
+import type { ProductImageStudioAiToolUploadedAsset } from "./ProductImageStudioAiToolUploads";
 import type { ProductImageStudioSvgConversionState } from "./ProductImageStudioSvgConversionModal";
+import type { ProductImageStudioAiToolOutputRatio } from "./ProductImageStudioAiToolWorkspaceOptions";
 import styles from "./ProductImageStudioAiToolWorkspace.module.css";
 
 export type ProductImageStudioAiToolPreviewPhase = "generating" | "idle" | "ready";
 
 type ProductImageStudioAiToolPreviewPanelProps = {
   readonly countLabel: string;
+  readonly featuredAsset?: ProductImageStudioAiToolUploadedAsset;
   readonly phase: ProductImageStudioAiToolPreviewPhase;
   readonly quality: string;
   readonly ratioLabel: string;
+  readonly ratioValue: ProductImageStudioAiToolOutputRatio;
   readonly svgState?: ProductImageStudioSvgConversionState;
   readonly tool: ProductImageStudioAiTool;
+  readonly uploadedCount: number;
 };
 
 export function ProductImageStudioAiToolPreviewPanel({
   countLabel,
+  featuredAsset,
   phase,
   quality,
   ratioLabel,
+  ratioValue,
   svgState,
   tool,
+  uploadedCount,
 }: ProductImageStudioAiToolPreviewPanelProps) {
   const state = readPreviewState(phase, svgState);
 
@@ -37,18 +45,23 @@ export function ProductImageStudioAiToolPreviewPanel({
           <Download aria-hidden="true" size={15} strokeWidth={2.3} />
         </button>
       </div>
-      <div className={styles.previewStage}>{renderPreviewContent({ countLabel, quality, ratioLabel, state, svgState, tool })}</div>
+      <div className={styles.previewStage}>
+        {renderPreviewContent({ countLabel, featuredAsset, quality, ratioLabel, ratioValue, state, svgState, tool, uploadedCount })}
+      </div>
     </aside>
   );
 }
 
 function renderPreviewContent(input: {
   readonly countLabel: string;
+  readonly featuredAsset?: ProductImageStudioAiToolUploadedAsset;
   readonly quality: string;
   readonly ratioLabel: string;
+  readonly ratioValue: ProductImageStudioAiToolOutputRatio;
   readonly state: ReturnType<typeof readPreviewState>;
   readonly svgState?: ProductImageStudioSvgConversionState;
   readonly tool: ProductImageStudioAiTool;
+  readonly uploadedCount: number;
 }) {
   if (input.state.kind === "loading") {
     return (
@@ -69,36 +82,45 @@ function renderPreviewContent(input: {
   }
 
   if (input.state.kind === "ready") {
-    return <GeneratedResultCard countLabel={input.countLabel} quality={input.quality} ratioLabel={input.ratioLabel} tool={input.tool} />;
+    return (
+      <GeneratedResultCard
+        countLabel={input.countLabel}
+        featuredAsset={input.featuredAsset}
+        quality={input.quality}
+        ratioLabel={input.ratioLabel}
+        tool={input.tool}
+      />
+    );
   }
 
   return (
-    <div className={styles.emptyPreview}>
-      <span className={styles.previewIcon}>
-        <ImageIcon aria-hidden="true" size={24} strokeWidth={2.2} />
-      </span>
-      <div className={styles.previewText}>
-        <strong>생성 결과가 이곳에 표시됩니다.</strong>
-        <span>페이지를 이동하지 않고 같은 모달 오른쪽에서 바로 확인합니다.</span>
-      </div>
-    </div>
+    <SizePreview
+      featuredAsset={input.featuredAsset}
+      ratioLabel={input.ratioLabel}
+      ratioValue={input.ratioValue}
+      tool={input.tool}
+      uploadedCount={input.uploadedCount}
+    />
   );
 }
 
 function GeneratedResultCard({
   countLabel,
+  featuredAsset,
   quality,
   ratioLabel,
   tool,
 }: {
   readonly countLabel: string;
+  readonly featuredAsset?: ProductImageStudioAiToolUploadedAsset;
   readonly quality: string;
   readonly ratioLabel: string;
   readonly tool: ProductImageStudioAiTool;
 }) {
   return (
     <article className={styles.resultCard}>
-      <div className={styles.generatedImage}>
+      <div className={styles.generatedImage} data-has-upload={featuredAsset ? "true" : "false"}>
+        {featuredAsset ? <img alt={`${featuredAsset.slotTitle} 기반 생성 결과`} src={featuredAsset.previewUrl} /> : null}
         <span className={styles.generatedBadge}>{quality}</span>
       </div>
       <div className={styles.resultMeta}>
@@ -113,6 +135,47 @@ function GeneratedResultCard({
         </button>
       </div>
     </article>
+  );
+}
+
+function SizePreview({
+  featuredAsset,
+  ratioLabel,
+  ratioValue,
+  tool,
+  uploadedCount,
+}: {
+  readonly featuredAsset?: ProductImageStudioAiToolUploadedAsset;
+  readonly ratioLabel: string;
+  readonly ratioValue: ProductImageStudioAiToolOutputRatio;
+  readonly tool: ProductImageStudioAiTool;
+  readonly uploadedCount: number;
+}) {
+  return (
+    <div className={styles.sizePreview} data-ai-tool-size-preview="true" data-output-ratio={ratioValue}>
+      <div className={styles.sizePreviewFrame} data-ai-tool-size-preview-frame="true" data-output-ratio={ratioValue}>
+        {featuredAsset ? (
+          <img alt={`${featuredAsset.slotTitle} 크기 미리보기`} className={styles.sizePreviewImage} src={featuredAsset.previewUrl} />
+        ) : (
+          <div className={styles.sizePreviewEmpty}>
+            <span className={styles.previewIcon}>
+              <ImageIcon aria-hidden="true" size={24} strokeWidth={2.2} />
+            </span>
+            <strong>업로드하면 이 영역에서 바로 확인합니다.</strong>
+            <span>출력 비율에 맞춘 여백과 잘림을 먼저 볼 수 있습니다.</span>
+          </div>
+        )}
+      </div>
+      <div className={styles.sizePreviewMeta}>
+        <div>
+          <strong>{featuredAsset ? featuredAsset.fileName : tool.previewLabel}</strong>
+          <span>
+            {ratioLabel} · {uploadedCount > 0 ? `${uploadedCount}개 업로드` : "업로드 대기"}
+          </span>
+        </div>
+        <span className={styles.sizePreviewRule}>{featuredAsset ? featuredAsset.slotTitle : "프리뷰"}</span>
+      </div>
+    </div>
   );
 }
 
